@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/lib/auth-context";
 import { Loader2 } from "lucide-react";
 
-export function AppLayout() {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -30,9 +30,7 @@ export function AppLayout() {
         <AppSidebar />
         <SidebarInset className="flex flex-1 flex-col">
           <AppHeader />
-          <main className="flex-1 p-6">
-            <Outlet />
-          </main>
+          <main className="flex-1 p-6">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>
