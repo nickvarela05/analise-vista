@@ -19,7 +19,8 @@ export function AppHeader() {
   const { theme, toggle } = useTheme();
   const { user, role, signOut } = useAuth();
 
-  const initials = (user?.email ?? "?")
+  const displayName = user?.email?.split("@")[0] ?? "Convidado";
+  const initials = (user?.email ?? "DV")
     .split("@")[0]
     .slice(0, 2)
     .toUpperCase();
@@ -37,6 +38,13 @@ export function AppHeader() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <Badge
+          variant="outline"
+          className="hidden border-amber-500/40 bg-amber-500/10 text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400 sm:inline-flex"
+        >
+          Modo dev — auth desativada
+        </Badge>
+
         <Button
           variant="ghost"
           size="icon"
@@ -55,30 +63,34 @@ export function AppHeader() {
                 </AvatarFallback>
               </Avatar>
               <div className="hidden flex-col items-start leading-tight md:flex">
-                <span className="text-xs font-medium">{user?.email?.split("@")[0]}</span>
-                {role && (
-                  <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
-                    {role}
-                  </Badge>
-                )}
+                <span className="text-xs font-medium">{displayName}</span>
+                <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">
+                  {user ? (role ?? "—") : "dev"}
+                </Badge>
               </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user?.email}</p>
-                <p className="text-xs text-muted-foreground capitalize">{role ?? "—"}</p>
+                <p className="text-sm font-medium">{user?.email ?? "Convidado (modo dev)"}</p>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {user ? (role ?? "—") : "autenticação desativada"}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <UserIcon className="mr-2 h-4 w-4" /> Meu perfil
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
-              <LogOut className="mr-2 h-4 w-4" /> Sair
-            </DropdownMenuItem>
+            {user && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="mr-2 h-4 w-4" /> Sair
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
