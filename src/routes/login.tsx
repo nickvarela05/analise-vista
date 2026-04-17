@@ -46,15 +46,9 @@ function LoginPage() {
     defaultValues: { email: "", password: "", nome: "" },
   });
 
-  const onLogin = async (values: z.infer<typeof loginSchema>) => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword(values);
-    setLoading(false);
-    if (error) {
-      toast.error("Falha no login", { description: error.message });
-      return;
-    }
-    toast.success("Bem-vindo!");
+  const onLogin = async (_values: z.infer<typeof loginSchema>) => {
+    // Modo dev: auth desativada — entra direto sem validar credenciais
+    toast.success("Modo dev — acesso liberado");
     navigate({ to: "/" });
   };
 
