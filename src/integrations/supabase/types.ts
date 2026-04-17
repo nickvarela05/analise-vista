@@ -14,16 +14,347 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      aviso_gestor: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          criado_por: string | null
+          expira_em: string | null
+          id: string
+          mensagem: string
+          tipo: Database["public"]["Enums"]["aviso_tipo"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          criado_por?: string | null
+          expira_em?: string | null
+          id?: string
+          mensagem: string
+          tipo?: Database["public"]["Enums"]["aviso_tipo"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          criado_por?: string | null
+          expira_em?: string | null
+          id?: string
+          mensagem?: string
+          tipo?: Database["public"]["Enums"]["aviso_tipo"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      colaborador: {
+        Row: {
+          ativo: boolean
+          bio: string | null
+          cargo: string | null
+          created_at: string
+          email: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bio?: string | null
+          cargo?: string | null
+          created_at?: string
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bio?: string | null
+          cargo?: string | null
+          created_at?: string
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      demanda: {
+        Row: {
+          categoria: Database["public"]["Enums"]["demanda_categoria"]
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          origem: Database["public"]["Enums"]["demanda_origem"]
+          prazo: string | null
+          prioridade: Database["public"]["Enums"]["demanda_prioridade"]
+          responsavel_id: string | null
+          solicitante: string | null
+          status: Database["public"]["Enums"]["demanda_status"]
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          categoria?: Database["public"]["Enums"]["demanda_categoria"]
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          origem?: Database["public"]["Enums"]["demanda_origem"]
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
+          responsavel_id?: string | null
+          solicitante?: string | null
+          status?: Database["public"]["Enums"]["demanda_status"]
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["demanda_categoria"]
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          origem?: Database["public"]["Enums"]["demanda_origem"]
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
+          responsavel_id?: string | null
+          solicitante?: string | null
+          status?: Database["public"]["Enums"]["demanda_status"]
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          cargo: string | null
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          cargo?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reuniao: {
+        Row: {
+          audio_mime: string | null
+          audio_path: string | null
+          audio_size: number | null
+          created_at: string
+          criado_por: string | null
+          data_reuniao: string
+          duracao_min: number | null
+          id: string
+          link_calendario: string | null
+          participantes: string[] | null
+          pauta: string | null
+          proximos_passos: string | null
+          responsavel_id: string | null
+          resumo: string | null
+          status: Database["public"]["Enums"]["reuniao_status"]
+          tipo: Database["public"]["Enums"]["reuniao_tipo"]
+          titulo: string
+          transcricao: string | null
+          updated_at: string
+        }
+        Insert: {
+          audio_mime?: string | null
+          audio_path?: string | null
+          audio_size?: number | null
+          created_at?: string
+          criado_por?: string | null
+          data_reuniao: string
+          duracao_min?: number | null
+          id?: string
+          link_calendario?: string | null
+          participantes?: string[] | null
+          pauta?: string | null
+          proximos_passos?: string | null
+          responsavel_id?: string | null
+          resumo?: string | null
+          status?: Database["public"]["Enums"]["reuniao_status"]
+          tipo?: Database["public"]["Enums"]["reuniao_tipo"]
+          titulo: string
+          transcricao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audio_mime?: string | null
+          audio_path?: string | null
+          audio_size?: number | null
+          created_at?: string
+          criado_por?: string | null
+          data_reuniao?: string
+          duracao_min?: number | null
+          id?: string
+          link_calendario?: string | null
+          participantes?: string[] | null
+          pauta?: string | null
+          proximos_passos?: string | null
+          responsavel_id?: string | null
+          resumo?: string | null
+          status?: Database["public"]["Enums"]["reuniao_status"]
+          tipo?: Database["public"]["Enums"]["reuniao_tipo"]
+          titulo?: string
+          transcricao?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      todo: {
+        Row: {
+          concluida_em: string | null
+          created_at: string
+          criado_por: string | null
+          data_prevista: string | null
+          demanda_id: string | null
+          descricao: string | null
+          id: string
+          prioridade: Database["public"]["Enums"]["todo_prioridade"]
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["todo_status"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          concluida_em?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_prevista?: string | null
+          demanda_id?: string | null
+          descricao?: string | null
+          id?: string
+          prioridade?: Database["public"]["Enums"]["todo_prioridade"]
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["todo_status"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          concluida_em?: string | null
+          created_at?: string
+          criado_por?: string | null
+          data_prevista?: string | null
+          demanda_id?: string | null
+          descricao?: string | null
+          id?: string
+          prioridade?: Database["public"]["Enums"]["todo_prioridade"]
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["todo_status"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demanda"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "gestor" | "analista"
+      aviso_tipo: "informativo" | "alerta" | "critico"
+      demanda_categoria:
+        | "bug"
+        | "melhoria"
+        | "nova_funcionalidade"
+        | "duvida"
+        | "documentacao"
+        | "outro"
+      demanda_origem: "email" | "reuniao" | "chamado" | "whatsapp" | "outro"
+      demanda_prioridade: "baixa" | "media" | "alta" | "critica"
+      demanda_status:
+        | "aberta"
+        | "em_analise"
+        | "em_andamento"
+        | "aguardando_cliente"
+        | "homologacao"
+        | "concluida"
+        | "cancelada"
+      reuniao_status: "agendada" | "realizada" | "cancelada"
+      reuniao_tipo:
+        | "interna"
+        | "cliente"
+        | "fornecedor"
+        | "alinhamento"
+        | "outro"
+      todo_prioridade: "baixa" | "media" | "alta"
+      todo_status: "pendente" | "em_andamento" | "concluida" | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +481,38 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["gestor", "analista"],
+      aviso_tipo: ["informativo", "alerta", "critico"],
+      demanda_categoria: [
+        "bug",
+        "melhoria",
+        "nova_funcionalidade",
+        "duvida",
+        "documentacao",
+        "outro",
+      ],
+      demanda_origem: ["email", "reuniao", "chamado", "whatsapp", "outro"],
+      demanda_prioridade: ["baixa", "media", "alta", "critica"],
+      demanda_status: [
+        "aberta",
+        "em_analise",
+        "em_andamento",
+        "aguardando_cliente",
+        "homologacao",
+        "concluida",
+        "cancelada",
+      ],
+      reuniao_status: ["agendada", "realizada", "cancelada"],
+      reuniao_tipo: [
+        "interna",
+        "cliente",
+        "fornecedor",
+        "alinhamento",
+        "outro",
+      ],
+      todo_prioridade: ["baixa", "media", "alta"],
+      todo_status: ["pendente", "em_andamento", "concluida", "cancelada"],
+    },
   },
 } as const
