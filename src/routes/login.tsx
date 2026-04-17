@@ -129,7 +129,13 @@ function LoginPage() {
               </TabsList>
 
               <TabsContent value="login" className="mt-4">
-                <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    onLogin(loginForm.getValues());
+                  }}
+                  className="space-y-4"
+                >
                   <div className="space-y-1.5">
                     <Label htmlFor="login-email">E-mail</Label>
                     <Input
@@ -138,11 +144,6 @@ function LoginPage() {
                       autoComplete="email"
                       {...loginForm.register("email")}
                     />
-                    {loginForm.formState.errors.email && (
-                      <p className="text-xs text-destructive">
-                        {loginForm.formState.errors.email.message}
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="login-password">Senha</Label>
@@ -152,15 +153,13 @@ function LoginPage() {
                       autoComplete="current-password"
                       {...loginForm.register("password")}
                     />
-                    {loginForm.formState.errors.password && (
-                      <p className="text-xs text-destructive">
-                        {loginForm.formState.errors.password.message}
-                      </p>
-                    )}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
                   </Button>
+                  <p className="text-center text-xs text-amber-600 dark:text-amber-400">
+                    Modo dev — autenticação desativada
+                  </p>
                 </form>
               </TabsContent>
 
