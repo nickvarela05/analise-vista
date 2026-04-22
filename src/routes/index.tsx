@@ -535,7 +535,7 @@ function Dashboard() {
                     key={`${a.tipo}-${a.id}`}
                     type="button"
                     onClick={() => openPreview(a)}
-                    className="list-item-interactive"
+                    className="list-item-interactive group"
                   >
                     <span className={cn("type-dot", `type-dot-${tone}`)} />
                     <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
