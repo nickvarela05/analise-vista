@@ -289,7 +289,7 @@
 
   /* Item de lista interativo (atividades, avisos, tarefas) */
   .list-item-interactive {
-    @apply group flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-all;
+    @apply flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-all;
   }
   .list-item-interactive:hover {
     @apply border-border bg-muted/50;
