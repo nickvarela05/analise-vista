@@ -1,12 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import {
   LayoutDashboard,
-  Inbox,
-  CheckSquare,
+  FileBarChart,
+  CalendarRange,
   Calendar,
+  CheckSquare,
   Megaphone,
   Users,
   Settings,
+  Inbox,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,16 +23,17 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Logo } from "@/components/Logo";
 import logoUrl from "@/assets/logo.png";
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Demandas", url: "/demandas", icon: Inbox },
-  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
+  { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
+  { title: "Atividades semanais", url: "/atividades", icon: CalendarRange },
   { title: "Reuniões", url: "/reunioes", icon: Calendar },
+  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
+  { title: "Demandas", url: "/demandas", icon: Inbox },
   { title: "Avisos", url: "/avisos", icon: Megaphone },
-  { title: "Portfólio", url: "/portfolio", icon: Users },
+  { title: "Equipe", url: "/equipe", icon: Users },
 ];
 
 const bottomItems = [{ title: "Configurações", url: "/configuracoes", icon: Settings }];

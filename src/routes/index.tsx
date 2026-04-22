@@ -1,15 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Inbox,
-  CheckSquare,
-  Calendar,
-  AlertTriangle,
-  TrendingUp,
-} from "lucide-react";
+import * as React from "react";
+import { AlertTriangle } from "lucide-react";
+import { format, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatCard, PanelCard } from "@/components/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -20,9 +17,6 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
   Legend,
 } from "recharts";
 
@@ -38,21 +32,11 @@ function IndexRoute() {
   );
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  aberta: "oklch(0.6 0.13 230)",
-  em_analise: "oklch(0.78 0.15 80)",
-  em_andamento: "oklch(0.45 0.06 180)",
-  aguardando_cliente: "oklch(0.7 0.05 60)",
-  homologacao: "oklch(0.6 0.09 180)",
-  concluida: "oklch(0.62 0.15 155)",
-  cancelada: "oklch(0.58 0.05 30)",
-};
-
 function Dashboard() {
-  const { data: demandas = [] } = useQuery({
-    queryKey: ["dash-demandas"],
+  const { data: chamados = [] } = useQuery({
+    queryKey: ["dash-chamados"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("demanda").select("status, categoria, prioridade");
+      const { data, error } = await supabase.from("chamado_externo").select("*");
       if (error) throw error;
       return data ?? [];
     },
@@ -61,7 +45,7 @@ function Dashboard() {
   const { data: tarefas = [] } = useQuery({
     queryKey: ["dash-tarefas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("todo").select("status");
+      const { data, error } = await supabase.from("todo").select("*");
       if (error) throw error;
       return data ?? [];
     },
@@ -70,7 +54,7 @@ function Dashboard() {
   const { data: reunioes = [] } = useQuery({
     queryKey: ["dash-reunioes"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("reuniao").select("status, data_reuniao");
+      const { data, error } = await supabase.from("reuniao").select("*").order("data_reuniao");
       if (error) throw error;
       return data ?? [];
     },
@@ -89,35 +73,156 @@ function Dashboard() {
     },
   });
 
-  const statusData = Object.entries(
-    demandas.reduce<Record<string, number>>((acc, d) => {
-      acc[d.status] = (acc[d.status] ?? 0) + 1;
-      return acc;
-    }, {}),
-  ).map(([status, count]) => ({ status: status.replace(/_/g, " "), count, key: status }));
+  const { data: ferias = [] } = useQuery({
+    queryKey: ["dash-ferias"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador_ferias")
+        .select("*, colaborador(nome)")
+        .order("data_inicio", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
-  const categoriaData = Object.entries(
-    demandas.reduce<Record<string, number>>((acc, d) => {
-      acc[d.categoria] = (acc[d.categoria] ?? 0) + 1;
-      return acc;
-    }, {}),
-  ).map(([name, value]) => ({ name: name.replace(/_/g, " "), value }));
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ["dash-colaboradores"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("*, colaborador_horario(*)")
+        .eq("ativo", true)
+        .order("ordem");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
-  const tarefasAbertas = tarefas.filter((t) => t.status !== "concluida" && t.status !== "cancelada").length;
-  const reunioesMes = reunioes.filter((r) => {
+  const { data: demandas = [] } = useQuery({
+    queryKey: ["dash-demandas"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("demanda").select("*");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // KPIs
+  const relatPendentes = chamados.filter((c) => !["concluido", "cancelado", "reprovado"].includes(c.status)).length;
+  const relatFeitos = chamados.filter((c) => c.status === "concluido").length;
+
+  const avisosAlta = avisos.filter((a) => a.tipo === "critico").length;
+  const avisosMedia = avisos.filter((a) => a.tipo === "alerta").length;
+  const avisosBaixa = avisos.filter((a) => a.tipo === "informativo").length;
+
+  const now = new Date();
+  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+  const reunioesSemana = reunioes.filter((r) =>
+    isWithinInterval(new Date(r.data_reuniao), { start: weekStart, end: weekEnd }),
+  ).length;
+  const reunioesFuturas = reunioes.filter((r) => {
     const d = new Date(r.data_reuniao);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    return d > weekEnd;
   }).length;
+  const reunioesFeitas = reunioes.filter((r) => r.status === "realizada").length;
+
+  // Tarefas por status workflow
+  const taskHML = tarefas.filter((t) => t.status === "homologacao").length;
+  const taskProd = tarefas.filter((t) => t.status === "producao").length;
+  const taskAbertas = tarefas.filter((t) => ["aberta", "pendente", "encaminhada"].includes(t.status)).length;
+  const taskUrgentes = tarefas.filter((t) => t.prioridade === "alta").length;
+  const taskReprov = tarefas.filter((t) => t.status === "reprovada").length;
+
+  // Atribuições por colaborador (gráfico)
+  const atribuicoes = colaboradores.map((c) => {
+    const tDoColab = tarefas.filter((t) => t.responsavel_id === c.id).length;
+    const dDoColab = demandas.filter((d) => d.responsavel_id === c.id).length;
+    const rDoColab = reunioes.filter((r) => r.responsavel_id === c.id).length;
+    return {
+      nome: c.nome.split(" ")[0],
+      Tarefas: tDoColab,
+      Demandas: dDoColab,
+      Reuniões: rDoColab,
+    };
+  });
+
+  // Atividades semanais = demandas/tarefas com prazo na semana + reuniões da semana
+  type AtividadeSemana = {
+    tipo: "tarefa" | "demanda" | "reuniao";
+    titulo: string;
+    data: Date;
+    extra: string;
+    prioridade?: string;
+  };
+  const atividades: AtividadeSemana[] = [];
+  tarefas.forEach((t) => {
+    if (t.data_prevista) {
+      const d = new Date(t.data_prevista);
+      if (isWithinInterval(d, { start: weekStart, end: weekEnd })) {
+        atividades.push({
+          tipo: "tarefa",
+          titulo: t.titulo,
+          data: d,
+          extra: `Prazo: ${format(d, "dd/MM/yyyy")}`,
+          prioridade: t.prioridade,
+        });
+      }
+    }
+  });
+  demandas.forEach((d) => {
+    if (d.prazo) {
+      const dt = new Date(d.prazo);
+      if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
+        atividades.push({
+          tipo: "demanda",
+          titulo: d.titulo,
+          data: dt,
+          extra: `Prazo: ${format(dt, "dd/MM/yyyy")}`,
+          prioridade: d.prioridade,
+        });
+      }
+    }
+  });
+  reunioes.forEach((r) => {
+    const dt = new Date(r.data_reuniao);
+    if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
+      atividades.push({
+        tipo: "reuniao",
+        titulo: r.titulo,
+        data: dt,
+        extra: `${format(dt, "dd/MM 'às' HH:mm")}`,
+      });
+    }
+  });
+  atividades.sort((a, b) => a.data.getTime() - b.data.getTime());
+
+  const proximasFerias = ferias.slice(0, 4);
+
+  // Horários (pega do primeiro dia da semana de cada colaborador)
+  const horarios = colaboradores
+    .map((c) => {
+      const seg = (c.colaborador_horario ?? []).find((h: any) => h.dia_semana === 1);
+      if (!seg) return null;
+      return {
+        nome: c.nome.split(" ")[0],
+        expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} às ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
+        almoco: seg.almoco_inicio
+          ? `${seg.almoco_inicio.slice(0, 5)} às ${seg.almoco_fim?.slice(0, 5)} (${seg.local_almoco ?? ""})`
+          : "—",
+      };
+    })
+    .filter(Boolean) as { nome: string; expediente: string; almoco: string }[];
 
   return (
     <div>
       <PageHeader
         title="Dashboard"
-        description="Visão consolidada da equipe de Análise de Requisitos."
+        description="Painel gerencial — Equipe de Análise de Requisitos."
       />
 
-      {/* Avisos críticos */}
+      {/* Avisos críticos no topo */}
       {avisos.length > 0 && (
         <div className="mb-6 space-y-2">
           {avisos.slice(0, 3).map((a) => (
@@ -152,33 +257,65 @@ function Dashboard() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Demandas" value={demandas.length} icon={Inbox} hint="total registrado" />
-        <KpiCard label="Tarefas abertas" value={tarefasAbertas} icon={CheckSquare} hint="pendentes ou em andamento" />
-        <KpiCard label="Reuniões no mês" value={reunioesMes} icon={Calendar} hint="agendadas + realizadas" />
-        <KpiCard
-          label="Concluídas"
-          value={demandas.filter((d) => d.status === "concluida").length}
-          icon={TrendingUp}
-          hint="demandas finalizadas"
+      {/* Linha 1 — Cards no estilo da imagem */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Relatórios"
+          items={[
+            { value: relatPendentes, label: "Pendentes", tone: "warning" },
+            { value: relatFeitos, label: "Feitos", tone: "success" },
+          ]}
         />
+        <StatCard
+          title="Avisos"
+          items={[
+            { value: avisosAlta, label: "Alta", tone: "destructive" },
+            { value: avisosMedia, label: "Média", tone: "warning" },
+            { value: avisosBaixa, label: "Baixa", tone: "info" },
+          ]}
+          size="sm"
+        />
+        <StatCard
+          title="Reuniões"
+          items={[
+            { value: reunioesSemana, label: "Semana atual", tone: "primary" },
+            { value: reunioesFuturas, label: ">7 dias", tone: "info" },
+            { value: reunioesFeitas, label: "Feitas", tone: "success" },
+          ]}
+          size="sm"
+        />
+        <PanelCard title="Férias">
+          {proximasFerias.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma férias programada.</p>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {proximasFerias.map((f: any) => (
+                <li key={f.id} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="font-medium">{f.colaborador?.nome?.split(" ")[0] ?? "—"}:</span>
+                  <span className="text-muted-foreground">
+                    {format(new Date(f.data_inicio), "dd/MM")} a {format(new Date(f.data_fim), "dd/MM")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PanelCard>
       </div>
 
-      {/* Gráficos */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Demandas por status</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            {statusData.length === 0 ? (
-              <EmptyChart />
+      {/* Linha 2 — BI + Atividades semanais + Horários */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+        <PanelCard title="Atribuições (Equipe de análise)" className="lg:col-span-1">
+          <div className="h-72">
+            {atribuicoes.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Sem dados ainda.
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={statusData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.005 200)" />
-                  <XAxis dataKey="status" fontSize={11} />
+                <BarChart data={atribuicoes}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="nome" fontSize={11} />
                   <YAxis allowDecimals={false} fontSize={11} />
                   <Tooltip
                     contentStyle={{
@@ -188,101 +325,104 @@ function Dashboard() {
                       fontSize: 12,
                     }}
                   />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                    {statusData.map((entry) => (
-                      <Cell key={entry.key} fill={STATUS_COLORS[entry.key] ?? "var(--primary)"} />
-                    ))}
-                  </Bar>
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Tarefas" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Demandas" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Reuniões" fill="var(--chart-5)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Demandas por categoria</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            {categoriaData.length === 0 ? (
-              <EmptyChart />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoriaData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={50}
-                    outerRadius={90}
-                    paddingAngle={2}
-                  >
-                    {categoriaData.map((_, i) => (
-                      <Cell
-                        key={i}
-                        fill={[
-                          "var(--chart-1)",
-                          "var(--chart-2)",
-                          "var(--chart-3)",
-                          "var(--chart-4)",
-                          "var(--chart-5)",
-                          "var(--primary-glow)",
-                        ][i % 6]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      borderRadius: 8,
-                      border: "1px solid var(--border)",
-                      background: "var(--popover)",
-                      fontSize: 12,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  icon: Icon,
-  hint,
-}: {
-  label: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  hint?: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {label}
-          </span>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <Icon className="h-4 w-4" />
           </div>
-        </div>
-        <p className="mt-3 text-3xl font-semibold tracking-tight">{value}</p>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
-      </CardContent>
-    </Card>
-  );
-}
+        </PanelCard>
 
-function EmptyChart() {
-  return (
-    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-      Sem dados ainda. Cadastre demandas para visualizar.
+        <PanelCard title="Atividades semanais" actions={
+          <span className="text-[10px] uppercase text-muted-foreground">
+            {format(weekStart, "dd/MM", { locale: ptBR })} – {format(weekEnd, "dd/MM", { locale: ptBR })}
+          </span>
+        }>
+          <div className="max-h-72 overflow-y-auto pr-2">
+            {atividades.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma atividade nesta semana.</p>
+            ) : (
+              <ul className="space-y-3 text-sm">
+                {atividades.slice(0, 8).map((a, i) => (
+                  <li key={i} className="border-l-2 border-primary/40 pl-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[9px] uppercase">{a.tipo}</Badge>
+                      {a.prioridade && (
+                        <span className="text-[10px] uppercase text-muted-foreground">
+                          Urg.: {a.prioridade}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 font-medium leading-tight">{a.titulo}</p>
+                    <p className="text-xs text-muted-foreground">{a.extra}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {atividades.length > 8 && (
+              <Link to="/atividades" className="mt-3 inline-block text-xs font-medium text-primary hover:underline">
+                Ver mais {atividades.length - 8} atividades →
+              </Link>
+            )}
+          </div>
+        </PanelCard>
+
+        <PanelCard title="Horários da equipe">
+          <div className="max-h-72 space-y-3 overflow-y-auto pr-2 text-sm">
+            {horarios.length === 0 ? (
+              <p className="text-muted-foreground">Cadastre horários em Equipe.</p>
+            ) : (
+              <>
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Expediente
+                  </p>
+                  <ul className="space-y-1">
+                    {horarios.map((h, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                        <span className="font-medium">{h.nome}:</span>
+                        <span className="text-muted-foreground">{h.expediente}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="border-t border-border pt-2">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Almoço
+                  </p>
+                  <ul className="space-y-1">
+                    {horarios.map((h, i) => (
+                      <li key={i} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+                        <span className="font-medium">{h.nome}:</span>
+                        <span className="text-muted-foreground">{h.almoco}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </PanelCard>
+      </div>
+
+      {/* Linha 3 — Tarefas em círculo */}
+      <div className="mt-8">
+        <StatCard
+          title="Tarefas"
+          items={[
+            { value: taskHML, label: "Em HML", tone: "info" },
+            { value: taskProd, label: "Produção", tone: "primary" },
+            { value: taskAbertas, label: "Abertas", tone: "warning" },
+            { value: taskUrgentes, label: "Urgentes", tone: "destructive" },
+            { value: taskReprov, label: "Reprovadas", tone: "destructive" },
+          ]}
+          size="sm"
+        />
+      </div>
     </div>
   );
 }
