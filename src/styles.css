@@ -185,3 +185,34 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
+
+/* ============================================================
+ * Stat Card — visual inspirado no painel administrativo:
+ * borda fina, título no topo, números grandes em círculo.
+ * Funciona em tema claro e escuro automaticamente.
+ * ============================================================ */
+@layer components {
+  .stat-card {
+    @apply relative rounded-xl border bg-card text-card-foreground;
+    border-color: color-mix(in oklab, var(--foreground) 18%, transparent);
+    box-shadow: 0 1px 0 color-mix(in oklab, var(--foreground) 4%, transparent);
+  }
+  .stat-card-title {
+    @apply absolute -top-3 left-4 px-2 text-xs font-semibold uppercase tracking-wider;
+    background: var(--card);
+    color: var(--foreground);
+  }
+  .stat-circle {
+    @apply flex h-16 w-16 items-center justify-center rounded-full border text-2xl font-semibold tabular-nums;
+    border-color: color-mix(in oklab, var(--foreground) 35%, transparent);
+    color: var(--foreground);
+  }
+  .stat-circle-sm {
+    @apply h-12 w-12 text-lg;
+  }
+  .stat-circle-primary { color: var(--primary); border-color: color-mix(in oklab, var(--primary) 50%, transparent); }
+  .stat-circle-success { color: var(--success); border-color: color-mix(in oklab, var(--success) 50%, transparent); }
+  .stat-circle-warning { color: var(--warning); border-color: color-mix(in oklab, var(--warning) 60%, transparent); }
+  .stat-circle-destructive { color: var(--destructive); border-color: color-mix(in oklab, var(--destructive) 50%, transparent); }
+  .stat-circle-info { color: var(--info); border-color: color-mix(in oklab, var(--info) 50%, transparent); }
+}
