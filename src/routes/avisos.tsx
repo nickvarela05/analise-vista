@@ -46,7 +46,7 @@ function AvisosRoute() {
 const TIPOS = ["informativo", "alerta", "critico"] as const;
 
 function tipoStyle(t: string) {
-  if (t === "critico") return "border-destructive/40 bg-destructive/5 text-destructive";
+  if (t === "critico") return "border-destructive/40 bg-destructive/5";
   if (t === "alerta") return "border-warning/40 bg-warning/5";
   return "border-info/40 bg-info/5";
 }
@@ -56,20 +56,30 @@ function Avisos() {
   const qc = useQueryClient();
   const isGestor = role === "gestor";
   const [open, setOpen] = React.useState(false);
+  const [filter, setFilter] = React.useState<string>("todos");
   const [form, setForm] = React.useState({
     titulo: "",
     mensagem: "",
     tipo: "informativo" as (typeof TIPOS)[number],
     ativo: true,
+    colaborador_id: "" as string,
+  });
+
+  const { data: colabs = [] } = useQuery({
+    queryKey: ["av-colabs"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const { data = [], isLoading } = useQuery({
-    queryKey: ["avisos"],
+    queryKey: ["avisos", filter],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("aviso_gestor")
-        .select("*")
-        .order("created_at", { ascending: false });
+      let q = supabase.from("aviso_gestor").select("*, colaborador:colaborador_id(nome)").order("created_at", { ascending: false });
+      if (filter !== "todos") q = q.eq("tipo", filter as any);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
@@ -78,14 +88,19 @@ function Avisos() {
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.titulo.trim() || !form.mensagem.trim()) return;
-    const { error } = await supabase.from("aviso_gestor").insert({ ...form, criado_por: user?.id });
+    const { colaborador_id, ...rest } = form;
+    const { error } = await supabase.from("aviso_gestor").insert({
+      ...rest,
+      colaborador_id: colaborador_id || null,
+      criado_por: user?.id,
+    });
     if (error) {
       toast.error("Erro", { description: error.message });
       return;
     }
     toast.success("Aviso publicado");
     setOpen(false);
-    setForm({ titulo: "", mensagem: "", tipo: "informativo", ativo: true });
+    setForm({ titulo: "", mensagem: "", tipo: "informativo", ativo: true, colaborador_id: "" });
     qc.invalidateQueries({ queryKey: ["avisos"] });
     qc.invalidateQueries({ queryKey: ["dash-avisos"] });
   };
@@ -109,8 +124,8 @@ function Avisos() {
   return (
     <div>
       <PageHeader
-        title="Avisos do Gestor"
-        description="Comunicados da liderança para a equipe."
+        title="Avisos"
+        description="Comunicados da liderança ou da equipe — separados por urgência e podendo vincular um colaborador."
         actions={
           isGestor && (
             <Dialog open={open} onOpenChange={setOpen}>
@@ -128,12 +143,21 @@ function Avisos() {
                     <Label>Mensagem</Label>
                     <Textarea rows={4} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
                   </div>
-                  <div className="space-y-1.5">
-                    <Label>Tipo</Label>
-                    <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{TIPOS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Urgência</Label>
+                      <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{TIPOS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Vincular colaborador</Label>
+                      <Select value={form.colaborador_id} onValueChange={(v) => setForm({ ...form, colaborador_id: v })}>
+                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>{colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <DialogFooter><Button type="submit">Publicar</Button></DialogFooter>
                 </form>
@@ -143,18 +167,31 @@ function Avisos() {
         }
       />
 
+      <div className="mb-4">
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas urgências</SelectItem>
+            {TIPOS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       {isLoading ? (
         <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : data.length === 0 ? (
         <EmptyState icon={AlertTriangle} title="Nenhum aviso ativo" />
       ) : (
         <div className="space-y-3">
-          {data.map((a) => (
+          {data.map((a: any) => (
             <Card key={a.id} className={`border ${tipoStyle(a.tipo)}`}>
               <CardContent className="flex items-start justify-between gap-4 p-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="capitalize text-[10px]">{a.tipo}</Badge>
+                    {a.colaborador?.nome && (
+                      <Badge variant="secondary" className="text-[10px]">→ {a.colaborador.nome}</Badge>
+                    )}
                     {!a.ativo && <Badge variant="secondary" className="text-[10px]">inativo</Badge>}
                   </div>
                   <h3 className="mt-2 text-sm font-semibold">{a.titulo}</h3>

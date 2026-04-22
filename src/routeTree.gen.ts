@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TarefasRouteImport } from './routes/tarefas'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DemandasRouteImport } from './routes/demandas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as AvisosRouteImport } from './routes/avisos'
+import { Route as AtividadesRouteImport } from './routes/atividades'
 import { Route as IndexRouteImport } from './routes/index'
 
 const TarefasRoute = TarefasRouteImport.update({
@@ -28,6 +31,11 @@ const ReunioesRoute = ReunioesRouteImport.update({
   path: '/reunioes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortfolioRoute = PortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
@@ -36,6 +44,11 @@ const PortfolioRoute = PortfolioRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipeRoute = EquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemandasRoute = DemandasRouteImport.update({
@@ -53,6 +66,11 @@ const AvisosRoute = AvisosRouteImport.update({
   path: '/avisos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AtividadesRoute = AtividadesRouteImport.update({
+  id: '/atividades',
+  path: '/atividades',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -61,32 +79,41 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/atividades': typeof AtividadesRoute
   '/avisos': typeof AvisosRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
+  '/equipe': typeof EquipeRoute
   '/login': typeof LoginRoute
   '/portfolio': typeof PortfolioRoute
+  '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/atividades': typeof AtividadesRoute
   '/avisos': typeof AvisosRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
+  '/equipe': typeof EquipeRoute
   '/login': typeof LoginRoute
   '/portfolio': typeof PortfolioRoute
+  '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/atividades': typeof AtividadesRoute
   '/avisos': typeof AvisosRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
+  '/equipe': typeof EquipeRoute
   '/login': typeof LoginRoute
   '/portfolio': typeof PortfolioRoute
+  '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
 }
@@ -94,42 +121,54 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/atividades'
     | '/avisos'
     | '/configuracoes'
     | '/demandas'
+    | '/equipe'
     | '/login'
     | '/portfolio'
+    | '/relatorios'
     | '/reunioes'
     | '/tarefas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/atividades'
     | '/avisos'
     | '/configuracoes'
     | '/demandas'
+    | '/equipe'
     | '/login'
     | '/portfolio'
+    | '/relatorios'
     | '/reunioes'
     | '/tarefas'
   id:
     | '__root__'
     | '/'
+    | '/atividades'
     | '/avisos'
     | '/configuracoes'
     | '/demandas'
+    | '/equipe'
     | '/login'
     | '/portfolio'
+    | '/relatorios'
     | '/reunioes'
     | '/tarefas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AtividadesRoute: typeof AtividadesRoute
   AvisosRoute: typeof AvisosRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DemandasRoute: typeof DemandasRoute
+  EquipeRoute: typeof EquipeRoute
   LoginRoute: typeof LoginRoute
   PortfolioRoute: typeof PortfolioRoute
+  RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
   TarefasRoute: typeof TarefasRoute
 }
@@ -150,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReunioesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portfolio': {
       id: '/portfolio'
       path: '/portfolio'
@@ -162,6 +208,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipe': {
+      id: '/equipe'
+      path: '/equipe'
+      fullPath: '/equipe'
+      preLoaderRoute: typeof EquipeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demandas': {
@@ -185,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AvisosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/atividades': {
+      id: '/atividades'
+      path: '/atividades'
+      fullPath: '/atividades'
+      preLoaderRoute: typeof AtividadesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -197,11 +257,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AtividadesRoute: AtividadesRoute,
   AvisosRoute: AvisosRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   DemandasRoute: DemandasRoute,
+  EquipeRoute: EquipeRoute,
   LoginRoute: LoginRoute,
   PortfolioRoute: PortfolioRoute,
+  RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,
   TarefasRoute: TarefasRoute,
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Upload, Calendar as CalIcon } from "lucide-react";
+import { Plus, Loader2, Upload, Calendar as CalIcon, Users, FileText, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
@@ -50,6 +50,7 @@ function Reunioes() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [open, setOpen] = React.useState(false);
+  const [openDetail, setOpenDetail] = React.useState<any>(null);
   const [audio, setAudio] = React.useState<File | null>(null);
   const [saving, setSaving] = React.useState(false);
 
@@ -62,7 +63,19 @@ function Reunioes() {
     pauta: "",
     resumo: "",
     proximos_passos: "",
+    transcricao: "",
     link_calendario: "",
+    responsavel_id: "" as string,
+    participantes_str: "",
+  });
+
+  const { data: colabs = [] } = useQuery({
+    queryKey: ["reu-colabs"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const { data = [], isLoading } = useQuery({
@@ -79,7 +92,10 @@ function Reunioes() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.titulo.trim() || !user) return;
+    if (!form.titulo.trim() || !user) {
+      toast.error(user ? "Informe título" : "Faça login para criar reuniões");
+      return;
+    }
     setSaving(true);
 
     let audio_path: string | null = null;
@@ -88,9 +104,7 @@ function Reunioes() {
 
     if (audio) {
       const path = `${user.id}/${Date.now()}-${audio.name}`;
-      const { error: upErr } = await supabase.storage
-        .from("reuniao-audios")
-        .upload(path, audio);
+      const { error: upErr } = await supabase.storage.from("reuniao-audios").upload(path, audio);
       if (upErr) {
         setSaving(false);
         toast.error("Erro no upload do áudio", { description: upErr.message });
@@ -101,15 +115,21 @@ function Reunioes() {
       audio_mime = audio.type;
     }
 
+    const { participantes_str, ...rest } = form;
+    const participantes = participantes_str
+      ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
+      : null;
+
     const { error } = await supabase.from("reuniao").insert({
-      ...form,
+      ...rest,
       data_reuniao: new Date(form.data_reuniao).toISOString(),
       duracao_min: Number(form.duracao_min) || null,
+      responsavel_id: form.responsavel_id || null,
+      participantes,
       audio_path,
       audio_size,
       audio_mime,
       criado_por: user.id,
-      responsavel_id: user.id,
     });
     setSaving(false);
 
@@ -121,7 +141,7 @@ function Reunioes() {
     toast.success("Reunião registrada");
     setOpen(false);
     setAudio(null);
-    setForm({ ...form, titulo: "", pauta: "", resumo: "", proximos_passos: "", link_calendario: "" });
+    setForm({ ...form, titulo: "", pauta: "", resumo: "", proximos_passos: "", transcricao: "", link_calendario: "", participantes_str: "" });
     qc.invalidateQueries({ queryKey: ["reunioes"] });
     qc.invalidateQueries({ queryKey: ["dash-reunioes"] });
   };
@@ -130,7 +150,7 @@ function Reunioes() {
     <div>
       <PageHeader
         title="Reuniões"
-        description="Pautas, resumos, próximos passos e áudios para transcrição posterior."
+        description="Pautas, resumos, transcrições, participantes, responsável e prazos."
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -167,9 +187,22 @@ function Reunioes() {
                     <Input type="number" value={form.duracao_min} onChange={(e) => setForm({ ...form, duracao_min: Number(e.target.value) })} />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Responsável</Label>
+                    <Select value={form.responsavel_id} onValueChange={(v) => setForm({ ...form, responsavel_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                      <SelectContent>{colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Link do calendário</Label>
+                    <Input value={form.link_calendario} onChange={(e) => setForm({ ...form, link_calendario: e.target.value })} placeholder="https://..." />
+                  </div>
+                </div>
                 <div className="space-y-1.5">
-                  <Label>Link do calendário</Label>
-                  <Input value={form.link_calendario} onChange={(e) => setForm({ ...form, link_calendario: e.target.value })} placeholder="https://..." />
+                  <Label>Participantes (separados por vírgula)</Label>
+                  <Input value={form.participantes_str} onChange={(e) => setForm({ ...form, participantes_str: e.target.value })} placeholder="João, Maria, Pedro" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Pauta</Label>
@@ -177,7 +210,11 @@ function Reunioes() {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Resumo</Label>
-                  <Textarea rows={4} value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
+                  <Textarea rows={3} value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Transcrição</Label>
+                  <Textarea rows={4} value={form.transcricao} onChange={(e) => setForm({ ...form, transcricao: e.target.value })} placeholder="Cole aqui a transcrição automática do áudio" />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Próximos passos</Label>
@@ -205,36 +242,83 @@ function Reunioes() {
       ) : data.length === 0 ? (
         <EmptyState icon={CalIcon} title="Nenhuma reunião registrada" />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {data.map((r) => (
-            <Card key={r.id}>
+            <Card key={r.id} className="cursor-pointer transition hover:border-primary/50" onClick={() => setOpenDetail(r)}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <CardTitle className="text-base">{r.titulo}</CardTitle>
+                    <CardTitle className="text-sm">{r.titulo}</CardTitle>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {format(new Date(r.data_reuniao), "dd/MM/yyyy 'às' HH:mm")}
                       {r.duracao_min ? ` · ${r.duracao_min} min` : ""}
                     </p>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-col gap-1">
                     <Badge variant="outline" className="capitalize text-[10px]">{r.tipo}</Badge>
                     <Badge variant="outline" className="capitalize text-[10px]">{r.status}</Badge>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2 pt-0 text-sm">
-                {r.resumo && <p className="line-clamp-3 text-muted-foreground">{r.resumo}</p>}
-                {r.audio_path && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    🎵 áudio anexado
-                  </Badge>
-                )}
+                {r.resumo && <p className="line-clamp-2 text-xs text-muted-foreground">{r.resumo}</p>}
+                <div className="flex flex-wrap gap-1">
+                  {r.participantes && r.participantes.length > 0 && (
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <Users className="h-3 w-3" /> {r.participantes.length}
+                    </Badge>
+                  )}
+                  {r.transcricao && <Badge variant="secondary" className="gap-1 text-[10px]"><FileText className="h-3 w-3" /> transcrição</Badge>}
+                  {r.proximos_passos && <Badge variant="secondary" className="gap-1 text-[10px]"><ListChecks className="h-3 w-3" /> próximos</Badge>}
+                  {r.audio_path && <Badge variant="secondary" className="text-[10px]">🎵 áudio</Badge>}
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      <Dialog open={!!openDetail} onOpenChange={() => setOpenDetail(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {openDetail && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{openDetail.titulo}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(openDetail.data_reuniao), "dd/MM/yyyy 'às' HH:mm")} ·
+                  {openDetail.duracao_min ? ` ${openDetail.duracao_min} min · ` : " "}
+                  {openDetail.tipo} · {openDetail.status}
+                </p>
+                {openDetail.participantes && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Participantes</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {openDetail.participantes.map((p: string, i: number) => (
+                        <Badge key={i} variant="outline">{p}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {openDetail.pauta && <Section title="Pauta" content={openDetail.pauta} />}
+                {openDetail.resumo && <Section title="Resumo" content={openDetail.resumo} />}
+                {openDetail.transcricao && <Section title="Transcrição" content={openDetail.transcricao} />}
+                {openDetail.proximos_passos && <Section title="Próximos passos" content={openDetail.proximos_passos} />}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function Section({ title, content }: { title: string; content: string }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase text-muted-foreground">{title}</p>
+      <p className="mt-1 whitespace-pre-wrap">{content}</p>
     </div>
   );
 }
