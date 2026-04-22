@@ -17,6 +17,7 @@ export type Database = {
       aviso_gestor: {
         Row: {
           ativo: boolean
+          colaborador_id: string | null
           created_at: string
           criado_por: string | null
           expira_em: string | null
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          colaborador_id?: string | null
           created_at?: string
           criado_por?: string | null
           expira_em?: string | null
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          colaborador_id?: string | null
           created_at?: string
           criado_por?: string | null
           expira_em?: string | null
@@ -48,7 +51,77 @@ export type Database = {
           titulo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "aviso_gestor_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chamado_externo: {
+        Row: {
+          abertura: string
+          cliente: string | null
+          codigo: string
+          created_at: string
+          descricao: string | null
+          id: string
+          modulo: string | null
+          origem: string | null
+          prazo: string | null
+          prioridade: Database["public"]["Enums"]["chamado_externo_prioridade"]
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["chamado_externo_status"]
+          tags: string[] | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          abertura?: string
+          cliente?: string | null
+          codigo: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          modulo?: string | null
+          origem?: string | null
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"]
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["chamado_externo_status"]
+          tags?: string[] | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          abertura?: string
+          cliente?: string | null
+          codigo?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          modulo?: string | null
+          origem?: string | null
+          prazo?: string | null
+          prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"]
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["chamado_externo_status"]
+          tags?: string[] | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chamado_externo_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       colaborador: {
         Row: {
@@ -88,6 +161,91 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      colaborador_ferias: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          id: string
+          observacao: string | null
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          id?: string
+          observacao?: string | null
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          observacao?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_ferias_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      colaborador_horario: {
+        Row: {
+          almoco_fim: string | null
+          almoco_inicio: string | null
+          colaborador_id: string
+          created_at: string
+          dia_semana: number
+          expediente_fim: string | null
+          expediente_inicio: string | null
+          id: string
+          local_almoco: string | null
+          updated_at: string
+        }
+        Insert: {
+          almoco_fim?: string | null
+          almoco_inicio?: string | null
+          colaborador_id: string
+          created_at?: string
+          dia_semana: number
+          expediente_fim?: string | null
+          expediente_inicio?: string | null
+          id?: string
+          local_almoco?: string | null
+          updated_at?: string
+        }
+        Update: {
+          almoco_fim?: string | null
+          almoco_inicio?: string | null
+          colaborador_id?: string
+          created_at?: string
+          dia_semana?: number
+          expediente_fim?: string | null
+          expediente_inicio?: string | null
+          id?: string
+          local_almoco?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_horario_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       demanda: {
         Row: {
@@ -329,6 +487,15 @@ export type Database = {
     Enums: {
       app_role: "gestor" | "analista"
       aviso_tipo: "informativo" | "alerta" | "critico"
+      chamado_externo_prioridade: "baixa" | "media" | "alta" | "critica"
+      chamado_externo_status:
+        | "aberto"
+        | "encaminhado"
+        | "homologacao"
+        | "producao"
+        | "concluido"
+        | "reprovado"
+        | "cancelado"
       demanda_categoria:
         | "bug"
         | "melhoria"
@@ -354,7 +521,16 @@ export type Database = {
         | "alinhamento"
         | "outro"
       todo_prioridade: "baixa" | "media" | "alta"
-      todo_status: "pendente" | "em_andamento" | "concluida" | "cancelada"
+      todo_status:
+        | "pendente"
+        | "em_andamento"
+        | "concluida"
+        | "cancelada"
+        | "aberta"
+        | "encaminhada"
+        | "homologacao"
+        | "producao"
+        | "reprovada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -484,6 +660,16 @@ export const Constants = {
     Enums: {
       app_role: ["gestor", "analista"],
       aviso_tipo: ["informativo", "alerta", "critico"],
+      chamado_externo_prioridade: ["baixa", "media", "alta", "critica"],
+      chamado_externo_status: [
+        "aberto",
+        "encaminhado",
+        "homologacao",
+        "producao",
+        "concluido",
+        "reprovado",
+        "cancelado",
+      ],
       demanda_categoria: [
         "bug",
         "melhoria",
@@ -512,7 +698,17 @@ export const Constants = {
         "outro",
       ],
       todo_prioridade: ["baixa", "media", "alta"],
-      todo_status: ["pendente", "em_andamento", "concluida", "cancelada"],
+      todo_status: [
+        "pendente",
+        "em_andamento",
+        "concluida",
+        "cancelada",
+        "aberta",
+        "encaminhada",
+        "homologacao",
+        "producao",
+        "reprovada",
+      ],
     },
   },
 } as const
