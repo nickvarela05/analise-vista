@@ -354,6 +354,7 @@ function Dashboard() {
           hint={`${totalChamados} chamados no total`}
           tone="warning"
           to="/relatorios"
+          loading={loadingChamados}
         />
         <KpiTile
           icon={CheckSquare}
@@ -362,6 +363,7 @@ function Dashboard() {
           hint={`${taskUrgentes} urgentes`}
           tone="primary"
           to="/tarefas"
+          loading={loadingTarefas}
         />
         <KpiTile
           icon={Calendar}
@@ -370,6 +372,7 @@ function Dashboard() {
           hint={`${reunioes.length} no total`}
           tone="info"
           to="/reunioes"
+          loading={loadingReunioes}
         />
         <KpiTile
           icon={Megaphone}
@@ -378,6 +381,7 @@ function Dashboard() {
           hint={`${avisos.length} avisos ativos`}
           tone="destructive"
           to="/avisos"
+          loading={loadingAvisos}
         />
       </div>
 
