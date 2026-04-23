@@ -233,7 +233,6 @@ function Tarefas() {
                     onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
                   />
                 </div>
-                </div>
                 <DialogFooter><Button type="submit">Criar</Button></DialogFooter>
               </form>
             </DialogContent>
