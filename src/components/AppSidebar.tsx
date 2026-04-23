@@ -44,9 +44,14 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { role } = useAuth();
 
   const isActive = (path: string) =>
     path === "/" ? currentPath === "/" : currentPath.startsWith(path);
+
+  const visibleItems = items.filter(
+    (it) => !("requireGestor" in it && it.requireGestor) || role === "gestor",
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
