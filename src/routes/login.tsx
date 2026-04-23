@@ -168,9 +168,6 @@ function LoginPage() {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
                   </Button>
-                  <p className="text-center text-xs text-amber-600 dark:text-amber-400">
-                    Modo dev — autenticação desativada
-                  </p>
                 </form>
               </TabsContent>
 

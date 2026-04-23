@@ -38,12 +38,6 @@ export function AppHeader() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <Badge
-          variant="outline"
-          className="hidden border-amber-500/40 bg-amber-500/10 text-[10px] uppercase tracking-wide text-amber-600 dark:text-amber-400 sm:inline-flex"
-        >
-          Modo dev — auth desativada
-        </Badge>
 
         <Button
           variant="ghost"
@@ -73,9 +67,9 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user?.email ?? "Convidado (modo dev)"}</p>
+                <p className="text-sm font-medium">{user?.email ?? "Conta"}</p>
                 <p className="text-xs text-muted-foreground capitalize">
-                  {user ? (role ?? "—") : "autenticação desativada"}
+                  {user ? (role ?? "carregando") : "não autenticado"}
                 </p>
               </div>
             </DropdownMenuLabel>
