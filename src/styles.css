@@ -137,6 +137,13 @@
   --tooltip-bg: oklch(1 0 0);
   --tooltip-foreground: oklch(0.20 0.02 220);
   --tooltip-border: oklch(0.91 0.008 210);
+
+  /* Status de colaborador (Equipe) */
+  --status-trabalhando: oklch(0.62 0.15 155);
+  --status-almoco:      oklch(0.75 0.16 70);
+  --status-ferias:      oklch(0.62 0.13 235);
+  --status-evento:      oklch(0.65 0.18 40);
+  --status-fora:        oklch(0.65 0.01 220);
 }
 
 .dark {
