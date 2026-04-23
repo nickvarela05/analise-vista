@@ -174,11 +174,12 @@ function Demandas() {
 
   // KPIs (sobre todas, não filtradas)
   const kpis = React.useMemo(() => {
-    const abertas = demandas.filter(
+    const ativas = demandas.filter(
       (d: any) => d.status !== "concluida" && d.status !== "cancelada",
     );
-    const atrasadas = abertas.filter((d: any) => describePrazo(d.prazo, d.status)?.isAtrasada);
-    const criticas = abertas.filter((d: any) => d.prioridade === "critica");
+    const novas = demandas.filter((d: any) => d.status === "aberta");
+    const atrasadas = ativas.filter((d: any) => describePrazo(d.prazo, d.status)?.isAtrasada);
+    const criticas = ativas.filter((d: any) => d.prioridade === "critica");
     const now = new Date();
     const concluidasMes = demandas.filter((d: any) => {
       if (d.status !== "concluida") return false;
@@ -186,7 +187,8 @@ function Demandas() {
       return u.getFullYear() === now.getFullYear() && u.getMonth() === now.getMonth();
     });
     return {
-      abertas: abertas.length,
+      ativas: ativas.length,
+      novas: novas.length,
       atrasadas: atrasadas.length,
       criticas: criticas.length,
       concluidasMes: concluidasMes.length,
@@ -230,8 +232,23 @@ function Demandas() {
       />
 
       {/* KPIs */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiTile icon={Inbox} label="Em aberto" value={kpis.abertas} tone="info" loading={isLoading} />
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <KpiTile
+          icon={Inbox}
+          label="Ativas"
+          value={kpis.ativas}
+          tone="info"
+          loading={isLoading}
+          hint="Não concluídas/canceladas"
+        />
+        <KpiTile
+          icon={Clock}
+          label="Novas (a iniciar)"
+          value={kpis.novas}
+          tone="primary"
+          loading={isLoading}
+          hint="Status: aberta"
+        />
         <KpiTile
           icon={AlertCircle}
           label="Atrasadas"
