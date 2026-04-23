@@ -15,6 +15,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logoUrl from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/")
+      ? search.redirect
+      : "/",
+  }),
   component: LoginPage,
 });
 
@@ -29,12 +34,17 @@ const signupSchema = loginSchema.extend({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { session, loading: authLoading } = useAuth();
   const [loading, setLoading] = React.useState(false);
 
+  const finishLogin = React.useCallback(() => {
+    window.location.replace(search.redirect || "/");
+  }, [search.redirect]);
+
   React.useEffect(() => {
-    if (!authLoading && session) navigate({ to: "/" });
-  }, [session, authLoading, navigate]);
+    if (!authLoading && session) finishLogin();
+  }, [session, authLoading, finishLogin]);
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -60,7 +70,7 @@ function LoginPage() {
     }
 
     toast.success("Login realizado com sucesso");
-    navigate({ to: "/" });
+    finishLogin();
   };
 
   const onSignup = async (values: z.infer<typeof signupSchema>) => {
