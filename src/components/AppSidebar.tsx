@@ -24,6 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import logoUrl from "@/assets/logo.png";
+import { useAuth } from "@/lib/auth-context";
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -33,8 +34,8 @@ const items = [
   { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   { title: "Demandas", url: "/demandas", icon: Inbox },
   { title: "Avisos", url: "/avisos", icon: Megaphone },
-  { title: "Equipe", url: "/equipe", icon: Users },
-];
+  { title: "Equipe", url: "/equipe", icon: Users, requireGestor: true },
+] as const;
 
 const bottomItems = [{ title: "Configurações", url: "/configuracoes", icon: Settings }];
 
