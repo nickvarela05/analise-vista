@@ -225,11 +225,6 @@ function Reunioes() {
                     <Input value={form.link_calendario} onChange={(e) => setForm({ ...form, link_calendario: e.target.value })} placeholder="https://..." />
                   </div>
                 </div>
-                  <div className="space-y-1.5">
-                    <Label>Link do calendário</Label>
-                    <Input value={form.link_calendario} onChange={(e) => setForm({ ...form, link_calendario: e.target.value })} placeholder="https://..." />
-                  </div>
-                </div>
                 <div className="space-y-1.5">
                   <Label>Participantes (separados por vírgula)</Label>
                   <Input value={form.participantes_str} onChange={(e) => setForm({ ...form, participantes_str: e.target.value })} placeholder="João, Maria, Pedro" />
