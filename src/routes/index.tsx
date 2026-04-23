@@ -690,7 +690,7 @@ function Dashboard() {
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Tarefas internas (workflow Sisteplan)
             </p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <WorkflowStep
                 icon={Inbox}
                 label="Abertura"
@@ -716,6 +716,13 @@ function Dashboard() {
                 icon={CheckSquare}
                 label="Produção"
                 value={taskProd}
+                tone="success"
+                to="/tarefas"
+              />
+              <WorkflowStep
+                icon={CheckSquare}
+                label="Concluída"
+                value={tarefas.filter((t) => t.status === "concluida").length}
                 tone="success"
                 to="/tarefas"
               />
