@@ -1,29 +1,45 @@
 
-O usuário quer remover temporariamente a verificação de autenticação para testar livremente as telas sem precisar fazer login.
 
-Estado atual:
-- `AppLayout.tsx` redireciona para `/login` se não houver sessão e mostra spinner enquanto carrega
-- `AppHeader.tsx` usa `user`, `role`, `signOut` do `useAuth()` para exibir avatar/email/role
-- `auth-context.tsx` busca sessão e role do Supabase
+## Gerar dump completo do banco
 
-Abordagem mínima e reversível:
-1. **`src/components/AppLayout.tsx`**: remover o `useEffect` de redirect e o early return de loading/!session. Renderizar direto sidebar + header + conteúdo.
-2. **`src/components/AppHeader.tsx`**: tornar tolerante à ausência de usuário — exibir um placeholder ("Convidado / dev") quando `user` for null, em vez de quebrar.
-3. **Manter** `AuthProvider`, rota `/login` e toda a lógica do Supabase intactas — apenas o "guard" fica desativado. Assim, basta reverter 2 arquivos para religar.
-4. Adicionar um aviso visual discreto no header ("Modo dev — auth desativada") para lembrar que está temporário.
+Vou exportar o banco PostgreSQL atual (schema + dados de todas as tabelas) e te entregar como um arquivo `.sql` pronto para restaurar no seu próprio projeto Supabase.
 
-Não vou mexer em RLS nem nas queries do Supabase — as páginas que dependem de dados podem retornar vazio (RLS bloqueia anônimo), mas a navegação e UI ficam livres para testar, que é o objetivo.
+### O que será incluído no dump
 
-# Plano — Desativar verificação de login (modo dev)
+- **Schema completo**: tabelas (`aviso_gestor`, `chamado_externo`, `colaborador`, `colaborador_ferias`, `colaborador_horario`, `demanda`, `profiles`, `reuniao`, `todo`, `user_roles`)
+- **Tipos enum**: `app_role`, `aviso_tipo`, `chamado_externo_*`, `demanda_*`, `reuniao_*`, `todo_*`
+- **Funções**: `has_role`, `handle_new_user`, `update_updated_at_column`
+- **Políticas RLS** de todas as tabelas
+- **Dados** (`INSERT`s) de todas as tabelas públicas
+- **Buckets de Storage**: definições de `reuniao-audios` e `colaborador-fotos` (apenas a configuração — os arquivos binários precisam ser baixados separadamente do Storage; explico abaixo)
 
-## O que muda
-- **`src/components/AppLayout.tsx`**: remover o redirect para `/login` e o gate de loading. O layout passa a renderizar sempre.
-- **`src/components/AppHeader.tsx`**: tornar o menu de usuário tolerante a `user = null` (mostra "Convidado" + badge "dev"). Botão "Sair" só aparece se houver sessão real.
-- **Adicionar banner discreto** no header: "Modo dev — autenticação desativada", para não esquecer de reativar.
+### O que NÃO entra no dump
 
-## O que NÃO muda
-- `AuthProvider`, `auth-context.tsx`, rota `/login`, schema, RLS e Supabase ficam exatamente como estão.
-- Para reativar depois: basta restaurar o `useEffect` de redirect no `AppLayout`.
+- **Usuários do `auth.users`**: o schema `auth` é gerenciado pelo Supabase e não é portável entre projetos via dump SQL. No projeto novo, os usuários precisarão ser recriados (ou migrados via Admin API com export do `auth.users`).
+- **Arquivos físicos do Storage**: o dump traz só a estrutura dos buckets. Para mover áudios de reuniões e fotos de colaboradores, vou gerar um script complementar que baixa os arquivos.
 
-## Observação importante
-As páginas continuam consultando o Supabase. Como as policies de RLS exigem usuário autenticado, listas podem aparecer vazias. Isso é esperado — você poderá navegar livremente pela UI, mas para testar dados reais ainda precisará logar normalmente. Se quiser que eu também afrouxe RLS para testes, me avise (não recomendado).
+### Como vou gerar
+
+1. Usar `pg_dump` contra a connection string `SUPABASE_DB_URL` (já disponível como secret), escopado ao schema `public` + buckets de storage.
+2. Salvar o arquivo em `/mnt/documents/backup_completo.sql` para você baixar.
+3. (Opcional) Gerar um segundo script `restore_instructions.md` com o passo-a-passo para restaurar no seu novo Supabase.
+4. (Opcional) Gerar script Node `download_storage_files.ts` que baixa todos os arquivos dos buckets para uma pasta local.
+
+### Detalhes técnicos
+
+- Comando base: `pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges --inserts -f /mnt/documents/backup_completo.sql`
+- Flag `--inserts` em vez de `COPY` para máxima compatibilidade na restauração.
+- Flag `--no-owner` e `--no-privileges` para evitar conflitos de roles entre projetos Supabase diferentes.
+- Vou também gerar uma versão `backup_schema_only.sql` (sem dados) caso você queira só a estrutura.
+
+### Entregáveis
+
+```text
+/mnt/documents/
+├── backup_completo.sql        # schema + dados (principal)
+├── backup_schema_only.sql     # só a estrutura
+└── restore_instructions.md    # passo-a-passo de restauração
+```
+
+Após sua aprovação, executo o dump e te envio os arquivos como `<lov-artifact>` para download direto.
+
