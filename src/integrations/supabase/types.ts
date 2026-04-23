@@ -556,6 +556,164 @@ export type Database = {
           },
         ]
       }
+      todo_anexo: {
+        Row: {
+          autor_id: string | null
+          autor_nome: string | null
+          created_at: string
+          id: string
+          mime_type: string | null
+          nome_arquivo: string
+          storage_path: string
+          tamanho_bytes: number | null
+          todo_id: string
+        }
+        Insert: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          created_at?: string
+          id?: string
+          mime_type?: string | null
+          nome_arquivo: string
+          storage_path: string
+          tamanho_bytes?: number | null
+          todo_id: string
+        }
+        Update: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          created_at?: string
+          id?: string
+          mime_type?: string | null
+          nome_arquivo?: string
+          storage_path?: string
+          tamanho_bytes?: number | null
+          todo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_anexo_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      todo_checklist: {
+        Row: {
+          concluido: boolean
+          created_at: string
+          id: string
+          ordem: number
+          texto: string
+          todo_id: string
+          updated_at: string
+        }
+        Insert: {
+          concluido?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          texto: string
+          todo_id: string
+          updated_at?: string
+        }
+        Update: {
+          concluido?: boolean
+          created_at?: string
+          id?: string
+          ordem?: number
+          texto?: string
+          todo_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_checklist_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      todo_comentario: {
+        Row: {
+          autor_id: string
+          autor_nome: string | null
+          conteudo: string
+          created_at: string
+          id: string
+          todo_id: string
+        }
+        Insert: {
+          autor_id: string
+          autor_nome?: string | null
+          conteudo: string
+          created_at?: string
+          id?: string
+          todo_id: string
+        }
+        Update: {
+          autor_id?: string
+          autor_nome?: string | null
+          conteudo?: string
+          created_at?: string
+          id?: string
+          todo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_comentario_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      todo_historico: {
+        Row: {
+          autor_id: string | null
+          autor_nome: string | null
+          campo: string
+          created_at: string
+          id: string
+          todo_id: string
+          valor_antigo: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          campo: string
+          created_at?: string
+          id?: string
+          todo_id: string
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          campo?: string
+          created_at?: string
+          id?: string
+          todo_id?: string
+          valor_antigo?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_historico_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -631,6 +789,8 @@ export type Database = {
         | "homologacao"
         | "producao"
         | "reprovada"
+        | "aprovado"
+        | "aprovado_ressalvas"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -801,6 +961,8 @@ export const Constants = {
         "homologacao",
         "producao",
         "reprovada",
+        "aprovado",
+        "aprovado_ressalvas",
       ],
     },
   },
