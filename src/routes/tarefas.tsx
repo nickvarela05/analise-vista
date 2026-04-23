@@ -220,18 +220,19 @@ function Tarefas() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Responsável</Label>
-                    <Select value={form.responsavel_id} onValueChange={(v) => setForm({ ...form, responsavel_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>
-                        {colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
                     <Label>Prazo</Label>
                     <Input type="date" value={form.data_prevista} onChange={(e) => setForm({ ...form, data_prevista: e.target.value })} />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Atribuir a</Label>
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={form.responsaveis_ids}
+                    equipeToda={form.equipe_toda}
+                    onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                  />
+                </div>
                 </div>
                 <DialogFooter><Button type="submit">Criar</Button></DialogFooter>
               </form>
