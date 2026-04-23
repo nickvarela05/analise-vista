@@ -287,6 +287,14 @@ function Reunioes() {
               </CardHeader>
               <CardContent className="space-y-2 pt-0 text-sm">
                 {r.resumo && <p className="line-clamp-2 text-xs text-muted-foreground">{r.resumo}</p>}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AssigneeBadges
+                    selectedIds={r.responsaveis_ids}
+                    equipeToda={r.equipe_toda}
+                    options={colabs}
+                    max={2}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-1">
                   {r.participantes && r.participantes.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -296,6 +304,15 @@ function Reunioes() {
                   {r.transcricao && <Badge variant="secondary" className="gap-1 text-[10px]"><FileText className="h-3 w-3" /> transcrição</Badge>}
                   {r.proximos_passos && <Badge variant="secondary" className="gap-1 text-[10px]"><ListChecks className="h-3 w-3" /> próximos</Badge>}
                   {r.audio_path && <Badge variant="secondary" className="text-[10px]">🎵 áudio</Badge>}
+                </div>
+                <div onClick={(e) => e.stopPropagation()} className="pt-1">
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={r.responsaveis_ids ?? []}
+                    equipeToda={!!r.equipe_toda}
+                    onChange={(n) => updateAssignees(r.id, n)}
+                    placeholder="Atribuir..."
+                  />
                 </div>
               </CardContent>
             </Card>
