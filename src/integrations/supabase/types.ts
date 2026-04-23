@@ -168,6 +168,56 @@ export type Database = {
         }
         Relationships: []
       }
+      colaborador_evento: {
+        Row: {
+          anexo_url: string | null
+          colaborador_id: string
+          created_at: string
+          data: string
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: string
+          observacao: string | null
+          registrado_por: string | null
+          tipo: Database["public"]["Enums"]["evento_tipo"]
+          updated_at: string
+        }
+        Insert: {
+          anexo_url?: string | null
+          colaborador_id: string
+          created_at?: string
+          data: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          observacao?: string | null
+          registrado_por?: string | null
+          tipo: Database["public"]["Enums"]["evento_tipo"]
+          updated_at?: string
+        }
+        Update: {
+          anexo_url?: string | null
+          colaborador_id?: string
+          created_at?: string
+          data?: string
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: string
+          observacao?: string | null
+          registrado_por?: string | null
+          tipo?: Database["public"]["Enums"]["evento_tipo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaborador_evento_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       colaborador_ferias: {
         Row: {
           colaborador_id: string
@@ -530,6 +580,7 @@ export type Database = {
         | "homologacao"
         | "concluida"
         | "cancelada"
+      evento_tipo: "folga" | "falta" | "atestado" | "atraso" | "ferias_avulso"
       reuniao_status: "agendada" | "realizada" | "cancelada"
       reuniao_tipo:
         | "interna"
@@ -698,6 +749,7 @@ export const Constants = {
         "concluida",
         "cancelada",
       ],
+      evento_tipo: ["folga", "falta", "atestado", "atraso", "ferias_avulso"],
       reuniao_status: ["agendada", "realizada", "cancelada"],
       reuniao_tipo: [
         "interna",
