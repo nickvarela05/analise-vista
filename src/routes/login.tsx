@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import logoUrl from "@/assets/logo.png";
+
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -101,17 +101,8 @@ function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.6_0.09_180/0.25),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,oklch(0.7_0.1_180/0.18),transparent_50%)]" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-sidebar-foreground">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/30">
-              <img src={logoUrl} alt="Sisteplan" className="h-9 w-9 object-contain" />
-            </div>
-            <div className="leading-tight">
-              <p className="text-base font-semibold tracking-wide">SISTEPLAN</p>
-              <p className="text-[11px] uppercase tracking-widest text-sidebar-foreground/60">
-                Gestão Interna
-              </p>
-            </div>
-          </div>
+          <BrandMark />
+
 
           <div className="max-w-md space-y-4">
             <h2 className="text-3xl font-semibold leading-tight">
@@ -133,9 +124,8 @@ function LoginPage() {
       <div className="flex flex-1 items-center justify-center bg-background p-6">
         <Card className="w-full max-w-md border-border/60 shadow-lg">
           <CardContent className="p-8">
-            <div className="mb-6 flex flex-col items-center text-center lg:hidden">
-              <img src={logoUrl} alt="" className="h-12 object-contain" />
-              <h1 className="mt-3 text-lg font-semibold">SISTEPLAN</h1>
+            <div className="mb-6 flex justify-center lg:hidden">
+              <BrandMark compact />
             </div>
 
             <h1 className="text-xl font-semibold tracking-tight">Acessar plataforma</h1>
