@@ -53,7 +53,7 @@ function TarefasRoute() {
   );
 }
 
-const WORKFLOW = ["aberta", "encaminhada", "homologacao", "producao", "reprovada"] as const;
+const WORKFLOW = ["aberta", "em_andamento", "encaminhada", "homologacao", "producao", "concluida", "reprovada"] as const;
 const PRIO = ["baixa", "media", "alta"] as const;
 
 function statusVariant(s: string) {
@@ -115,9 +115,11 @@ function Tarefas() {
 
   const counts = {
     aberta: data.filter((t) => ["aberta", "pendente"].includes(t.status)).length,
+    em_andamento: data.filter((t) => t.status === "em_andamento").length,
     encaminhada: data.filter((t) => t.status === "encaminhada").length,
     homologacao: data.filter((t) => t.status === "homologacao").length,
     producao: data.filter((t) => t.status === "producao").length,
+    concluida: data.filter((t) => t.status === "concluida").length,
     reprovada: data.filter((t) => t.status === "reprovada").length,
   };
 
@@ -246,9 +248,11 @@ function Tarefas() {
           size="sm"
           items={[
             { value: counts.aberta, label: "Abertas", tone: "primary" },
+            { value: counts.em_andamento, label: "Em andamento", tone: "info" },
             { value: counts.encaminhada, label: "Encaminhadas", tone: "warning" },
             { value: counts.homologacao, label: "Em HML", tone: "info" },
             { value: counts.producao, label: "Em produção", tone: "success" },
+            { value: counts.concluida, label: "Concluídas", tone: "success" },
             { value: counts.reprovada, label: "Reprovadas", tone: "destructive" },
           ]}
         />

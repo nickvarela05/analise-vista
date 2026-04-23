@@ -92,14 +92,19 @@ function Atividades() {
 
   const todas: Atividade[] = React.useMemo(() => {
     const arr: Atividade[] = [];
+    const tarefaConcluida = ["concluida", "producao", "cancelada", "reprovada"];
+    const demandaConcluida = ["concluida", "cancelada"];
     tarefas.forEach((t) => {
-      if (t.data_prevista) arr.push({ id: `t-${t.id}`, tipo: "tarefa", titulo: t.titulo, data: new Date(t.data_prevista), prioridade: t.prioridade });
+      if (t.data_prevista && !tarefaConcluida.includes(t.status))
+        arr.push({ id: `t-${t.id}`, tipo: "tarefa", titulo: t.titulo, data: new Date(t.data_prevista), prioridade: t.prioridade });
     });
     demandas.forEach((d) => {
-      if (d.prazo) arr.push({ id: `d-${d.id}`, tipo: "demanda", titulo: d.titulo, data: new Date(d.prazo), prioridade: d.prioridade });
+      if (d.prazo && !demandaConcluida.includes(d.status))
+        arr.push({ id: `d-${d.id}`, tipo: "demanda", titulo: d.titulo, data: new Date(d.prazo), prioridade: d.prioridade });
     });
     reunioes.forEach((r) => {
-      arr.push({ id: `r-${r.id}`, tipo: "reuniao", titulo: r.titulo, data: new Date(r.data_reuniao) });
+      if (r.status !== "cancelada")
+        arr.push({ id: `r-${r.id}`, tipo: "reuniao", titulo: r.titulo, data: new Date(r.data_reuniao) });
     });
     return arr;
   }, [tarefas, demandas, reunioes]);

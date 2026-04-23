@@ -152,21 +152,26 @@ function Dashboard() {
   const relatPendentes = chamados.filter((c) => c.status !== "finalizado").length;
   const relatEncaminhados = chamados.filter((c) => c.status === "encaminhado").length;
 
-  const taskAbertas = tarefas.filter((t) =>
-    ["aberta", "pendente", "encaminhada"].includes(t.status),
-  ).length;
+  const tarefasAtivas = tarefas.filter(
+    (t) => !["concluida", "producao", "reprovada", "cancelada"].includes(t.status),
+  );
+  const taskAbertas = tarefasAtivas.length;
   const taskHML = tarefas.filter((t) => t.status === "homologacao").length;
   const taskProd = tarefas.filter((t) => t.status === "producao").length;
-  const taskUrgentes = tarefas.filter((t) => t.prioridade === "alta").length;
-
-  const avisosCrit = avisos.filter((a) => a.tipo === "critico").length;
+  const taskUrgentes = tarefasAtivas.filter((t) => t.prioridade === "alta").length;
 
   const now = new Date();
+  const avisosCrit = avisos.filter(
+    (a) => a.tipo === "critico" && (!a.expira_em || new Date(a.expira_em).getTime() > now.getTime()),
+  ).length;
+
   const weekStart = startOfWeek(now, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
-  const reunioesSemana = reunioes.filter((r) =>
-    isWithinInterval(new Date(r.data_reuniao), { start: weekStart, end: weekEnd }),
+  const reunioesSemana = reunioes.filter(
+    (r) =>
+      r.status !== "cancelada" &&
+      isWithinInterval(new Date(r.data_reuniao), { start: weekStart, end: weekEnd }),
   ).length;
 
   const feriasAtivas = ferias.filter((f: any) => {
@@ -177,7 +182,21 @@ function Dashboard() {
 
   // Pie de status de tarefas
   const pieTarefas = [
-    { name: "Aberta", value: taskAbertas, color: "var(--chart-3)" },
+    {
+      name: "Aberta",
+      value: tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length,
+      color: "var(--chart-3)",
+    },
+    {
+      name: "Em andamento",
+      value: tarefas.filter((t) => t.status === "em_andamento").length,
+      color: "var(--chart-5)",
+    },
+    {
+      name: "Encaminhada",
+      value: tarefas.filter((t) => t.status === "encaminhada").length,
+      color: "var(--chart-4)",
+    },
     { name: "Homologação", value: taskHML, color: "var(--chart-4)" },
     { name: "Produção", value: taskProd, color: "var(--chart-2)" },
     {
