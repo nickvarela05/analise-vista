@@ -64,7 +64,7 @@ function Dashboard() {
     setPreviewOpen(true);
   };
 
-  const { data: chamados = [] } = useQuery({
+  const { data: chamados = [], isLoading: loadingChamados } = useQuery({
     queryKey: ["dash-chamados"],
     queryFn: async () => {
       const { data, error } = await supabase.from("chamado_externo").select("*");
@@ -73,7 +73,7 @@ function Dashboard() {
     },
   });
 
-  const { data: tarefas = [] } = useQuery({
+  const { data: tarefas = [], isLoading: loadingTarefas } = useQuery({
     queryKey: ["dash-tarefas"],
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*");
@@ -82,7 +82,7 @@ function Dashboard() {
     },
   });
 
-  const { data: reunioes = [] } = useQuery({
+  const { data: reunioes = [], isLoading: loadingReunioes } = useQuery({
     queryKey: ["dash-reunioes"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -94,7 +94,7 @@ function Dashboard() {
     },
   });
 
-  const { data: avisos = [] } = useQuery({
+  const { data: avisos = [], isLoading: loadingAvisos } = useQuery({
     queryKey: ["dash-avisos"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -354,6 +354,7 @@ function Dashboard() {
           hint={`${totalChamados} chamados no total`}
           tone="warning"
           to="/relatorios"
+          loading={loadingChamados}
         />
         <KpiTile
           icon={CheckSquare}
@@ -362,6 +363,7 @@ function Dashboard() {
           hint={`${taskUrgentes} urgentes`}
           tone="primary"
           to="/tarefas"
+          loading={loadingTarefas}
         />
         <KpiTile
           icon={Calendar}
@@ -370,6 +372,7 @@ function Dashboard() {
           hint={`${reunioes.length} no total`}
           tone="info"
           to="/reunioes"
+          loading={loadingReunioes}
         />
         <KpiTile
           icon={Megaphone}
@@ -378,6 +381,7 @@ function Dashboard() {
           hint={`${avisos.length} avisos ativos`}
           tone="destructive"
           to="/avisos"
+          loading={loadingAvisos}
         />
       </div>
 
@@ -646,24 +650,28 @@ function Dashboard() {
               label="Aberto"
               value={chamados.filter((c) => c.status === "aberto").length}
               tone="warning"
+              to="/relatorios"
             />
             <WorkflowStep
               icon={ArrowRight}
               label="Encaminhado"
               value={chamados.filter((c) => c.status === "encaminhado").length}
               tone="info"
+              to="/relatorios"
             />
             <WorkflowStep
               icon={CheckSquare}
               label="Homologação"
               value={relatHomolog}
               tone="primary"
+              to="/relatorios"
             />
             <WorkflowStep
               icon={CheckSquare}
               label="Produção"
               value={chamados.filter((c) => c.status === "producao").length}
               tone="success"
+              to="/relatorios"
             />
           </div>
 
@@ -677,24 +685,28 @@ function Dashboard() {
                 label="Abertura"
                 value={tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length}
                 tone="warning"
+                to="/tarefas"
               />
               <WorkflowStep
                 icon={ArrowRight}
                 label="Encaminhada"
                 value={tarefas.filter((t) => t.status === "encaminhada").length}
                 tone="info"
+                to="/tarefas"
               />
               <WorkflowStep
                 icon={CheckSquare}
                 label="Homologação"
                 value={taskHML}
                 tone="primary"
+                to="/tarefas"
               />
               <WorkflowStep
                 icon={CheckSquare}
                 label="Produção"
                 value={taskProd}
                 tone="success"
+                to="/tarefas"
               />
             </div>
           </div>
@@ -746,11 +758,13 @@ function WorkflowStep({
   label,
   value,
   tone,
+  to,
 }: {
   icon: any;
   label: string;
   value: number;
   tone: "primary" | "success" | "warning" | "info";
+  to?: string;
 }) {
   const toneClass: Record<string, string> = {
     primary: "border-primary/30 bg-primary/5 text-primary",
@@ -758,13 +772,22 @@ function WorkflowStep({
     warning: "border-warning/40 bg-warning/5 text-warning",
     info: "border-info/30 bg-info/5 text-info",
   };
-  return (
-    <div className={cn("rounded-lg border p-3 transition-all hover:scale-[1.02]", toneClass[tone])}>
+  const inner = (
+    <>
       <Icon className="mb-1.5 h-4 w-4" />
       <p className="text-2xl font-semibold tabular-nums leading-none text-foreground">{value}</p>
       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-    </div>
+    </>
   );
+  const cls = cn("workflow-step", toneClass[tone]);
+  if (to) {
+    return (
+      <Link to={to} className={cls} aria-label={`${label}: ${value}`}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={cls}>{inner}</div>;
 }

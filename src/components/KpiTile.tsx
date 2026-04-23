@@ -13,8 +13,11 @@ interface KpiTileProps {
   hint?: string;
   tone?: KpiTone;
   to?: string;
+  onClick?: () => void;
+  loading?: boolean;
   trend?: { value: number; label?: string };
   className?: string;
+  ariaLabel?: string;
 }
 
 const iconClass: Record<KpiTone, string> = {
@@ -32,24 +35,32 @@ export function KpiTile({
   hint,
   tone = "primary",
   to,
+  onClick,
+  loading,
   trend,
   className,
+  ariaLabel,
 }: KpiTileProps) {
+  const isInteractive = !!to || !!onClick;
   const content = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <div className={cn("kpi-icon", iconClass[tone])}>
+        <div className={cn("kpi-icon", iconClass[tone])} aria-hidden>
           <Icon className="h-5 w-5" />
         </div>
-        {to && (
+        {isInteractive && (
           <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
         )}
       </div>
       <div className="space-y-1">
         <p className="kpi-label">{label}</p>
         <div className="flex items-baseline gap-2">
-          <span className="kpi-value">{value}</span>
-          {trend && (
+          {loading ? (
+            <span className="kpi-value-skeleton" aria-hidden />
+          ) : (
+            <span className="kpi-value">{value}</span>
+          )}
+          {trend && !loading && (
             <span
               className={cn(
                 "flex items-center gap-0.5 text-xs font-medium",
@@ -76,10 +87,13 @@ export function KpiTile({
     </>
   );
 
+  const a11yLabel = ariaLabel ?? `${label}: ${value}${hint ? `. ${hint}` : ""}`;
+
   if (to) {
     return (
       <Link
         to={to}
+        aria-label={a11yLabel}
         className={cn("kpi-tile kpi-tile-link group block", className)}
       >
         {content}
@@ -87,7 +101,27 @@ export function KpiTile({
     );
   }
 
-  return <div className={cn("kpi-tile", className)}>{content}</div>;
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={a11yLabel}
+        className={cn(
+          "kpi-tile kpi-tile-link group block w-full text-left",
+          className,
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={cn("kpi-tile", className)} aria-label={a11yLabel}>
+      {content}
+    </div>
+  );
 }
 
 export function Panel({

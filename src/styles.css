@@ -230,7 +230,7 @@
 
   /* KPI tile — moderno, com ícone, número grande, tendência */
   .kpi-tile {
-    @apply relative flex flex-col gap-3 overflow-hidden rounded-xl border bg-card p-5 transition-all;
+    @apply relative flex flex-col gap-3 overflow-hidden rounded-xl border bg-card p-5 transition-all duration-200;
     box-shadow: var(--shadow-sm);
   }
   .kpi-tile:hover {
@@ -238,17 +238,30 @@
     transform: translateY(-2px);
   }
   .kpi-tile-link {
-    @apply cursor-pointer;
+    @apply cursor-pointer outline-none;
   }
   .kpi-tile-link:hover {
     border-color: color-mix(in oklab, var(--primary) 40%, var(--border));
   }
+  .kpi-tile-link:focus-visible {
+    border-color: var(--ring);
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--ring),
+      var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .kpi-tile-link:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
   .kpi-icon {
-    @apply flex h-10 w-10 items-center justify-center rounded-lg;
+    @apply flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-200;
     background: var(--gradient-primary);
     color: var(--primary-foreground);
     box-shadow: var(--shadow-sm);
   }
+  .kpi-tile-link:hover .kpi-icon { transform: scale(1.05); }
   .kpi-icon-success { background: var(--gradient-success); color: var(--success-foreground); }
   .kpi-icon-warning { background: var(--gradient-warning); color: var(--warning-foreground); }
   .kpi-icon-destructive { background: var(--gradient-destructive); color: var(--destructive-foreground); }
@@ -257,6 +270,9 @@
   .kpi-value {
     @apply text-3xl font-semibold tabular-nums leading-none tracking-tight;
   }
+  .kpi-value-skeleton {
+    @apply inline-block h-8 w-16 animate-pulse rounded-md bg-muted;
+  }
   .kpi-label {
     @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
   }
@@ -264,13 +280,14 @@
   .kpi-trend-down { @apply text-destructive; }
   .kpi-trend-flat { @apply text-muted-foreground; }
 
-  /* Faixa decorativa lateral em alguns KPIs */
+  /* Faixa decorativa lateral */
   .kpi-tile::before {
     content: "";
-    @apply absolute left-0 top-0 h-full w-1 opacity-0 transition-opacity;
+    @apply absolute left-0 top-0 h-full w-1 opacity-0 transition-opacity duration-200;
     background: var(--gradient-primary);
   }
-  .kpi-tile-link:hover::before { opacity: 1; }
+  .kpi-tile-link:hover::before,
+  .kpi-tile-link:focus-visible::before { opacity: 1; }
 
   /* Painel (mesma família, com header sticky opcional) */
   .panel {
@@ -289,13 +306,19 @@
 
   /* Item de lista interativo (atividades, avisos, tarefas) */
   .list-item-interactive {
-    @apply flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-all;
+    @apply flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left outline-none transition-all duration-150;
   }
   .list-item-interactive:hover {
-    @apply border-border bg-muted/50;
+    @apply border-border bg-muted/60;
+    transform: translateX(2px);
   }
   .list-item-interactive:focus-visible {
-    @apply outline-none border-primary/40 bg-muted/40;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent);
+    @apply bg-muted/40;
+  }
+  .list-item-interactive:active {
+    transform: translateX(0);
   }
 
   /* Bullet pontiagudo (mark visual de tipo) */
@@ -310,10 +333,18 @@
 
   /* Aviso banner */
   .alert-banner {
-    @apply flex items-start gap-3 rounded-xl border p-4 transition-all;
+    @apply flex items-start gap-3 rounded-xl border p-4 outline-none transition-all duration-200;
     box-shadow: var(--shadow-xs);
   }
-  .alert-banner:hover { box-shadow: var(--shadow-sm); }
+  .alert-banner:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+  .alert-banner:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--ring);
+  }
   .alert-banner-critico {
     border-color: color-mix(in oklab, var(--destructive) 35%, transparent);
     background: color-mix(in oklab, var(--destructive) 6%, var(--card));
@@ -326,6 +357,21 @@
     border-color: color-mix(in oklab, var(--info) 35%, transparent);
     background: color-mix(in oklab, var(--info) 6%, var(--card));
   }
+
+  /* Workflow step — clicável */
+  .workflow-step {
+    @apply flex w-full flex-col items-start rounded-lg border p-3 text-left outline-none transition-all duration-200;
+  }
+  .workflow-step:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+  .workflow-step:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--ring);
+  }
+  .workflow-step:active { transform: translateY(0); }
 
   /* === Mantido por compatibilidade com StatCard === */
   .stat-card {
