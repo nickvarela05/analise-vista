@@ -130,7 +130,8 @@ function Reunioes() {
       ...rest,
       data_reuniao: new Date(form.data_reuniao).toISOString(),
       duracao_min: Number(form.duracao_min) || null,
-      responsavel_id: form.responsavel_id || null,
+      responsaveis_ids: form.responsaveis_ids,
+      equipe_toda: form.equipe_toda,
       participantes,
       audio_path,
       audio_size,
@@ -147,9 +148,25 @@ function Reunioes() {
     toast.success("Reunião registrada");
     setOpen(false);
     setAudio(null);
-    setForm({ ...form, titulo: "", pauta: "", resumo: "", proximos_passos: "", transcricao: "", link_calendario: "", participantes_str: "" });
+    setForm({ ...form, titulo: "", pauta: "", resumo: "", proximos_passos: "", transcricao: "", link_calendario: "", participantes_str: "", responsaveis_ids: [], equipe_toda: false });
     qc.invalidateQueries({ queryKey: ["reunioes"] });
     qc.invalidateQueries({ queryKey: ["dash-reunioes"] });
+    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+  };
+
+  const updateAssignees = async (
+    id: string,
+    next: { selectedIds: string[]; equipeToda: boolean },
+  ) => {
+    const { error } = await supabase
+      .from("reuniao")
+      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
+      .eq("id", id);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      qc.invalidateQueries({ queryKey: ["reunioes"] });
+      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    }
   };
 
   return (
@@ -195,12 +212,19 @@ function Reunioes() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Responsável</Label>
-                    <Select value={form.responsavel_id} onValueChange={(v) => setForm({ ...form, responsavel_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <Label>Atribuir a</Label>
+                    <AssigneeCombobox
+                      options={colabs}
+                      selectedIds={form.responsaveis_ids}
+                      equipeToda={form.equipe_toda}
+                      onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                    />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label>Link do calendário</Label>
+                    <Input value={form.link_calendario} onChange={(e) => setForm({ ...form, link_calendario: e.target.value })} placeholder="https://..." />
+                  </div>
+                </div>
                   <div className="space-y-1.5">
                     <Label>Link do calendário</Label>
                     <Input value={form.link_calendario} onChange={(e) => setForm({ ...form, link_calendario: e.target.value })} placeholder="https://..." />
