@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           ativo: boolean
           colaborador_id: string | null
+          colaboradores_ids: string[]
           created_at: string
           criado_por: string | null
           expira_em: string | null
@@ -30,6 +31,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           colaborador_id?: string | null
+          colaboradores_ids?: string[]
           created_at?: string
           criado_por?: string | null
           expira_em?: string | null
@@ -42,6 +44,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           colaborador_id?: string | null
+          colaboradores_ids?: string[]
           created_at?: string
           criado_por?: string | null
           expira_em?: string | null
@@ -57,6 +60,35 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aviso_leitura: {
+        Row: {
+          aviso_id: string
+          id: string
+          lido_em: string
+          user_id: string
+        }
+        Insert: {
+          aviso_id: string
+          id?: string
+          lido_em?: string
+          user_id: string
+        }
+        Update: {
+          aviso_id?: string
+          id?: string
+          lido_em?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aviso_leitura_aviso_id_fkey"
+            columns: ["aviso_id"]
+            isOneToOne: false
+            referencedRelation: "aviso_gestor"
             referencedColumns: ["id"]
           },
         ]
