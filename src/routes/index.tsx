@@ -64,7 +64,7 @@ function Dashboard() {
     setPreviewOpen(true);
   };
 
-  const { data: chamados = [] } = useQuery({
+  const { data: chamados = [], isLoading: loadingChamados } = useQuery({
     queryKey: ["dash-chamados"],
     queryFn: async () => {
       const { data, error } = await supabase.from("chamado_externo").select("*");
@@ -73,7 +73,7 @@ function Dashboard() {
     },
   });
 
-  const { data: tarefas = [] } = useQuery({
+  const { data: tarefas = [], isLoading: loadingTarefas } = useQuery({
     queryKey: ["dash-tarefas"],
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*");
@@ -82,7 +82,7 @@ function Dashboard() {
     },
   });
 
-  const { data: reunioes = [] } = useQuery({
+  const { data: reunioes = [], isLoading: loadingReunioes } = useQuery({
     queryKey: ["dash-reunioes"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -94,7 +94,7 @@ function Dashboard() {
     },
   });
 
-  const { data: avisos = [] } = useQuery({
+  const { data: avisos = [], isLoading: loadingAvisos } = useQuery({
     queryKey: ["dash-avisos"],
     queryFn: async () => {
       const { data, error } = await supabase
