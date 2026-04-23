@@ -13,14 +13,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (!loading && !session) {
-      const redirect = `${location.pathname}${location.search}${location.hash}`;
-      navigate({
-        to: "/login",
-        search: { redirect },
-        replace: true,
-      });
+      const path = location.pathname || "/";
+      const target = path === "/login" ? "/login" : `/login?redirect=${encodeURIComponent(path)}`;
+      window.location.replace(target);
     }
-  }, [loading, session, navigate, location.pathname, location.search, location.hash]);
+  }, [loading, session, location.pathname]);
 
   if (loading || !session) {
     return (

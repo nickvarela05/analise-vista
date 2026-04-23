@@ -15,11 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logoUrl from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    redirect: typeof search.redirect === "string" && search.redirect.startsWith("/")
-      ? search.redirect
-      : "/",
-  }),
   component: LoginPage,
 });
 
@@ -34,13 +29,18 @@ const signupSchema = loginSchema.extend({
 
 function LoginPage() {
   const navigate = useNavigate();
-  const search = Route.useSearch();
   const { session, loading: authLoading } = useAuth();
   const [loading, setLoading] = React.useState(false);
 
   const finishLogin = React.useCallback(() => {
-    window.location.replace(search.redirect || "/");
-  }, [search.redirect]);
+    let target = "/";
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const r = params.get("redirect");
+      if (r && r.startsWith("/") && !r.startsWith("//")) target = r;
+    }
+    window.location.replace(target);
+  }, []);
 
   React.useEffect(() => {
     if (!authLoading && session) finishLogin();
