@@ -102,9 +102,7 @@ function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,oklch(0.7_0.1_180/0.18),transparent_50%)]" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-sidebar-foreground">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/30">
-              <img src={logoUrl} alt="Sisteplan" className="h-9 w-9 object-contain" />
-            </div>
+            <img src={logoUrl} alt="Sisteplan" className="h-8 w-8 object-contain" />
             <div className="leading-tight">
               <p className="text-base font-semibold tracking-wide">SISTEPLAN</p>
               <p className="text-[11px] uppercase tracking-widest text-sidebar-foreground/60">
