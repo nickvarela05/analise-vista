@@ -20,6 +20,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
 
   const fetchRole = React.useCallback(async (userId: string) => {
+    const { data: gestor } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "gestor")
+      .maybeSingle();
+
+    if (gestor?.role === "gestor") {
+      setRole("gestor");
+      return "gestor" satisfies AppRole;
+    }
+
     const { data } = await supabase
       .from("user_roles")
       .select("role")
@@ -27,33 +39,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .order("role", { ascending: true })
       .limit(1)
       .maybeSingle();
-    // gestor tem prioridade
-    const { data: gestor } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "gestor")
-      .maybeSingle();
-    setRole((gestor?.role as AppRole) ?? (data?.role as AppRole) ?? null);
+
+    const nextRole = (data?.role as AppRole) ?? null;
+    setRole(nextRole);
+    return nextRole;
   }, []);
 
   React.useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    let active = true;
+
+    const syncAuth = async (newSession: Session | null) => {
+      if (!active) return;
+
       setSession(newSession);
+
       if (newSession?.user) {
-        setTimeout(() => fetchRole(newSession.user.id), 0);
-      } else {
-        setRole(null);
+        setLoading(true);
+        await fetchRole(newSession.user.id);
+        if (active) setLoading(false);
+        return;
       }
-    });
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      if (s?.user) fetchRole(s.user.id);
+      setRole(null);
       setLoading(false);
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      void syncAuth(newSession);
     });
 
-    return () => sub.subscription.unsubscribe();
+    void supabase.auth.getSession().then(({ data: { session: s } }) => {
+      void syncAuth(s);
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
   }, [fetchRole]);
 
   const signOut = async () => {
