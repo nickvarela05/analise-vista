@@ -101,13 +101,18 @@ function LoginPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.6_0.09_180/0.25),transparent_55%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,oklch(0.7_0.1_180/0.18),transparent_50%)]" />
         <div className="relative z-10 flex flex-col justify-between p-12 text-sidebar-foreground">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-sidebar-primary/15 ring-1 ring-sidebar-primary/30">
-              <img src={logoUrl} alt="Sisteplan" className="h-9 w-9 object-contain" />
+          <div className="flex items-center gap-4">
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sidebar-primary/30 to-sidebar-primary/10 ring-1 ring-sidebar-primary/40 shadow-[0_0_40px_-8px_var(--sidebar-primary)]">
+              <div className="absolute inset-0 rounded-2xl bg-sidebar-primary/10 blur-xl" />
+              <img
+                src={logoUrl}
+                alt="Sisteplan"
+                className="relative h-14 w-14 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
+              />
             </div>
             <div className="leading-tight">
-              <p className="text-base font-semibold tracking-wide">SISTEPLAN</p>
-              <p className="text-[11px] uppercase tracking-widest text-sidebar-foreground/60">
+              <p className="text-2xl font-bold tracking-wide">SISTEPLAN</p>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-sidebar-foreground/70">
                 Gestão Interna
               </p>
             </div>
@@ -134,8 +139,10 @@ function LoginPage() {
         <Card className="w-full max-w-md border-border/60 shadow-lg">
           <CardContent className="p-8">
             <div className="mb-6 flex flex-col items-center text-center lg:hidden">
-              <img src={logoUrl} alt="" className="h-12 object-contain" />
-              <h1 className="mt-3 text-lg font-semibold">SISTEPLAN</h1>
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/30 shadow-[0_0_30px_-6px_var(--primary)]">
+                <img src={logoUrl} alt="" className="h-14 w-14 object-contain" />
+              </div>
+              <h1 className="mt-3 text-xl font-bold tracking-wide">SISTEPLAN</h1>
             </div>
 
             <h1 className="text-xl font-semibold tracking-tight">Acessar plataforma</h1>
