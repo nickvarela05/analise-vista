@@ -24,6 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import logoUrl from "@/assets/logo.png";
+import { useAuth } from "@/lib/auth-context";
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -33,8 +34,8 @@ const items = [
   { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
   { title: "Demandas", url: "/demandas", icon: Inbox },
   { title: "Avisos", url: "/avisos", icon: Megaphone },
-  { title: "Equipe", url: "/equipe", icon: Users },
-];
+  { title: "Equipe", url: "/equipe", icon: Users, requireGestor: true },
+] as const;
 
 const bottomItems = [{ title: "Configurações", url: "/configuracoes", icon: Settings }];
 
@@ -43,9 +44,14 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { role } = useAuth();
 
   const isActive = (path: string) =>
     path === "/" ? currentPath === "/" : currentPath.startsWith(path);
+
+  const visibleItems = items.filter(
+    (it) => !("requireGestor" in it && it.requireGestor) || role === "gestor",
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -72,7 +78,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Principal</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
