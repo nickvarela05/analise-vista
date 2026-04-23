@@ -758,11 +758,13 @@ function WorkflowStep({
   label,
   value,
   tone,
+  to,
 }: {
   icon: any;
   label: string;
   value: number;
   tone: "primary" | "success" | "warning" | "info";
+  to?: string;
 }) {
   const toneClass: Record<string, string> = {
     primary: "border-primary/30 bg-primary/5 text-primary",
@@ -770,13 +772,22 @@ function WorkflowStep({
     warning: "border-warning/40 bg-warning/5 text-warning",
     info: "border-info/30 bg-info/5 text-info",
   };
-  return (
-    <div className={cn("rounded-lg border p-3 transition-all hover:scale-[1.02]", toneClass[tone])}>
+  const inner = (
+    <>
       <Icon className="mb-1.5 h-4 w-4" />
       <p className="text-2xl font-semibold tabular-nums leading-none text-foreground">{value}</p>
       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
-    </div>
+    </>
   );
+  const cls = cn("workflow-step", toneClass[tone]);
+  if (to) {
+    return (
+      <Link to={to} className={cls} aria-label={`${label}: ${value}`}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={cls}>{inner}</div>;
 }
