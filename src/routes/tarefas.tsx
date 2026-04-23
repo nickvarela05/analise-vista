@@ -275,10 +275,11 @@ function Tarefas() {
             <TableHeader>
               <TableRow>
                 <TableHead>Título</TableHead>
+                <TableHead>Atribuído a</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Prazo</TableHead>
-                <TableHead className="w-44">Alterar status</TableHead>
+                <TableHead className="w-56">Atribuir / Status</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -286,6 +287,13 @@ function Tarefas() {
               {data.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell className="font-medium">{t.titulo}</TableCell>
+                  <TableCell>
+                    <AssigneeBadges
+                      selectedIds={t.responsaveis_ids}
+                      equipeToda={t.equipe_toda}
+                      options={colabs}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`capitalize ${prioVariant(t.prioridade)}`}>{t.prioridade}</Badge>
                   </TableCell>
@@ -296,12 +304,21 @@ function Tarefas() {
                     {t.data_prevista ? format(new Date(t.data_prevista), "dd/MM/yyyy") : "—"}
                   </TableCell>
                   <TableCell>
-                    <Select value={t.status} onValueChange={(v) => updateStatus(t.id, v)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {WORKFLOW.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-1.5">
+                      <AssigneeCombobox
+                        options={colabs}
+                        selectedIds={t.responsaveis_ids ?? []}
+                        equipeToda={!!t.equipe_toda}
+                        onChange={(n) => updateAssignees(t.id, n)}
+                        placeholder="Atribuir..."
+                      />
+                      <Select value={t.status} onValueChange={(v) => updateStatus(t.id, v)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {WORKFLOW.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => remover(t.id)} className="h-7 w-7">

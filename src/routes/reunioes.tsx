@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 
 export const Route = createFileRoute("/reunioes")({
   component: ReunioesRoute,
@@ -65,14 +66,19 @@ function Reunioes() {
     proximos_passos: "",
     transcricao: "",
     link_calendario: "",
-    responsavel_id: "" as string,
     participantes_str: "",
+    responsaveis_ids: [] as string[],
+    equipe_toda: false,
   });
 
   const { data: colabs = [] } = useQuery({
     queryKey: ["reu-colabs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
