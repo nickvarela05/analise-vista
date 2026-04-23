@@ -433,11 +433,14 @@ function Dashboard() {
                     cursor={{ fill: "color-mix(in oklab, var(--primary) 6%, transparent)" }}
                     contentStyle={{
                       borderRadius: 10,
-                      border: "1px solid var(--border)",
-                      background: "var(--popover)",
+                      border: "1px solid var(--tooltip-border)",
+                      background: "var(--tooltip-bg)",
+                      color: "var(--tooltip-foreground)",
                       fontSize: 12,
-                      boxShadow: "var(--shadow-md)",
+                      boxShadow: "var(--shadow-lg)",
                     }}
+                    labelStyle={{ color: "var(--tooltip-foreground)", fontWeight: 600 }}
+                    itemStyle={{ color: "var(--tooltip-foreground)" }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
                   <Bar dataKey="Tarefas" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={28} />
@@ -480,11 +483,14 @@ function Dashboard() {
                   <Tooltip
                     contentStyle={{
                       borderRadius: 10,
-                      border: "1px solid var(--border)",
-                      background: "var(--popover)",
+                      border: "1px solid var(--tooltip-border)",
+                      background: "var(--tooltip-bg)",
+                      color: "var(--tooltip-foreground)",
                       fontSize: 12,
-                      boxShadow: "var(--shadow-md)",
+                      boxShadow: "var(--shadow-lg)",
                     }}
+                    labelStyle={{ color: "var(--tooltip-foreground)", fontWeight: 600 }}
+                    itemStyle={{ color: "var(--tooltip-foreground)" }}
                   />
                   <Legend
                     verticalAlign="bottom"
