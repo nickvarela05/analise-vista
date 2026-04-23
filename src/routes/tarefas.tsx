@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 
 export const Route = createFileRoute("/tarefas")({
   component: TarefasRoute,
@@ -82,14 +83,19 @@ function Tarefas() {
     descricao: "",
     prioridade: "media" as (typeof PRIO)[number],
     status: "aberta" as string,
-    responsavel_id: "" as string,
     data_prevista: "",
+    responsaveis_ids: [] as string[],
+    equipe_toda: false,
   });
 
   const { data: colabs = [] } = useQuery({
     queryKey: ["tar-colabs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -123,7 +129,8 @@ function Tarefas() {
       descricao: form.descricao || null,
       prioridade: form.prioridade,
       status: form.status as any,
-      responsavel_id: form.responsavel_id || null,
+      responsaveis_ids: form.responsaveis_ids,
+      equipe_toda: form.equipe_toda,
       data_prevista: form.data_prevista || null,
       criado_por: user?.id,
     });
@@ -133,9 +140,25 @@ function Tarefas() {
     }
     toast.success("Tarefa criada");
     setOpen(false);
-    setForm({ ...form, titulo: "", descricao: "", data_prevista: "" });
+    setForm({ ...form, titulo: "", descricao: "", data_prevista: "", responsaveis_ids: [], equipe_toda: false });
     qc.invalidateQueries({ queryKey: ["tarefas"] });
     qc.invalidateQueries({ queryKey: ["dash-tarefas"] });
+    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+  };
+
+  const updateAssignees = async (
+    id: string,
+    next: { selectedIds: string[]; equipeToda: boolean },
+  ) => {
+    const { error } = await supabase
+      .from("todo")
+      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
+      .eq("id", id);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -197,18 +220,18 @@ function Tarefas() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Responsável</Label>
-                    <Select value={form.responsavel_id} onValueChange={(v) => setForm({ ...form, responsavel_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>
-                        {colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
                     <Label>Prazo</Label>
                     <Input type="date" value={form.data_prevista} onChange={(e) => setForm({ ...form, data_prevista: e.target.value })} />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Atribuir a</Label>
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={form.responsaveis_ids}
+                    equipeToda={form.equipe_toda}
+                    onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                  />
                 </div>
                 <DialogFooter><Button type="submit">Criar</Button></DialogFooter>
               </form>
@@ -252,10 +275,11 @@ function Tarefas() {
             <TableHeader>
               <TableRow>
                 <TableHead>Título</TableHead>
+                <TableHead>Atribuído a</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Prazo</TableHead>
-                <TableHead className="w-44">Alterar status</TableHead>
+                <TableHead className="w-56">Atribuir / Status</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -263,6 +287,13 @@ function Tarefas() {
               {data.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell className="font-medium">{t.titulo}</TableCell>
+                  <TableCell>
+                    <AssigneeBadges
+                      selectedIds={t.responsaveis_ids}
+                      equipeToda={t.equipe_toda}
+                      options={colabs}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`capitalize ${prioVariant(t.prioridade)}`}>{t.prioridade}</Badge>
                   </TableCell>
@@ -273,12 +304,21 @@ function Tarefas() {
                     {t.data_prevista ? format(new Date(t.data_prevista), "dd/MM/yyyy") : "—"}
                   </TableCell>
                   <TableCell>
-                    <Select value={t.status} onValueChange={(v) => updateStatus(t.id, v)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {WORKFLOW.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-1.5">
+                      <AssigneeCombobox
+                        options={colabs}
+                        selectedIds={t.responsaveis_ids ?? []}
+                        equipeToda={!!t.equipe_toda}
+                        onChange={(n) => updateAssignees(t.id, n)}
+                        placeholder="Atribuir..."
+                      />
+                      <Select value={t.status} onValueChange={(v) => updateStatus(t.id, v)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {WORKFLOW.map((s) => <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon" onClick={() => remover(t.id)} className="h-7 w-7">

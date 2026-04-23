@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { StatCard } from "@/components/StatCard";
+import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,15 +52,20 @@ function RelatoriosRoute() {
   );
 }
 
-const STATUS_OPTS = ["aberto", "encaminhado", "homologacao", "producao", "concluido", "reprovado", "cancelado"] as const;
+const STATUS_OPTS = ["aberto", "encaminhado", "finalizado"] as const;
+type StatusRel = (typeof STATUS_OPTS)[number];
 const PRIO_OPTS = ["baixa", "media", "alta", "critica"] as const;
 
+const STATUS_LABEL: Record<StatusRel, string> = {
+  aberto: "Aberto",
+  encaminhado: "Encaminhado",
+  finalizado: "Finalizado",
+};
+
 function statusVariant(s: string) {
-  if (s === "concluido") return "bg-success/15 text-success border-success/30";
-  if (s === "cancelado" || s === "reprovado") return "bg-destructive/15 text-destructive border-destructive/30";
+  if (s === "finalizado") return "bg-success/15 text-success border-success/30";
   if (s === "aberto") return "bg-info/15 text-info border-info/30";
-  if (s === "producao") return "bg-primary/15 text-primary border-primary/30";
-  if (s === "homologacao") return "bg-warning/20 text-warning-foreground border-warning/40";
+  if (s === "encaminhado") return "bg-warning/20 text-warning-foreground border-warning/40";
   return "bg-muted text-muted-foreground";
 }
 
@@ -72,7 +78,7 @@ function prioVariant(p: string) {
 
 function Relatorios() {
   const qc = useQueryClient();
-  const [statusFilter, setStatusFilter] = React.useState("todos");
+  const [statusFilter, setStatusFilter] = React.useState<string>("todos");
   const [search, setSearch] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState({
@@ -81,15 +87,30 @@ function Relatorios() {
     descricao: "",
     cliente: "",
     modulo: "",
-    status: "aberto" as (typeof STATUS_OPTS)[number],
+    status: "aberto" as StatusRel,
     prioridade: "media" as (typeof PRIO_OPTS)[number],
+    responsaveis_ids: [] as string[],
+    equipe_toda: false,
+  });
+
+  const { data: colabs = [] } = useQuery({
+    queryKey: ["rel-colabs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["chamados-externos", statusFilter, search],
     queryFn: async () => {
       let q = supabase.from("chamado_externo").select("*").order("abertura", { ascending: false });
-      if (statusFilter !== "todos") q = q.eq("status", statusFilter as (typeof STATUS_OPTS)[number]);
+      if (statusFilter !== "todos") q = q.eq("status", statusFilter as StatusRel);
       if (search) q = q.or(`titulo.ilike.%${search}%,codigo.ilike.%${search}%,cliente.ilike.%${search}%`);
       const { data, error } = await q;
       if (error) throw error;
@@ -100,9 +121,7 @@ function Relatorios() {
   const counts = {
     aberto: data.filter((c) => c.status === "aberto").length,
     encaminhado: data.filter((c) => c.status === "encaminhado").length,
-    homologacao: data.filter((c) => c.status === "homologacao").length,
-    producao: data.filter((c) => c.status === "producao").length,
-    concluido: data.filter((c) => c.status === "concluido").length,
+    finalizado: data.filter((c) => c.status === "finalizado").length,
   };
 
   const criar = async (e: React.FormEvent) => {
@@ -111,19 +130,39 @@ function Relatorios() {
       toast.error("Informe código e título");
       return;
     }
-    const { error } = await supabase.from("chamado_externo").insert({ ...form });
+    const { error } = await supabase.from("chamado_externo").insert({
+      codigo: form.codigo,
+      titulo: form.titulo,
+      descricao: form.descricao || null,
+      cliente: form.cliente || null,
+      modulo: form.modulo || null,
+      status: form.status,
+      prioridade: form.prioridade,
+      responsaveis_ids: form.responsaveis_ids,
+      equipe_toda: form.equipe_toda,
+    });
     if (error) {
       toast.error("Erro", { description: error.message });
       return;
     }
-    toast.success("Chamado criado");
+    toast.success("Relatório criado");
     setOpen(false);
-    setForm({ ...form, codigo: "", titulo: "", descricao: "", cliente: "", modulo: "" });
+    setForm({
+      ...form,
+      codigo: "",
+      titulo: "",
+      descricao: "",
+      cliente: "",
+      modulo: "",
+      responsaveis_ids: [],
+      equipe_toda: false,
+    });
     qc.invalidateQueries({ queryKey: ["chamados-externos"] });
     qc.invalidateQueries({ queryKey: ["dash-chamados"] });
+    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
   };
 
-  const updateStatus = async (id: string, status: (typeof STATUS_OPTS)[number]) => {
+  const updateStatus = async (id: string, status: StatusRel) => {
     const { error } = await supabase.from("chamado_externo").update({ status }).eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
     else {
@@ -133,27 +172,42 @@ function Relatorios() {
     }
   };
 
+  const updateAssignees = async (
+    id: string,
+    next: { selectedIds: string[]; equipeToda: boolean },
+  ) => {
+    const { error } = await supabase
+      .from("chamado_externo")
+      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
+      .eq("id", id);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      qc.invalidateQueries({ queryKey: ["chamados-externos"] });
+      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    }
+  };
+
   return (
     <div>
       <PageHeader
         title="Relatórios"
-        description="Chamados que virão da integração externa + workflow. (Mockup)"
+        description="Solicitações de relatórios. Workflow simplificado: Aberto → Encaminhado → Finalizado."
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Novo chamado
+                <Plus className="mr-2 h-4 w-4" /> Novo relatório
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>Novo chamado externo</DialogTitle>
+                <DialogTitle>Novo relatório</DialogTitle>
               </DialogHeader>
               <form onSubmit={criar} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label>Código</Label>
-                    <Input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="CH-2026-0011" />
+                    <Input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="REL-2026-0011" />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Cliente</Label>
@@ -175,10 +229,10 @@ function Relatorios() {
                   </div>
                   <div className="space-y-1.5">
                     <Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}>
+                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as StatusRel })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {STATUS_OPTS.map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                        {STATUS_OPTS.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -191,6 +245,15 @@ function Relatorios() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Atribuir a</Label>
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={form.responsaveis_ids}
+                    equipeToda={form.equipe_toda}
+                    onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                  />
                 </div>
                 <DialogFooter>
                   <Button type="submit">Criar</Button>
@@ -208,9 +271,7 @@ function Relatorios() {
           items={[
             { value: counts.aberto, label: "Abertos", tone: "info" },
             { value: counts.encaminhado, label: "Encaminhados", tone: "warning" },
-            { value: counts.homologacao, label: "Homologação", tone: "primary" },
-            { value: counts.producao, label: "Produção", tone: "success" },
-            { value: counts.concluido, label: "Concluídos", tone: "success" },
+            { value: counts.finalizado, label: "Finalizados", tone: "success" },
           ]}
         />
       </div>
@@ -227,7 +288,7 @@ function Relatorios() {
           <SelectContent>
             <SelectItem value="todos">Todos os status</SelectItem>
             {STATUS_OPTS.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+              <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -237,7 +298,7 @@ function Relatorios() {
         {isLoading ? (
           <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : data.length === 0 ? (
-          <EmptyState icon={FileBarChart} title="Nenhum chamado" description="Quando a integração existir, os chamados aparecerão aqui." />
+          <EmptyState icon={FileBarChart} title="Nenhum relatório" description="Crie um novo relatório para começar." />
         ) : (
           <Table>
             <TableHeader>
@@ -245,11 +306,11 @@ function Relatorios() {
                 <TableHead>Código</TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Módulo</TableHead>
+                <TableHead>Atribuído a</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Abertura</TableHead>
-                <TableHead className="w-40">Alterar</TableHead>
+                <TableHead className="w-56">Atribuir / Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -258,25 +319,40 @@ function Relatorios() {
                   <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
                   <TableCell className="font-medium">{c.titulo}</TableCell>
                   <TableCell className="text-muted-foreground">{c.cliente ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.modulo ?? "—"}</TableCell>
+                  <TableCell>
+                    <AssigneeBadges
+                      selectedIds={c.responsaveis_ids}
+                      equipeToda={c.equipe_toda}
+                      options={colabs}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`capitalize ${prioVariant(c.prioridade)}`}>{c.prioridade}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`capitalize ${statusVariant(c.status)}`}>{c.status}</Badge>
+                    <Badge variant="outline" className={statusVariant(c.status)}>{STATUS_LABEL[c.status as StatusRel] ?? c.status}</Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {format(new Date(c.abertura), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>
-                    <Select value={c.status} onValueChange={(v) => updateStatus(c.id, v as (typeof STATUS_OPTS)[number])}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTS.map((s) => (
-                          <SelectItem key={s} value={s} className="text-xs capitalize">{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-1.5">
+                      <AssigneeCombobox
+                        options={colabs}
+                        selectedIds={c.responsaveis_ids ?? []}
+                        equipeToda={!!c.equipe_toda}
+                        onChange={(n) => updateAssignees(c.id, n)}
+                        placeholder="Atribuir..."
+                      />
+                      <Select value={c.status} onValueChange={(v) => updateStatus(c.id, v as StatusRel)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTS.map((s) => (
+                            <SelectItem key={s} value={s} className="text-xs">{STATUS_LABEL[s]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

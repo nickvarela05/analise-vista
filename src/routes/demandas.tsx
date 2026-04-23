@@ -38,6 +38,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 
 export const Route = createFileRoute("/demandas")({
   component: DemandasRoute,
@@ -104,6 +105,21 @@ function Demandas() {
     categoria: "melhoria" as (typeof CATEGORIA_OPTS)[number],
     prioridade: "media" as (typeof PRIORIDADE_OPTS)[number],
     solicitante: "",
+    responsaveis_ids: [] as string[],
+    equipe_toda: false,
+  });
+
+  const { data: colabs = [] } = useQuery({
+    queryKey: ["dem-colabs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
   });
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -113,7 +129,14 @@ function Demandas() {
       return;
     }
     const { error } = await supabase.from("demanda").insert({
-      ...form,
+      titulo: form.titulo,
+      descricao: form.descricao || null,
+      origem: form.origem,
+      categoria: form.categoria,
+      prioridade: form.prioridade,
+      solicitante: form.solicitante || null,
+      responsaveis_ids: form.responsaveis_ids,
+      equipe_toda: form.equipe_toda,
       criado_por: user?.id,
     });
     if (error) {
@@ -122,9 +145,25 @@ function Demandas() {
     }
     toast.success("Demanda criada");
     setOpen(false);
-    setForm({ ...form, titulo: "", descricao: "", solicitante: "" });
+    setForm({ ...form, titulo: "", descricao: "", solicitante: "", responsaveis_ids: [], equipe_toda: false });
     qc.invalidateQueries({ queryKey: ["demandas"] });
     qc.invalidateQueries({ queryKey: ["dash-demandas"] });
+    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+  };
+
+  const updateAssignees = async (
+    id: string,
+    next: { selectedIds: string[]; equipeToda: boolean },
+  ) => {
+    const { error } = await supabase
+      .from("demanda")
+      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
+      .eq("id", id);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      qc.invalidateQueries({ queryKey: ["demandas"] });
+      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    }
   };
 
   const updateStatus = async (id: string, status: (typeof STATUS_OPTS)[number]) => {
@@ -198,6 +237,15 @@ function Demandas() {
                     <Input value={form.solicitante} onChange={(e) => setForm({ ...form, solicitante: e.target.value })} />
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Atribuir a</Label>
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={form.responsaveis_ids}
+                    equipeToda={form.equipe_toda}
+                    onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                  />
+                </div>
                 <DialogFooter>
                   <Button type="submit">Criar</Button>
                 </DialogFooter>
@@ -236,10 +284,11 @@ function Demandas() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Atribuído a</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Criado em</TableHead>
-                <TableHead className="w-40">Alterar status</TableHead>
+                <TableHead className="w-56">Atribuir / Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -247,6 +296,13 @@ function Demandas() {
                 <TableRow key={d.id}>
                   <TableCell className="font-medium">{d.titulo}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{d.categoria.replace(/_/g, " ")}</TableCell>
+                  <TableCell>
+                    <AssigneeBadges
+                      selectedIds={d.responsaveis_ids}
+                      equipeToda={d.equipe_toda}
+                      options={colabs}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`capitalize ${prioridadeVariant(d.prioridade)}`}>{d.prioridade}</Badge>
                   </TableCell>
@@ -257,14 +313,23 @@ function Demandas() {
                     {format(new Date(d.created_at), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>
-                    <Select value={d.status} onValueChange={(v) => updateStatus(d.id, v as (typeof STATUS_OPTS)[number])}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTS.map((s) => (
-                          <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-1.5">
+                      <AssigneeCombobox
+                        options={colabs}
+                        selectedIds={d.responsaveis_ids ?? []}
+                        equipeToda={!!d.equipe_toda}
+                        onChange={(n) => updateAssignees(d.id, n)}
+                        placeholder="Atribuir..."
+                      />
+                      <Select value={d.status} onValueChange={(v) => updateStatus(d.id, v as (typeof STATUS_OPTS)[number])}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTS.map((s) => (
+                            <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 
 export const Route = createFileRoute("/reunioes")({
   component: ReunioesRoute,
@@ -65,14 +66,19 @@ function Reunioes() {
     proximos_passos: "",
     transcricao: "",
     link_calendario: "",
-    responsavel_id: "" as string,
     participantes_str: "",
+    responsaveis_ids: [] as string[],
+    equipe_toda: false,
   });
 
   const { data: colabs = [] } = useQuery({
     queryKey: ["reu-colabs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -124,7 +130,8 @@ function Reunioes() {
       ...rest,
       data_reuniao: new Date(form.data_reuniao).toISOString(),
       duracao_min: Number(form.duracao_min) || null,
-      responsavel_id: form.responsavel_id || null,
+      responsaveis_ids: form.responsaveis_ids,
+      equipe_toda: form.equipe_toda,
       participantes,
       audio_path,
       audio_size,
@@ -141,9 +148,25 @@ function Reunioes() {
     toast.success("Reunião registrada");
     setOpen(false);
     setAudio(null);
-    setForm({ ...form, titulo: "", pauta: "", resumo: "", proximos_passos: "", transcricao: "", link_calendario: "", participantes_str: "" });
+    setForm({ ...form, titulo: "", pauta: "", resumo: "", proximos_passos: "", transcricao: "", link_calendario: "", participantes_str: "", responsaveis_ids: [], equipe_toda: false });
     qc.invalidateQueries({ queryKey: ["reunioes"] });
     qc.invalidateQueries({ queryKey: ["dash-reunioes"] });
+    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+  };
+
+  const updateAssignees = async (
+    id: string,
+    next: { selectedIds: string[]; equipeToda: boolean },
+  ) => {
+    const { error } = await supabase
+      .from("reuniao")
+      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
+      .eq("id", id);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      qc.invalidateQueries({ queryKey: ["reunioes"] });
+      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    }
   };
 
   return (
@@ -189,11 +212,13 @@ function Reunioes() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Responsável</Label>
-                    <Select value={form.responsavel_id} onValueChange={(v) => setForm({ ...form, responsavel_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                      <SelectContent>{colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <Label>Atribuir a</Label>
+                    <AssigneeCombobox
+                      options={colabs}
+                      selectedIds={form.responsaveis_ids}
+                      equipeToda={form.equipe_toda}
+                      onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Link do calendário</Label>
@@ -262,6 +287,14 @@ function Reunioes() {
               </CardHeader>
               <CardContent className="space-y-2 pt-0 text-sm">
                 {r.resumo && <p className="line-clamp-2 text-xs text-muted-foreground">{r.resumo}</p>}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AssigneeBadges
+                    selectedIds={r.responsaveis_ids}
+                    equipeToda={r.equipe_toda}
+                    options={colabs}
+                    max={2}
+                  />
+                </div>
                 <div className="flex flex-wrap gap-1">
                   {r.participantes && r.participantes.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-[10px]">
@@ -271,6 +304,15 @@ function Reunioes() {
                   {r.transcricao && <Badge variant="secondary" className="gap-1 text-[10px]"><FileText className="h-3 w-3" /> transcrição</Badge>}
                   {r.proximos_passos && <Badge variant="secondary" className="gap-1 text-[10px]"><ListChecks className="h-3 w-3" /> próximos</Badge>}
                   {r.audio_path && <Badge variant="secondary" className="text-[10px]">🎵 áudio</Badge>}
+                </div>
+                <div onClick={(e) => e.stopPropagation()} className="pt-1">
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={r.responsaveis_ids ?? []}
+                    equipeToda={!!r.equipe_toda}
+                    onChange={(n) => updateAssignees(r.id, n)}
+                    placeholder="Atribuir..."
+                  />
                 </div>
               </CardContent>
             </Card>

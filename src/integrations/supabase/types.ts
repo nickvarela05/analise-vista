@@ -68,11 +68,13 @@ export type Database = {
           codigo: string
           created_at: string
           descricao: string | null
+          equipe_toda: boolean
           id: string
           modulo: string | null
           origem: string | null
           prazo: string | null
           prioridade: Database["public"]["Enums"]["chamado_externo_prioridade"]
+          responsaveis_ids: string[]
           responsavel_id: string | null
           status: Database["public"]["Enums"]["chamado_externo_status"]
           tags: string[] | null
@@ -85,11 +87,13 @@ export type Database = {
           codigo: string
           created_at?: string
           descricao?: string | null
+          equipe_toda?: boolean
           id?: string
           modulo?: string | null
           origem?: string | null
           prazo?: string | null
           prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"]
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["chamado_externo_status"]
           tags?: string[] | null
@@ -102,11 +106,13 @@ export type Database = {
           codigo?: string
           created_at?: string
           descricao?: string | null
+          equipe_toda?: boolean
           id?: string
           modulo?: string | null
           origem?: string | null
           prazo?: string | null
           prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"]
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["chamado_externo_status"]
           tags?: string[] | null
@@ -253,10 +259,12 @@ export type Database = {
           created_at: string
           criado_por: string | null
           descricao: string | null
+          equipe_toda: boolean
           id: string
           origem: Database["public"]["Enums"]["demanda_origem"]
           prazo: string | null
           prioridade: Database["public"]["Enums"]["demanda_prioridade"]
+          responsaveis_ids: string[]
           responsavel_id: string | null
           solicitante: string | null
           status: Database["public"]["Enums"]["demanda_status"]
@@ -269,10 +277,12 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           descricao?: string | null
+          equipe_toda?: boolean
           id?: string
           origem?: Database["public"]["Enums"]["demanda_origem"]
           prazo?: string | null
           prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           solicitante?: string | null
           status?: Database["public"]["Enums"]["demanda_status"]
@@ -285,10 +295,12 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           descricao?: string | null
+          equipe_toda?: boolean
           id?: string
           origem?: Database["public"]["Enums"]["demanda_origem"]
           prazo?: string | null
           prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           solicitante?: string | null
           status?: Database["public"]["Enums"]["demanda_status"]
@@ -340,11 +352,13 @@ export type Database = {
           criado_por: string | null
           data_reuniao: string
           duracao_min: number | null
+          equipe_toda: boolean
           id: string
           link_calendario: string | null
           participantes: string[] | null
           pauta: string | null
           proximos_passos: string | null
+          responsaveis_ids: string[]
           responsavel_id: string | null
           resumo: string | null
           status: Database["public"]["Enums"]["reuniao_status"]
@@ -361,11 +375,13 @@ export type Database = {
           criado_por?: string | null
           data_reuniao: string
           duracao_min?: number | null
+          equipe_toda?: boolean
           id?: string
           link_calendario?: string | null
           participantes?: string[] | null
           pauta?: string | null
           proximos_passos?: string | null
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           resumo?: string | null
           status?: Database["public"]["Enums"]["reuniao_status"]
@@ -382,11 +398,13 @@ export type Database = {
           criado_por?: string | null
           data_reuniao?: string
           duracao_min?: number | null
+          equipe_toda?: boolean
           id?: string
           link_calendario?: string | null
           participantes?: string[] | null
           pauta?: string | null
           proximos_passos?: string | null
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           resumo?: string | null
           status?: Database["public"]["Enums"]["reuniao_status"]
@@ -405,8 +423,10 @@ export type Database = {
           data_prevista: string | null
           demanda_id: string | null
           descricao: string | null
+          equipe_toda: boolean
           id: string
           prioridade: Database["public"]["Enums"]["todo_prioridade"]
+          responsaveis_ids: string[]
           responsavel_id: string | null
           status: Database["public"]["Enums"]["todo_status"]
           titulo: string
@@ -419,8 +439,10 @@ export type Database = {
           data_prevista?: string | null
           demanda_id?: string | null
           descricao?: string | null
+          equipe_toda?: boolean
           id?: string
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["todo_status"]
           titulo: string
@@ -433,8 +455,10 @@ export type Database = {
           data_prevista?: string | null
           demanda_id?: string | null
           descricao?: string | null
+          equipe_toda?: boolean
           id?: string
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
+          responsaveis_ids?: string[]
           responsavel_id?: string | null
           status?: Database["public"]["Enums"]["todo_status"]
           titulo?: string
@@ -488,14 +512,7 @@ export type Database = {
       app_role: "gestor" | "analista"
       aviso_tipo: "informativo" | "alerta" | "critico"
       chamado_externo_prioridade: "baixa" | "media" | "alta" | "critica"
-      chamado_externo_status:
-        | "aberto"
-        | "encaminhado"
-        | "homologacao"
-        | "producao"
-        | "concluido"
-        | "reprovado"
-        | "cancelado"
+      chamado_externo_status: "aberto" | "encaminhado" | "finalizado"
       demanda_categoria:
         | "bug"
         | "melhoria"
@@ -661,15 +678,7 @@ export const Constants = {
       app_role: ["gestor", "analista"],
       aviso_tipo: ["informativo", "alerta", "critico"],
       chamado_externo_prioridade: ["baixa", "media", "alta", "critica"],
-      chamado_externo_status: [
-        "aberto",
-        "encaminhado",
-        "homologacao",
-        "producao",
-        "concluido",
-        "reprovado",
-        "cancelado",
-      ],
+      chamado_externo_status: ["aberto", "encaminhado", "finalizado"],
       demanda_categoria: [
         "bug",
         "melhoria",

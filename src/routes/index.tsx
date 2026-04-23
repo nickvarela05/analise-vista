@@ -149,10 +149,8 @@ function Dashboard() {
 
   // KPIs
   const totalChamados = chamados.length;
-  const relatPendentes = chamados.filter(
-    (c) => !["concluido", "cancelado", "reprovado"].includes(c.status),
-  ).length;
-  const relatHomolog = chamados.filter((c) => c.status === "homologacao").length;
+  const relatPendentes = chamados.filter((c) => c.status !== "finalizado").length;
+  const relatEncaminhados = chamados.filter((c) => c.status === "encaminhado").length;
 
   const taskAbertas = tarefas.filter((t) =>
     ["aberta", "pendente", "encaminhada"].includes(t.status),
@@ -189,16 +187,29 @@ function Dashboard() {
     },
   ].filter((d) => d.value > 0);
 
-  // Atribuições por colaborador (gráfico)
+  // Atribuições por colaborador (gráfico) — considera responsaveis_ids + equipe_toda
+  const totalColabsAtivos = colaboradores.length;
+  const countAssignees = (rows: any[], colabId: string) =>
+    rows.filter((r) => {
+      if (r.equipe_toda) return true;
+      const ids: string[] = r.responsaveis_ids ?? [];
+      if (ids.length > 0) return ids.includes(colabId);
+      // fallback para registros antigos com responsavel_id único
+      return r.responsavel_id === colabId;
+    }).length;
+
   const atribuicoes = colaboradores.map((c) => {
-    const tDoColab = tarefas.filter((t) => t.responsavel_id === c.id).length;
-    const dDoColab = demandas.filter((d) => d.responsavel_id === c.id).length;
-    const rDoColab = reunioes.filter((r) => r.responsavel_id === c.id).length;
+    const tDoColab = countAssignees(tarefas, c.id);
+    const dDoColab = countAssignees(demandas, c.id);
+    const rDoColab = countAssignees(reunioes, c.id);
+    const relDoColab = countAssignees(chamados, c.id);
     return {
       nome: c.nome.split(" ")[0],
       Tarefas: tDoColab,
       Demandas: dDoColab,
       Reuniões: rDoColab,
+      Relatórios: relDoColab,
+      Total: tDoColab + dDoColab + rDoColab + relDoColab,
     };
   });
 
@@ -443,9 +454,10 @@ function Dashboard() {
                     itemStyle={{ color: "var(--tooltip-foreground)" }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
-                  <Bar dataKey="Tarefas" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="Demandas" fill="var(--chart-2)" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                  <Bar dataKey="Reuniões" fill="var(--chart-4)" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="Tarefas" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="Demandas" fill="var(--chart-2)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="Reuniões" fill="var(--chart-4)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="Relatórios" fill="var(--chart-3)" radius={[6, 6, 0, 0]} maxBarSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -650,7 +662,7 @@ function Dashboard() {
             </Link>
           }
         >
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <WorkflowStep
               icon={Inbox}
               label="Aberto"
@@ -661,21 +673,14 @@ function Dashboard() {
             <WorkflowStep
               icon={ArrowRight}
               label="Encaminhado"
-              value={chamados.filter((c) => c.status === "encaminhado").length}
+              value={relatEncaminhados}
               tone="info"
               to="/relatorios"
             />
             <WorkflowStep
               icon={CheckSquare}
-              label="Homologação"
-              value={relatHomolog}
-              tone="primary"
-              to="/relatorios"
-            />
-            <WorkflowStep
-              icon={CheckSquare}
-              label="Produção"
-              value={chamados.filter((c) => c.status === "producao").length}
+              label="Finalizado"
+              value={chamados.filter((c) => c.status === "finalizado").length}
               tone="success"
               to="/relatorios"
             />
