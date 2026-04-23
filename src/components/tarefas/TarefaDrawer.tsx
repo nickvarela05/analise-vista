@@ -48,8 +48,20 @@ interface Props {
 }
 
 export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
+  const { data: profile } = useQuery({
+    queryKey: ["profile-self", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("nome")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
   const [novoComentario, setNovoComentario] = React.useState("");
   const [novoChecklistItem, setNovoChecklistItem] = React.useState("");
   const [uploadingFile, setUploadingFile] = React.useState(false);
