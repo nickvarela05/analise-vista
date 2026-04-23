@@ -1,35 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, AlertTriangle, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  Bell,
+  Search,
+  Inbox,
+  CheckCheck,
+} from "lucide-react";
+import {
+  isToday,
+  isYesterday,
+  isThisWeek,
+  isThisMonth,
+  parseISO,
+  format,
+} from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { KpiTile } from "@/components/KpiTile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/AvisoCard";
+import { AvisoDialog } from "@/components/avisos/AvisoDialog";
 
 export const Route = createFileRoute("/avisos")({
   component: AvisosRoute,
@@ -43,173 +46,411 @@ function AvisosRoute() {
   );
 }
 
-const TIPOS = ["informativo", "alerta", "critico"] as const;
-
-function tipoStyle(t: string) {
-  if (t === "critico") return "border-destructive/40 bg-destructive/5";
-  if (t === "alerta") return "border-warning/40 bg-warning/5";
-  return "border-info/40 bg-info/5";
-}
+type FiltroUrgencia = "todos" | AvisoTipo;
+type FiltroEscopo = "todos" | "para_mim" | "nao_lidos";
 
 function Avisos() {
   const { user, role } = useAuth();
   const qc = useQueryClient();
   const isGestor = role === "gestor";
-  const [open, setOpen] = React.useState(false);
-  const [filter, setFilter] = React.useState<string>("todos");
-  const [form, setForm] = React.useState({
-    titulo: "",
-    mensagem: "",
-    tipo: "informativo" as (typeof TIPOS)[number],
-    ativo: true,
-    colaborador_id: "" as string,
-  });
 
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [editing, setEditing] = React.useState<AvisoRow | null>(null);
+  const [busca, setBusca] = React.useState("");
+  const [urgencia, setUrgencia] = React.useState<FiltroUrgencia>("todos");
+  const [escopo, setEscopo] = React.useState<FiltroEscopo>("todos");
+
+  // Colaboradores
   const { data: colabs = [] } = useQuery({
     queryKey: ["av-colabs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, foto_url")
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ["avisos", filter],
+  const colabsMap = React.useMemo(
+    () =>
+      new Map(
+        colabs.map((c) => [c.id, { nome: c.nome, foto_url: c.foto_url ?? null }]),
+      ),
+    [colabs],
+  );
+
+  // Avisos
+  const { data: avisos = [], isLoading } = useQuery({
+    queryKey: ["avisos"],
     queryFn: async () => {
-      let q = supabase.from("aviso_gestor").select("*, colaborador:colaborador_id(nome)").order("created_at", { ascending: false });
-      if (filter !== "todos") q = q.eq("tipo", filter as any);
-      const { data, error } = await q;
+      const { data, error } = await supabase
+        .from("aviso_gestor")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as AvisoRow[];
+    },
+  });
+
+  // Leituras do usuário
+  const { data: leituras = [] } = useQuery({
+    queryKey: ["avisos-leituras", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("aviso_leitura")
+        .select("aviso_id")
+        .eq("user_id", user!.id);
       if (error) throw error;
       return data ?? [];
     },
   });
 
-  const criar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.titulo.trim() || !form.mensagem.trim()) return;
-    const { colaborador_id, ...rest } = form;
-    const { error } = await supabase.from("aviso_gestor").insert({
-      ...rest,
-      colaborador_id: colaborador_id || null,
-      criado_por: user?.id,
-    });
-    if (error) {
-      toast.error("Erro", { description: error.message });
-      return;
+  const lidos = React.useMemo(
+    () => new Set(leituras.map((l) => l.aviso_id)),
+    [leituras],
+  );
+
+  // Para gestor: contagem de leituras por aviso
+  const { data: leiturasAgrupadas = [] } = useQuery({
+    queryKey: ["avisos-leituras-todas"],
+    enabled: isGestor,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("aviso_leitura")
+        .select("aviso_id, user_id");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const leiturasPorAviso = React.useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    for (const l of leiturasAgrupadas) {
+      if (!m.has(l.aviso_id)) m.set(l.aviso_id, new Set());
+      m.get(l.aviso_id)!.add(l.user_id);
     }
-    toast.success("Aviso publicado");
-    setOpen(false);
-    setForm({ titulo: "", mensagem: "", tipo: "informativo", ativo: true, colaborador_id: "" });
-    qc.invalidateQueries({ queryKey: ["avisos"] });
-    qc.invalidateQueries({ queryKey: ["dash-avisos"] });
+    return m;
+  }, [leiturasAgrupadas]);
+
+  // ----- Filtragem -----
+  const isParaMim = React.useCallback(
+    (a: AvisoRow) => {
+      const ids = new Set<string>();
+      if (a.colaborador_id) ids.add(a.colaborador_id);
+      (a.colaboradores_ids ?? []).forEach((id) => ids.add(id));
+      // Equipe toda OU o usuário é destinatário
+      // (não temos colaborador_id ↔ user_id direto; usamos o e-mail como heurística)
+      const meuColab = colabs.find(
+        (c) => c.id && user && (c as any).email === user.email,
+      );
+      if (ids.size === 0) return true;
+      if (meuColab && ids.has(meuColab.id)) return true;
+      return false;
+    },
+    [colabs, user],
+  );
+
+  const filtrados = React.useMemo(() => {
+    const now = Date.now();
+    return avisos.filter((a) => {
+      if (urgencia !== "todos" && a.tipo !== urgencia) return false;
+      if (escopo === "nao_lidos" && (lidos.has(a.id) || !a.ativo)) return false;
+      if (escopo === "para_mim" && !isParaMim(a)) return false;
+      if (busca) {
+        const q = busca.toLowerCase();
+        if (
+          !a.titulo.toLowerCase().includes(q) &&
+          !a.mensagem.toLowerCase().includes(q)
+        )
+          return false;
+      }
+      // Esconde inativos para não-gestores
+      if (!isGestor && !a.ativo) return false;
+      // Esconde expirados para não-gestores
+      if (!isGestor && a.expira_em && new Date(a.expira_em).getTime() < now)
+        return false;
+      return true;
+    });
+  }, [avisos, urgencia, escopo, lidos, busca, isGestor, isParaMim]);
+
+  // KPIs
+  const kpis = React.useMemo(() => {
+    const now = Date.now();
+    const ativos = avisos.filter((a) => a.ativo);
+    const criticos = ativos.filter((a) => a.tipo === "critico");
+    const naoLidos = ativos.filter((a) => !lidos.has(a.id));
+    const expirandoHoje = ativos.filter((a) => {
+      if (!a.expira_em) return false;
+      const t = new Date(a.expira_em).getTime();
+      return t > now && t - now < 24 * 60 * 60 * 1000;
+    });
+    return {
+      ativos: ativos.length,
+      criticos: criticos.length,
+      naoLidos: naoLidos.length,
+      expirandoHoje: expirandoHoje.length,
+    };
+  }, [avisos, lidos]);
+
+  // Agrupamento por data
+  const grupos = React.useMemo(() => {
+    const buckets: Record<string, AvisoRow[]> = {
+      Hoje: [],
+      Ontem: [],
+      "Esta semana": [],
+      "Este mês": [],
+      Anteriores: [],
+    };
+    // Críticos não-lidos sobem
+    const ordenados = [...filtrados].sort((a, b) => {
+      const aDestaque = a.tipo === "critico" && a.ativo && !lidos.has(a.id) ? 1 : 0;
+      const bDestaque = b.tipo === "critico" && b.ativo && !lidos.has(b.id) ? 1 : 0;
+      if (aDestaque !== bDestaque) return bDestaque - aDestaque;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    for (const a of ordenados) {
+      const d = parseISO(a.created_at);
+      if (isToday(d)) buckets["Hoje"].push(a);
+      else if (isYesterday(d)) buckets["Ontem"].push(a);
+      else if (isThisWeek(d, { weekStartsOn: 1 })) buckets["Esta semana"].push(a);
+      else if (isThisMonth(d)) buckets["Este mês"].push(a);
+      else buckets["Anteriores"].push(a);
+    }
+    return buckets;
+  }, [filtrados, lidos]);
+
+  // ----- Ações -----
+  const marcarLido = async (avisoId: string, lido: boolean) => {
+    if (!user) return;
+    if (lido) {
+      const { error } = await supabase
+        .from("aviso_leitura")
+        .insert({ aviso_id: avisoId, user_id: user.id });
+      if (error && !error.message.includes("duplicate")) {
+        toast.error("Erro", { description: error.message });
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from("aviso_leitura")
+        .delete()
+        .eq("aviso_id", avisoId)
+        .eq("user_id", user.id);
+      if (error) {
+        toast.error("Erro", { description: error.message });
+        return;
+      }
+    }
+    qc.invalidateQueries({ queryKey: ["avisos-leituras"] });
+    qc.invalidateQueries({ queryKey: ["bell-leituras"] });
   };
 
-  const toggle = async (id: string, ativo: boolean) => {
+  const marcarTodasLidas = async () => {
+    if (!user) return;
+    const naoLidos = filtrados.filter((a) => !lidos.has(a.id) && a.ativo);
+    if (naoLidos.length === 0) {
+      toast.info("Nada para marcar");
+      return;
+    }
+    const rows = naoLidos.map((a) => ({ aviso_id: a.id, user_id: user.id }));
+    const { error } = await supabase.from("aviso_leitura").upsert(rows, {
+      onConflict: "aviso_id,user_id",
+      ignoreDuplicates: true,
+    });
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      toast.success(`${naoLidos.length} aviso(s) marcado(s) como lidos`);
+      qc.invalidateQueries({ queryKey: ["avisos-leituras"] });
+      qc.invalidateQueries({ queryKey: ["bell-leituras"] });
+    }
+  };
+
+  const toggleAtivo = async (id: string, ativo: boolean) => {
     const { error } = await supabase.from("aviso_gestor").update({ ativo }).eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
     else qc.invalidateQueries({ queryKey: ["avisos"] });
   };
 
   const remover = async (id: string) => {
-    if (!confirm("Excluir este aviso?")) return;
     const { error } = await supabase.from("aviso_gestor").delete().eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
     else {
       toast.success("Aviso removido");
       qc.invalidateQueries({ queryKey: ["avisos"] });
+      qc.invalidateQueries({ queryKey: ["bell-avisos"] });
     }
+  };
+
+  const onSaved = () => {
+    qc.invalidateQueries({ queryKey: ["avisos"] });
+    qc.invalidateQueries({ queryKey: ["bell-avisos"] });
+    qc.invalidateQueries({ queryKey: ["dash-avisos"] });
+  };
+
+  const totalDestinatarios = (a: AvisoRow) => {
+    const ids = new Set<string>();
+    if (a.colaborador_id) ids.add(a.colaborador_id);
+    (a.colaboradores_ids ?? []).forEach((id) => ids.add(id));
+    return ids.size === 0 ? colabs.length : ids.size;
   };
 
   return (
     <div>
       <PageHeader
         title="Avisos"
-        description="Comunicados da liderança ou da equipe — separados por urgência e podendo vincular um colaborador."
+        description="Comunicados internos com prioridade, destinatários e leitura confirmada."
         actions={
-          isGestor && (
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" /> Novo aviso</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Novo aviso</DialogTitle></DialogHeader>
-                <form onSubmit={criar} className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label>Título</Label>
-                    <Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Mensagem</Label>
-                    <Textarea rows={4} value={form.mensagem} onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label>Urgência</Label>
-                      <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{TIPOS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Vincular colaborador</Label>
-                      <Select value={form.colaborador_id} onValueChange={(v) => setForm({ ...form, colaborador_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                        <SelectContent>{colabs.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter><Button type="submit">Publicar</Button></DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )
+          <div className="flex items-center gap-2">
+            {user && (
+              <Button variant="outline" size="sm" onClick={marcarTodasLidas}>
+                <CheckCheck className="mr-2 h-4 w-4" />
+                Marcar tudo como lido
+              </Button>
+            )}
+            {isGestor && (
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  setDialogOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Novo aviso
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <div className="mb-4">
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todas urgências</SelectItem>
-            {TIPOS.map((t) => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      {/* KPIs */}
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiTile icon={Bell} label="Avisos ativos" value={kpis.ativos} tone="primary" />
+        <KpiTile
+          icon={AlertTriangle}
+          label="Críticos"
+          value={kpis.criticos}
+          tone="destructive"
+        />
+        <KpiTile icon={Inbox} label="Não lidos por mim" value={kpis.naoLidos} tone="warning" />
+        <KpiTile
+          icon={AlertCircle}
+          label="Expirando em 24h"
+          value={kpis.expirandoHoje}
+          tone="info"
+        />
       </div>
 
+      {/* Filtros */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Tabs value={urgencia} onValueChange={(v) => setUrgencia(v as FiltroUrgencia)}>
+          <TabsList>
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="critico" className="gap-1">
+              <AlertTriangle className="h-3 w-3" /> Críticos
+            </TabsTrigger>
+            <TabsTrigger value="alerta" className="gap-1">
+              <AlertCircle className="h-3 w-3" /> Alertas
+            </TabsTrigger>
+            <TabsTrigger value="informativo" className="gap-1">
+              <Info className="h-3 w-3" /> Informativos
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Tabs value={escopo} onValueChange={(v) => setEscopo(v as FiltroEscopo)}>
+          <TabsList>
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="nao_lidos">Não lidos</TabsTrigger>
+            <TabsTrigger value="para_mim">Para mim</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="relative ml-auto w-full max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar avisos..."
+            className="h-9 pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Lista */}
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : data.length === 0 ? (
-        <EmptyState icon={AlertTriangle} title="Nenhum aviso ativo" />
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : filtrados.length === 0 ? (
+        <EmptyState
+          icon={Bell}
+          title={
+            avisos.length === 0
+              ? "Nenhum aviso ainda"
+              : "Nenhum aviso corresponde aos filtros"
+          }
+          description={
+            avisos.length === 0 && isGestor
+              ? "Publique o primeiro aviso para a equipe."
+              : undefined
+          }
+        />
       ) : (
-        <div className="space-y-3">
-          {data.map((a: any) => (
-            <Card key={a.id} className={`border ${tipoStyle(a.tipo)}`}>
-              <CardContent className="flex items-start justify-between gap-4 p-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="capitalize text-[10px]">{a.tipo}</Badge>
-                    {a.colaborador?.nome && (
-                      <Badge variant="secondary" className="text-[10px]">→ {a.colaborador.nome}</Badge>
-                    )}
-                    {!a.ativo && <Badge variant="secondary" className="text-[10px]">inativo</Badge>}
+        <div className="space-y-6">
+          {Object.entries(grupos).map(
+            ([titulo, items]) =>
+              items.length > 0 && (
+                <section key={titulo}>
+                  <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {titulo}{" "}
+                    <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-muted-foreground">
+                      {items.length}
+                    </span>
+                  </h2>
+                  <div className="space-y-2">
+                    {items.map((a) => (
+                      <AvisoCard
+                        key={a.id}
+                        aviso={a}
+                        colabsMap={colabsMap}
+                        isGestor={isGestor}
+                        isLido={lidos.has(a.id)}
+                        totalLeituras={leiturasPorAviso.get(a.id)?.size ?? 0}
+                        totalDestinatarios={totalDestinatarios(a)}
+                        onToggleLido={() => marcarLido(a.id, !lidos.has(a.id))}
+                        onToggleAtivo={(v) => toggleAtivo(a.id, v)}
+                        onEdit={() => {
+                          setEditing(a);
+                          setDialogOpen(true);
+                        }}
+                        onRemove={() => remover(a.id)}
+                      />
+                    ))}
                   </div>
-                  <h3 className="mt-2 text-sm font-semibold">{a.titulo}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{a.mensagem}</p>
-                </div>
-                {isGestor && (
-                  <div className="flex items-center gap-3">
-                    <Switch checked={a.ativo} onCheckedChange={(v) => toggle(a.id, v)} />
-                    <Button variant="ghost" size="icon" onClick={() => remover(a.id)} className="h-8 w-8">
-                      <Trash2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </section>
+              ),
+          )}
         </div>
       )}
+
+      <AvisoDialog
+        open={dialogOpen}
+        onOpenChange={(v) => {
+          setDialogOpen(v);
+          if (!v) setEditing(null);
+        }}
+        editing={editing}
+        colabs={colabs}
+        userId={user?.id}
+        onSaved={onSaved}
+      />
+
+      {/* keep import */}
+      <span className="hidden">{format(new Date(), "yyyy", { locale: ptBR })}</span>
     </div>
   );
 }
