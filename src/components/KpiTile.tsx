@@ -13,8 +13,11 @@ interface KpiTileProps {
   hint?: string;
   tone?: KpiTone;
   to?: string;
+  onClick?: () => void;
+  loading?: boolean;
   trend?: { value: number; label?: string };
   className?: string;
+  ariaLabel?: string;
 }
 
 const iconClass: Record<KpiTone, string> = {
