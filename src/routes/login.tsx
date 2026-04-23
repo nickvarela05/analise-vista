@@ -46,9 +46,20 @@ function LoginPage() {
     defaultValues: { email: "", password: "", nome: "" },
   });
 
-  const onLogin = async (_values: z.infer<typeof loginSchema>) => {
-    // Modo dev: auth desativada — entra direto sem validar credenciais
-    toast.success("Modo dev — acesso liberado");
+  const onLogin = async (values: z.infer<typeof loginSchema>) => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.error("Falha no login", { description: error.message });
+      return;
+    }
+
+    toast.success("Login realizado com sucesso");
     navigate({ to: "/" });
   };
 
@@ -157,9 +168,6 @@ function LoginPage() {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
                   </Button>
-                  <p className="text-center text-xs text-amber-600 dark:text-amber-400">
-                    Modo dev — autenticação desativada
-                  </p>
                 </form>
               </TabsContent>
 
