@@ -12,7 +12,101 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import logoUrl from "@/assets/logo.png";
 
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={`flex items-center ${compact ? "gap-3" : "gap-4"}`}>
+      {/* Vitrine do logo: anel cromático + halo + monograma original preservado */}
+      <div className="relative">
+        {/* Halo difuso */}
+        <div
+          aria-hidden
+          className="absolute -inset-3 rounded-2xl blur-2xl opacity-70"
+          style={{
+            background:
+              "conic-gradient(from 140deg, oklch(0.72 0.14 180 / 0.55), oklch(0.55 0.18 200 / 0.35), oklch(0.78 0.16 160 / 0.45), oklch(0.72 0.14 180 / 0.55))",
+          }}
+        />
+        {/* Anel cromático girando lentamente */}
+        <div
+          aria-hidden
+          className="absolute -inset-[3px] rounded-2xl animate-[spin_14s_linear_infinite]"
+          style={{
+            background:
+              "conic-gradient(from 0deg, oklch(0.78 0.16 160), oklch(0.55 0.18 210), oklch(0.85 0.12 180), oklch(0.78 0.16 160))",
+            WebkitMask:
+              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+            padding: 1.5,
+          }}
+        />
+        {/* Frame do monograma — fundo escuro vidro */}
+        <div
+          className={`relative ${compact ? "h-14 w-14" : "h-16 w-16"} grid place-items-center rounded-2xl bg-sidebar/80 ring-1 ring-white/10 backdrop-blur-sm shadow-[inset_0_1px_0_oklch(1_0_0/0.08),0_8px_30px_-8px_oklch(0.55_0.18_200/0.45)]`}
+        >
+          <img
+            src={logoUrl}
+            alt="Sisteplan"
+            width={64}
+            height={64}
+            className={`${compact ? "h-9 w-9" : "h-10 w-10"} object-contain drop-shadow-[0_2px_8px_oklch(0.78_0.16_180/0.55)]`}
+          />
+          {/* Brilho diagonal sutil */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(120deg,transparent_30%,oklch(1_0_0/0.18)_45%,transparent_60%)] opacity-60"
+          />
+        </div>
+        {/* Pontinho de status pulsando */}
+        <span
+          aria-hidden
+          className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-sidebar shadow-[0_0_12px_oklch(0.78_0.16_160/0.9)] animate-pulse"
+        />
+      </div>
+
+      {/* Wordmark em camadas */}
+      <div className="leading-none">
+        <div className="flex items-baseline gap-1">
+          <span
+            className={`${compact ? "text-xl" : "text-2xl"} font-semibold tracking-[0.18em] text-sidebar-foreground`}
+            style={{
+              backgroundImage:
+                "linear-gradient(180deg, oklch(0.98 0.01 180) 0%, oklch(0.78 0.06 180) 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            SISTE
+          </span>
+          <span
+            className={`${compact ? "text-xl" : "text-2xl"} font-light tracking-[0.18em]`}
+            style={{
+              backgroundImage:
+                "linear-gradient(180deg, oklch(0.85 0.14 180) 0%, oklch(0.55 0.18 210) 100%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+            }}
+          >
+            PLAN
+          </span>
+        </div>
+        <div className="mt-1.5 flex items-center gap-2">
+          <span
+            aria-hidden
+            className="h-px w-6 bg-gradient-to-r from-transparent via-sidebar-foreground/60 to-sidebar-foreground/0"
+          />
+          <span className="text-[10px] uppercase tracking-[0.32em] text-sidebar-foreground/55">
+            Gestão Interna
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
