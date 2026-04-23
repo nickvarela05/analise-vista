@@ -200,6 +200,11 @@
   --sidebar-accent-foreground: oklch(0.97 0.005 180);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.72 0.10 180);
+
+  /* Tooltip flutuante — superfície elevada com mais contraste no escuro */
+  --tooltip-bg: oklch(0.30 0.025 215);
+  --tooltip-foreground: oklch(0.98 0.005 180);
+  --tooltip-border: oklch(0.72 0.10 180 / 45%);
 }
 
 @layer base {
