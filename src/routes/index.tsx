@@ -650,24 +650,28 @@ function Dashboard() {
               label="Aberto"
               value={chamados.filter((c) => c.status === "aberto").length}
               tone="warning"
+              to="/relatorios"
             />
             <WorkflowStep
               icon={ArrowRight}
               label="Encaminhado"
               value={chamados.filter((c) => c.status === "encaminhado").length}
               tone="info"
+              to="/relatorios"
             />
             <WorkflowStep
               icon={CheckSquare}
               label="Homologação"
               value={relatHomolog}
               tone="primary"
+              to="/relatorios"
             />
             <WorkflowStep
               icon={CheckSquare}
               label="Produção"
               value={chamados.filter((c) => c.status === "producao").length}
               tone="success"
+              to="/relatorios"
             />
           </div>
 
@@ -681,24 +685,28 @@ function Dashboard() {
                 label="Abertura"
                 value={tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length}
                 tone="warning"
+                to="/tarefas"
               />
               <WorkflowStep
                 icon={ArrowRight}
                 label="Encaminhada"
                 value={tarefas.filter((t) => t.status === "encaminhada").length}
                 tone="info"
+                to="/tarefas"
               />
               <WorkflowStep
                 icon={CheckSquare}
                 label="Homologação"
                 value={taskHML}
                 tone="primary"
+                to="/tarefas"
               />
               <WorkflowStep
                 icon={CheckSquare}
                 label="Produção"
                 value={taskProd}
                 tone="success"
+                to="/tarefas"
               />
             </div>
           </div>
