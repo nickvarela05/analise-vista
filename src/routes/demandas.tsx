@@ -237,6 +237,15 @@ function Demandas() {
                     <Input value={form.solicitante} onChange={(e) => setForm({ ...form, solicitante: e.target.value })} />
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Atribuir a</Label>
+                  <AssigneeCombobox
+                    options={colabs}
+                    selectedIds={form.responsaveis_ids}
+                    equipeToda={form.equipe_toda}
+                    onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                  />
+                </div>
                 <DialogFooter>
                   <Button type="submit">Criar</Button>
                 </DialogFooter>
@@ -275,10 +284,11 @@ function Demandas() {
               <TableRow>
                 <TableHead>Título</TableHead>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Atribuído a</TableHead>
                 <TableHead>Prioridade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Criado em</TableHead>
-                <TableHead className="w-40">Alterar status</TableHead>
+                <TableHead className="w-56">Atribuir / Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -286,6 +296,13 @@ function Demandas() {
                 <TableRow key={d.id}>
                   <TableCell className="font-medium">{d.titulo}</TableCell>
                   <TableCell className="capitalize text-muted-foreground">{d.categoria.replace(/_/g, " ")}</TableCell>
+                  <TableCell>
+                    <AssigneeBadges
+                      selectedIds={d.responsaveis_ids}
+                      equipeToda={d.equipe_toda}
+                      options={colabs}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`capitalize ${prioridadeVariant(d.prioridade)}`}>{d.prioridade}</Badge>
                   </TableCell>
@@ -296,14 +313,23 @@ function Demandas() {
                     {format(new Date(d.created_at), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>
-                    <Select value={d.status} onValueChange={(v) => updateStatus(d.id, v as (typeof STATUS_OPTS)[number])}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTS.map((s) => (
-                          <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-col gap-1.5">
+                      <AssigneeCombobox
+                        options={colabs}
+                        selectedIds={d.responsaveis_ids ?? []}
+                        equipeToda={!!d.equipe_toda}
+                        onChange={(n) => updateAssignees(d.id, n)}
+                        placeholder="Atribuir..."
+                      />
+                      <Select value={d.status} onValueChange={(v) => updateStatus(d.id, v as (typeof STATUS_OPTS)[number])}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTS.map((s) => (
+                            <SelectItem key={s} value={s} className="text-xs capitalize">{s.replace(/_/g, " ")}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

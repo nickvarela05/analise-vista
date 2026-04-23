@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 
 export const Route = createFileRoute("/tarefas")({
   component: TarefasRoute,
@@ -82,14 +83,19 @@ function Tarefas() {
     descricao: "",
     prioridade: "media" as (typeof PRIO)[number],
     status: "aberta" as string,
-    responsavel_id: "" as string,
     data_prevista: "",
+    responsaveis_ids: [] as string[],
+    equipe_toda: false,
   });
 
   const { data: colabs = [] } = useQuery({
     queryKey: ["tar-colabs"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true);
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome, cargo")
+        .eq("ativo", true)
+        .order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -123,7 +129,8 @@ function Tarefas() {
       descricao: form.descricao || null,
       prioridade: form.prioridade,
       status: form.status as any,
-      responsavel_id: form.responsavel_id || null,
+      responsaveis_ids: form.responsaveis_ids,
+      equipe_toda: form.equipe_toda,
       data_prevista: form.data_prevista || null,
       criado_por: user?.id,
     });
@@ -133,9 +140,25 @@ function Tarefas() {
     }
     toast.success("Tarefa criada");
     setOpen(false);
-    setForm({ ...form, titulo: "", descricao: "", data_prevista: "" });
+    setForm({ ...form, titulo: "", descricao: "", data_prevista: "", responsaveis_ids: [], equipe_toda: false });
     qc.invalidateQueries({ queryKey: ["tarefas"] });
     qc.invalidateQueries({ queryKey: ["dash-tarefas"] });
+    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+  };
+
+  const updateAssignees = async (
+    id: string,
+    next: { selectedIds: string[]; equipeToda: boolean },
+  ) => {
+    const { error } = await supabase
+      .from("todo")
+      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
+      .eq("id", id);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
