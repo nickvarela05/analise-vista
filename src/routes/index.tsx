@@ -349,7 +349,7 @@ function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiTile
           icon={FileBarChart}
-          label="Chamados pendentes"
+          label="Solicitação de relatórios"
           value={relatPendentes}
           hint={`${totalChamados} chamados no total`}
           tone="warning"
