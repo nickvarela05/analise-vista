@@ -306,13 +306,19 @@
 
   /* Item de lista interativo (atividades, avisos, tarefas) */
   .list-item-interactive {
-    @apply flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-all;
+    @apply flex w-full items-start gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left outline-none transition-all duration-150;
   }
   .list-item-interactive:hover {
-    @apply border-border bg-muted/50;
+    @apply border-border bg-muted/60;
+    transform: translateX(2px);
   }
   .list-item-interactive:focus-visible {
-    @apply outline-none border-primary/40 bg-muted/40;
+    border-color: var(--ring);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 25%, transparent);
+    @apply bg-muted/40;
+  }
+  .list-item-interactive:active {
+    transform: translateX(0);
   }
 
   /* Bullet pontiagudo (mark visual de tipo) */
@@ -327,10 +333,18 @@
 
   /* Aviso banner */
   .alert-banner {
-    @apply flex items-start gap-3 rounded-xl border p-4 transition-all;
+    @apply flex items-start gap-3 rounded-xl border p-4 outline-none transition-all duration-200;
     box-shadow: var(--shadow-xs);
   }
-  .alert-banner:hover { box-shadow: var(--shadow-sm); }
+  .alert-banner:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+  .alert-banner:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--ring);
+  }
   .alert-banner-critico {
     border-color: color-mix(in oklab, var(--destructive) 35%, transparent);
     background: color-mix(in oklab, var(--destructive) 6%, var(--card));
@@ -343,6 +357,21 @@
     border-color: color-mix(in oklab, var(--info) 35%, transparent);
     background: color-mix(in oklab, var(--info) 6%, var(--card));
   }
+
+  /* Workflow step — clicável */
+  .workflow-step {
+    @apply flex w-full flex-col items-start rounded-lg border p-3 text-left outline-none transition-all duration-200;
+  }
+  .workflow-step:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+  .workflow-step:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--ring);
+  }
+  .workflow-step:active { transform: translateY(0); }
 
   /* === Mantido por compatibilidade com StatCard === */
   .stat-card {
