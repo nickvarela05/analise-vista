@@ -10,12 +10,31 @@ export type UsuarioRow = {
   cargo: string | null;
   colaborador_id: string | null;
   role: "gestor" | "analista" | null;
+  must_change_password: boolean;
   created_at: string | null;
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
 };
 
-const inviteSchema = z.object({
+/** Gera senha temporária de 12 chars: maiúsc + minúsc + dígito + símbolo. */
+function gerarSenhaTemporaria(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnpqrstuvwxyz";
+  const digit = "23456789";
+  const symbol = "!@#$%&*?";
+  const all = upper + lower + digit + symbol;
+  const rand = (set: string) => set[Math.floor(Math.random() * set.length)];
+  const chars = [rand(upper), rand(lower), rand(digit), rand(symbol)];
+  for (let i = 0; i < 8; i++) chars.push(rand(all));
+  // shuffle
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}
+
+const createSchema = z.object({
   email: z.string().email().max(255),
   nome: z.string().min(1).max(120),
   role: z.enum(["gestor", "analista"]),
@@ -33,6 +52,7 @@ const linkSchema = z.object({
 });
 
 const deleteSchema = z.object({ user_id: z.string().uuid() });
+const resetSchema = z.object({ user_id: z.string().uuid() });
 
 export const Route = createFileRoute("/api/admin/usuarios")({
   server: {
@@ -45,7 +65,10 @@ export const Route = createFileRoute("/api/admin/usuarios")({
 
           const ids = usersResp.users.map((u) => u.id);
           const [{ data: profiles }, { data: roles }] = await Promise.all([
-            admin.from("profiles").select("user_id,nome,email,avatar_url,cargo,colaborador_id").in("user_id", ids),
+            admin
+              .from("profiles")
+              .select("user_id,nome,email,avatar_url,cargo,colaborador_id,must_change_password")
+              .in("user_id", ids),
             admin.from("user_roles").select("user_id,role").in("user_id", ids),
           ]);
 
@@ -66,6 +89,7 @@ export const Route = createFileRoute("/api/admin/usuarios")({
               cargo: p?.cargo ?? null,
               colaborador_id: p?.colaborador_id ?? null,
               role: rMap.get(u.id) ?? null,
+              must_change_password: p?.must_change_password ?? false,
               created_at: u.created_at ?? null,
               last_sign_in_at: u.last_sign_in_at ?? null,
               email_confirmed_at: u.email_confirmed_at ?? null,
@@ -86,20 +110,41 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           const action = url.searchParams.get("action");
           const body = await request.json();
 
-          if (action === "invite") {
-            const data = inviteSchema.parse(body);
-            const { data: invited, error } = await admin.auth.admin.inviteUserByEmail(data.email, {
-              data: { nome: data.nome },
+          if (action === "create") {
+            const data = createSchema.parse(body);
+            const tempPassword = gerarSenhaTemporaria();
+            const { data: created, error } = await admin.auth.admin.createUser({
+              email: data.email,
+              password: tempPassword,
+              email_confirm: true,
+              user_metadata: { nome: data.nome },
             });
             if (error) return jsonError(error.message, 400);
-            const newId = invited.user?.id;
+            const newId = created.user?.id;
             if (!newId) return jsonError("Falha ao criar usuário", 500);
             await admin.from("user_roles").delete().eq("user_id", newId);
             await admin.from("user_roles").insert({ user_id: newId, role: data.role });
-            const updates: { nome: string; colaborador_id?: string } = { nome: data.nome };
+            const updates: { nome: string; must_change_password: boolean; colaborador_id?: string } = {
+              nome: data.nome,
+              must_change_password: true,
+            };
             if (data.colaborador_id) updates.colaborador_id = data.colaborador_id;
             await admin.from("profiles").update(updates).eq("user_id", newId);
-            return Response.json({ ok: true, user_id: newId });
+            return Response.json({ ok: true, user_id: newId, temp_password: tempPassword });
+          }
+
+          if (action === "reset-password") {
+            const data = resetSchema.parse(body);
+            const tempPassword = gerarSenhaTemporaria();
+            const { error } = await admin.auth.admin.updateUserById(data.user_id, {
+              password: tempPassword,
+            });
+            if (error) return jsonError(error.message, 400);
+            await admin
+              .from("profiles")
+              .update({ must_change_password: true })
+              .eq("user_id", data.user_id);
+            return Response.json({ ok: true, temp_password: tempPassword });
           }
 
           if (action === "role") {

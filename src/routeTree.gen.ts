@@ -19,6 +19,7 @@ import { Route as DemandasRouteImport } from './routes/demandas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as AvisosRouteImport } from './routes/avisos'
 import { Route as AtividadesRouteImport } from './routes/atividades'
+import { Route as AlterarSenhaRouteImport } from './routes/alterar-senha'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiAdminUsuariosRouteImport } from './routes/api.admin.usuarios'
 
@@ -72,6 +73,11 @@ const AtividadesRoute = AtividadesRouteImport.update({
   path: '/atividades',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlterarSenhaRoute = AlterarSenhaRouteImport.update({
+  id: '/alterar-senha',
+  path: '/alterar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -85,6 +91,7 @@ const ApiAdminUsuariosRoute = ApiAdminUsuariosRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/alterar-senha': typeof AlterarSenhaRoute
   '/atividades': typeof AtividadesRoute
   '/avisos': typeof AvisosRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/alterar-senha': typeof AlterarSenhaRoute
   '/atividades': typeof AtividadesRoute
   '/avisos': typeof AvisosRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -114,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/alterar-senha': typeof AlterarSenhaRoute
   '/atividades': typeof AtividadesRoute
   '/avisos': typeof AvisosRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/alterar-senha'
     | '/atividades'
     | '/avisos'
     | '/configuracoes'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/alterar-senha'
     | '/atividades'
     | '/avisos'
     | '/configuracoes'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/alterar-senha'
     | '/atividades'
     | '/avisos'
     | '/configuracoes'
@@ -173,6 +185,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AlterarSenhaRoute: typeof AlterarSenhaRoute
   AtividadesRoute: typeof AtividadesRoute
   AvisosRoute: typeof AvisosRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
@@ -258,6 +271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AtividadesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alterar-senha': {
+      id: '/alterar-senha'
+      path: '/alterar-senha'
+      fullPath: '/alterar-senha'
+      preLoaderRoute: typeof AlterarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -277,6 +297,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlterarSenhaRoute: AlterarSenhaRoute,
   AtividadesRoute: AtividadesRoute,
   AvisosRoute: AvisosRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,

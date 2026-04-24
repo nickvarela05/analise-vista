@@ -8,8 +8,10 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   role: AppRole | null;
+  mustChangePassword: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshMustChangePassword: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
@@ -17,6 +19,7 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null);
   const [role, setRole] = React.useState<AppRole | null>(null);
+  const [mustChangePassword, setMustChangePassword] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
 
   const fetchRole = React.useCallback(async (userId: string) => {
@@ -45,6 +48,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return nextRole;
   }, []);
 
+  const fetchMustChange = React.useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("must_change_password")
+      .eq("user_id", userId)
+      .maybeSingle();
+    setMustChangePassword(Boolean(data?.must_change_password));
+  }, []);
+
+  const refreshMustChangePassword = React.useCallback(async () => {
+    if (session?.user) await fetchMustChange(session.user.id);
+  }, [session, fetchMustChange]);
+
   React.useEffect(() => {
     let active = true;
 
@@ -55,12 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (newSession?.user) {
         setLoading(true);
-        await fetchRole(newSession.user.id);
+        await Promise.all([fetchRole(newSession.user.id), fetchMustChange(newSession.user.id)]);
         if (active) setLoading(false);
         return;
       }
 
       setRole(null);
+      setMustChangePassword(false);
       setLoading(false);
     };
 
@@ -76,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [fetchRole]);
+  }, [fetchRole, fetchMustChange]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -84,7 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, role, loading, signOut }}
+      value={{
+        session,
+        user: session?.user ?? null,
+        role,
+        mustChangePassword,
+        loading,
+        signOut,
+        refreshMustChangePassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

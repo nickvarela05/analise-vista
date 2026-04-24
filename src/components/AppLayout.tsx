@@ -7,7 +7,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/lib/auth-context";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
+  const { session, loading, mustChangePassword } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -23,6 +23,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const search =
       path === "/login" || path === "/" ? undefined : { redirect: path };
     return <Navigate to="/login" search={search as never} replace />;
+  }
+
+  if (mustChangePassword && location.pathname !== "/alterar-senha") {
+    return <Navigate to="/alterar-senha" replace />;
   }
 
   return (

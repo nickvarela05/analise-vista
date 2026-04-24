@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Mail, Trash2, UserPlus, Link2 } from "lucide-react";
+import { Loader2, Trash2, UserPlus, KeyRound, Copy, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -46,6 +47,7 @@ interface UsuarioRow {
   cargo: string | null;
   colaborador_id: string | null;
   role: Role | null;
+  must_change_password: boolean;
   created_at: string | null;
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
@@ -55,10 +57,11 @@ interface Props {
   colabs: Colaborador[];
 }
 
-const ROLE_LABEL: Record<Role, string> = {
-  gestor: "Gestor",
-  analista: "Analista",
-};
+interface TempPasswordInfo {
+  email: string;
+  password: string;
+  context: "create" | "reset";
+}
 
 export function EquipeUsuariosView({ colabs }: Props) {
   const qc = useQueryClient();
@@ -81,6 +84,28 @@ export function EquipeUsuariosView({ colabs }: Props) {
   }, [colabs]);
 
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [tempPasswordInfo, setTempPasswordInfo] = React.useState<TempPasswordInfo | null>(null);
+
+  const resetarSenha = async (u: UsuarioRow) => {
+    if (!u.email) return;
+    if (!confirm(`Gerar nova senha temporária para ${u.email}? A senha atual deixará de funcionar.`)) return;
+    setBusyId(u.user_id);
+    try {
+      const r = await adminFetch<{ ok: true; temp_password: string }>(
+        "/api/admin/usuarios?action=reset-password",
+        {
+          method: "POST",
+          body: JSON.stringify({ user_id: u.user_id }),
+        },
+      );
+      setTempPasswordInfo({ email: u.email, password: r.temp_password, context: "reset" });
+      reload();
+    } catch (e) {
+      toast.error("Erro", { description: (e as Error).message });
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const alterarRole = async (u: UsuarioRow, role: Role) => {
     if (u.role === role) return;
@@ -156,7 +181,13 @@ export function EquipeUsuariosView({ colabs }: Props) {
         <p className="text-sm text-muted-foreground">
           {usuarios.length} usuário{usuarios.length === 1 ? "" : "s"} cadastrado{usuarios.length === 1 ? "" : "s"}.
         </p>
-        <ConvidarUsuarioDialog colabs={colabs} onSaved={reload} />
+        <CriarUsuarioDialog
+          colabs={colabs}
+          onCreated={(info) => {
+            setTempPasswordInfo(info);
+            reload();
+          }}
+        />
       </div>
 
       <div className="rounded-md border">
@@ -238,10 +269,17 @@ export function EquipeUsuariosView({ colabs }: Props) {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5 text-xs">
-                      {u.email_confirmed_at ? (
+                      {u.must_change_password ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400"
+                        >
+                          <AlertTriangle className="mr-1 h-3 w-3" /> Senha temporária
+                        </Badge>
+                      ) : u.last_sign_in_at ? (
                         <Badge variant="outline" className="text-[10px]">Ativo</Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-[10px]">Convite pendente</Badge>
+                        <Badge variant="secondary" className="text-[10px]">Nunca acessou</Badge>
                       )}
                       {u.last_sign_in_at && (
                         <div className="text-[10px] text-muted-foreground">
@@ -251,20 +289,32 @@ export function EquipeUsuariosView({ colabs }: Props) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => remover(u)}
-                      disabled={busy || isMe}
-                      title={isMe ? "Você não pode remover seu próprio usuário" : "Remover usuário"}
-                    >
-                      {busy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => resetarSenha(u)}
+                        disabled={busy}
+                        title="Gerar nova senha temporária"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => remover(u)}
+                        disabled={busy || isMe}
+                        title={isMe ? "Você não pode remover seu próprio usuário" : "Remover usuário"}
+                      >
+                        {busy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
@@ -279,16 +329,21 @@ export function EquipeUsuariosView({ colabs }: Props) {
           </TableBody>
         </Table>
       </div>
+
+      <TempPasswordDialog
+        info={tempPasswordInfo}
+        onClose={() => setTempPasswordInfo(null)}
+      />
     </div>
   );
 }
 
-function ConvidarUsuarioDialog({
+function CriarUsuarioDialog({
   colabs,
-  onSaved,
+  onCreated,
 }: {
   colabs: Colaborador[];
-  onSaved: () => void;
+  onCreated: (info: TempPasswordInfo) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -305,21 +360,23 @@ function ConvidarUsuarioDialog({
     if (!form.email.trim() || !form.nome.trim()) return;
     setSaving(true);
     try {
-      await adminFetch("/api/admin/usuarios?action=invite", {
-        method: "POST",
-        body: JSON.stringify({
-          email: form.email.trim(),
-          nome: form.nome.trim(),
-          role: form.role,
-          colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
-        }),
-      });
-      toast.success("Convite enviado", { description: `Um e-mail foi enviado para ${form.email}.` });
+      const r = await adminFetch<{ ok: true; user_id: string; temp_password: string }>(
+        "/api/admin/usuarios?action=create",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: form.email.trim(),
+            nome: form.nome.trim(),
+            role: form.role,
+            colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
+          }),
+        },
+      );
       setOpen(false);
+      onCreated({ email: form.email.trim(), password: r.temp_password, context: "create" });
       setForm({ email: "", nome: "", cargo: "", role: "analista", colaborador_id: "__none__" });
-      onSaved();
     } catch (e2) {
-      toast.error("Erro ao convidar", { description: (e2 as Error).message });
+      toast.error("Erro ao criar usuário", { description: (e2 as Error).message });
     } finally {
       setSaving(false);
     }
@@ -329,12 +386,16 @@ function ConvidarUsuarioDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <UserPlus className="mr-2 h-4 w-4" /> Convidar usuário
+          <UserPlus className="mr-2 h-4 w-4" /> Novo usuário
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Convidar novo usuário</DialogTitle>
+          <DialogTitle>Criar novo usuário</DialogTitle>
+          <DialogDescription>
+            Uma senha temporária será gerada. Você precisará entregá-la ao usuário —
+            no primeiro acesso ele será obrigado a definir uma nova senha.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
@@ -361,7 +422,7 @@ function ConvidarUsuarioDialog({
               onChange={(v) => setForm({ ...form, cargo: v })}
             />
             <p className="text-[11px] text-muted-foreground">
-              O cargo será definido no perfil do colaborador vinculado.
+              O cargo é definido no perfil do colaborador vinculado.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -405,9 +466,9 @@ function ConvidarUsuarioDialog({
               {saving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Mail className="mr-2 h-4 w-4" />
+                <UserPlus className="mr-2 h-4 w-4" />
               )}
-              Enviar convite
+              Criar e gerar senha
             </Button>
           </DialogFooter>
         </form>
@@ -416,5 +477,72 @@ function ConvidarUsuarioDialog({
   );
 }
 
-// suprime warnings de import não-usado em alguns ambientes
-void Link2;
+function TempPasswordDialog({
+  info,
+  onClose,
+}: {
+  info: TempPasswordInfo | null;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = React.useState(false);
+  React.useEffect(() => {
+    if (info) setCopied(false);
+  }, [info]);
+
+  if (!info) return null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(info.password);
+      setCopied(true);
+      toast.success("Senha copiada");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  return (
+    <Dialog open={!!info} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {info.context === "create" ? "Usuário criado" : "Senha redefinida"}
+          </DialogTitle>
+          <DialogDescription>
+            Esta senha é temporária e <strong>aparece apenas uma vez</strong>.
+            Copie e entregue ao usuário em um canal seguro. No primeiro acesso ele
+            será obrigado a definir uma nova senha.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">E-mail</Label>
+            <Input value={info.email} readOnly />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Senha temporária</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={info.password}
+                readOnly
+                className="font-mono tracking-wider"
+              />
+              <Button type="button" variant="outline" size="icon" onClick={copy}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />
+            Anote ou copie agora — esta senha não poderá ser recuperada depois.
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>Entendi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
