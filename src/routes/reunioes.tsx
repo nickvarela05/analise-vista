@@ -408,6 +408,17 @@ function Reunioes() {
     }
   };
 
+  const [regenerating, setRegenerating] = React.useState(false);
+  const handleRegerar = async (reuniaoId: string) => {
+    setRegenerating(true);
+    const { error } = await supabase.functions.invoke("analisar-transcricao", {
+      body: { reuniao_id: reuniaoId },
+    });
+    setRegenerating(false);
+    if (error) toast.error("Falha ao regerar análise", { description: error.message });
+    else toast.info("✨ Regerando análise com IA...", { description: "A reunião será atualizada em instantes." });
+  };
+
   // Filtragem em memória
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
