@@ -102,9 +102,11 @@ export function UploadAudioReuniao({
     setUploadPct(15);
 
     const path = `${userId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+    const normalizedType =
+      file.type && file.type !== "video/mp4" ? file.type : "audio/mp4";
     const { error } = await supabase.storage.from("reuniao-audios").upload(path, file, {
       upsert: false,
-      contentType: file.type,
+      contentType: normalizedType,
     });
     setUploadPct(100);
 
