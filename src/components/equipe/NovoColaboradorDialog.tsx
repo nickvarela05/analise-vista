@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { CargoSelect } from "./CargoSelect";
 
 export function NovoColaboradorDialog() {
   const qc = useQueryClient();
@@ -75,9 +76,9 @@ export function NovoColaboradorDialog() {
           </div>
           <div className="space-y-1.5">
             <Label>Cargo</Label>
-            <Input
+            <CargoSelect
               value={form.cargo}
-              onChange={(e) => setForm({ ...form, cargo: e.target.value })}
+              onChange={(v) => setForm({ ...form, cargo: v })}
             />
           </div>
           <div className="space-y-1.5">
