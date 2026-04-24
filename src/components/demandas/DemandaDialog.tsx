@@ -336,6 +336,71 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5">
+              <ListTodo className="h-3.5 w-3.5" />
+              Vincular tarefas
+              {tarefasSelecionadas.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 text-[10px]">
+                  {tarefasSelecionadas.length}
+                </Badge>
+              )}
+            </Label>
+            <Popover open={tarefasOpen} onOpenChange={setTarefasOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                  {tarefasSelecionadas.length === 0
+                    ? "Selecione tarefas para vincular..."
+                    : `${tarefasSelecionadas.length} tarefa(s) selecionada(s)`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar tarefa..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      <ScrollArea className="h-60">
+                        {tarefasDisponiveis.map((t) => {
+                          const selected = tarefasSelecionadas.includes(t.id);
+                          const vinculadaOutra = !!t.demanda_id && t.demanda_id !== initial?.id;
+                          return (
+                            <CommandItem
+                              key={t.id}
+                              value={`${t.titulo} ${t.id}`}
+                              onSelect={() => toggleTarefa(t.id)}
+                              className="flex items-start gap-2"
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                                  selected ? "bg-primary border-primary text-primary-foreground" : "border-input",
+                                )}
+                              >
+                                {selected && <Check className="h-3 w-3" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-sm">{t.titulo}</div>
+                                {vinculadaOutra && (
+                                  <div className="text-[10px] text-warning-foreground">
+                                    Já vinculada a outra demanda — será movida
+                                  </div>
+                                )}
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </ScrollArea>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <p className="text-[11px] text-muted-foreground">
+              As tarefas selecionadas serão automaticamente vinculadas a esta demanda.
+            </p>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancelar
