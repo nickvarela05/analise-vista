@@ -22,6 +22,7 @@ import type { Colaborador } from "./lib/types";
 import { DIAS, EVENTO_LABEL } from "./lib/types";
 import { HorarioDialog } from "./HorarioDialog";
 import { FeriasDialog } from "./FeriasDialog";
+import { CargoSelect } from "./CargoSelect";
 
 interface Props {
   colab: Colaborador | null;
@@ -152,11 +153,9 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                   placeholder="Nome"
                   className="h-8"
                 />
-                <Input
+                <CargoSelect
                   value={form.cargo}
-                  onChange={(e) => setForm({ ...form, cargo: e.target.value })}
-                  placeholder="Cargo"
-                  className="h-8"
+                  onChange={(v) => setForm({ ...form, cargo: v })}
                 />
                 <Input
                   value={form.email}
