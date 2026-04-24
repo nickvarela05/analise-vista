@@ -254,7 +254,7 @@ function Reunioes() {
       : null;
 
     if (editingId) {
-      const updatePayload: Record<string, any> = {
+      const baseUpdate = {
         ...rest,
         data_reuniao: new Date(form.data_reuniao).toISOString(),
         duracao_min: Number(form.duracao_min) || null,
@@ -262,11 +262,9 @@ function Reunioes() {
         equipe_toda: form.equipe_toda,
         participantes,
       };
-      if (audio_path) {
-        updatePayload.audio_path = audio_path;
-        updatePayload.audio_size = audio_size;
-        updatePayload.audio_mime = audio_mime;
-      }
+      const updatePayload = audio_path
+        ? { ...baseUpdate, audio_path, audio_size, audio_mime }
+        : baseUpdate;
       const { error } = await supabase.from("reuniao").update(updatePayload).eq("id", editingId);
       setSaving(false);
       if (error) {
