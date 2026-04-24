@@ -1,1 +1,7 @@
 project_id = "tcapurryhrqfykvzxsfq"
+
+[functions.transcrever-reuniao]
+verify_jwt = false
+
+[functions.analisar-transcricao]
+verify_jwt = false
