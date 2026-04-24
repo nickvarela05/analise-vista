@@ -1,26 +1,37 @@
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
-import { Link, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ErrorFallbackProps {
   error: Error;
-  reset: () => void;
+  reset?: () => void;
 }
 
 export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
-  const router = useRouter();
-
   const handleRetry = () => {
-    void router.invalidate();
-    reset();
+    try {
+      reset?.();
+    } catch {
+      // ignore
+    }
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  };
+
+  const handleHome = () => {
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
   };
 
   const message = error?.message || "Erro desconhecido ao carregar a página.";
   const stack = error?.stack;
+  const isDev =
+    typeof import.meta !== "undefined" && (import.meta as any)?.env?.DEV;
 
   return (
-    <div className="flex min-h-[60vh] w-full items-center justify-center p-4 sm:p-6">
+    <div className="flex min-h-[60vh] w-full items-center justify-center bg-background p-4 sm:p-6">
       <Card className="w-full max-w-2xl border-destructive/30">
         <CardHeader className="space-y-2">
           <div className="flex items-center gap-3">
@@ -33,8 +44,7 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
           </div>
           <p className="text-sm text-muted-foreground">
             Não foi possível renderizar o conteúdo. Você pode tentar recarregar
-            esta rota ou voltar à tela inicial — o restante da aplicação
-            continua funcionando.
+            esta rota ou voltar à tela inicial.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -47,7 +57,7 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
             </p>
           </div>
 
-          {stack && import.meta.env.DEV && (
+          {stack && isDev && (
             <details className="rounded-md border bg-muted/30 p-3">
               <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Detalhes técnicos (dev)
@@ -62,10 +72,8 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
             <Button onClick={handleRetry}>
               <RefreshCw className="mr-2 h-4 w-4" /> Tentar novamente
             </Button>
-            <Button variant="outline" asChild>
-              <Link to="/">
-                <Home className="mr-2 h-4 w-4" /> Ir para o início
-              </Link>
+            <Button variant="outline" onClick={handleHome}>
+              <Home className="mr-2 h-4 w-4" /> Ir para o início
             </Button>
           </div>
         </CardContent>
