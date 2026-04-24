@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
         participantes_detectados:
           insights.participantes_detectados.length > 0
             ? insights.participantes_detectados
-            : speakers.map((s) => `Falante ${s}`),
+            : speakers.map((s: string) => `Falante ${s}`),
         transcricao_status: "concluido",
         transcricao_erro: null,
       })
