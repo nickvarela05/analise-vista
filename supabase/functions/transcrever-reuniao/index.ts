@@ -256,9 +256,11 @@ Deno.serve(async (req) => {
         })
         .eq("id", reuniaoId);
     }
+    // Retorna 200 com payload de erro para o cliente NÃO crashar — o status já foi
+    // gravado em transcricao_status='erro' e a mensagem em transcricao_erro.
     return new Response(
-      JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({ ok: false, error: String(e?.message ?? e) }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
