@@ -987,7 +987,21 @@ function Reunioes() {
                       )}
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 flex-wrap gap-1">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      disabled={generatingReport}
+                      onClick={() => handleGerarRelatorio(openDetail)}
+                      title="Gera um relatório detalhado em Word usando IA"
+                    >
+                      {generatingReport ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Gerar relatório (Word)
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => openEdit(openDetail)}>
                       <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                     </Button>
