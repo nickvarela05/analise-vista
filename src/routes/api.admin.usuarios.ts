@@ -151,7 +151,7 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           return jsonError("Ação inválida", 400);
         } catch (e) {
           if (e instanceof Response) return e;
-          if (e instanceof z.ZodError) return jsonError(e.errors[0]?.message ?? "Dados inválidos", 400);
+          if (e instanceof z.ZodError) return jsonError(e.issues[0]?.message ?? "Dados inválidos", 400);
           return jsonError((e as Error).message, 500);
         }
       },
