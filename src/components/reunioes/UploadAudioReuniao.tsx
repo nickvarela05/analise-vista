@@ -116,7 +116,7 @@ export function UploadAudioReuniao({
       return;
     }
 
-    await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: file.type });
+    await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: normalizedType });
     setUploading(false);
 
     // Se já existe reunião salva, dispara processamento
