@@ -281,10 +281,10 @@ function Relatorios() {
           placeholder="Buscar por código, título ou cliente..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
+          className="w-full sm:max-w-sm"
         />
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os status</SelectItem>
             {STATUS_OPTS.map((s) => (
@@ -294,7 +294,7 @@ function Relatorios() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="overflow-x-auto">
         {isLoading ? (
           <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : data.length === 0 ? (

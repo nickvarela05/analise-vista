@@ -57,14 +57,14 @@ export function TarefaFilters({ value, onChange, colabs }: Props) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="relative">
+    <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-none">
+      <div className="relative flex-1 sm:flex-none">
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar tarefas..."
           value={value.search}
           onChange={(e) => onChange({ ...value, search: e.target.value })}
-          className="h-9 w-64 pl-8"
+          className="h-9 w-full pl-8 sm:w-64"
         />
       </div>
 

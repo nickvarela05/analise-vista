@@ -436,13 +436,13 @@ function Tarefas() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} />
 
-        <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "lista")}>
+        <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "lista")} className="ml-auto">
           <TabsList className="h-9">
             <TabsTrigger value="kanban" className="text-xs">
-              <LayoutGrid className="mr-1.5 h-3.5 w-3.5" /> Kanban
+              <LayoutGrid className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Kanban</span>
             </TabsTrigger>
             <TabsTrigger value="lista" className="text-xs">
-              <ListIcon className="mr-1.5 h-3.5 w-3.5" /> Lista
+              <ListIcon className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Lista</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -450,9 +450,9 @@ function Tarefas() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <Card className="mb-3 flex items-center gap-2 border-primary/40 bg-primary/5 p-2">
+        <Card className="mb-3 flex flex-wrap items-center gap-2 border-primary/40 bg-primary/5 p-2">
           <span className="ml-2 text-sm font-medium">{selectedIds.size} selecionada(s)</span>
-          <div className="ml-auto flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5 sm:ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline">

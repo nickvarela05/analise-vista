@@ -327,7 +327,7 @@ function Avisos() {
       />
 
       {/* KPIs */}
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <KpiTile icon={Bell} label="Avisos ativos" value={kpis.ativos} tone="primary" />
         <KpiTile
           icon={AlertTriangle}
@@ -345,9 +345,9 @@ function Avisos() {
       </div>
 
       {/* Filtros */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Tabs value={urgencia} onValueChange={(v) => setUrgencia(v as FiltroUrgencia)}>
-          <TabsList>
+      <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
+        <Tabs value={urgencia} onValueChange={(v) => setUrgencia(v as FiltroUrgencia)} className="w-full sm:w-auto">
+          <TabsList className="w-full overflow-x-auto sm:w-auto">
             <TabsTrigger value="todos">Todos</TabsTrigger>
             <TabsTrigger value="critico" className="gap-1">
               <AlertTriangle className="h-3 w-3" /> Críticos
@@ -369,7 +369,7 @@ function Avisos() {
           </TabsList>
         </Tabs>
 
-        <div className="relative ml-auto w-full max-w-xs">
+        <div className="relative w-full sm:ml-auto sm:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={busca}

@@ -125,9 +125,9 @@ function Atividades() {
         title="Atividades semanais"
         description="Agenda consolidada — tarefas, demandas e reuniões com prazo no período."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-32 sm:w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="tarefa">Tarefas</SelectItem>
@@ -136,7 +136,7 @@ function Atividades() {
               </SelectContent>
             </Select>
             <Select value={periodo} onValueChange={(v) => setPeriodo(v as Periodo)}>
-              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-28 sm:w-32"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="semana">Semana</SelectItem>
                 <SelectItem value="mes">Mês</SelectItem>
@@ -146,20 +146,21 @@ function Atividades() {
         }
       />
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={navPrev}><ChevronLeft className="h-4 w-4" /></Button>
           <Button variant="outline" onClick={hoje}>Hoje</Button>
           <Button variant="outline" size="icon" onClick={navNext}><ChevronRight className="h-4 w-4" /></Button>
         </div>
-        <div className="flex items-center gap-2 text-sm font-medium">
+        <div className="flex items-center gap-2 text-xs font-medium sm:text-sm">
           <CalendarRange className="h-4 w-4 text-muted-foreground" />
-          {format(inicio, "dd 'de' MMMM", { locale: ptBR })} – {format(fim, "dd 'de' MMMM yyyy", { locale: ptBR })}
+          <span className="hidden sm:inline">{format(inicio, "dd 'de' MMMM", { locale: ptBR })} – {format(fim, "dd 'de' MMMM yyyy", { locale: ptBR })}</span>
+          <span className="sm:hidden">{format(inicio, "dd/MM", { locale: ptBR })} – {format(fim, "dd/MM/yy", { locale: ptBR })}</span>
         </div>
       </div>
 
       {periodo === "semana" ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-7">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           {dias.map((dia) => {
             const doDia = noPeriodo.filter((a) => isSameDay(a.data, dia));
             const isHoje = isSameDay(dia, new Date());
@@ -169,7 +170,7 @@ function Atividades() {
                 title={format(dia, "EEE dd/MM", { locale: ptBR })}
                 className={isHoje ? "ring-2 ring-primary/40" : ""}
               >
-                <div className="min-h-[180px] space-y-2">
+                <div className="min-h-[140px] space-y-2 sm:min-h-[180px]">
                   {doDia.length === 0 ? (
                     <p className="text-xs text-muted-foreground">—</p>
                   ) : (
@@ -190,34 +191,36 @@ function Atividades() {
         </div>
       ) : (
         <PanelCard title={format(cursor, "MMMM yyyy", { locale: ptBR })}>
-          <div className="grid grid-cols-7 gap-2">
-            {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => (
-              <div key={d} className="px-2 py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground">
-                {d}
-              </div>
-            ))}
-            {dias.map((dia) => {
-              const doDia = noPeriodo.filter((a) => isSameDay(a.data, dia));
-              const isHoje = isSameDay(dia, new Date());
-              return (
-                <div
-                  key={dia.toISOString()}
-                  className={`min-h-[90px] rounded-md border p-1.5 text-xs ${isHoje ? "border-primary bg-primary/5" : "border-border"}`}
-                >
-                  <div className="mb-1 text-[10px] font-semibold">{format(dia, "dd")}</div>
-                  <div className="space-y-1">
-                    {doDia.slice(0, 3).map((a) => (
-                      <div key={a.id} className={`truncate rounded px-1 py-0.5 text-[10px] ${tipoColor[a.tipo]}`}>
-                        {a.titulo}
-                      </div>
-                    ))}
-                    {doDia.length > 3 && (
-                      <p className="text-[10px] text-muted-foreground">+{doDia.length - 3}</p>
-                    )}
-                  </div>
+          <div className="-mx-2 overflow-x-auto px-2">
+            <div className="grid min-w-[640px] grid-cols-7 gap-2">
+              {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => (
+                <div key={d} className="px-2 py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground">
+                  {d}
                 </div>
-              );
-            })}
+              ))}
+              {dias.map((dia) => {
+                const doDia = noPeriodo.filter((a) => isSameDay(a.data, dia));
+                const isHoje = isSameDay(dia, new Date());
+                return (
+                  <div
+                    key={dia.toISOString()}
+                    className={`min-h-[90px] rounded-md border p-1.5 text-xs ${isHoje ? "border-primary bg-primary/5" : "border-border"}`}
+                  >
+                    <div className="mb-1 text-[10px] font-semibold">{format(dia, "dd")}</div>
+                    <div className="space-y-1">
+                      {doDia.slice(0, 3).map((a) => (
+                        <div key={a.id} className={`truncate rounded px-1 py-0.5 text-[10px] ${tipoColor[a.tipo]}`}>
+                          {a.titulo}
+                        </div>
+                      ))}
+                      {doDia.length > 3 && (
+                        <p className="text-[10px] text-muted-foreground">+{doDia.length - 3}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </PanelCard>
       )}

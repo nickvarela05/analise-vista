@@ -27,7 +27,7 @@ export function AppHeader() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:gap-3 sm:px-4">
       <SidebarTrigger />
 
       <div className="relative hidden flex-1 max-w-md md:block">
