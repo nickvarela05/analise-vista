@@ -718,12 +718,41 @@ function Reunioes() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Pauta</Label>
+              <Label className="flex items-center gap-1.5">
+                Pauta
+                {form.pauta && audioPath && (
+                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
+                    <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
+                  </Badge>
+                )}
+              </Label>
               <Textarea rows={3} value={form.pauta} onChange={(e) => setForm({ ...form, pauta: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>Resumo</Label>
+              <Label className="flex items-center gap-1.5">
+                Resumo
+                {form.resumo && audioPath && (
+                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
+                    <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
+                  </Badge>
+                )}
+              </Label>
               <Textarea rows={3} value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                Próximos passos
+                {form.proximos_passos && audioPath && (
+                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
+                    <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
+                  </Badge>
+                )}
+              </Label>
+              <Textarea
+                rows={3}
+                value={form.proximos_passos}
+                onChange={(e) => setForm({ ...form, proximos_passos: e.target.value })}
+              />
             </div>
             {form.transcricao && (
               <Accordion type="single" collapsible>
