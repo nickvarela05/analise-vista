@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Upload, Calendar as CalIcon, Users, FileText, ListChecks } from "lucide-react";
+import { Plus, Loader2, Upload, Calendar as CalIcon, Users, FileText, ListChecks, CheckCircle2, XCircle, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, isThisMonth, isFuture } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { KpiTile } from "@/components/KpiTile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
