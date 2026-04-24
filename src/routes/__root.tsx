@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { ErrorFallback } from "@/components/ErrorFallback";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
