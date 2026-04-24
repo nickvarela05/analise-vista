@@ -396,6 +396,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           cargo: string | null
+          colaborador_id: string | null
           created_at: string
           email: string
           id: string
@@ -406,6 +407,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           cargo?: string | null
+          colaborador_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -416,6 +418,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           cargo?: string | null
+          colaborador_id?: string | null
           created_at?: string
           email?: string
           id?: string
@@ -423,7 +426,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reuniao: {
         Row: {
