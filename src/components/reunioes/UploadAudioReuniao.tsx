@@ -84,8 +84,13 @@ export function UploadAudioReuniao({
   };
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith("audio/")) {
-      toast.error("Arquivo não é um áudio válido");
+    const isAudioMime = file.type.startsWith("audio/");
+    const isMp4Container = file.type === "video/mp4" || /\.mp4$/i.test(file.name);
+    const hasAudioExt = AUDIO_EXTENSIONS.test(file.name);
+    if (!isAudioMime && !isMp4Container && !hasAudioExt) {
+      toast.error("Arquivo não é um áudio válido", {
+        description: "Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
+      });
       return;
     }
     if (file.size > MAX_BYTES) {
