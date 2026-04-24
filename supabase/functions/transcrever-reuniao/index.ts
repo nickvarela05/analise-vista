@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
 
   let reuniaoId: string | null = null;
   try {
-    if (!ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY não configurada");
+    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY não configurada");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
     const body = await req.json();
