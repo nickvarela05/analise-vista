@@ -110,20 +110,41 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           const action = url.searchParams.get("action");
           const body = await request.json();
 
-          if (action === "invite") {
-            const data = inviteSchema.parse(body);
-            const { data: invited, error } = await admin.auth.admin.inviteUserByEmail(data.email, {
-              data: { nome: data.nome },
+          if (action === "create") {
+            const data = createSchema.parse(body);
+            const tempPassword = gerarSenhaTemporaria();
+            const { data: created, error } = await admin.auth.admin.createUser({
+              email: data.email,
+              password: tempPassword,
+              email_confirm: true,
+              user_metadata: { nome: data.nome },
             });
             if (error) return jsonError(error.message, 400);
-            const newId = invited.user?.id;
+            const newId = created.user?.id;
             if (!newId) return jsonError("Falha ao criar usuário", 500);
             await admin.from("user_roles").delete().eq("user_id", newId);
             await admin.from("user_roles").insert({ user_id: newId, role: data.role });
-            const updates: { nome: string; colaborador_id?: string } = { nome: data.nome };
+            const updates: { nome: string; must_change_password: boolean; colaborador_id?: string } = {
+              nome: data.nome,
+              must_change_password: true,
+            };
             if (data.colaborador_id) updates.colaborador_id = data.colaborador_id;
             await admin.from("profiles").update(updates).eq("user_id", newId);
-            return Response.json({ ok: true, user_id: newId });
+            return Response.json({ ok: true, user_id: newId, temp_password: tempPassword });
+          }
+
+          if (action === "reset-password") {
+            const data = resetSchema.parse(body);
+            const tempPassword = gerarSenhaTemporaria();
+            const { error } = await admin.auth.admin.updateUserById(data.user_id, {
+              password: tempPassword,
+            });
+            if (error) return jsonError(error.message, 400);
+            await admin
+              .from("profiles")
+              .update({ must_change_password: true })
+              .eq("user_id", data.user_id);
+            return Response.json({ ok: true, temp_password: tempPassword });
           }
 
           if (action === "role") {
