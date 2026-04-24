@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <SidebarInset className="flex flex-1 flex-col">
           <AppHeader />
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
         </SidebarInset>
       </div>
     </SidebarProvider>
