@@ -59,6 +59,21 @@ async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Prom
 
   if (!res.ok) {
     const errText = await res.text();
+    // Mensagens amigáveis para erros comuns do ElevenLabs
+    if (res.status === 401 && /unusual_activity|detected_unusual/i.test(errText)) {
+      throw new Error(
+        "ElevenLabs bloqueou a chave (Free Tier desabilitado por atividade incomum). Faça upgrade para um plano pago em elevenlabs.io ou gere uma nova API key e atualize o secret ELEVENLABS_API_KEY.",
+      );
+    }
+    if (res.status === 401) {
+      throw new Error("ElevenLabs: API key inválida ou sem permissão. Verifique o secret ELEVENLABS_API_KEY.");
+    }
+    if (res.status === 402) {
+      throw new Error("ElevenLabs sem créditos. Adicione créditos ou faça upgrade do plano.");
+    }
+    if (res.status === 429) {
+      throw new Error("ElevenLabs: limite de requisições atingido. Aguarde alguns minutos e tente novamente.");
+    }
     throw new Error(`ElevenLabs (${res.status}): ${errText.slice(0, 300)}`);
   }
 
@@ -241,9 +256,11 @@ Deno.serve(async (req) => {
         })
         .eq("id", reuniaoId);
     }
+    // Retorna 200 com payload de erro para o cliente NÃO crashar — o status já foi
+    // gravado em transcricao_status='erro' e a mensagem em transcricao_erro.
     return new Response(
-      JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      JSON.stringify({ ok: false, error: String(e?.message ?? e) }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });
