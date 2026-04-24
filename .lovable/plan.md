@@ -1,95 +1,49 @@
+## Objetivo
 
-# 🎙️ Transcrição + análise IA de reuniões
+Substituir o ElevenLabs (Free Tier bloqueado por "atividade incomum") pelo **Groq Whisper-large-v3**: gratuito, rápido, sem cartão, sem bloqueio de IP de servidor. Manter o código antigo do ElevenLabs comentado para rollback fácil.
 
-## Decisões já confirmadas
-- **Captura**: apenas upload de arquivo (mp3, m4a, wav, webm, ogg, máx 100MB)
-- **Transcrição**: ElevenLabs Scribe (`scribe_v2`, `language_code=por`, `diarize=true`, `tag_audio_events=true`)
-- **Análise IA**: automática após transcrever + botão "Regerar com IA" sempre disponível
-- **Modelo IA**: `google/gemini-2.5-flash` via Lovable AI Gateway (já configurado)
+## Pré-requisito (você precisa fazer antes)
 
----
+1. Acesse **https://console.groq.com**
+2. Crie conta gratuita (login com Google funciona)
+3. Vá em **API Keys** → **Create API Key**
+4. Copie a chave (começa com `gsk_...`)
 
-## 1. Migração de banco
+Depois que eu começar a implementação, vou pedir essa chave via tool de secret (`GROQ_API_KEY`).
 
-Adicionar à tabela `reuniao`:
-- `transcricao_status` (novo enum `reuniao_transcricao_status`: `pendente | processando | concluido | erro`, default `pendente`)
-- `transcricao_erro` (text, nullable)
-- `decisoes` (text[], nullable)
-- `participantes_detectados` (text[], nullable)
+## O que muda
 
-Habilitar **Realtime** na tabela `reuniao` (`ALTER PUBLICATION supabase_realtime ADD TABLE public.reuniao`) pra UI atualizar sozinha quando o processamento terminar.
+### 1. Edge function `supabase/functions/transcrever-reuniao/index.ts`
+- Adicionar função `transcribeWithGroq(audioBlob, fileName)` que chama:
+  ```
+  POST https://api.groq.com/openai/v1/audio/transcriptions
+  model=whisper-large-v3
+  language=pt
+  response_format=verbose_json
+  temperature=0
+  ```
+- Comentar (não apagar) a função `transcribeWithElevenLabs` e o check da `ELEVENLABS_API_KEY`, com cabeçalho explicando o motivo, para rollback rápido se quisermos voltar.
+- Trocar a chamada no handler para usar Groq.
+- Tratamento de erros específicos:
+  - 401 → "Groq API key inválida"
+  - 413 → "Áudio maior que 25 MB. Comprima ou divida o arquivo."
+  - 429 → "Limite de requisições Groq atingido, aguarde 1 min."
 
-## 2. Secret
+### 2. Sem mudanças em
+- Frontend (mesma chamada à edge function)
+- Banco de dados (mesmos campos)
+- Análise por IA com Gemini (continua extraindo resumo, pauta, próximos passos, decisões e participantes a partir do texto)
 
-Pedir `ELEVENLABS_API_KEY` via `add_secret` (campo seguro, não passa pelo chat).
-`LOVABLE_API_KEY` ✅ já existe.
+## Limitações a saber
 
-## 3. Edge Function `transcrever-reuniao`
+- **Máximo 25 MB por arquivo**. Reuniões de 1h em MP3 mono 32–64 kbps cabem (~14–28 MB). Se o áudio atual for WAV ou bitrate alto e estourar, te aviso e adiciono compressão depois.
+- **Sem diarização** (texto corrido, sem "Falante 1/2"). Confirmado que está OK pra você. O Gemini ainda detecta nomes mencionados.
 
-Endpoint POST recebe `{ reuniao_id, audio_path }`:
-1. UPDATE `transcricao_status='processando'`
-2. Baixa áudio do bucket `reuniao-audios` via service role
-3. Chama ElevenLabs Scribe → monta transcrição formatada por speaker
-4. Chama Lovable AI (`gemini-2.5-flash`) com **tool calling estruturado** pra extrair: `resumo`, `pauta`, `proximos_passos`, `decisoes`, `participantes_detectados`
-5. UPDATE final com todos os campos + `status='concluido'`
-6. Tratamento de erro: salva mensagem em `transcricao_erro`, status='erro'
-7. Captura 429 (rate limit) e 402 (créditos) com mensagens amigáveis
+## Passos da implementação (após sua aprovação)
 
-## 4. Edge Function `analisar-transcricao`
+1. Pedir o secret `GROQ_API_KEY` via tool.
+2. Editar `supabase/functions/transcrever-reuniao/index.ts` (adicionar Groq, comentar ElevenLabs).
+3. Deploy automático.
+4. Você clica em **Tentar novamente** no card da reunião com erro e validamos.
 
-POST recebe `{ reuniao_id }`. Pula transcrição, só roda a IA novamente sobre `reuniao.transcricao` existente. Usado pelo botão "Regerar".
-
-## 5. Componente `UploadAudioReuniao.tsx`
-
-Dentro do dialog de criar/editar reunião, seção destacada **"🎙️ Áudio e análise automática"**:
-- Drop zone (drag & drop ou clique)
-- Validação client-side (tipo + tamanho)
-- Player nativo após upload
-- Barra de progresso em 3 fases: 📤 Enviando → 🎧 Transcrevendo → ✨ Analisando
-- Polling/realtime no `transcricao_status`
-- Mensagem final: "Pronto! Campos preenchidos automaticamente — você pode editar."
-- Estado de erro com botão "Tentar novamente"
-
-## 6. Refatorar `ReuniaoDialog`
-
-- `<UploadAudioReuniao />` no topo
-- Badge **"✨ Gerado por IA"** ao lado de Resumo, Pauta, Próximos passos, Decisões quando preenchidos pela IA
-- Botão **"🔄 Regerar análise com IA"**
-- Accordion **"Ver transcrição completa"** (formatada por speaker)
-- Campo novo **"Decisões tomadas"** (lista)
-
-## 7. Refatorar `ReuniaoSheet` (visualização) e `ReuniaoCard`
-
-- Ícone ✨ no card quando há IA
-- Sheet: nova seção "Decisões tomadas" + chips "Participantes detectados pela IA" + accordion da transcrição completa formatada
-- Player de áudio (já existe) — mantido
-
-## 8. Componente auxiliar `TranscricaoFormatada.tsx`
-
-Renderiza transcrição agrupada por speaker com avatar/cor por falante.
-
----
-
-## 📦 Arquivos
-
-**Novos:**
-- `supabase/migrations/<timestamp>_reuniao_ia.sql`
-- `supabase/functions/transcrever-reuniao/index.ts`
-- `supabase/functions/analisar-transcricao/index.ts`
-- `src/components/reunioes/UploadAudioReuniao.tsx`
-- `src/components/reunioes/TranscricaoFormatada.tsx`
-
-**Modificados:**
-- `src/routes/reunioes.tsx` (dialog criar/editar + Sheet de detalhe + card + tipos)
-
----
-
-## ⏱️ Expectativa de tempo (UX)
-
-| Reunião | Total estimado |
-|---|---|
-| 15 min | ~20s |
-| 1h | ~75s |
-| 2h | ~3min |
-
-Como o processamento é assíncrono e usa Realtime, o usuário pode fechar o dialog e a UI atualiza sozinha quando termina.
+Pode confirmar e me dizer quando tiver a `GROQ_API_KEY` em mãos?
