@@ -278,6 +278,16 @@ export function UploadAudioReuniao({
               <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Iniciar análise por IA
             </Button>
           )}
+
+          {status === "pendente" && !reuniaoId && (
+            <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-sm text-primary">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Clique em <strong>Salvar</strong> para iniciar a transcrição e análise por IA
+                automaticamente. Resumo, pauta, decisões e próximos passos serão preenchidos.
+              </span>
+            </div>
+          )}
         </div>
       )}
 
