@@ -408,6 +408,17 @@ function Reunioes() {
     }
   };
 
+  const [regenerating, setRegenerating] = React.useState(false);
+  const handleRegerar = async (reuniaoId: string) => {
+    setRegenerating(true);
+    const { error } = await supabase.functions.invoke("analisar-transcricao", {
+      body: { reuniao_id: reuniaoId },
+    });
+    setRegenerating(false);
+    if (error) toast.error("Falha ao regerar análise", { description: error.message });
+    else toast.info("✨ Regerando análise com IA...", { description: "A reunião será atualizada em instantes." });
+  };
+
   // Filtragem em memória
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -594,6 +605,22 @@ function Reunioes() {
                   />
                 </div>
                 <div className="flex flex-wrap gap-1">
+                  {r.transcricao && r.resumo && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-primary/30 bg-primary/5 text-[10px] text-primary"
+                    >
+                      <Sparkles className="h-3 w-3" /> IA
+                    </Badge>
+                  )}
+                  {r.transcricao_status === "processando" && (
+                    <Badge variant="outline" className="gap-1 text-[10px]">
+                      <Loader2 className="h-3 w-3 animate-spin" /> processando
+                    </Badge>
+                  )}
+                  {r.transcricao_status === "erro" && (
+                    <Badge variant="destructive" className="text-[10px]">⚠️ erro IA</Badge>
+                  )}
                   {r.participantes && r.participantes.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-[10px]">
                       <Users className="h-3 w-3" /> {r.participantes.length}
@@ -800,6 +827,19 @@ function Reunioes() {
                       <Badge variant="outline" className="capitalize">
                         {openDetail.tipo}
                       </Badge>
+                      {openDetail.transcricao && openDetail.resumo && (
+                        <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-primary">
+                          <Sparkles className="h-3 w-3" /> Analisada por IA
+                        </Badge>
+                      )}
+                      {openDetail.transcricao_status === "processando" && (
+                        <Badge variant="outline" className="gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> processando
+                        </Badge>
+                      )}
+                      {openDetail.transcricao_status === "erro" && (
+                        <Badge variant="destructive">⚠️ erro IA</Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
@@ -903,11 +943,84 @@ function Reunioes() {
 
                 {openDetail.pauta && <Section title="Pauta" content={openDetail.pauta} />}
                 {openDetail.resumo && <Section title="Resumo" content={openDetail.resumo} />}
-                {openDetail.transcricao && (
-                  <Section title="Transcrição" content={openDetail.transcricao} mono />
-                )}
                 {openDetail.proximos_passos && (
                   <Section title="Próximos passos" content={openDetail.proximos_passos} />
+                )}
+
+                {openDetail.decisoes && openDetail.decisoes.length > 0 && (
+                  <div>
+                    <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                      <CheckCheck className="h-3.5 w-3.5" /> Decisões tomadas
+                    </p>
+                    <ul className="space-y-1.5 rounded-md border bg-muted/30 p-3">
+                      {openDetail.decisoes.map((d: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span className="mt-0.5 text-success">✓</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {openDetail.participantes_detectados &&
+                  openDetail.participantes_detectados.length > 0 && (
+                    <div>
+                      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                        <Sparkles className="h-3.5 w-3.5" /> Participantes detectados pela IA
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {openDetail.participantes_detectados.map((p: string, i: number) => (
+                          <Badge
+                            key={i}
+                            variant="outline"
+                            className="border-primary/30 bg-primary/5 text-primary"
+                          >
+                            {p}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {openDetail.transcricao_erro && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                    <p className="font-semibold">⚠️ Erro no processamento IA</p>
+                    <p className="mt-1 text-xs">{openDetail.transcricao_erro}</p>
+                  </div>
+                )}
+
+                {openDetail.transcricao && (
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="transcricao" className="rounded-md border px-3">
+                      <AccordionTrigger className="text-sm">
+                        <span className="flex items-center gap-1.5">
+                          <FileText className="h-3.5 w-3.5" /> Ver transcrição completa
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <TranscricaoFormatada transcricao={openDetail.transcricao} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+
+                {openDetail.transcricao && (
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRegerar(openDetail.id)}
+                      disabled={regenerating || openDetail.transcricao_status === "processando"}
+                    >
+                      {regenerating || openDetail.transcricao_status === "processando" ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Regerar análise com IA
+                    </Button>
+                  </div>
                 )}
               </div>
             </>
