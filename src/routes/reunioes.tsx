@@ -759,51 +759,7 @@ function Reunioes() {
                   setAudioMime(info.audio_mime || null);
                   setAudioUploadedThisSession(!!info.audio_path);
                 }}
-                onRequestEarlyAnalysis={async () => {
-                  if (!user || !audioPath) return;
-                  if (!form.titulo.trim()) {
-                    toast.error("Informe um título antes de iniciar a análise");
-                    return;
-                  }
-                  // Cria rascunho para podermos atrelar a transcrição
-                  const { participantes_str, ...rest } = form;
-                  const participantes = participantes_str
-                    ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
-                    : null;
-                  const { data: inserted, error } = await supabase
-                    .from("reuniao")
-                    .insert({
-                      ...rest,
-                      data_reuniao: new Date(form.data_reuniao).toISOString(),
-                      duracao_min: Number(form.duracao_min) || null,
-                      responsaveis_ids: form.responsaveis_ids,
-                      equipe_toda: form.equipe_toda,
-                      participantes,
-                      audio_path: audioPath,
-                      audio_size: audioSize,
-                      audio_mime: audioMime,
-                      criado_por: user.id,
-                    })
-                    .select("id")
-                    .single();
-                  if (error || !inserted) {
-                    toast.error("Erro ao criar rascunho", { description: error?.message });
-                    return;
-                  }
-                  setEditingId(inserted.id);
-                  setAudioUploadedThisSession(false);
-                  const { error: fnError } = await supabase.functions.invoke("transcrever-reuniao", {
-                    body: { reuniao_id: inserted.id, audio_path: audioPath },
-                  });
-                  if (fnError) {
-                    toast.error("Falha ao iniciar análise", { description: fnError.message });
-                  } else {
-                    toast.info("🎧 Transcrevendo e analisando com IA...", {
-                      description: "Os campos serão preenchidos automaticamente. Continue editando e salve depois.",
-                    });
-                  }
-                  qc.invalidateQueries({ queryKey: ["reunioes"] });
-                }}
+                onRequestEarlyAnalysis={handleEarlyAnalysis}
               />
             )}
 
