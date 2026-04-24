@@ -50,6 +50,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   }),
   shellComponent: RootShell,
   component: RootComponent,
+  errorComponent: ({ error, reset }) => <ErrorFallback error={error} reset={reset} />,
   notFoundComponent: NotFoundComponent,
 });
 
