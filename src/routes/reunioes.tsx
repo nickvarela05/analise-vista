@@ -190,7 +190,7 @@ function Reunioes() {
     },
   });
 
-  // Audio signed URL para detalhe
+  // Audio signed URL para detalhe (Sheet)
   React.useEffect(() => {
     let active = true;
     setAudioUrl(null);
@@ -207,10 +207,53 @@ function Reunioes() {
     };
   }, [openDetail]);
 
+  // Realtime: atualiza lista quando edge function termina o processamento
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("reuniao-rt")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "reuniao" },
+        (payload) => {
+          qc.invalidateQueries({ queryKey: ["reunioes"] });
+          // Mantém o detail aberto sincronizado
+          setOpenDetail((cur: any) =>
+            cur && cur.id === (payload.new as any).id ? { ...cur, ...payload.new } : cur,
+          );
+          // Mantém form aberto sincronizado se for a mesma reunião
+          if (
+            editingId &&
+            (payload.new as any).id === editingId &&
+            (payload.new as any).transcricao_status === "concluido"
+          ) {
+            const n = payload.new as any;
+            setForm((f) => ({
+              ...f,
+              transcricao: n.transcricao ?? f.transcricao,
+              resumo: n.resumo ?? f.resumo,
+              pauta: n.pauta ?? f.pauta,
+              proximos_passos: n.proximos_passos ?? f.proximos_passos,
+            }));
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc, editingId]);
+
+  const resetAudioState = () => {
+    setAudioPath(null);
+    setAudioSize(null);
+    setAudioMime(null);
+    setAudioUploadedThisSession(false);
+  };
+
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
-    setAudio(null);
+    resetAudioState();
     setFormOpen(true);
   };
 
@@ -233,9 +276,18 @@ function Reunioes() {
       responsaveis_ids: r.responsaveis_ids ?? [],
       equipe_toda: !!r.equipe_toda,
     });
-    setAudio(null);
+    setAudioPath(r.audio_path ?? null);
+    setAudioSize(r.audio_size ?? null);
+    setAudioMime(r.audio_mime ?? null);
+    setAudioUploadedThisSession(false);
     setFormOpen(true);
   };
+
+  // Encontra a reunião atual em edição (para status de transcrição em tempo real)
+  const editingRow = React.useMemo(
+    () => (editingId ? data.find((r: any) => r.id === editingId) : null),
+    [editingId, data],
+  );
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,76 +297,83 @@ function Reunioes() {
     }
     setSaving(true);
 
-    let audio_path: string | null = null;
-    let audio_size: number | null = null;
-    let audio_mime: string | null = null;
-
-    if (audio) {
-      const path = `${user.id}/${Date.now()}-${audio.name}`;
-      const { error: upErr } = await supabase.storage.from("reuniao-audios").upload(path, audio);
-      if (upErr) {
-        setSaving(false);
-        toast.error("Erro no upload do áudio", { description: upErr.message });
-        return;
-      }
-      audio_path = path;
-      audio_size = audio.size;
-      audio_mime = audio.type;
-    }
-
     const { participantes_str, ...rest } = form;
     const participantes = participantes_str
       ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
       : null;
 
+    let savedId = editingId;
+
     if (editingId) {
-      const baseUpdate = {
+      const updatePayload: any = {
         ...rest,
         data_reuniao: new Date(form.data_reuniao).toISOString(),
         duracao_min: Number(form.duracao_min) || null,
         responsaveis_ids: form.responsaveis_ids,
         equipe_toda: form.equipe_toda,
         participantes,
+        audio_path: audioPath,
+        audio_size: audioSize,
+        audio_mime: audioMime,
       };
-      const updatePayload = audio_path
-        ? { ...baseUpdate, audio_path, audio_size, audio_mime }
-        : baseUpdate;
       const { error } = await supabase.from("reuniao").update(updatePayload).eq("id", editingId);
-      setSaving(false);
       if (error) {
+        setSaving(false);
         toast.error("Erro ao atualizar", { description: error.message });
         return;
       }
       toast.success("Reunião atualizada");
     } else {
-      const { error } = await supabase.from("reuniao").insert({
-        ...rest,
-        data_reuniao: new Date(form.data_reuniao).toISOString(),
-        duracao_min: Number(form.duracao_min) || null,
-        responsaveis_ids: form.responsaveis_ids,
-        equipe_toda: form.equipe_toda,
-        participantes,
-        audio_path,
-        audio_size,
-        audio_mime,
-        criado_por: user.id,
-      });
-      setSaving(false);
-      if (error) {
-        toast.error("Erro ao salvar", { description: error.message });
+      const { data: inserted, error } = await supabase
+        .from("reuniao")
+        .insert({
+          ...rest,
+          data_reuniao: new Date(form.data_reuniao).toISOString(),
+          duracao_min: Number(form.duracao_min) || null,
+          responsaveis_ids: form.responsaveis_ids,
+          equipe_toda: form.equipe_toda,
+          participantes,
+          audio_path: audioPath,
+          audio_size: audioSize,
+          audio_mime: audioMime,
+          criado_por: user.id,
+        })
+        .select("id")
+        .single();
+      if (error || !inserted) {
+        setSaving(false);
+        toast.error("Erro ao salvar", { description: error?.message });
         return;
       }
+      savedId = inserted.id;
       toast.success("Reunião registrada");
     }
 
+    // Se o áudio foi anexado nesta sessão e ainda não foi processado, dispara IA
+    if (savedId && audioPath && audioUploadedThisSession) {
+      supabase.functions
+        .invoke("transcrever-reuniao", {
+          body: { reuniao_id: savedId, audio_path: audioPath },
+        })
+        .then(({ error }) => {
+          if (error) toast.error("Falha ao iniciar análise IA", { description: error.message });
+          else
+            toast.info("🎧 Transcrevendo e analisando com IA...", {
+              description: "A reunião será atualizada automaticamente.",
+            });
+        });
+    }
+
+    setSaving(false);
     setFormOpen(false);
-    setAudio(null);
+    resetAudioState();
     setEditingId(null);
     setForm(emptyForm());
     qc.invalidateQueries({ queryKey: ["reunioes"] });
     qc.invalidateQueries({ queryKey: ["dash-reunioes"] });
     qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
   };
+
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
