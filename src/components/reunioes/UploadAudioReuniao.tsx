@@ -36,6 +36,7 @@ export function UploadAudioReuniao({
   errorMessage,
   onUploaded,
   onProcessingDone,
+  onRequestEarlyAnalysis,
 }: Props) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
