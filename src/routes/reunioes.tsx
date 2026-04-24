@@ -159,6 +159,7 @@ function Reunioes() {
   const [audioUploadedThisSession, setAudioUploadedThisSession] = React.useState(false);
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
+  const [analyzing, setAnalyzing] = React.useState(false);
 
   // Filtros
   const [search, setSearch] = React.useState("");
