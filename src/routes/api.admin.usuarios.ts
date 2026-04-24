@@ -10,12 +10,31 @@ export type UsuarioRow = {
   cargo: string | null;
   colaborador_id: string | null;
   role: "gestor" | "analista" | null;
+  must_change_password: boolean;
   created_at: string | null;
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
 };
 
-const inviteSchema = z.object({
+/** Gera senha temporária de 12 chars: maiúsc + minúsc + dígito + símbolo. */
+function gerarSenhaTemporaria(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnpqrstuvwxyz";
+  const digit = "23456789";
+  const symbol = "!@#$%&*?";
+  const all = upper + lower + digit + symbol;
+  const rand = (set: string) => set[Math.floor(Math.random() * set.length)];
+  const chars = [rand(upper), rand(lower), rand(digit), rand(symbol)];
+  for (let i = 0; i < 8; i++) chars.push(rand(all));
+  // shuffle
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
+}
+
+const createSchema = z.object({
   email: z.string().email().max(255),
   nome: z.string().min(1).max(120),
   role: z.enum(["gestor", "analista"]),
@@ -33,6 +52,7 @@ const linkSchema = z.object({
 });
 
 const deleteSchema = z.object({ user_id: z.string().uuid() });
+const resetSchema = z.object({ user_id: z.string().uuid() });
 
 export const Route = createFileRoute("/api/admin/usuarios")({
   server: {
