@@ -38,7 +38,13 @@ export function TarefaKanban({
 
   return (
     <ScrollArea className="w-full">
-      <div className="flex gap-3 pb-4">
+      <div
+        className="grid gap-3 pb-4"
+        style={{
+          gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(220px, 1fr))`,
+          minWidth: `${WORKFLOW.length * 220}px`,
+        }}
+      >
         {WORKFLOW.map((status) => {
           const items = grouped[status] ?? [];
           const isOver = dragOver === status;
@@ -56,7 +62,7 @@ export function TarefaKanban({
                 setDragOver(null);
                 if (id) onDropStatus(id, status);
               }}
-              className={`flex w-72 shrink-0 flex-col rounded-lg border-t-2 bg-muted/40 p-2 transition ${columnAccent(
+              className={`flex min-w-0 flex-col rounded-lg border-t-2 bg-muted/40 p-2 transition ${columnAccent(
                 status,
               )} ${isOver ? "bg-muted ring-2 ring-primary/40" : ""}`}
             >
