@@ -283,12 +283,37 @@ export function UploadAudioReuniao({
           )}
 
           {status === "pendente" && !reuniaoId && (
-            <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-sm text-primary">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                Clique em <strong>Salvar</strong> para iniciar a transcrição e análise por IA
-                automaticamente. Resumo, pauta, decisões e próximos passos serão preenchidos.
-              </span>
+            <div className="space-y-2">
+              {onRequestEarlyAnalysis && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="w-full"
+                  disabled={triggering}
+                  onClick={async () => {
+                    setTriggering(true);
+                    try {
+                      await onRequestEarlyAnalysis();
+                    } finally {
+                      setTriggering(false);
+                    }
+                  }}
+                >
+                  {triggering ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Iniciar análise por IA agora
+                </Button>
+              )}
+              <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs text-primary">
+                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>
+                  Você pode iniciar a análise agora (cria um rascunho automaticamente) ou clicar em{" "}
+                  <strong>Salvar</strong> para iniciar junto.
+                </span>
+              </div>
             </div>
           )}
         </div>
