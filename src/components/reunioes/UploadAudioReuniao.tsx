@@ -21,8 +21,10 @@ interface Props {
   onProcessingDone?: () => void;
 }
 
-const ACCEPT = "audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4";
+const ACCEPT =
+  "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
 const MAX_BYTES = 100 * 1024 * 1024;
+const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
   reuniaoId,
@@ -82,8 +84,13 @@ export function UploadAudioReuniao({
   };
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith("audio/")) {
-      toast.error("Arquivo não é um áudio válido");
+    const isAudioMime = file.type.startsWith("audio/");
+    const isMp4Container = file.type === "video/mp4" || /\.mp4$/i.test(file.name);
+    const hasAudioExt = AUDIO_EXTENSIONS.test(file.name);
+    if (!isAudioMime && !isMp4Container && !hasAudioExt) {
+      toast.error("Arquivo não é um áudio válido", {
+        description: "Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
+      });
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -95,9 +102,11 @@ export function UploadAudioReuniao({
     setUploadPct(15);
 
     const path = `${userId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+    const normalizedType =
+      file.type && file.type !== "video/mp4" ? file.type : "audio/mp4";
     const { error } = await supabase.storage.from("reuniao-audios").upload(path, file, {
       upsert: false,
-      contentType: file.type,
+      contentType: normalizedType,
     });
     setUploadPct(100);
 
@@ -107,7 +116,7 @@ export function UploadAudioReuniao({
       return;
     }
 
-    await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: file.type });
+    await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: normalizedType });
     setUploading(false);
 
     // Se já existe reunião salva, dispara processamento
