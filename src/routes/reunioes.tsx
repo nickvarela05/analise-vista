@@ -152,7 +152,11 @@ function Reunioes() {
 
   // Form
   const [form, setForm] = React.useState<FormState>(emptyForm());
-  const [audio, setAudio] = React.useState<File | null>(null);
+  // Áudio já enviado para o storage (caminho final). null = sem áudio.
+  const [audioPath, setAudioPath] = React.useState<string | null>(null);
+  const [audioSize, setAudioSize] = React.useState<number | null>(null);
+  const [audioMime, setAudioMime] = React.useState<string | null>(null);
+  const [audioUploadedThisSession, setAudioUploadedThisSession] = React.useState(false);
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
