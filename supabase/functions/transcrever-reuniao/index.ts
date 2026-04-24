@@ -10,7 +10,10 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+// ElevenLabs desativado: Free Tier bloqueia chamadas vindas de servidores
+// (detectado como "atividade incomum"). Mantido comentado para rollback rápido.
+// const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -39,6 +42,54 @@ function formatTranscriptByWords(words: any[]): string {
   return lines.join("\n\n");
 }
 
+// =============================================================
+// Groq Whisper-large-v3 — gratuito, rápido, sem bloqueio de IP.
+// =============================================================
+async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
+  text: string;
+  formatted: string;
+  speakers: string[];
+}> {
+  const fd = new FormData();
+  fd.append("file", audioBlob, fileName);
+  fd.append("model", "whisper-large-v3");
+  fd.append("language", "pt");
+  fd.append("response_format", "verbose_json");
+  fd.append("temperature", "0");
+
+  const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
+    body: fd,
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    if (res.status === 401) {
+      throw new Error("Groq: API key inválida. Verifique o secret GROQ_API_KEY em console.groq.com.");
+    }
+    if (res.status === 413) {
+      throw new Error("Áudio maior que 25 MB (limite do Groq Whisper). Comprima ou divida o arquivo antes de enviar.");
+    }
+    if (res.status === 429) {
+      throw new Error("Groq: limite de requisições atingido. Aguarde alguns minutos e tente novamente.");
+    }
+    throw new Error(`Groq Whisper (${res.status}): ${errText.slice(0, 300)}`);
+  }
+
+  const json = await res.json();
+  const text: string = json.text ?? "";
+  // Whisper não tem diarização nativa — retornamos o texto corrido.
+  // O Gemini detecta participantes a partir do conteúdo.
+  return { text, formatted: text, speakers: [] };
+}
+
+/* =============================================================
+ * ElevenLabs DESATIVADO — Free Tier bloqueia chamadas de servidores
+ * com mensagem "detected_unusual_activity". Mantido para rollback.
+ * Para reativar: descomentar este bloco e a const ELEVENLABS_API_KEY no topo,
+ * e trocar a chamada em Deno.serve() de transcribeWithGroq para transcribeWithElevenLabs.
+ * =============================================================
 async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Promise<{
   text: string;
   formatted: string;
@@ -59,20 +110,10 @@ async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Prom
 
   if (!res.ok) {
     const errText = await res.text();
-    // Mensagens amigáveis para erros comuns do ElevenLabs
     if (res.status === 401 && /unusual_activity|detected_unusual/i.test(errText)) {
       throw new Error(
-        "ElevenLabs bloqueou a chave (Free Tier desabilitado por atividade incomum). Faça upgrade para um plano pago em elevenlabs.io ou gere uma nova API key e atualize o secret ELEVENLABS_API_KEY.",
+        "ElevenLabs bloqueou a chave (Free Tier desabilitado por atividade incomum).",
       );
-    }
-    if (res.status === 401) {
-      throw new Error("ElevenLabs: API key inválida ou sem permissão. Verifique o secret ELEVENLABS_API_KEY.");
-    }
-    if (res.status === 402) {
-      throw new Error("ElevenLabs sem créditos. Adicione créditos ou faça upgrade do plano.");
-    }
-    if (res.status === 429) {
-      throw new Error("ElevenLabs: limite de requisições atingido. Aguarde alguns minutos e tente novamente.");
     }
     throw new Error(`ElevenLabs (${res.status}): ${errText.slice(0, 300)}`);
   }
@@ -85,6 +126,7 @@ async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Prom
   ) as string[];
   return { text, formatted, speakers };
 }
+============================================================= */
 
 async function analyzeWithAI(transcricao: string): Promise<{
   resumo: string;
@@ -189,7 +231,7 @@ Deno.serve(async (req) => {
 
   let reuniaoId: string | null = null;
   try {
-    if (!ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY não configurada");
+    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY não configurada");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
     const body = await req.json();
@@ -211,7 +253,7 @@ Deno.serve(async (req) => {
     const fileName = audioPath.split("/").pop() ?? "audio.mp3";
 
     // 2. Transcreve
-    const { formatted, speakers } = await transcribeWithElevenLabs(blob, fileName);
+    const { formatted, speakers } = await transcribeWithGroq(blob, fileName);
     if (!formatted.trim()) throw new Error("Transcrição vazia");
 
     // Salva transcrição parcial enquanto IA roda
@@ -235,7 +277,7 @@ Deno.serve(async (req) => {
         participantes_detectados:
           insights.participantes_detectados.length > 0
             ? insights.participantes_detectados
-            : speakers.map((s) => `Falante ${s}`),
+            : speakers.map((s: string) => `Falante ${s}`),
         transcricao_status: "concluido",
         transcricao_erro: null,
       })
