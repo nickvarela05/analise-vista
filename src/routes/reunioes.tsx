@@ -19,6 +19,8 @@ import {
   ExternalLink,
   Clock,
   Download,
+  Sparkles,
+  CheckCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isThisMonth, isFuture } from "date-fns";
@@ -68,6 +70,14 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
+import { UploadAudioReuniao } from "@/components/reunioes/UploadAudioReuniao";
+import { TranscricaoFormatada } from "@/components/reunioes/TranscricaoFormatada";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/reunioes")({
   component: ReunioesRoute,
