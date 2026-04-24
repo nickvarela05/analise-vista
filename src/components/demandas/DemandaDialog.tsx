@@ -1,6 +1,6 @@
 import * as React from "react";
 import { format } from "date-fns";
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, X, Check, ListTodo } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AssigneeCombobox, type AssigneeOption } from "@/components/AssigneeCombobox";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,14 +77,35 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
   const [form, setForm] = React.useState<DemandaInitial>(EMPTY);
   const [tagInput, setTagInput] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  const [tarefasDisponiveis, setTarefasDisponiveis] = React.useState<{ id: string; titulo: string; demanda_id: string | null }[]>([]);
+  const [tarefasSelecionadas, setTarefasSelecionadas] = React.useState<string[]>([]);
+  const [tarefasIniciais, setTarefasIniciais] = React.useState<string[]>([]);
+  const [tarefasOpen, setTarefasOpen] = React.useState(false);
   const isEditing = !!initial?.id;
 
   React.useEffect(() => {
     if (open) {
       setForm(initial ? { ...EMPTY, ...initial, tags: initial.tags ?? [] } : EMPTY);
       setTagInput("");
+      // Carrega tarefas disponíveis (sem demanda) + as já vinculadas a esta demanda (se editando)
+      (async () => {
+        const { data } = await supabase
+          .from("todo")
+          .select("id, titulo, demanda_id")
+          .order("created_at", { ascending: false })
+          .limit(500);
+        setTarefasDisponiveis(data ?? []);
+        if (isEditing && initial?.id) {
+          const vinculadas = (data ?? []).filter((t) => t.demanda_id === initial.id).map((t) => t.id);
+          setTarefasSelecionadas(vinculadas);
+          setTarefasIniciais(vinculadas);
+        } else {
+          setTarefasSelecionadas([]);
+          setTarefasIniciais([]);
+        }
+      })();
     }
-  }, [open, initial]);
+  }, [open, initial, isEditing]);
 
   const addTag = () => {
     const t = tagInput.trim().toLowerCase();
@@ -94,6 +117,12 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
 
   const removeTag = (t: string) =>
     setForm({ ...form, tags: (form.tags ?? []).filter((x) => x !== t) });
+
+  const toggleTarefa = (id: string) => {
+    setTarefasSelecionadas((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,14 +143,40 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
       prazo: form.prazo || null,
       tags: form.tags && form.tags.length > 0 ? form.tags : null,
     };
-    const { error } = isEditing
-      ? await supabase.from("demanda").update(payload).eq("id", initial!.id!)
-      : await supabase.from("demanda").insert({ ...payload, criado_por: userId });
-    setSaving(false);
-    if (error) {
-      toast.error(isEditing ? "Erro ao atualizar" : "Erro ao criar", { description: error.message });
+    const { data: saved, error } = isEditing
+      ? await supabase.from("demanda").update(payload).eq("id", initial!.id!).select("id").single()
+      : await supabase.from("demanda").insert({ ...payload, criado_por: userId }).select("id").single();
+    if (error || !saved) {
+      setSaving(false);
+      toast.error(isEditing ? "Erro ao atualizar" : "Erro ao criar", { description: error?.message });
       return;
     }
+
+    // Vincula/desvincula tarefas
+    const demandaId = saved.id;
+    const aVincular = tarefasSelecionadas.filter((id) => !tarefasIniciais.includes(id));
+    const aDesvincular = tarefasIniciais.filter((id) => !tarefasSelecionadas.includes(id));
+
+    if (aVincular.length > 0) {
+      const { error: e1 } = await supabase
+        .from("todo")
+        .update({ demanda_id: demandaId })
+        .in("id", aVincular);
+      if (e1) {
+        toast.error("Erro ao vincular tarefas", { description: e1.message });
+      }
+    }
+    if (aDesvincular.length > 0) {
+      const { error: e2 } = await supabase
+        .from("todo")
+        .update({ demanda_id: null })
+        .in("id", aDesvincular);
+      if (e2) {
+        toast.error("Erro ao desvincular tarefas", { description: e2.message });
+      }
+    }
+
+    setSaving(false);
     toast.success(isEditing ? "Demanda atualizada" : "Demanda criada");
     onOpenChange(false);
     onSaved();
@@ -279,6 +334,71 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5">
+              <ListTodo className="h-3.5 w-3.5" />
+              Vincular tarefas
+              {tarefasSelecionadas.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 text-[10px]">
+                  {tarefasSelecionadas.length}
+                </Badge>
+              )}
+            </Label>
+            <Popover open={tarefasOpen} onOpenChange={setTarefasOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                  {tarefasSelecionadas.length === 0
+                    ? "Selecione tarefas para vincular..."
+                    : `${tarefasSelecionadas.length} tarefa(s) selecionada(s)`}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Buscar tarefa..." />
+                  <CommandList>
+                    <CommandEmpty>Nenhuma tarefa encontrada.</CommandEmpty>
+                    <CommandGroup>
+                      <ScrollArea className="h-60">
+                        {tarefasDisponiveis.map((t) => {
+                          const selected = tarefasSelecionadas.includes(t.id);
+                          const vinculadaOutra = !!t.demanda_id && t.demanda_id !== initial?.id;
+                          return (
+                            <CommandItem
+                              key={t.id}
+                              value={`${t.titulo} ${t.id}`}
+                              onSelect={() => toggleTarefa(t.id)}
+                              className="flex items-start gap-2"
+                            >
+                              <div
+                                className={cn(
+                                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                                  selected ? "bg-primary border-primary text-primary-foreground" : "border-input",
+                                )}
+                              >
+                                {selected && <Check className="h-3 w-3" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-sm">{t.titulo}</div>
+                                {vinculadaOutra && (
+                                  <div className="text-[10px] text-warning-foreground">
+                                    Já vinculada a outra demanda — será movida
+                                  </div>
+                                )}
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </ScrollArea>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <p className="text-[11px] text-muted-foreground">
+              As tarefas selecionadas serão automaticamente vinculadas a esta demanda.
+            </p>
           </div>
 
           <DialogFooter>
