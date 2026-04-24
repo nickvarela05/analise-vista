@@ -725,51 +725,30 @@ function Reunioes() {
               <Label>Resumo</Label>
               <Textarea rows={3} value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
             </div>
-            <div className="space-y-1.5">
-              <Label>Transcrição</Label>
-              <Textarea
-                rows={4}
-                value={form.transcricao}
-                onChange={(e) => setForm({ ...form, transcricao: e.target.value })}
-                placeholder="Cole aqui a transcrição automática do áudio"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Próximos passos</Label>
-              <Textarea
-                rows={3}
-                value={form.proximos_passos}
-                onChange={(e) => setForm({ ...form, proximos_passos: e.target.value })}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Áudio {editingId ? "(opcional — substitui o atual)" : "(opcional)"}</Label>
-              <Input
-                type="file"
-                accept="audio/*"
-                onChange={(e) => setAudio(e.target.files?.[0] ?? null)}
-              />
-              {audio && (
-                <p className="text-xs text-muted-foreground">
-                  {audio.name} ({Math.round(audio.size / 1024)} KB)
-                </p>
-              )}
-            </div>
+            {form.transcricao && (
+              <Accordion type="single" collapsible>
+                <AccordionItem value="transcricao" className="rounded-md border px-3">
+                  <AccordionTrigger className="text-sm">
+                    📝 Ver transcrição completa
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <Textarea
+                      rows={8}
+                      value={form.transcricao}
+                      onChange={(e) => setForm({ ...form, transcricao: e.target.value })}
+                      className="font-mono text-xs"
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {audio ? (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" /> Salvar e enviar
-                  </>
-                ) : editingId ? (
-                  "Salvar alterações"
-                ) : (
-                  "Salvar"
-                )}
+                {editingId ? "Salvar alterações" : "Salvar"}
               </Button>
             </DialogFooter>
           </form>
