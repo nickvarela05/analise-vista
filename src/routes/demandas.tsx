@@ -428,7 +428,8 @@ function KanbanView({
   }, [demandas]);
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+      <div className="grid min-w-[900px] grid-cols-6 gap-3 lg:min-w-0 xl:grid-cols-6">
       {KANBAN_STATUS.map((status) => {
         const items = grouped[status] ?? [];
         const isOver = overCol === status;
@@ -480,6 +481,7 @@ function KanbanView({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
