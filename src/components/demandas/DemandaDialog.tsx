@@ -77,14 +77,35 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
   const [form, setForm] = React.useState<DemandaInitial>(EMPTY);
   const [tagInput, setTagInput] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  const [tarefasDisponiveis, setTarefasDisponiveis] = React.useState<{ id: string; titulo: string; demanda_id: string | null }[]>([]);
+  const [tarefasSelecionadas, setTarefasSelecionadas] = React.useState<string[]>([]);
+  const [tarefasIniciais, setTarefasIniciais] = React.useState<string[]>([]);
+  const [tarefasOpen, setTarefasOpen] = React.useState(false);
   const isEditing = !!initial?.id;
 
   React.useEffect(() => {
     if (open) {
       setForm(initial ? { ...EMPTY, ...initial, tags: initial.tags ?? [] } : EMPTY);
       setTagInput("");
+      // Carrega tarefas disponíveis (sem demanda) + as já vinculadas a esta demanda (se editando)
+      (async () => {
+        const { data } = await supabase
+          .from("todo")
+          .select("id, titulo, demanda_id")
+          .order("created_at", { ascending: false })
+          .limit(500);
+        setTarefasDisponiveis(data ?? []);
+        if (isEditing && initial?.id) {
+          const vinculadas = (data ?? []).filter((t) => t.demanda_id === initial.id).map((t) => t.id);
+          setTarefasSelecionadas(vinculadas);
+          setTarefasIniciais(vinculadas);
+        } else {
+          setTarefasSelecionadas([]);
+          setTarefasIniciais([]);
+        }
+      })();
     }
-  }, [open, initial]);
+  }, [open, initial, isEditing]);
 
   const addTag = () => {
     const t = tagInput.trim().toLowerCase();
@@ -96,6 +117,12 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
 
   const removeTag = (t: string) =>
     setForm({ ...form, tags: (form.tags ?? []).filter((x) => x !== t) });
+
+  const toggleTarefa = (id: string) => {
+    setTarefasSelecionadas((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,14 +143,40 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
       prazo: form.prazo || null,
       tags: form.tags && form.tags.length > 0 ? form.tags : null,
     };
-    const { error } = isEditing
-      ? await supabase.from("demanda").update(payload).eq("id", initial!.id!)
-      : await supabase.from("demanda").insert({ ...payload, criado_por: userId });
-    setSaving(false);
-    if (error) {
-      toast.error(isEditing ? "Erro ao atualizar" : "Erro ao criar", { description: error.message });
+    const { data: saved, error } = isEditing
+      ? await supabase.from("demanda").update(payload).eq("id", initial!.id!).select("id").single()
+      : await supabase.from("demanda").insert({ ...payload, criado_por: userId }).select("id").single();
+    if (error || !saved) {
+      setSaving(false);
+      toast.error(isEditing ? "Erro ao atualizar" : "Erro ao criar", { description: error?.message });
       return;
     }
+
+    // Vincula/desvincula tarefas
+    const demandaId = saved.id;
+    const aVincular = tarefasSelecionadas.filter((id) => !tarefasIniciais.includes(id));
+    const aDesvincular = tarefasIniciais.filter((id) => !tarefasSelecionadas.includes(id));
+
+    if (aVincular.length > 0) {
+      const { error: e1 } = await supabase
+        .from("todo")
+        .update({ demanda_id: demandaId })
+        .in("id", aVincular);
+      if (e1) {
+        toast.error("Erro ao vincular tarefas", { description: e1.message });
+      }
+    }
+    if (aDesvincular.length > 0) {
+      const { error: e2 } = await supabase
+        .from("todo")
+        .update({ demanda_id: null })
+        .in("id", aDesvincular);
+      if (e2) {
+        toast.error("Erro ao desvincular tarefas", { description: e2.message });
+      }
+    }
+
+    setSaving(false);
     toast.success(isEditing ? "Demanda atualizada" : "Demanda criada");
     onOpenChange(false);
     onSaved();
