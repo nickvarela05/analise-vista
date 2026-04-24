@@ -160,6 +160,50 @@ function Reunioes() {
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [analyzing, setAnalyzing] = React.useState(false);
+  const [generatingReport, setGeneratingReport] = React.useState(false);
+
+  const handleGerarRelatorio = async (reuniao: any) => {
+    if (!reuniao?.id) return;
+    setGeneratingReport(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess?.session?.access_token;
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-relatorio-reuniao`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ reuniao_id: reuniao.id }),
+      });
+      if (!res.ok) {
+        let msg = `Erro ${res.status}`;
+        try {
+          const j = await res.json();
+          msg = j.error || msg;
+        } catch {}
+        throw new Error(msg);
+      }
+      const blob = await res.blob();
+      const cd = res.headers.get("Content-Disposition") || "";
+      const match = cd.match(/filename="?([^";]+)"?/);
+      const filename = match?.[1] || `Relatorio_${reuniao.titulo || "reuniao"}.docx`;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+      toast.success("Relatório gerado!", { description: filename });
+    } catch (e: any) {
+      toast.error("Falha ao gerar relatório", { description: e?.message });
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
 
   // Filtros
   const [search, setSearch] = React.useState("");
@@ -943,7 +987,21 @@ function Reunioes() {
                       )}
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 flex-wrap gap-1">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      disabled={generatingReport}
+                      onClick={() => handleGerarRelatorio(openDetail)}
+                      title="Gera um relatório detalhado em Word usando IA"
+                    >
+                      {generatingReport ? (
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                      )}
+                      Gerar relatório (Word)
+                    </Button>
                     <Button variant="outline" size="sm" onClick={() => openEdit(openDetail)}>
                       <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
                     </Button>
