@@ -19,6 +19,8 @@ interface Props {
     audio_mime: string;
   }) => Promise<void> | void;
   onProcessingDone?: () => void;
+  /** Em modo criação: cria rascunho da reunião e dispara análise antes de salvar definitivo. */
+  onRequestEarlyAnalysis?: () => Promise<void> | void;
 }
 
 const ACCEPT =
