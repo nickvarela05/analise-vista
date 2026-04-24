@@ -744,6 +744,24 @@ function Reunioes() {
                 placeholder="João, Maria, Pedro"
               />
             </div>
+
+            {/* Upload de áudio + análise IA — disponível em criação e edição */}
+            {user && (
+              <UploadAudioReuniao
+                reuniaoId={editingId}
+                userId={user.id}
+                audioPath={audioPath}
+                status={(editingRow?.transcricao_status as any) ?? "pendente"}
+                errorMessage={editingRow?.transcricao_erro ?? null}
+                onUploaded={async (info) => {
+                  setAudioPath(info.audio_path || null);
+                  setAudioSize(info.audio_size || null);
+                  setAudioMime(info.audio_mime || null);
+                  setAudioUploadedThisSession(!!info.audio_path);
+                }}
+              />
+            )}
+
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Pauta
