@@ -827,6 +827,19 @@ function Reunioes() {
                       <Badge variant="outline" className="capitalize">
                         {openDetail.tipo}
                       </Badge>
+                      {openDetail.transcricao && openDetail.resumo && (
+                        <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-primary">
+                          <Sparkles className="h-3 w-3" /> Analisada por IA
+                        </Badge>
+                      )}
+                      {openDetail.transcricao_status === "processando" && (
+                        <Badge variant="outline" className="gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> processando
+                        </Badge>
+                      )}
+                      {openDetail.transcricao_status === "erro" && (
+                        <Badge variant="destructive">⚠️ erro IA</Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
