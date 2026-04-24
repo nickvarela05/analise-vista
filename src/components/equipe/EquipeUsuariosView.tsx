@@ -84,6 +84,28 @@ export function EquipeUsuariosView({ colabs }: Props) {
   }, [colabs]);
 
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [tempPasswordInfo, setTempPasswordInfo] = React.useState<TempPasswordInfo | null>(null);
+
+  const resetarSenha = async (u: UsuarioRow) => {
+    if (!u.email) return;
+    if (!confirm(`Gerar nova senha temporária para ${u.email}? A senha atual deixará de funcionar.`)) return;
+    setBusyId(u.user_id);
+    try {
+      const r = await adminFetch<{ ok: true; temp_password: string }>(
+        "/api/admin/usuarios?action=reset-password",
+        {
+          method: "POST",
+          body: JSON.stringify({ user_id: u.user_id }),
+        },
+      );
+      setTempPasswordInfo({ email: u.email, password: r.temp_password, context: "reset" });
+      reload();
+    } catch (e) {
+      toast.error("Erro", { description: (e as Error).message });
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const alterarRole = async (u: UsuarioRow, role: Role) => {
     if (u.role === role) return;
