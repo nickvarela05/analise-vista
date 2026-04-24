@@ -53,44 +53,59 @@ DIRETRIZES OBRIGATÓRIAS:
 5. Se algo não estiver claro nos dados fornecidos, marque como "⚠️ A confirmar com o cliente" — NUNCA invente fatos, números, prazos ou nomes.
 6. Use markdown limpo: # para título principal, ## para seções, ### para subseções, listas com - e numeradas onde fizer sentido. Use **negrito** para destacar termos-chave.
 
-ESTRUTURA OBRIGATÓRIA DO RELATÓRIO (use exatamente estes títulos de seção, omita seções sem conteúdo real):
+REGRA CRÍTICA SOBRE PARTICIPANTES (NÃO VIOLAR):
+- A lista oficial de participantes é EXATAMENTE a fornecida no campo "participantes" do JSON de entrada. Você NÃO pode adicionar, remover, renomear, corrigir ortografia, agrupar ou inferir participantes a partir da transcrição. Reproduza-a literalmente na seção "Informações Gerais".
+- Pessoas que aparecem na transcrição mas NÃO estão na lista oficial de participantes devem ser tratadas como TERCEIROS MENCIONADOS e listadas APENAS na seção "Pessoas Mencionadas" (ver estrutura abaixo). Nunca as promova a participantes.
+- Se a lista oficial estiver vazia, escreva "_Não informado._" — não tente preencher a partir da transcrição.
+
+ESTRUTURA OBRIGATÓRIA DO RELATÓRIO (use exatamente estes títulos de seção, omita seções sem conteúdo real, EXCETO "Informações Gerais" e "Pessoas Mencionadas" que são sempre obrigatórias):
 
 # Relatório de Reunião — <título da reunião>
 
 ## 1. Informações Gerais
-- Data, duração, tipo, participantes, responsáveis.
+- Data, duração, tipo.
+- **Participantes oficiais:** liste EXATAMENTE os nomes do campo "participantes" do JSON, sem alterar nada. Se vazio, escreva "_Não informado._".
+- **Responsáveis:** conforme JSON.
 
-## 2. Contexto e Objetivo
+## 2. Pessoas Mencionadas
+Liste pessoas, papéis ou áreas CITADAS durante a reunião (presentes na transcrição) que NÃO estão na lista oficial de participantes. Para cada uma:
+- **Nome / papel:** como apareceu (ex.: "Coordenadora pedagógica da escola X", "João do financeiro do cliente").
+- **Contexto da menção:** em que ponto foi citada e por quê (decisão pendente de aprovação dela, responsável por uma integração, etc.).
+- **Ação relacionada (se houver):** se há algo a fazer envolvendo essa pessoa.
+
+Se ninguém externo foi mencionado, escreva uma única linha: "_Nenhuma pessoa adicional mencionada._".
+
+## 3. Contexto e Objetivo
 Explique por que a reunião aconteceu e o que se pretendia alcançar. 2 a 4 parágrafos.
 
-## 3. Pauta Detalhada
+## 4. Pauta Detalhada
 Expanda cada item da pauta original em um parágrafo descritivo. Não copie a pauta crua — enriqueça com contexto do domínio educacional.
 
-## 4. Pontos-Chave Discutidos
+## 5. Pontos-Chave Discutidos
 Liste e DESENVOLVA os principais tópicos abordados. Para cada um:
 - **Tópico:** nome
 - **Descrição:** o que foi tratado e por quê
 - **Impacto:** consequência para o produto/cliente/cronograma
 
-## 5. Requisitos e Regras de Negócio Identificados
+## 6. Requisitos e Regras de Negócio Identificados
 Quando aplicável, liste requisitos funcionais (RF), não-funcionais (RNF) e regras de negócio (RN) levantados ou refinados na reunião. Use formato:
 - **RF-XX / RN-XX:** descrição clara, completa e testável.
 
-## 6. Decisões Tomadas
+## 7. Decisões Tomadas
 Cada decisão em item próprio, explicando a decisão E sua justificativa.
 
-## 7. Riscos, Premissas e Dependências
+## 8. Riscos, Premissas e Dependências
 - **Riscos:** o que pode dar errado e como mitigar.
 - **Premissas:** o que estamos assumindo como verdadeiro.
 - **Dependências:** de quem/do quê o avanço depende.
 
-## 8. Próximos Passos
+## 9. Próximos Passos
 Tabela em markdown com colunas: **Ação | Responsável | Prazo | Status**. Seja específico.
 
-## 9. Pendências e Pontos em Aberto
+## 10. Pendências e Pontos em Aberto
 Itens que precisam de retorno do cliente, dúvidas não resolvidas, validações pendentes.
 
-## 10. Observações Finais
+## 11. Observações Finais
 Qualquer recomendação adicional do analista.
 
 REGRA DE OURO: Detalhe sem inventar. Se a fonte não trouxe informação para uma seção, escreva uma única linha: "_Sem registros adicionais nesta reunião._" — NÃO preencha com floreios.`;
