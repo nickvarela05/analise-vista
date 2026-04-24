@@ -594,6 +594,22 @@ function Reunioes() {
                   />
                 </div>
                 <div className="flex flex-wrap gap-1">
+                  {r.transcricao && r.resumo && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-primary/30 bg-primary/5 text-[10px] text-primary"
+                    >
+                      <Sparkles className="h-3 w-3" /> IA
+                    </Badge>
+                  )}
+                  {r.transcricao_status === "processando" && (
+                    <Badge variant="outline" className="gap-1 text-[10px]">
+                      <Loader2 className="h-3 w-3 animate-spin" /> processando
+                    </Badge>
+                  )}
+                  {r.transcricao_status === "erro" && (
+                    <Badge variant="destructive" className="text-[10px]">⚠️ erro IA</Badge>
+                  )}
                   {r.participantes && r.participantes.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-[10px]">
                       <Users className="h-3 w-3" /> {r.participantes.length}
