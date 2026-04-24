@@ -290,6 +290,68 @@ function Reunioes() {
     [editingId, data],
   );
 
+  const handleEarlyAnalysis = async () => {
+    if (!user) {
+      toast.error("Faça login para iniciar a análise");
+      return;
+    }
+    if (!audioPath) {
+      toast.error("Anexe um áudio antes de iniciar a análise");
+      return;
+    }
+    if (!form.titulo.trim()) {
+      toast.error("Informe um título antes de iniciar a análise");
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      // Se ainda é criação, cria rascunho para podermos atrelar a transcrição
+      let rid = editingId;
+      if (!rid) {
+        const { participantes_str, ...rest } = form;
+        const participantes = participantes_str
+          ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
+          : null;
+        const { data: inserted, error } = await supabase
+          .from("reuniao")
+          .insert({
+            ...rest,
+            data_reuniao: new Date(form.data_reuniao).toISOString(),
+            duracao_min: Number(form.duracao_min) || null,
+            responsaveis_ids: form.responsaveis_ids,
+            equipe_toda: form.equipe_toda,
+            participantes,
+            audio_path: audioPath,
+            audio_size: audioSize,
+            audio_mime: audioMime,
+            criado_por: user.id,
+          })
+          .select("id")
+          .single();
+        if (error || !inserted) {
+          toast.error("Erro ao criar rascunho", { description: error?.message });
+          return;
+        }
+        rid = inserted.id;
+        setEditingId(rid);
+        setAudioUploadedThisSession(false);
+      }
+      const { error: fnError } = await supabase.functions.invoke("transcrever-reuniao", {
+        body: { reuniao_id: rid, audio_path: audioPath },
+      });
+      if (fnError) {
+        toast.error("Falha ao iniciar análise", { description: fnError.message });
+      } else {
+        toast.info("🎧 Transcrevendo e analisando com IA...", {
+          description: "Os campos serão preenchidos automaticamente. Continue editando e salve depois.",
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["reunioes"] });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.titulo.trim() || !user) {
