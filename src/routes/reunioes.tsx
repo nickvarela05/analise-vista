@@ -880,14 +880,33 @@ function Reunioes() {
                 </AccordionItem>
               </Accordion>
             )}
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>
-                Cancelar
+            <DialogFooter className="gap-2 sm:justify-between">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={
+                  analyzing ||
+                  !audioPath ||
+                  (editingRow?.transcricao_status as any) === "processando"
+                }
+                onClick={handleEarlyAnalysis}
+              >
+                {analyzing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Iniciar análise por IA
               </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingId ? "Salvar alterações" : "Salvar"}
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingId ? "Salvar alterações" : "Salvar"}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </DialogContent>
