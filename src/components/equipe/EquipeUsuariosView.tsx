@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Mail, Trash2, UserPlus, Link2 } from "lucide-react";
+import { Loader2, Trash2, UserPlus, KeyRound, Copy, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -46,6 +47,7 @@ interface UsuarioRow {
   cargo: string | null;
   colaborador_id: string | null;
   role: Role | null;
+  must_change_password: boolean;
   created_at: string | null;
   last_sign_in_at: string | null;
   email_confirmed_at: string | null;
