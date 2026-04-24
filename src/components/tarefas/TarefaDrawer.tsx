@@ -259,7 +259,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
+      <SheetContent className="w-full overflow-y-auto p-4 sm:max-w-2xl sm:p-6">
         <SheetHeader>
           <div className="flex items-start justify-between gap-2">
             <SheetTitle className="text-base">{tarefa.titulo}</SheetTitle>
@@ -275,7 +275,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
         </SheetHeader>
 
         {/* Painel rápido de edição */}
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-lg border p-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">Status</Label>
             <Select value={tarefa.status} onValueChange={(v) => updateField("status", v)}>
@@ -336,7 +336,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="col-span-2 space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Atribuir a</Label>
             <AssigneeCombobox
               options={colabs}
