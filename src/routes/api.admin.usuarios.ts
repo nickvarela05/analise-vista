@@ -65,7 +65,10 @@ export const Route = createFileRoute("/api/admin/usuarios")({
 
           const ids = usersResp.users.map((u) => u.id);
           const [{ data: profiles }, { data: roles }] = await Promise.all([
-            admin.from("profiles").select("user_id,nome,email,avatar_url,cargo,colaborador_id").in("user_id", ids),
+            admin
+              .from("profiles")
+              .select("user_id,nome,email,avatar_url,cargo,colaborador_id,must_change_password")
+              .in("user_id", ids),
             admin.from("user_roles").select("user_id,role").in("user_id", ids),
           ]);
 
@@ -86,6 +89,7 @@ export const Route = createFileRoute("/api/admin/usuarios")({
               cargo: p?.cargo ?? null,
               colaborador_id: p?.colaborador_id ?? null,
               role: rMap.get(u.id) ?? null,
+              must_change_password: p?.must_change_password ?? false,
               created_at: u.created_at ?? null,
               last_sign_in_at: u.last_sign_in_at ?? null,
               email_confirmed_at: u.email_confirmed_at ?? null,
