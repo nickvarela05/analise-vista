@@ -329,16 +329,21 @@ export function EquipeUsuariosView({ colabs }: Props) {
           </TableBody>
         </Table>
       </div>
+
+      <TempPasswordDialog
+        info={tempPasswordInfo}
+        onClose={() => setTempPasswordInfo(null)}
+      />
     </div>
   );
 }
 
-function ConvidarUsuarioDialog({
+function CriarUsuarioDialog({
   colabs,
-  onSaved,
+  onCreated,
 }: {
   colabs: Colaborador[];
-  onSaved: () => void;
+  onCreated: (info: TempPasswordInfo) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -355,21 +360,23 @@ function ConvidarUsuarioDialog({
     if (!form.email.trim() || !form.nome.trim()) return;
     setSaving(true);
     try {
-      await adminFetch("/api/admin/usuarios?action=invite", {
-        method: "POST",
-        body: JSON.stringify({
-          email: form.email.trim(),
-          nome: form.nome.trim(),
-          role: form.role,
-          colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
-        }),
-      });
-      toast.success("Convite enviado", { description: `Um e-mail foi enviado para ${form.email}.` });
+      const r = await adminFetch<{ ok: true; user_id: string; temp_password: string }>(
+        "/api/admin/usuarios?action=create",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: form.email.trim(),
+            nome: form.nome.trim(),
+            role: form.role,
+            colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
+          }),
+        },
+      );
       setOpen(false);
+      onCreated({ email: form.email.trim(), password: r.temp_password, context: "create" });
       setForm({ email: "", nome: "", cargo: "", role: "analista", colaborador_id: "__none__" });
-      onSaved();
     } catch (e2) {
-      toast.error("Erro ao convidar", { description: (e2 as Error).message });
+      toast.error("Erro ao criar usuário", { description: (e2 as Error).message });
     } finally {
       setSaving(false);
     }
@@ -379,12 +386,16 @@ function ConvidarUsuarioDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <UserPlus className="mr-2 h-4 w-4" /> Convidar usuário
+          <UserPlus className="mr-2 h-4 w-4" /> Novo usuário
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Convidar novo usuário</DialogTitle>
+          <DialogTitle>Criar novo usuário</DialogTitle>
+          <DialogDescription>
+            Uma senha temporária será gerada. Você precisará entregá-la ao usuário —
+            no primeiro acesso ele será obrigado a definir uma nova senha.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="space-y-1.5">
@@ -411,7 +422,7 @@ function ConvidarUsuarioDialog({
               onChange={(v) => setForm({ ...form, cargo: v })}
             />
             <p className="text-[11px] text-muted-foreground">
-              O cargo será definido no perfil do colaborador vinculado.
+              O cargo é definido no perfil do colaborador vinculado.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -455,9 +466,9 @@ function ConvidarUsuarioDialog({
               {saving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Mail className="mr-2 h-4 w-4" />
+                <UserPlus className="mr-2 h-4 w-4" />
               )}
-              Enviar convite
+              Criar e gerar senha
             </Button>
           </DialogFooter>
         </form>
@@ -466,5 +477,72 @@ function ConvidarUsuarioDialog({
   );
 }
 
-// suprime warnings de import não-usado em alguns ambientes
-void Link2;
+function TempPasswordDialog({
+  info,
+  onClose,
+}: {
+  info: TempPasswordInfo | null;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = React.useState(false);
+  React.useEffect(() => {
+    if (info) setCopied(false);
+  }, [info]);
+
+  if (!info) return null;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(info.password);
+      setCopied(true);
+      toast.success("Senha copiada");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  return (
+    <Dialog open={!!info} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {info.context === "create" ? "Usuário criado" : "Senha redefinida"}
+          </DialogTitle>
+          <DialogDescription>
+            Esta senha é temporária e <strong>aparece apenas uma vez</strong>.
+            Copie e entregue ao usuário em um canal seguro. No primeiro acesso ele
+            será obrigado a definir uma nova senha.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">E-mail</Label>
+            <Input value={info.email} readOnly />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Senha temporária</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                value={info.password}
+                readOnly
+                className="font-mono tracking-wider"
+              />
+              <Button type="button" variant="outline" size="icon" onClick={copy}>
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />
+            Anote ou copie agora — esta senha não poderá ser recuperada depois.
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={onClose}>Entendi</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
