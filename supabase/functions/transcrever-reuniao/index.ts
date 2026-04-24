@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
     const fileName = audioPath.split("/").pop() ?? "audio.mp3";
 
     // 2. Transcreve
-    const { formatted, speakers } = await transcribeWithElevenLabs(blob, fileName);
+    const { formatted, speakers } = await transcribeWithGroq(blob, fileName);
     if (!formatted.trim()) throw new Error("Transcrição vazia");
 
     // Salva transcrição parcial enquanto IA roda
