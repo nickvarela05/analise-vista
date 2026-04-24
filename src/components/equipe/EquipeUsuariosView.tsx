@@ -57,10 +57,11 @@ interface Props {
   colabs: Colaborador[];
 }
 
-const ROLE_LABEL: Record<Role, string> = {
-  gestor: "Gestor",
-  analista: "Analista",
-};
+interface TempPasswordInfo {
+  email: string;
+  password: string;
+  context: "create" | "reset";
+}
 
 export function EquipeUsuariosView({ colabs }: Props) {
   const qc = useQueryClient();
