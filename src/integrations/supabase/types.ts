@@ -433,11 +433,13 @@ export type Database = {
           created_at: string
           criado_por: string | null
           data_reuniao: string
+          decisoes: string[] | null
           duracao_min: number | null
           equipe_toda: boolean
           id: string
           link_calendario: string | null
           participantes: string[] | null
+          participantes_detectados: string[] | null
           pauta: string | null
           proximos_passos: string | null
           responsaveis_ids: string[]
@@ -447,6 +449,8 @@ export type Database = {
           tipo: Database["public"]["Enums"]["reuniao_tipo"]
           titulo: string
           transcricao: string | null
+          transcricao_erro: string | null
+          transcricao_status: Database["public"]["Enums"]["reuniao_transcricao_status"]
           updated_at: string
         }
         Insert: {
@@ -456,11 +460,13 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           data_reuniao: string
+          decisoes?: string[] | null
           duracao_min?: number | null
           equipe_toda?: boolean
           id?: string
           link_calendario?: string | null
           participantes?: string[] | null
+          participantes_detectados?: string[] | null
           pauta?: string | null
           proximos_passos?: string | null
           responsaveis_ids?: string[]
@@ -470,6 +476,8 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["reuniao_tipo"]
           titulo: string
           transcricao?: string | null
+          transcricao_erro?: string | null
+          transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"]
           updated_at?: string
         }
         Update: {
@@ -479,11 +487,13 @@ export type Database = {
           created_at?: string
           criado_por?: string | null
           data_reuniao?: string
+          decisoes?: string[] | null
           duracao_min?: number | null
           equipe_toda?: boolean
           id?: string
           link_calendario?: string | null
           participantes?: string[] | null
+          participantes_detectados?: string[] | null
           pauta?: string | null
           proximos_passos?: string | null
           responsaveis_ids?: string[]
@@ -493,6 +503,8 @@ export type Database = {
           tipo?: Database["public"]["Enums"]["reuniao_tipo"]
           titulo?: string
           transcricao?: string | null
+          transcricao_erro?: string | null
+          transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"]
           updated_at?: string
         }
         Relationships: []
@@ -778,6 +790,11 @@ export type Database = {
         | "fornecedor"
         | "alinhamento"
         | "outro"
+      reuniao_transcricao_status:
+        | "pendente"
+        | "processando"
+        | "concluido"
+        | "erro"
       todo_prioridade: "baixa" | "media" | "alta"
       todo_status:
         | "pendente"
@@ -949,6 +966,12 @@ export const Constants = {
         "fornecedor",
         "alinhamento",
         "outro",
+      ],
+      reuniao_transcricao_status: [
+        "pendente",
+        "processando",
+        "concluido",
+        "erro",
       ],
       todo_prioridade: ["baixa", "media", "alta"],
       todo_status: [
