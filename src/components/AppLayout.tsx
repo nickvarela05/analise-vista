@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Loader2 } from "lucide-react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { Navigate, useLocation } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -8,23 +8,21 @@ import { useAuth } from "@/lib/auth-context";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
 
-  React.useEffect(() => {
-    if (!loading && !session) {
-      const path = location.pathname || "/";
-      const target = path === "/login" ? "/login" : `/login?redirect=${encodeURIComponent(path)}`;
-      window.location.replace(target);
-    }
-  }, [loading, session, location.pathname]);
-
-  if (loading || !session) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
+  }
+
+  if (!session) {
+    const path = location.pathname || "/";
+    const search =
+      path === "/login" || path === "/" ? undefined : { redirect: path };
+    return <Navigate to="/login" search={search as never} replace />;
   }
 
   return (
