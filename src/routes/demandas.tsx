@@ -232,7 +232,7 @@ function Demandas() {
       />
 
       {/* KPIs */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-5">
         <KpiTile
           icon={Inbox}
           label="Ativas"
@@ -270,12 +270,13 @@ function Demandas() {
           value={kpis.concluidasMes}
           tone="success"
           loading={isLoading}
+          className="col-span-2 md:col-span-1"
         />
       </div>
 
       {/* Filtros */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative max-w-xs flex-1">
+        <div className="relative w-full sm:w-auto sm:max-w-xs sm:flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar título, descrição, tag..."
@@ -285,7 +286,7 @@ function Demandas() {
           />
         </div>
         <Select value={prioFilter} onValueChange={setPrioFilter}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+          <SelectTrigger className="w-[140px] sm:w-36"><SelectValue placeholder="Prioridade" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas prioridades</SelectItem>
             {PRIORIDADE_OPTS.map((p) => (
@@ -294,7 +295,7 @@ function Demandas() {
           </SelectContent>
         </Select>
         <Select value={respFilter} onValueChange={setRespFilter}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Responsável" /></SelectTrigger>
+          <SelectTrigger className="w-[160px] sm:w-44"><SelectValue placeholder="Responsável" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos responsáveis</SelectItem>
             <SelectItem value="__equipe__">Equipe toda</SelectItem>
@@ -304,8 +305,8 @@ function Demandas() {
             ))}
           </SelectContent>
         </Select>
-        <Tabs value={prazoFilter} onValueChange={(v) => setPrazoFilter(v as PrazoFilter)}>
-          <TabsList className="h-9">
+        <Tabs value={prazoFilter} onValueChange={(v) => setPrazoFilter(v as PrazoFilter)} className="w-full sm:w-auto">
+          <TabsList className="h-9 w-full overflow-x-auto sm:w-auto">
             <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
             <TabsTrigger value="atrasadas" className="text-xs">Atrasadas</TabsTrigger>
             <TabsTrigger value="hoje" className="text-xs">Hoje</TabsTrigger>
@@ -315,7 +316,7 @@ function Demandas() {
         </Tabs>
         {view === "lista" && (
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[160px] sm:w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os status</SelectItem>
               {STATUS_OPTS.map((s) => (
