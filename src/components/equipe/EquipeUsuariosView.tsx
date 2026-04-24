@@ -181,7 +181,13 @@ export function EquipeUsuariosView({ colabs }: Props) {
         <p className="text-sm text-muted-foreground">
           {usuarios.length} usuário{usuarios.length === 1 ? "" : "s"} cadastrado{usuarios.length === 1 ? "" : "s"}.
         </p>
-        <ConvidarUsuarioDialog colabs={colabs} onSaved={reload} />
+        <CriarUsuarioDialog
+          colabs={colabs}
+          onCreated={(info) => {
+            setTempPasswordInfo(info);
+            reload();
+          }}
+        />
       </div>
 
       <div className="rounded-md border">
@@ -263,10 +269,17 @@ export function EquipeUsuariosView({ colabs }: Props) {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-0.5 text-xs">
-                      {u.email_confirmed_at ? (
+                      {u.must_change_password ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400"
+                        >
+                          <AlertTriangle className="mr-1 h-3 w-3" /> Senha temporária
+                        </Badge>
+                      ) : u.last_sign_in_at ? (
                         <Badge variant="outline" className="text-[10px]">Ativo</Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-[10px]">Convite pendente</Badge>
+                        <Badge variant="secondary" className="text-[10px]">Nunca acessou</Badge>
                       )}
                       {u.last_sign_in_at && (
                         <div className="text-[10px] text-muted-foreground">
@@ -276,20 +289,32 @@ export function EquipeUsuariosView({ colabs }: Props) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => remover(u)}
-                      disabled={busy || isMe}
-                      title={isMe ? "Você não pode remover seu próprio usuário" : "Remover usuário"}
-                    >
-                      {busy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => resetarSenha(u)}
+                        disabled={busy}
+                        title="Gerar nova senha temporária"
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => remover(u)}
+                        disabled={busy || isMe}
+                        title={isMe ? "Você não pode remover seu próprio usuário" : "Remover usuário"}
+                      >
+                        {busy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );
