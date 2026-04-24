@@ -1,7 +1,6 @@
 import * as React from "react";
 import { TarefaCard } from "./TarefaCard";
 import { WORKFLOW, STATUS_LABEL, STATUS_DESCRIPTION, columnAccent, normalizeStatus } from "./lib/workflow";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
 interface Props {
@@ -37,12 +36,11 @@ export function TarefaKanban({
   }, [tarefas]);
 
   return (
-    <ScrollArea className="w-full">
+    <div className="w-full overflow-x-auto">
       <div
-        className="grid gap-3 pb-4"
+        className="grid gap-2 pb-4"
         style={{
-          gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(220px, 1fr))`,
-          minWidth: `${WORKFLOW.length * 220}px`,
+          gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(0, 1fr))`,
         }}
       >
         {WORKFLOW.map((status) => {
@@ -66,22 +64,22 @@ export function TarefaKanban({
                 status,
               )} ${isOver ? "bg-muted ring-2 ring-primary/40" : ""}`}
             >
-              <div className="mb-2 flex items-center justify-between px-1">
-                <div>
-                  <h3 className="text-xs font-semibold uppercase tracking-wide">
+              <div className="mb-2 flex items-start justify-between gap-1 px-1">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-[11px] font-semibold uppercase tracking-wide">
                     {STATUS_LABEL[status]}
                   </h3>
-                  <p className="text-[10px] text-muted-foreground">{STATUS_DESCRIPTION[status]}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">{STATUS_DESCRIPTION[status]}</p>
                 </div>
-                <Badge variant="secondary" className="h-5 text-[10px]">
+                <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
                   {items.length}
                 </Badge>
               </div>
 
               <div className="flex min-h-[120px] flex-col gap-2">
                 {items.length === 0 ? (
-                  <div className="flex h-24 items-center justify-center rounded-md border border-dashed text-[11px] text-muted-foreground">
-                    Arraste tarefas aqui
+                  <div className="flex h-20 items-center justify-center rounded-md border border-dashed px-1 text-center text-[10px] text-muted-foreground">
+                    Arraste aqui
                   </div>
                 ) : (
                   items.map((t) => (
@@ -107,7 +105,6 @@ export function TarefaKanban({
           );
         })}
       </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    </div>
   );
 }
