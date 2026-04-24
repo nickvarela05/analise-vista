@@ -263,6 +263,26 @@ function Reunioes() {
         }
       />
 
+      {(() => {
+        const total = data.length;
+        const agendadas = data.filter((r: any) => r.status === "agendada").length;
+        const realizadas = data.filter((r: any) => r.status === "realizada").length;
+        const canceladas = data.filter((r: any) => r.status === "cancelada").length;
+        const noMes = data.filter((r: any) => isThisMonth(new Date(r.data_reuniao))).length;
+        const proximas = data.filter(
+          (r: any) => r.status === "agendada" && isFuture(new Date(r.data_reuniao)),
+        ).length;
+        return (
+          <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+            <KpiTile icon={CalIcon} label="Total" value={total} tone="primary" loading={isLoading} />
+            <KpiTile icon={CalendarDays} label="Agendadas" value={agendadas} hint={`${proximas} futuras`} tone="info" loading={isLoading} />
+            <KpiTile icon={CheckCircle2} label="Realizadas" value={realizadas} tone="success" loading={isLoading} />
+            <KpiTile icon={XCircle} label="Canceladas" value={canceladas} tone="destructive" loading={isLoading} />
+            <KpiTile icon={CalIcon} label="Neste mês" value={noMes} tone="warning" loading={isLoading} />
+          </div>
+        );
+      })()}
+
       {isLoading ? (
         <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : data.length === 0 ? (
