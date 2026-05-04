@@ -53,6 +53,10 @@ const linkSchema = z.object({
 
 const deleteSchema = z.object({ user_id: z.string().uuid() });
 const resetSchema = z.object({ user_id: z.string().uuid() });
+const inviteSchema = z.object({
+  email: z.string().email().max(255),
+  role: z.enum(["gestor", "analista"]),
+});
 
 export const Route = createFileRoute("/api/admin/usuarios")({
   server: {
@@ -99,7 +103,8 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           return Response.json({ usuarios });
         } catch (e) {
           if (e instanceof Response) return e;
-          return jsonError((e as Error).message, 500);
+          console.error("api.admin.usuarios GET error:", e);
+          return jsonError("Erro interno ao listar usuários", 500);
         }
       },
 
@@ -193,11 +198,28 @@ export const Route = createFileRoute("/api/admin/usuarios")({
             return Response.json({ ok: true });
           }
 
+          if (action === "invite") {
+            const data = inviteSchema.parse(body);
+            const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+            const { error } = await admin.from("invite_token").insert({
+              email: data.email,
+              role: data.role,
+              token,
+              created_by: userId,
+            });
+            if (error) {
+              console.error("invite insert error", error);
+              return jsonError("Não foi possível gerar o convite", 500);
+            }
+            return Response.json({ ok: true, token, email: data.email, role: data.role });
+          }
+
           return jsonError("Ação inválida", 400);
         } catch (e) {
           if (e instanceof Response) return e;
           if (e instanceof z.ZodError) return jsonError(e.issues[0]?.message ?? "Dados inválidos", 400);
-          return jsonError((e as Error).message, 500);
+          console.error("api.admin.usuarios POST error:", e);
+          return jsonError("Erro interno", 500);
         }
       },
     },

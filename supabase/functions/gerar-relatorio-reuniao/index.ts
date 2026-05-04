@@ -8,13 +8,8 @@ import {
   TextRun,
   AlignmentType,
 } from "https://esm.sh/docx@8.5.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsFor } from "../_shared/cors.ts";
+import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -229,13 +224,17 @@ function mdToDocx(md: string): Paragraph[] {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const user = await requireUser(req);
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
     const { reuniao_id } = await req.json();
     if (!reuniao_id) throw new Error("reuniao_id é obrigatório");
+
+    await assertReuniaoAccess(admin, user.id, reuniao_id);
 
     const { data: r, error } = await admin
       .from("reuniao")
@@ -330,10 +329,11 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e: any) {
+    if (e instanceof Response) return e;
     console.error("gerar-relatorio-reuniao error:", e);
     return new Response(
       JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...corsFor(req), "Content-Type": "application/json" } },
     );
   }
 });

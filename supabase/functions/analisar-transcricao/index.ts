@@ -1,12 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsFor } from "../_shared/cors.ts";
+import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -37,15 +32,19 @@ const tool = {
 };
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   let reuniaoId: string | null = null;
   try {
+    const user = await requireUser(req);
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
     const body = await req.json();
     reuniaoId = body.reuniao_id;
     if (!reuniaoId) throw new Error("reuniao_id é obrigatório");
+
+    await assertReuniaoAccess(admin, user.id, reuniaoId);
 
     const { data: reu, error } = await admin
       .from("reuniao")
@@ -108,6 +107,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    if (e instanceof Response) return e;
     console.error("analisar-transcricao error:", e);
     if (reuniaoId) {
       await admin

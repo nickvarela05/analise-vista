@@ -1,18 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsFor } from "../_shared/cors.ts";
+import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-// ElevenLabs desativado: Free Tier bloqueia chamadas vindas de servidores
-// (detectado como "atividade incomum"). Mantido comentado para rollback rápido.
-// const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
@@ -227,10 +219,12 @@ async function analyzeWithAI(transcricao: string): Promise<{
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   let reuniaoId: string | null = null;
   try {
+    const user = await requireUser(req);
     if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY não configurada");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
@@ -238,6 +232,8 @@ Deno.serve(async (req) => {
     reuniaoId = body.reuniao_id;
     const audioPath: string = body.audio_path;
     if (!reuniaoId || !audioPath) throw new Error("reuniao_id e audio_path são obrigatórios");
+
+    await assertReuniaoAccess(admin, user.id, reuniaoId);
 
     await admin
       .from("reuniao")
@@ -288,6 +284,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    if (e instanceof Response) return e;
     console.error("transcrever-reuniao error:", e);
     if (reuniaoId) {
       await admin
@@ -298,8 +295,6 @@ Deno.serve(async (req) => {
         })
         .eq("id", reuniaoId);
     }
-    // Retorna 200 com payload de erro para o cliente NÃO crashar — o status já foi
-    // gravado em transcricao_status='erro' e a mensagem em transcricao_erro.
     return new Response(
       JSON.stringify({ ok: false, error: String(e?.message ?? e) }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },

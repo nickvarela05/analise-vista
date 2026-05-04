@@ -118,7 +118,8 @@ const loginSchema = z.object({
 });
 
 const signupSchema = loginSchema.extend({
-  nome: z.string().min(2, "Informe seu nome"),
+  nome: z.string().min(2, "Informe seu nome").max(120),
+  invite: z.string().min(8, "Informe o código de convite"),
 });
 
 function LoginPage() {
@@ -147,7 +148,7 @@ function LoginPage() {
 
   const signupForm = useForm({
     resolver: zodResolver(signupSchema),
-    defaultValues: { email: "", password: "", nome: "" },
+    defaultValues: { email: "", password: "", nome: "", invite: "" },
   });
 
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
@@ -175,12 +176,16 @@ function LoginPage() {
       password: values.password,
       options: {
         emailRedirectTo: redirectTo,
-        data: { nome: values.nome },
+        data: { nome: values.nome, invite_token: values.invite },
       },
     });
     setLoading(false);
     if (error) {
-      toast.error("Falha no cadastro", { description: error.message });
+      toast.error("Falha no cadastro", {
+        description: /invite|convite/i.test(error.message)
+          ? "Código de convite inválido ou expirado. Solicite um novo ao gestor."
+          : error.message,
+      });
       return;
     }
     toast.success("Cadastro realizado", {
@@ -299,11 +304,20 @@ function LoginPage() {
                       </p>
                     )}
                   </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="su-invite">Código de convite</Label>
+                    <Input id="su-invite" {...signupForm.register("invite")} placeholder="Cole aqui o código recebido do gestor" />
+                    {signupForm.formState.errors.invite && (
+                      <p className="text-xs text-destructive">
+                        {signupForm.formState.errors.invite.message}
+                      </p>
+                    )}
+                  </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar conta
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    O primeiro usuário cadastrado vira <strong>gestor</strong>.
+                    Cadastro requer convite. Solicite ao seu gestor.
                   </p>
                 </form>
               </TabsContent>
