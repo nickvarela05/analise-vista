@@ -304,11 +304,20 @@ function LoginPage() {
                       </p>
                     )}
                   </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="su-invite">Código de convite</Label>
+                    <Input id="su-invite" {...signupForm.register("invite")} placeholder="Cole aqui o código recebido do gestor" />
+                    {signupForm.formState.errors.invite && (
+                      <p className="text-xs text-destructive">
+                        {signupForm.formState.errors.invite.message}
+                      </p>
+                    )}
+                  </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar conta
                   </Button>
                   <p className="text-center text-xs text-muted-foreground">
-                    O primeiro usuário cadastrado vira <strong>gestor</strong>.
+                    Cadastro requer convite. Solicite ao seu gestor.
                   </p>
                 </form>
               </TabsContent>
