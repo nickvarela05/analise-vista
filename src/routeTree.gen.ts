@@ -21,6 +21,7 @@ import { Route as AvisosRouteImport } from './routes/avisos'
 import { Route as AtividadesRouteImport } from './routes/atividades'
 import { Route as AlterarSenhaRouteImport } from './routes/alterar-senha'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiInspectN8nRouteImport } from './routes/api._inspect-n8n'
 import { Route as ApiAdminUsuariosRouteImport } from './routes/api.admin.usuarios'
 
 const TarefasRoute = TarefasRouteImport.update({
@@ -83,6 +84,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInspectN8nRoute = ApiInspectN8nRouteImport.update({
+  id: '/api/_inspect-n8n',
+  path: '/api',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminUsuariosRoute = ApiAdminUsuariosRouteImport.update({
   id: '/api/admin/usuarios',
   path: '/api/admin/usuarios',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
+  '/api': typeof ApiInspectN8nRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
 }
 export interface FileRoutesByTo {
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
+  '/api': typeof ApiInspectN8nRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
 }
 export interface FileRoutesById {
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
+  '/api/_inspect-n8n': typeof ApiInspectN8nRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
+    | '/api'
     | '/api/admin/usuarios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
+    | '/api'
     | '/api/admin/usuarios'
   id:
     | '__root__'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
+    | '/api/_inspect-n8n'
     | '/api/admin/usuarios'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +208,7 @@ export interface RootRouteChildren {
   RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
   TarefasRoute: typeof TarefasRoute
+  ApiInspectN8nRoute: typeof ApiInspectN8nRoute
   ApiAdminUsuariosRoute: typeof ApiAdminUsuariosRoute
 }
 
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/_inspect-n8n': {
+      id: '/api/_inspect-n8n'
+      path: '/api'
+      fullPath: '/api'
+      preLoaderRoute: typeof ApiInspectN8nRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/usuarios': {
       id: '/api/admin/usuarios'
       path: '/api/admin/usuarios'
@@ -308,8 +328,18 @@ const rootRouteChildren: RootRouteChildren = {
   RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,
   TarefasRoute: TarefasRoute,
+  ApiInspectN8nRoute: ApiInspectN8nRoute,
   ApiAdminUsuariosRoute: ApiAdminUsuariosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
