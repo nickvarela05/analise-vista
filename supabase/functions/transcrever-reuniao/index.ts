@@ -284,6 +284,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    if (e instanceof Response) return e;
     console.error("transcrever-reuniao error:", e);
     if (reuniaoId) {
       await admin
@@ -294,8 +295,6 @@ Deno.serve(async (req) => {
         })
         .eq("id", reuniaoId);
     }
-    // Retorna 200 com payload de erro para o cliente NÃO crashar — o status já foi
-    // gravado em transcricao_status='erro' e a mensagem em transcricao_erro.
     return new Response(
       JSON.stringify({ ok: false, error: String(e?.message ?? e) }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
