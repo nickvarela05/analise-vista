@@ -329,10 +329,11 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e: any) {
+    if (e instanceof Response) return e;
     console.error("gerar-relatorio-reuniao error:", e);
     return new Response(
       JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...corsFor(req), "Content-Type": "application/json" } },
     );
   }
 });
