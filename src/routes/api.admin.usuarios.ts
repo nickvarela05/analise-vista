@@ -53,6 +53,10 @@ const linkSchema = z.object({
 
 const deleteSchema = z.object({ user_id: z.string().uuid() });
 const resetSchema = z.object({ user_id: z.string().uuid() });
+const inviteSchema = z.object({
+  email: z.string().email().max(255),
+  role: z.enum(["gestor", "analista"]),
+});
 
 export const Route = createFileRoute("/api/admin/usuarios")({
   server: {
