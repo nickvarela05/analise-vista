@@ -219,10 +219,12 @@ async function analyzeWithAI(transcricao: string): Promise<{
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   let reuniaoId: string | null = null;
   try {
+    const user = await requireUser(req);
     if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY não configurada");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
@@ -230,6 +232,8 @@ Deno.serve(async (req) => {
     reuniaoId = body.reuniao_id;
     const audioPath: string = body.audio_path;
     if (!reuniaoId || !audioPath) throw new Error("reuniao_id e audio_path são obrigatórios");
+
+    await assertReuniaoAccess(admin, user.id, reuniaoId);
 
     await admin
       .from("reuniao")
