@@ -224,13 +224,17 @@ function mdToDocx(md: string): Paragraph[] {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const user = await requireUser(req);
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
     const { reuniao_id } = await req.json();
     if (!reuniao_id) throw new Error("reuniao_id é obrigatório");
+
+    await assertReuniaoAccess(admin, user.id, reuniao_id);
 
     const { data: r, error } = await admin
       .from("reuniao")
