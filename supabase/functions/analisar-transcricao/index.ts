@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
+    if (e instanceof Response) return e;
     console.error("analisar-transcricao error:", e);
     if (reuniaoId) {
       await admin
