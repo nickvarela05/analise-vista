@@ -182,13 +182,16 @@ export function EquipeUsuariosView({ colabs }: Props) {
         <p className="text-sm text-muted-foreground">
           {usuarios.length} usuário{usuarios.length === 1 ? "" : "s"} cadastrado{usuarios.length === 1 ? "" : "s"}.
         </p>
-        <CriarUsuarioDialog
-          colabs={colabs}
-          onCreated={(info) => {
-            setTempPasswordInfo(info);
-            reload();
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <ConvidarUsuarioDialog />
+          <CriarUsuarioDialog
+            colabs={colabs}
+            onCreated={(info) => {
+              setTempPasswordInfo(info);
+              reload();
+            }}
+          />
+        </div>
       </div>
 
       <div className="rounded-md border">
