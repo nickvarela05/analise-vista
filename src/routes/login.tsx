@@ -148,7 +148,7 @@ function LoginPage() {
 
   const signupForm = useForm({
     resolver: zodResolver(signupSchema),
-    defaultValues: { email: "", password: "", nome: "" },
+    defaultValues: { email: "", password: "", nome: "", invite: "" },
   });
 
   const onLogin = async (values: z.infer<typeof loginSchema>) => {
@@ -176,12 +176,16 @@ function LoginPage() {
       password: values.password,
       options: {
         emailRedirectTo: redirectTo,
-        data: { nome: values.nome },
+        data: { nome: values.nome, invite_token: values.invite },
       },
     });
     setLoading(false);
     if (error) {
-      toast.error("Falha no cadastro", { description: error.message });
+      toast.error("Falha no cadastro", {
+        description: /invite|convite/i.test(error.message)
+          ? "Código de convite inválido ou expirado. Solicite um novo ao gestor."
+          : error.message,
+      });
       return;
     }
     toast.success("Cadastro realizado", {
