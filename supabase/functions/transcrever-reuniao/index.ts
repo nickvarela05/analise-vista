@@ -1,18 +1,10 @@
 // deno-lint-ignore-file no-explicit-any
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsFor } from "../_shared/cors.ts";
+import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-// ElevenLabs desativado: Free Tier bloqueia chamadas vindas de servidores
-// (detectado como "atividade incomum"). Mantido comentado para rollback rápido.
-// const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
