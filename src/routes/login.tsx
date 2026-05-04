@@ -118,7 +118,8 @@ const loginSchema = z.object({
 });
 
 const signupSchema = loginSchema.extend({
-  nome: z.string().min(2, "Informe seu nome"),
+  nome: z.string().min(2, "Informe seu nome").max(120),
+  invite: z.string().min(8, "Informe o código de convite"),
 });
 
 function LoginPage() {
