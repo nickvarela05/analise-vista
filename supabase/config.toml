@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analisar-transcricao]
 verify_jwt = false
+
+[functions.gerar-relatorio-reuniao]
+verify_jwt = false
