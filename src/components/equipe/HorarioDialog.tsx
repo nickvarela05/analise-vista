@@ -113,11 +113,18 @@ export function HorarioDialog({
           </div>
           <div className="space-y-1.5">
             <Label>Local do almoço</Label>
-            <Input
+            <Select
               value={form.local_almoco}
-              onChange={(e) => setForm({ ...form, local_almoco: e.target.value })}
-              placeholder="Copa, Fora..."
-            />
+              onValueChange={(v) => setForm({ ...form, local_almoco: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Copa">Copa</SelectItem>
+                <SelectItem value="Fora">Fora</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="submit">Salvar</Button>
