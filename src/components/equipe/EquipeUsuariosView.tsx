@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Trash2, UserPlus, KeyRound, Copy, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Trash2, UserPlus, KeyRound, Copy, Check, AlertTriangle, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
