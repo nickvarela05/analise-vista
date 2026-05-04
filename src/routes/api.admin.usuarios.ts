@@ -103,7 +103,8 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           return Response.json({ usuarios });
         } catch (e) {
           if (e instanceof Response) return e;
-          return jsonError((e as Error).message, 500);
+          console.error("api.admin.usuarios GET error:", e);
+          return jsonError("Erro interno ao listar usuários", 500);
         }
       },
 
