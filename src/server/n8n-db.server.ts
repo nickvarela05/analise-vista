@@ -8,7 +8,9 @@ let _client: SupabaseClient | null = null;
  */
 export function getN8nDbClient(): SupabaseClient {
   if (_client) return _client;
-  const url = process.env.N8N_DB_URL;
+  const raw = process.env.N8N_DB_URL;
+  // Normaliza: remove path (/rest/v1) e barra final, mantém só origem
+  const url = raw ? new URL(raw).origin : undefined;
   const key = process.env.N8N_DB_SERVICE_ROLE_KEY ?? process.env.N8N_DB_ANON_KEY;
   if (!url || !key) {
     throw new Error("N8N_DB_URL ou chave (service role/anon) não configurados");
