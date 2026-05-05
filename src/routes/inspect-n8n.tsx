@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { inspectN8nDbSchema } from "@/server/n8n-db.functions";
 
-export const Route = createFileRoute("/_inspect-n8n")({
+export const Route = createFileRoute("/inspect-n8n")({
   component: InspectRoute,
 });
 
