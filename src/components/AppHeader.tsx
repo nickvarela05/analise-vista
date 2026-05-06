@@ -1,6 +1,7 @@
+import * as React from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, Moon, Sun, LogOut, User as UserIcon } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/avisos/NotificationBell";
 import {
@@ -15,10 +16,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme-provider";
 import { useAuth } from "@/lib/auth-context";
+import { GlobalSearch, useGlobalSearchHotkey } from "@/components/GlobalSearch";
 
 export function AppHeader() {
   const { theme, toggle } = useTheme();
   const { user, role, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  useGlobalSearchHotkey(setSearchOpen);
 
   const displayName = user?.email?.split("@")[0] ?? "Convidado";
   const initials = (user?.email ?? "DV")
