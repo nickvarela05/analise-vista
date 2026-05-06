@@ -139,6 +139,19 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
     qc.invalidateQueries({ queryKey: ["galeria-equipe"] });
   };
 
+  const editarLegenda = async (id: string, novaLegenda: string) => {
+    const { error } = await supabase
+      .from("colaborador_galeria")
+      .update({ legenda: novaLegenda.trim() || null })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro", { description: error.message });
+      return;
+    }
+    toast.success("Legenda atualizada");
+    qc.invalidateQueries({ queryKey: ["galeria-equipe"] });
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
