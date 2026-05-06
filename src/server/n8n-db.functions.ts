@@ -74,3 +74,36 @@ export const sampleN8nTable = createServerFn({ method: "POST" })
     if (error) return { ok: false, error: error.message };
     return { ok: true, rows };
   });
+
+export type SolicitacaoRelatorio = {
+  id: string;
+  email_id: string | null;
+  solicitante_nome: string | null;
+  solicitante_email: string | null;
+  tipo_base: string | null;
+  descricao: string | null;
+  prazo: string | null;
+  urgencia: string | null;
+  justificativa_urgencia: string | null;
+  status: string | null;
+  responsavel: string | null;
+  criado_em: string | null;
+  categoria: string | null;
+  detalhes_email: string | null;
+};
+
+/**
+ * Lista todas as solicitações de relatórios do banco externo N8N,
+ * ordenadas pelas mais recentes.
+ */
+export const listSolicitacoesRelatorios = createServerFn({ method: "GET" }).handler(
+  async () => {
+    const client = getN8nDbClient();
+    const { data, error } = await client
+      .from("solicitacoes_relatorios")
+      .select("*")
+      .order("criado_em", { ascending: false });
+    if (error) return { ok: false as const, error: error.message, rows: [] };
+    return { ok: true as const, rows: (data ?? []) as SolicitacaoRelatorio[] };
+  },
+);
