@@ -288,6 +288,36 @@ export type Database = {
           },
         ]
       }
+      colaborador_galeria: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          foto_url: string
+          id: string
+          legenda: string | null
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          foto_url: string
+          id?: string
+          legenda?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          foto_url?: string
+          id?: string
+          legenda?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       colaborador_horario: {
         Row: {
           almoco_fim: string | null
