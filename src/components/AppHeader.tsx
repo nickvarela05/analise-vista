@@ -108,6 +108,7 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </header>
   );
 }
