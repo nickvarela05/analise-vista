@@ -32,6 +32,13 @@ export interface Evento {
   anexo_url: string | null;
 }
 
+export type LocalTrabalho = "escritorio" | "rua";
+
+export const LOCAL_TRABALHO_LABEL: Record<LocalTrabalho, string> = {
+  escritorio: "Escritório",
+  rua: "Rua",
+};
+
 export interface Colaborador {
   id: string;
   nome: string;
@@ -41,6 +48,7 @@ export interface Colaborador {
   foto_url: string | null;
   ativo: boolean;
   ordem: number;
+  local_trabalho: LocalTrabalho;
   colaborador_horario: Horario[];
   colaborador_ferias: Ferias[];
   colaborador_evento: Evento[];
