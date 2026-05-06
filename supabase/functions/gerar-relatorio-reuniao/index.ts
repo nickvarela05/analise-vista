@@ -408,8 +408,9 @@ Deno.serve(async (req) => {
     const user = await requireUser(req);
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
-    const { reuniao_id } = await req.json();
+    const { reuniao_id, modelo } = await req.json();
     if (!reuniao_id) throw new Error("reuniao_id é obrigatório");
+    const aiModel = modelo === "pro" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
 
     await assertReuniaoAccess(admin, user.id, reuniao_id);
 
