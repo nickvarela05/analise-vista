@@ -121,14 +121,31 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           if (action === "create") {
             const data = createSchema.parse(body);
             const tempPassword = gerarSenhaTemporaria();
+            const internalInviteToken =
+              crypto.randomUUID().replace(/-/g, "") +
+              crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+
+            const { error: inviteError } = await admin.from("invite_token").insert({
+              email: data.email,
+              role: data.role,
+              token: internalInviteToken,
+              created_by: userId,
+            });
+            if (inviteError) {
+              console.error("internal invite insert error", inviteError);
+              return jsonError("Não foi possível preparar a criação do usuário", 500);
+            }
+
             const { data: created, error } = await admin.auth.admin.createUser({
               email: data.email,
               password: tempPassword,
               email_confirm: true,
-              app_metadata: { created_by_admin: true, role: data.role },
               user_metadata: { nome: data.nome, role: data.role },
             });
-            if (error) return jsonError(error.message, 400);
+            if (error) {
+              await admin.from("invite_token").delete().eq("token", internalInviteToken);
+              return jsonError(error.message, 400);
+            }
             const newId = created.user?.id;
             if (!newId) return jsonError("Falha ao criar usuário", 500);
             await admin.from("user_roles").delete().eq("user_id", newId);
