@@ -178,6 +178,18 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                   placeholder="E-mail"
                   className="h-8"
                 />
+                <Select
+                  value={form.local_trabalho}
+                  onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="escritorio">{LOCAL_TRABALHO_LABEL.escritorio}</SelectItem>
+                    <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
+                  </SelectContent>
+                </Select>
               </>
             ) : (
               <>
@@ -185,6 +197,9 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                 {colab.cargo && (
                   <p className="text-sm text-muted-foreground">{colab.cargo}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  {LOCAL_TRABALHO_LABEL[(colab.local_trabalho ?? "escritorio") as LocalTrabalho]}
+                </p>
                 {colab.email && (
                   <p className="text-xs text-muted-foreground">{colab.email}</p>
                 )}
