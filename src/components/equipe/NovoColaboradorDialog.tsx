@@ -65,7 +65,7 @@ export function NovoColaboradorDialog() {
     toast.success("Colaborador adicionado");
     setOpen(false);
     setFoto(null);
-    setForm({ nome: "", cargo: "", bio: "", email: "" });
+    setForm({ nome: "", cargo: "", bio: "", email: "", local_trabalho: "escritorio" });
     qc.invalidateQueries({ queryKey: ["equipe"] });
   };
 
