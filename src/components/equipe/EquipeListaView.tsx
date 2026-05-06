@@ -32,6 +32,20 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
     (c.cargo ?? "").toLowerCase().includes(q.toLowerCase()),
   );
 
+  const grouped = React.useMemo(() => {
+    const map = new Map<string, Colaborador[]>();
+    for (const c of filtered) {
+      const key = c.cargo?.trim() || "Sem cargo";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(c);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === "Sem cargo") return 1;
+      if (b === "Sem cargo") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filtered]);
+
   return (
     <div className="space-y-3">
       <div className="relative max-w-sm">
