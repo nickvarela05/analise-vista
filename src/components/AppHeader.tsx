@@ -94,7 +94,7 @@ export function AppHeader() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/perfil" })}>
               <UserIcon className="mr-2 h-4 w-4" /> Meu perfil
             </DropdownMenuItem>
             {user && (
