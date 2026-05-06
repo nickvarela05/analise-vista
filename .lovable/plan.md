@@ -1,49 +1,32 @@
 ## Objetivo
 
-Substituir o ElevenLabs (Free Tier bloqueado por "atividade incomum") pelo **Groq Whisper-large-v3**: gratuito, rápido, sem cartão, sem bloqueio de IP de servidor. Manter o código antigo do ElevenLabs comentado para rollback fácil.
+Permitir que o gestor reordene as fotos da "Galeria da equipe" arrastando-as. A nova ordem é persistida no banco e refletida para todos.
 
-## Pré-requisito (você precisa fazer antes)
+## Mudanças
 
-1. Acesse **https://console.groq.com**
-2. Crie conta gratuita (login com Google funciona)
-3. Vá em **API Keys** → **Create API Key**
-4. Copie a chave (começa com `gsk_...`)
+### 1. Biblioteca de drag-and-drop
+- Instalar `@dnd-kit/core`, `@dnd-kit/sortable` e `@dnd-kit/utilities` (padrão moderno, acessível, sem dependências legadas).
 
-Depois que eu começar a implementação, vou pedir essa chave via tool de secret (`GROQ_API_KEY`).
+### 2. `src/components/equipe/GaleriaDialog.tsx`
+- Ordenar query por `ordem ASC, created_at DESC` (em vez de só `created_at`).
+- Envolver a grade de fotos com `DndContext` + `SortableContext` (estratégia `rectSortingStrategy`).
+- Cada item da galeria vira um `SortableItem` com handle de arrastar (ícone `GripVertical` no canto superior esquerdo, visível em hover, apenas para gestor).
+- Ao soltar (`onDragEnd`):
+  - Reordenar localmente (otimista) via `arrayMove`.
+  - Recalcular `ordem` (índice no array) e fazer `upsert` em lote no Supabase para todas as fotos afetadas.
+  - Em caso de erro: toast e `invalidateQueries` para reverter.
+- Para usuários sem permissão (`canManage = false`): grade renderiza normalmente, sem drag.
 
-## O que muda
+### 3. Novas fotos
+- Ao inserir, usar `ordem = (max(ordem) + 1)` em vez de `0`, para que apareçam ao final.
 
-### 1. Edge function `supabase/functions/transcrever-reuniao/index.ts`
-- Adicionar função `transcribeWithGroq(audioBlob, fileName)` que chama:
-  ```
-  POST https://api.groq.com/openai/v1/audio/transcriptions
-  model=whisper-large-v3
-  language=pt
-  response_format=verbose_json
-  temperature=0
-  ```
-- Comentar (não apagar) a função `transcribeWithElevenLabs` e o check da `ELEVENLABS_API_KEY`, com cabeçalho explicando o motivo, para rollback rápido se quisermos voltar.
-- Trocar a chamada no handler para usar Groq.
-- Tratamento de erros específicos:
-  - 401 → "Groq API key inválida"
-  - 413 → "Áudio maior que 25 MB. Comprima ou divida o arquivo."
-  - 429 → "Limite de requisições Groq atingido, aguarde 1 min."
+## Detalhes técnicos
 
-### 2. Sem mudanças em
-- Frontend (mesma chamada à edge function)
-- Banco de dados (mesmos campos)
-- Análise por IA com Gemini (continua extraindo resumo, pauta, próximos passos, decisões e participantes a partir do texto)
+- Sensors: `PointerSensor` (com `activationConstraint: { distance: 6 }` para não conflitar com clique no botão de excluir) + `KeyboardSensor` para acessibilidade.
+- `SortableItem` usa `useSortable({ id })` e aplica `transform`/`transition` via `CSS.Transform.toString`.
+- Persistência: `supabase.from('colaborador_galeria').upsert(items.map((f, i) => ({ id: f.id, ordem: i })))` — RLS já permite gestor (`Gestor gerencia galeria`).
+- Sem migração de banco — `ordem` já existe.
 
-## Limitações a saber
-
-- **Máximo 25 MB por arquivo**. Reuniões de 1h em MP3 mono 32–64 kbps cabem (~14–28 MB). Se o áudio atual for WAV ou bitrate alto e estourar, te aviso e adiciono compressão depois.
-- **Sem diarização** (texto corrido, sem "Falante 1/2"). Confirmado que está OK pra você. O Gemini ainda detecta nomes mencionados.
-
-## Passos da implementação (após sua aprovação)
-
-1. Pedir o secret `GROQ_API_KEY` via tool.
-2. Editar `supabase/functions/transcrever-reuniao/index.ts` (adicionar Groq, comentar ElevenLabs).
-3. Deploy automático.
-4. Você clica em **Tentar novamente** no card da reunião com erro e validamos.
-
-Pode confirmar e me dizer quando tiver a `GROQ_API_KEY` em mãos?
+## Fora do escopo
+- Reordenação por drag em outras listas (ex.: colaboradores).
+- Edição de legenda inline.
