@@ -50,7 +50,7 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
   const [legenda, setLegenda] = React.useState("");
   const [items, setItems] = React.useState<Foto[]>([]);
 
-  const { data: fotos = [], isLoading } = useQuery({
+  const { data: fotos, isLoading } = useQuery({
     queryKey: ["galeria-equipe"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -65,7 +65,7 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
   });
 
   React.useEffect(() => {
-    setItems(fotos);
+    if (fotos) setItems(fotos);
   }, [fotos]);
 
   const sensors = useSensors(
