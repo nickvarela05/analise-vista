@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioRoute,
@@ -159,6 +160,13 @@ function Portfolio() {
                 </div>
                 {c.bio && <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{c.bio}</p>}
                 {c.email && <p className="mt-2 text-xs text-muted-foreground">{c.email}</p>}
+                <div className="mt-3 flex justify-end">
+                  <GaleriaDialog
+                    colaboradorId={c.id}
+                    colaboradorNome={c.nome}
+                    canManage={isGestor}
+                  />
+                </div>
               </CardContent>
             </Card>
           ))}
