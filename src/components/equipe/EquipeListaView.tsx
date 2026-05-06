@@ -51,6 +51,7 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
               <TableHead className="w-[260px]">Colaborador</TableHead>
               <TableHead>Status agora</TableHead>
               <TableHead>Hoje ({DIAS[dia]})</TableHead>
+              <TableHead>Almoça em</TableHead>
               <TableHead>Próximo evento</TableHead>
             </TableRow>
           </TableHeader>
@@ -105,6 +106,9 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {h?.local_almoco ?? "—"}
+                  </TableCell>
                   <TableCell>
                     {proxEvento ? (
                       <Badge variant="outline" className="text-[10px]">
@@ -120,7 +124,7 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
                   Nenhum colaborador.
                 </TableCell>
               </TableRow>
