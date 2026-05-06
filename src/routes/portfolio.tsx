@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Users as UsersIcon, Search, Mail, Sparkles } from "lucide-react";
+import { Plus, Loader2, Users as UsersIcon, Search, Mail, Sparkles, Pencil, Trash2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { EmptyState } from "@/components/EmptyState";
@@ -20,10 +20,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
 import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
+
+type Colaborador = {
+  id: string;
+  nome: string;
+  cargo: string | null;
+  email: string | null;
+  bio: string | null;
+  foto_url: string | null;
+};
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioRoute,
