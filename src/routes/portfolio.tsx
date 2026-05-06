@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Users as UsersIcon, Search, Mail, Sparkles, Pencil, Trash2, MoreVertical } from "lucide-react";
+import { Loader2, Users as UsersIcon, Search, Mail, Sparkles, Pencil, Trash2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { EmptyState } from "@/components/EmptyState";
@@ -18,7 +18,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -65,13 +64,8 @@ function PortfolioRoute() {
 
 function Portfolio() {
   const { role } = useAuth();
-  const qc = useQueryClient();
   const isGestor = role === "gestor";
-  const [open, setOpen] = React.useState(false);
-  const [foto, setFoto] = React.useState<File | null>(null);
-  const [saving, setSaving] = React.useState(false);
   const [busca, setBusca] = React.useState("");
-  const [form, setForm] = React.useState({ nome: "", cargo: "", bio: "", email: "" });
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["colaboradores"],
@@ -101,39 +95,6 @@ function Portfolio() {
     () => Array.from(new Set(data.map((c) => c.cargo).filter(Boolean))).length,
     [data],
   );
-
-  const criar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.nome.trim()) return;
-    setSaving(true);
-
-    let foto_url: string | null = null;
-    if (foto) {
-      const path = `team/${Date.now()}-${foto.name}`;
-      const { error: upErr } = await supabase.storage
-        .from("colaborador-fotos")
-        .upload(path, foto);
-      if (upErr) {
-        setSaving(false);
-        toast.error("Erro no upload", { description: upErr.message });
-        return;
-      }
-      const { data: pub } = supabase.storage.from("colaborador-fotos").getPublicUrl(path);
-      foto_url = pub.publicUrl;
-    }
-
-    const { error } = await supabase.from("colaborador").insert({ ...form, foto_url });
-    setSaving(false);
-    if (error) {
-      toast.error("Erro", { description: error.message });
-      return;
-    }
-    toast.success("Colaborador adicionado");
-    setOpen(false);
-    setFoto(null);
-    setForm({ nome: "", cargo: "", bio: "", email: "" });
-    qc.invalidateQueries({ queryKey: ["colaboradores"] });
-  };
 
   return (
     <div className="space-y-8">
