@@ -141,7 +141,7 @@ function Portfolio() {
         }
       />
 
-      <div className="mb-6">
+      <div className="mx-auto mb-6 max-w-4xl">
         <GaleriaCarousel />
       </div>
 

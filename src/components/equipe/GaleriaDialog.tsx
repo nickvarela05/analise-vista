@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, Trash2, Images, GripVertical } from "lucide-react";
+import { Loader2, Trash2, Images, GripVertical, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -139,6 +139,19 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
     qc.invalidateQueries({ queryKey: ["galeria-equipe"] });
   };
 
+  const editarLegenda = async (id: string, novaLegenda: string) => {
+    const { error } = await supabase
+      .from("colaborador_galeria")
+      .update({ legenda: novaLegenda.trim() || null })
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro", { description: error.message });
+      return;
+    }
+    toast.success("Legenda atualizada");
+    qc.invalidateQueries({ queryKey: ["galeria-equipe"] });
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -192,6 +205,7 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
                     foto={f}
                     canManage={canManage}
                     onRemove={() => remover(f.id)}
+                    onEditLegenda={(novaLegenda) => editarLegenda(f.id, novaLegenda)}
                   />
                 ))}
               </div>
@@ -207,21 +221,34 @@ function SortableFoto({
   foto,
   canManage,
   onRemove,
+  onEditLegenda,
 }: {
   foto: Foto;
   canManage: boolean;
   onRemove: () => void;
+  onEditLegenda: (novaLegenda: string) => void | Promise<void>;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: foto.id,
     disabled: !canManage,
   });
+  const [editing, setEditing] = React.useState(false);
+  const [valor, setValor] = React.useState(foto.legenda ?? "");
+
+  React.useEffect(() => {
+    setValor(foto.legenda ?? "");
+  }, [foto.legenda]);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : "auto",
+  };
+
+  const salvar = async () => {
+    await onEditLegenda(valor);
+    setEditing(false);
   };
 
   return (
@@ -247,8 +274,56 @@ function SortableFoto({
         className="h-44 w-full object-cover"
         draggable={false}
       />
-      {foto.legenda && (
-        <p className="line-clamp-2 px-2 py-1.5 text-xs text-muted-foreground">{foto.legenda}</p>
+      {editing ? (
+        <div className="flex items-center gap-1 p-1.5">
+          <Input
+            value={valor}
+            onChange={(e) => setValor(e.target.value)}
+            placeholder="Legenda"
+            className="h-7 text-xs"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") salvar();
+              if (e.key === "Escape") {
+                setValor(foto.legenda ?? "");
+                setEditing(false);
+              }
+            }}
+          />
+          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={salvar}>
+            <Check className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 shrink-0"
+            onClick={() => {
+              setValor(foto.legenda ?? "");
+              setEditing(false);
+            }}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : (
+        (foto.legenda || canManage) && (
+          <div className="flex items-start justify-between gap-1 px-2 py-1.5">
+            <p className="line-clamp-2 flex-1 text-xs text-muted-foreground">
+              {foto.legenda || <span className="italic opacity-60">Sem legenda</span>}
+            </p>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                aria-label="Editar legenda"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )
       )}
       {canManage && (
         <Button
