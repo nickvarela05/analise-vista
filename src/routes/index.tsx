@@ -144,6 +144,12 @@ function Dashboard() {
     },
   });
 
+  const { data: solicitacoesData, isLoading: loadingSolic } = useQuery({
+    queryKey: ["dash-solicitacoes-relatorios"],
+    queryFn: () => listSolicitacoesRelatorios(),
+  });
+  const solicitacoes = solicitacoesData?.ok ? solicitacoesData.rows : [];
+
   const colabById = React.useMemo(() => {
     const map = new Map<string, any>();
     colaboradores.forEach((c) => map.set(c.id, c));
@@ -151,6 +157,17 @@ function Dashboard() {
   }, [colaboradores]);
 
   // KPIs
+  const isPendente = (s: string | null) => (s ?? "").toLowerCase() === "pendente";
+  const isRelatorio = (cat: string | null) =>
+    (cat ?? "").toLowerCase().includes("relat");
+
+  const solicRelatPend = solicitacoes.filter(
+    (s) => isPendente(s.status) && isRelatorio(s.categoria),
+  ).length;
+  const solicOutrasPend = solicitacoes.filter(
+    (s) => isPendente(s.status) && !isRelatorio(s.categoria),
+  ).length;
+
   const totalChamados = chamados.length;
   const relatPendentes = chamados.filter((c) => c.status !== "finalizado").length;
   const relatEncaminhados = chamados.filter((c) => c.status === "encaminhado").length;
