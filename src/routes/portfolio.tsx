@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, Users as UsersIcon, Search, Mail, Sparkles } from "lucide-react";
+import { Plus, Loader2, Users as UsersIcon, Search, Mail, Sparkles, Pencil, Trash2, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { EmptyState } from "@/components/EmptyState";
@@ -20,10 +20,36 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
 import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
+
+type Colaborador = {
+  id: string;
+  nome: string;
+  cargo: string | null;
+  email: string | null;
+  bio: string | null;
+  foto_url: string | null;
+};
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioRoute,
@@ -240,7 +266,7 @@ function Portfolio() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtrados.map((c) => (
-              <ColaboradorCard key={c.id} colaborador={c} />
+              <ColaboradorCard key={c.id} colaborador={c} canManage={isGestor} />
             ))}
           </div>
         )}
@@ -282,22 +308,35 @@ function SkeletonCard() {
 
 function ColaboradorCard({
   colaborador: c,
+  canManage,
 }: {
-  colaborador: {
-    id: string;
-    nome: string;
-    cargo: string | null;
-    email: string | null;
-    bio: string | null;
-    foto_url: string | null;
-  };
+  colaborador: Colaborador;
+  canManage: boolean;
 }) {
+  const qc = useQueryClient();
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [excluindo, setExcluindo] = React.useState(false);
+
   const iniciais = c.nome
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
     .map((n) => n[0]?.toUpperCase())
     .join("");
+
+  const excluir = async () => {
+    setExcluindo(true);
+    const { error } = await supabase.from("colaborador").delete().eq("id", c.id);
+    setExcluindo(false);
+    if (error) {
+      toast.error("Erro ao excluir", { description: error.message });
+      return;
+    }
+    toast.success("Colaborador excluído");
+    setConfirmOpen(false);
+    qc.invalidateQueries({ queryKey: ["colaboradores"] });
+  };
 
   return (
     <Card className="group relative overflow-hidden border-border/60 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg">
@@ -310,6 +349,34 @@ function ColaboradorCard({
             aria-hidden
             className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-xl"
           />
+        )}
+        {canManage && (
+          <div className="absolute right-2 top-2 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-8 w-8 rounded-full bg-background/80 shadow-sm backdrop-blur hover:bg-background"
+                  aria-label="Ações"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setConfirmOpen(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
       </div>
       <CardContent className="p-5">
@@ -340,6 +407,162 @@ function ColaboradorCard({
           </a>
         )}
       </CardContent>
+
+      {canManage && (
+        <>
+          <EditarColaboradorDialog
+            colaborador={c}
+            open={editOpen}
+            onOpenChange={setEditOpen}
+          />
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. {c.nome} será removido permanentemente do portfólio.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    excluir();
+                  }}
+                  disabled={excluindo}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {excluindo && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </Card>
+  );
+}
+
+function EditarColaboradorDialog({
+  colaborador,
+  open,
+  onOpenChange,
+}: {
+  colaborador: Colaborador;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const [salvando, setSalvando] = React.useState(false);
+  const [foto, setFoto] = React.useState<File | null>(null);
+  const [form, setForm] = React.useState({
+    nome: colaborador.nome,
+    cargo: colaborador.cargo ?? "",
+    email: colaborador.email ?? "",
+    bio: colaborador.bio ?? "",
+  });
+
+  React.useEffect(() => {
+    if (open) {
+      setForm({
+        nome: colaborador.nome,
+        cargo: colaborador.cargo ?? "",
+        email: colaborador.email ?? "",
+        bio: colaborador.bio ?? "",
+      });
+      setFoto(null);
+    }
+  }, [open, colaborador]);
+
+  const salvar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.nome.trim()) return;
+    setSalvando(true);
+
+    let foto_url = colaborador.foto_url;
+    if (foto) {
+      const path = `team/${Date.now()}-${foto.name}`;
+      const { error: upErr } = await supabase.storage
+        .from("colaborador-fotos")
+        .upload(path, foto);
+      if (upErr) {
+        setSalvando(false);
+        toast.error("Erro no upload", { description: upErr.message });
+        return;
+      }
+      const { data: pub } = supabase.storage.from("colaborador-fotos").getPublicUrl(path);
+      foto_url = pub.publicUrl;
+    }
+
+    const { error } = await supabase
+      .from("colaborador")
+      .update({
+        nome: form.nome,
+        cargo: form.cargo || null,
+        email: form.email || null,
+        bio: form.bio || null,
+        foto_url,
+      })
+      .eq("id", colaborador.id);
+
+    setSalvando(false);
+    if (error) {
+      toast.error("Erro", { description: error.message });
+      return;
+    }
+    toast.success("Colaborador atualizado");
+    onOpenChange(false);
+    qc.invalidateQueries({ queryKey: ["colaboradores"] });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar colaborador</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={salvar} className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Nome</Label>
+            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Cargo</Label>
+            <Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>E-mail</Label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Bio</Label>
+            <Textarea
+              rows={3}
+              value={form.bio}
+              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Foto {colaborador.foto_url && <span className="text-xs text-muted-foreground">(deixe vazio para manter a atual)</span>}</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={salvando}>
+              {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar alterações
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
