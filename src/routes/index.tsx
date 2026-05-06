@@ -396,15 +396,24 @@ function Dashboard() {
       )}
 
       {/* KPIs principais */}
-      <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-5">
         <KpiTile
           icon={FileBarChart}
-          label="Chamados em aberto"
-          value={relatPendentes}
-          hint={`${totalChamados} chamados no total`}
+          label="Solicitações de relatórios"
+          value={solicRelatPend}
+          hint="Pendentes"
           tone="warning"
           to="/relatorios"
-          loading={loadingChamados}
+          loading={loadingSolic}
+        />
+        <KpiTile
+          icon={Inbox}
+          label="Outras solicitações"
+          value={solicOutrasPend}
+          hint="Pendentes"
+          tone="info"
+          to="/relatorios"
+          loading={loadingSolic}
         />
         <KpiTile
           icon={CheckSquare}
