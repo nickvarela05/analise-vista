@@ -161,65 +161,6 @@ function Portfolio() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <GaleriaDialog canManage={isGestor} />
-            {isGestor && (
-              <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Novo colaborador
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Novo colaborador</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={criar} className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label>Nome</Label>
-                      <Input
-                        value={form.nome}
-                        onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Cargo</Label>
-                      <Input
-                        value={form.cargo}
-                        onChange={(e) => setForm({ ...form, cargo: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>E-mail</Label>
-                      <Input
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Bio</Label>
-                      <Textarea
-                        rows={3}
-                        value={form.bio}
-                        onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Foto</Label>
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit" disabled={saving}>
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salvar
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
         </div>
 
