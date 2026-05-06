@@ -57,8 +57,10 @@ function urgenciaVariant(u: string | null) {
 
 function statusVariant(s: string | null) {
   const v = (s ?? "").toLowerCase();
-  if (v === "finalizado" || v === "concluído" || v === "concluido") return "bg-success/15 text-success border-success/30";
-  if (v === "encaminhado" || v === "em andamento") return "bg-info/15 text-info border-info/30";
+  if (v === "enviado" || v === "finalizado" || v === "concluído" || v === "concluido")
+    return "bg-success/15 text-success border-success/30";
+  if (v === "feito" || v === "encaminhado" || v === "em andamento")
+    return "bg-info/15 text-info border-info/30";
   if (v === "pendente") return "bg-warning/20 text-warning-foreground border-warning/40";
   return "bg-muted text-muted-foreground";
 }
