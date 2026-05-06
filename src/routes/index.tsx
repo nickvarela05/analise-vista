@@ -30,6 +30,7 @@ import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { listSolicitacoesRelatorios } from "@/server/n8n-db.functions";
 import { cn } from "@/lib/utils";
 import {
   ResponsiveContainer,
