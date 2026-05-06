@@ -112,6 +112,12 @@ REGRA DE OURO: detalhe sem inventar; não repita o que já está na capa.`;
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers de formatação docx
 // ────────────────────────────────────────────────────────────────────────────
+function truncateMiddle(text: string, max: number): string {
+  if (!text || text.length <= max) return text;
+  const half = Math.floor((max - 40) / 2);
+  return text.slice(0, half) + "\n\n[... trecho omitido para reduzir o tempo de geração ...]\n\n" + text.slice(-half);
+}
+
 const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: BRAND.border };
 const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
 
@@ -408,8 +414,9 @@ Deno.serve(async (req) => {
     const user = await requireUser(req);
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
-    const { reuniao_id } = await req.json();
+    const { reuniao_id, modelo } = await req.json();
     if (!reuniao_id) throw new Error("reuniao_id é obrigatório");
+    const aiModel = modelo === "pro" ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
 
     await assertReuniaoAccess(admin, user.id, reuniao_id);
 
@@ -431,7 +438,7 @@ Deno.serve(async (req) => {
       resumo: r.resumo ?? "",
       decisoes: r.decisoes ?? [],
       proximos_passos: r.proximos_passos ?? "",
-      transcricao: (r.transcricao ?? "").slice(0, 80000),
+      transcricao: truncateMiddle(r.transcricao ?? "", 40000),
     };
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -441,7 +448,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: aiModel,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {
