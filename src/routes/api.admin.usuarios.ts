@@ -64,7 +64,10 @@ export const Route = createFileRoute("/api/admin/usuarios")({
       GET: async ({ request }) => {
         try {
           const { admin } = await requireGestor(request);
-          const { data: usersResp, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+          const { data: usersResp, error } = await admin.auth.admin.listUsers({
+            page: 1,
+            perPage: 200,
+          });
           if (error) return jsonError(error.message, 500);
 
           const ids = usersResp.users.map((u) => u.id);
@@ -130,7 +133,11 @@ export const Route = createFileRoute("/api/admin/usuarios")({
             if (!newId) return jsonError("Falha ao criar usuário", 500);
             await admin.from("user_roles").delete().eq("user_id", newId);
             await admin.from("user_roles").insert({ user_id: newId, role: data.role });
-            const updates: { nome: string; must_change_password: boolean; colaborador_id?: string } = {
+            const updates: {
+              nome: string;
+              must_change_password: boolean;
+              colaborador_id?: string;
+            } = {
               nome: data.nome,
               must_change_password: true,
             };
@@ -201,7 +208,9 @@ export const Route = createFileRoute("/api/admin/usuarios")({
 
           if (action === "invite") {
             const data = inviteSchema.parse(body);
-            const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+            const token =
+              crypto.randomUUID().replace(/-/g, "") +
+              crypto.randomUUID().replace(/-/g, "").slice(0, 8);
             const { error } = await admin.from("invite_token").insert({
               email: data.email,
               role: data.role,
@@ -218,7 +227,8 @@ export const Route = createFileRoute("/api/admin/usuarios")({
           return jsonError("Ação inválida", 400);
         } catch (e) {
           if (e instanceof Response) return e;
-          if (e instanceof z.ZodError) return jsonError(e.issues[0]?.message ?? "Dados inválidos", 400);
+          if (e instanceof z.ZodError)
+            return jsonError(e.issues[0]?.message ?? "Dados inválidos", 400);
           console.error("api.admin.usuarios POST error:", e);
           return jsonError("Erro interno", 500);
         }
