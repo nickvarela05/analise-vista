@@ -106,6 +106,9 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {h?.local_almoco ?? "—"}
+                  </TableCell>
                   <TableCell>
                     {proxEvento ? (
                       <Badge variant="outline" className="text-[10px]">
