@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, FileBarChart, RefreshCw, Search, Mail, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -25,9 +26,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listSolicitacoesRelatorios,
+  updateSolicitacaoRelatorio,
+  STATUS_SOLICITACAO,
   type SolicitacaoRelatorio,
+  type StatusSolicitacao,
 } from "@/server/n8n-db.functions";
 
 export const Route = createFileRoute("/relatorios")({
@@ -52,8 +57,10 @@ function urgenciaVariant(u: string | null) {
 
 function statusVariant(s: string | null) {
   const v = (s ?? "").toLowerCase();
-  if (v === "finalizado" || v === "concluído" || v === "concluido") return "bg-success/15 text-success border-success/30";
-  if (v === "encaminhado" || v === "em andamento") return "bg-info/15 text-info border-info/30";
+  if (v === "enviado" || v === "finalizado" || v === "concluído" || v === "concluido")
+    return "bg-success/15 text-success border-success/30";
+  if (v === "feito" || v === "encaminhado" || v === "em andamento")
+    return "bg-info/15 text-info border-info/30";
   if (v === "pendente") return "bg-warning/20 text-warning-foreground border-warning/40";
   return "bg-muted text-muted-foreground";
 }
@@ -67,6 +74,33 @@ function Relatorios() {
     queryKey: ["solicitacoes-relatorios"],
     queryFn: () => listSolicitacoesRelatorios(),
     refetchOnWindowFocus: false,
+  });
+
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ["relatorios-colaboradores"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (vars: { id: string; responsavel?: string | null; status?: StatusSolicitacao }) =>
+      updateSolicitacaoRelatorio({ data: vars }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("Erro ao atualizar", { description: res.error });
+        return;
+      }
+      toast.success("Atualizado");
+      qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao atualizar", { description: e.message }),
   });
 
   const rows: SolicitacaoRelatorio[] = data?.ok ? data.rows : [];
@@ -190,9 +224,10 @@ function Relatorios() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Solicitante</TableHead>
-                <TableHead className="min-w-[300px]">Descrição</TableHead>
+                <TableHead className="min-w-[280px]">Descrição</TableHead>
                 <TableHead>Urgência</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="min-w-[160px]">Responsável</TableHead>
+                <TableHead className="min-w-[140px]">Status</TableHead>
                 <TableHead>Prazo</TableHead>
                 <TableHead>Recebido</TableHead>
               </TableRow>
@@ -231,9 +266,45 @@ function Relatorios() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusVariant(r.status)}>
-                      {r.status ?? "—"}
-                    </Badge>
+                    <Select
+                      value={r.responsavel ?? "__none__"}
+                      onValueChange={(v) =>
+                        updateMut.mutate({ id: r.id, responsavel: v === "__none__" ? null : v })
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Atribuir..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Sem responsável —</SelectItem>
+                        {colaboradores.map((c) => (
+                          <SelectItem key={c.id} value={c.nome}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={(STATUS_SOLICITACAO as readonly string[]).includes(r.status ?? "")
+                        ? (r.status as string)
+                        : "Pendente"}
+                      onValueChange={(v) =>
+                        updateMut.mutate({ id: r.id, status: v as StatusSolicitacao })
+                      }
+                    >
+                      <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_SOLICITACAO.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {r.prazo ? format(new Date(r.prazo), "dd/MM/yyyy") : "—"}

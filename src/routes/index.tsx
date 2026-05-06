@@ -30,6 +30,7 @@ import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
+import { listSolicitacoesRelatorios } from "@/server/n8n-db.functions";
 import { cn } from "@/lib/utils";
 import {
   ResponsiveContainer,
@@ -143,6 +144,12 @@ function Dashboard() {
     },
   });
 
+  const { data: solicitacoesData, isLoading: loadingSolic } = useQuery({
+    queryKey: ["dash-solicitacoes-relatorios"],
+    queryFn: () => listSolicitacoesRelatorios(),
+  });
+  const solicitacoes = solicitacoesData?.ok ? solicitacoesData.rows : [];
+
   const colabById = React.useMemo(() => {
     const map = new Map<string, any>();
     colaboradores.forEach((c) => map.set(c.id, c));
@@ -150,6 +157,17 @@ function Dashboard() {
   }, [colaboradores]);
 
   // KPIs
+  const isPendente = (s: string | null) => (s ?? "").toLowerCase() === "pendente";
+  const isRelatorio = (cat: string | null) =>
+    (cat ?? "").toLowerCase().includes("relat");
+
+  const solicRelatPend = solicitacoes.filter(
+    (s) => isPendente(s.status) && isRelatorio(s.categoria),
+  ).length;
+  const solicOutrasPend = solicitacoes.filter(
+    (s) => isPendente(s.status) && !isRelatorio(s.categoria),
+  ).length;
+
   const totalChamados = chamados.length;
   const relatPendentes = chamados.filter((c) => c.status !== "finalizado").length;
   const relatEncaminhados = chamados.filter((c) => c.status === "encaminhado").length;
@@ -378,15 +396,24 @@ function Dashboard() {
       )}
 
       {/* KPIs principais */}
-      <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-5">
         <KpiTile
           icon={FileBarChart}
-          label="Chamados em aberto"
-          value={relatPendentes}
-          hint={`${totalChamados} chamados no total`}
+          label="Solicitações de relatórios"
+          value={solicRelatPend}
+          hint="Pendentes"
           tone="warning"
           to="/relatorios"
-          loading={loadingChamados}
+          loading={loadingSolic}
+        />
+        <KpiTile
+          icon={Inbox}
+          label="Outras solicitações"
+          value={solicOutrasPend}
+          hint="Pendentes"
+          tone="info"
+          to="/relatorios"
+          loading={loadingSolic}
         />
         <KpiTile
           icon={CheckSquare}
