@@ -96,6 +96,21 @@ export function NovoColaboradorDialog() {
             />
           </div>
           <div className="space-y-1.5">
+            <Label>Local de trabalho</Label>
+            <Select
+              value={form.local_trabalho}
+              onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="escritorio">{LOCAL_TRABALHO_LABEL.escritorio}</SelectItem>
+                <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
             <Label>E-mail</Label>
             <Input
               type="email"
