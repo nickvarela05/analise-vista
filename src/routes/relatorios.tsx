@@ -1,28 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, FileBarChart } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2, FileBarChart, RefreshCw, Search, Mail, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { StatCard } from "@/components/StatCard";
-import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -38,7 +25,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  listSolicitacoesRelatorios,
+  type SolicitacaoRelatorio,
+} from "@/server/n8n-db.functions";
 
 export const Route = createFileRoute("/relatorios")({
   component: RelatoriosRoute,
@@ -52,243 +42,127 @@ function RelatoriosRoute() {
   );
 }
 
-const STATUS_OPTS = ["aberto", "encaminhado", "finalizado"] as const;
-type StatusRel = (typeof STATUS_OPTS)[number];
-const PRIO_OPTS = ["baixa", "media", "alta", "critica"] as const;
-
-const STATUS_LABEL: Record<StatusRel, string> = {
-  aberto: "Aberto",
-  encaminhado: "Encaminhado",
-  finalizado: "Finalizado",
-};
-
-function statusVariant(s: string) {
-  if (s === "finalizado") return "bg-success/15 text-success border-success/30";
-  if (s === "aberto") return "bg-info/15 text-info border-info/30";
-  if (s === "encaminhado") return "bg-warning/20 text-warning-foreground border-warning/40";
+function urgenciaVariant(u: string | null) {
+  const v = (u ?? "").toLowerCase();
+  if (v === "crítica" || v === "critica") return "bg-destructive/15 text-destructive border-destructive/30";
+  if (v === "alta") return "bg-warning/20 text-warning-foreground border-warning/30";
+  if (v === "média" || v === "media") return "bg-primary/10 text-primary border-primary/20";
   return "bg-muted text-muted-foreground";
 }
 
-function prioVariant(p: string) {
-  if (p === "critica") return "bg-destructive/15 text-destructive border-destructive/30";
-  if (p === "alta") return "bg-warning/20 text-warning-foreground border-warning/30";
-  if (p === "media") return "bg-primary/10 text-primary border-primary/20";
+function statusVariant(s: string | null) {
+  const v = (s ?? "").toLowerCase();
+  if (v === "finalizado" || v === "concluído" || v === "concluido") return "bg-success/15 text-success border-success/30";
+  if (v === "encaminhado" || v === "em andamento") return "bg-info/15 text-info border-info/30";
+  if (v === "pendente") return "bg-warning/20 text-warning-foreground border-warning/40";
   return "bg-muted text-muted-foreground";
 }
 
 function Relatorios() {
   const qc = useQueryClient();
-  const [statusFilter, setStatusFilter] = React.useState<string>("todos");
+  const [categoria, setCategoria] = React.useState<string>("todas");
   const [search, setSearch] = React.useState("");
-  const [open, setOpen] = React.useState(false);
-  const [form, setForm] = React.useState({
-    codigo: "",
-    titulo: "",
-    descricao: "",
-    cliente: "",
-    modulo: "",
-    status: "aberto" as StatusRel,
-    prioridade: "media" as (typeof PRIO_OPTS)[number],
-    responsaveis_ids: [] as string[],
-    equipe_toda: false,
+
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ["solicitacoes-relatorios"],
+    queryFn: () => listSolicitacoesRelatorios(),
+    refetchOnWindowFocus: false,
   });
 
-  const { data: colabs = [] } = useQuery({
-    queryKey: ["rel-colabs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("colaborador")
-        .select("id, nome, cargo")
-        .eq("ativo", true)
-        .order("nome");
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  const rows: SolicitacaoRelatorio[] = data?.ok ? data.rows : [];
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ["chamados-externos", statusFilter, search],
-    queryFn: async () => {
-      let q = supabase.from("chamado_externo").select("*").order("abertura", { ascending: false });
-      if (statusFilter !== "todos") q = q.eq("status", statusFilter as StatusRel);
-      if (search) q = q.or(`titulo.ilike.%${search}%,codigo.ilike.%${search}%,cliente.ilike.%${search}%`);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const counts = {
-    aberto: data.filter((c) => c.status === "aberto").length,
-    encaminhado: data.filter((c) => c.status === "encaminhado").length,
-    finalizado: data.filter((c) => c.status === "finalizado").length,
-  };
-
-  const criar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.codigo.trim() || !form.titulo.trim()) {
-      toast.error("Informe código e título");
-      return;
+  const categorias = React.useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      const cat = (r.categoria ?? "Indefinido").trim() || "Indefinido";
+      counts.set(cat, (counts.get(cat) ?? 0) + 1);
     }
-    const { error } = await supabase.from("chamado_externo").insert({
-      codigo: form.codigo,
-      titulo: form.titulo,
-      descricao: form.descricao || null,
-      cliente: form.cliente || null,
-      modulo: form.modulo || null,
-      status: form.status,
-      prioridade: form.prioridade,
-      responsaveis_ids: form.responsaveis_ids,
-      equipe_toda: form.equipe_toda,
+    return Array.from(counts.entries())
+      .map(([nome, total]) => ({ nome, total }))
+      .sort((a, b) => b.total - a.total);
+  }, [rows]);
+
+  const filtered = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return rows.filter((r) => {
+      const cat = (r.categoria ?? "Indefinido").trim() || "Indefinido";
+      if (categoria !== "todas" && cat !== categoria) return false;
+      if (!q) return true;
+      return (
+        (r.descricao ?? "").toLowerCase().includes(q) ||
+        (r.solicitante_nome ?? "").toLowerCase().includes(q) ||
+        (r.solicitante_email ?? "").toLowerCase().includes(q) ||
+        (r.tipo_base ?? "").toLowerCase().includes(q)
+      );
     });
-    if (error) {
-      toast.error("Erro", { description: error.message });
-      return;
-    }
-    toast.success("Relatório criado");
-    setOpen(false);
-    setForm({
-      ...form,
-      codigo: "",
-      titulo: "",
-      descricao: "",
-      cliente: "",
-      modulo: "",
-      responsaveis_ids: [],
-      equipe_toda: false,
-    });
-    qc.invalidateQueries({ queryKey: ["chamados-externos"] });
-    qc.invalidateQueries({ queryKey: ["dash-chamados"] });
-    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
-  };
-
-  const updateStatus = async (id: string, status: StatusRel) => {
-    const { error } = await supabase.from("chamado_externo").update({ status }).eq("id", id);
-    if (error) toast.error("Erro", { description: error.message });
-    else {
-      toast.success("Status atualizado");
-      qc.invalidateQueries({ queryKey: ["chamados-externos"] });
-      qc.invalidateQueries({ queryKey: ["dash-chamados"] });
-    }
-  };
-
-  const updateAssignees = async (
-    id: string,
-    next: { selectedIds: string[]; equipeToda: boolean },
-  ) => {
-    const { error } = await supabase
-      .from("chamado_externo")
-      .update({ responsaveis_ids: next.selectedIds, equipe_toda: next.equipeToda })
-      .eq("id", id);
-    if (error) toast.error("Erro", { description: error.message });
-    else {
-      qc.invalidateQueries({ queryKey: ["chamados-externos"] });
-      qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
-    }
-  };
+  }, [rows, categoria, search]);
 
   return (
     <div>
       <PageHeader
         title="Relatórios"
-        description="Solicitações de relatórios. Workflow simplificado: Aberto → Encaminhado → Finalizado."
+        description="Solicitações de relatórios sincronizadas do banco externo (N8N)."
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" /> Novo relatório
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Novo relatório</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={criar} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Código</Label>
-                    <Input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="REL-2026-0011" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Cliente</Label>
-                    <Input value={form.cliente} onChange={(e) => setForm({ ...form, cliente: e.target.value })} />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Título</Label>
-                  <Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Descrição</Label>
-                  <Textarea rows={3} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <Label>Módulo</Label>
-                    <Input value={form.modulo} onChange={(e) => setForm({ ...form, modulo: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Status</Label>
-                    <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as StatusRel })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTS.map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Prioridade</Label>
-                    <Select value={form.prioridade} onValueChange={(v) => setForm({ ...form, prioridade: v as typeof form.prioridade })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PRIO_OPTS.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Atribuir a</Label>
-                  <AssigneeCombobox
-                    options={colabs}
-                    selectedIds={form.responsaveis_ids}
-                    equipeToda={form.equipe_toda}
-                    onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Criar</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button
+            variant="outline"
+            onClick={() => qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] })}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
         }
       />
 
-      <div className="mb-6">
-        <StatCard
-          title="Workflow"
-          size="sm"
-          items={[
-            { value: counts.aberto, label: "Abertos", tone: "info" },
-            { value: counts.encaminhado, label: "Encaminhados", tone: "warning" },
-            { value: counts.finalizado, label: "Finalizados", tone: "success" },
-          ]}
-        />
+      {/* Resumo por categoria */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <button
+          type="button"
+          onClick={() => setCategoria("todas")}
+          className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
+            categoria === "todas" ? "border-primary bg-primary/5" : "border-border"
+          }`}
+        >
+          <div className="text-2xl font-semibold">{rows.length}</div>
+          <div className="text-xs text-muted-foreground">Todas</div>
+        </button>
+        {categorias.map((c) => (
+          <button
+            type="button"
+            key={c.nome}
+            onClick={() => setCategoria(c.nome)}
+            className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
+              categoria === c.nome ? "border-primary bg-primary/5" : "border-border"
+            }`}
+          >
+            <div className="text-2xl font-semibold">{c.total}</div>
+            <div className="truncate text-xs text-muted-foreground" title={c.nome}>
+              {c.nome}
+            </div>
+          </button>
+        ))}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Input
-          placeholder="Buscar por código, título ou cliente..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full sm:max-w-sm"
-        />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por descrição, solicitante, e-mail..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={categoria} onValueChange={setCategoria}>
+          <SelectTrigger className="w-full sm:w-56">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            {STATUS_OPTS.map((s) => (
-              <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+            <SelectItem value="todas">Todas as categorias</SelectItem>
+            {categorias.map((c) => (
+              <SelectItem key={c.nome} value={c.nome}>
+                {c.nome} ({c.total})
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -296,62 +170,78 @@ function Relatorios() {
 
       <Card className="overflow-x-auto">
         {isLoading ? (
-          <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-        ) : data.length === 0 ? (
-          <EmptyState icon={FileBarChart} title="Nenhum relatório" description="Crie um novo relatório para começar." />
+          <div className="flex h-40 items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : error || (data && !data.ok) ? (
+          <div className="p-6 text-sm text-destructive">
+            Erro ao carregar: {(error as Error)?.message ?? (data && !data.ok ? data.error : "desconhecido")}
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={FileBarChart}
+            title="Nenhuma solicitação"
+            description="Nenhum registro encontrado com os filtros atuais."
+          />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Código</TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Atribuído a</TableHead>
-                <TableHead>Prioridade</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Solicitante</TableHead>
+                <TableHead className="min-w-[300px]">Descrição</TableHead>
+                <TableHead>Urgência</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Abertura</TableHead>
-                <TableHead className="w-56">Atribuir / Status</TableHead>
+                <TableHead>Prazo</TableHead>
+                <TableHead>Recebido</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs">{c.codigo}</TableCell>
-                  <TableCell className="font-medium">{c.titulo}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.cliente ?? "—"}</TableCell>
+              {filtered.map((r) => (
+                <TableRow key={r.id}>
                   <TableCell>
-                    <AssigneeBadges
-                      selectedIds={c.responsaveis_ids}
-                      equipeToda={c.equipe_toda}
-                      options={colabs}
-                    />
+                    <Badge variant="outline" className="bg-muted/50">
+                      {r.categoria ?? "Indefinido"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{r.tipo_base ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-medium">{r.solicitante_nome ?? "—"}</span>
+                      {r.solicitante_email && (
+                        <a
+                          href={`mailto:${r.solicitante_email}`}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        >
+                          <Mail className="h-3 w-3" />
+                          {r.solicitante_email}
+                        </a>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-md">
+                    <p className="line-clamp-2 text-sm" title={r.descricao ?? ""}>
+                      {r.descricao ?? "—"}
+                    </p>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={`capitalize ${prioVariant(c.prioridade)}`}>{c.prioridade}</Badge>
+                    <Badge variant="outline" className={`capitalize ${urgenciaVariant(r.urgencia)}`}>
+                      {r.urgencia ?? "—"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusVariant(c.status)}>{STATUS_LABEL[c.status as StatusRel] ?? c.status}</Badge>
+                    <Badge variant="outline" className={statusVariant(r.status)}>
+                      {r.status ?? "—"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {format(new Date(c.abertura), "dd/MM/yyyy")}
+                    {r.prazo ? format(new Date(r.prazo), "dd/MM/yyyy") : "—"}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1.5">
-                      <AssigneeCombobox
-                        options={colabs}
-                        selectedIds={c.responsaveis_ids ?? []}
-                        equipeToda={!!c.equipe_toda}
-                        onChange={(n) => updateAssignees(c.id, n)}
-                        placeholder="Atribuir..."
-                      />
-                      <Select value={c.status} onValueChange={(v) => updateStatus(c.id, v as StatusRel)}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {STATUS_OPTS.map((s) => (
-                            <SelectItem key={s} value={s} className="text-xs">{STATUS_LABEL[s]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  <TableCell className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {r.criado_em ? format(new Date(r.criado_em), "dd/MM/yyyy HH:mm") : "—"}
                     </div>
                   </TableCell>
                 </TableRow>
