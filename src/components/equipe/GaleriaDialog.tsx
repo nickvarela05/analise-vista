@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, Trash2, Images, GripVertical } from "lucide-react";
+import { Loader2, Trash2, Images, GripVertical, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
