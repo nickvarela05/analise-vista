@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/AppLayout";
@@ -6,16 +6,32 @@ import { PageHeader } from "@/components/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { inspectN8nDbSchema } from "@/server/n8n-db.functions";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/inspect-n8n")({
   component: InspectRoute,
 });
 
 function InspectRoute() {
+  const { role, loading } = useAuth();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["inspect-n8n"],
     queryFn: () => inspectN8nDbSchema(),
+    enabled: role === "gestor",
   });
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <Card className="p-6 flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+        </Card>
+      </AppLayout>
+    );
+  }
+
+  if (role !== "gestor") return <Navigate to="/" replace />;
 
   return (
     <AppLayout>
