@@ -60,6 +60,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
         cargo: colab.cargo ?? "",
         email: colab.email ?? "",
         bio: colab.bio ?? "",
+        local_trabalho: (colab.local_trabalho ?? "escritorio") as LocalTrabalho,
       });
       setEditing(false);
       setFoto(null);
