@@ -23,6 +23,14 @@ import { DIAS, EVENTO_LABEL } from "./lib/types";
 import { HorarioDialog } from "./HorarioDialog";
 import { FeriasDialog } from "./FeriasDialog";
 import { CargoSelect } from "./CargoSelect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
 
 interface Props {
   colab: Colaborador | null;
@@ -37,7 +45,13 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
   const [editing, setEditing] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [foto, setFoto] = React.useState<File | null>(null);
-  const [form, setForm] = React.useState({ nome: "", cargo: "", email: "", bio: "" });
+  const [form, setForm] = React.useState<{
+    nome: string;
+    cargo: string;
+    email: string;
+    bio: string;
+    local_trabalho: LocalTrabalho;
+  }>({ nome: "", cargo: "", email: "", bio: "", local_trabalho: "escritorio" });
 
   React.useEffect(() => {
     if (colab) {
