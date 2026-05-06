@@ -112,6 +112,12 @@ REGRA DE OURO: detalhe sem inventar; não repita o que já está na capa.`;
 // ────────────────────────────────────────────────────────────────────────────
 // Helpers de formatação docx
 // ────────────────────────────────────────────────────────────────────────────
+function truncateMiddle(text: string, max: number): string {
+  if (!text || text.length <= max) return text;
+  const half = Math.floor((max - 40) / 2);
+  return text.slice(0, half) + "\n\n[... trecho omitido para reduzir o tempo de geração ...]\n\n" + text.slice(-half);
+}
+
 const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: BRAND.border };
 const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
 
