@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search } from "lucide-react";
+import { Search, Building2, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,13 +13,23 @@ import {
 } from "@/components/ui/table";
 import { ColaboradorStatusBadge } from "./ColaboradorStatusBadge";
 import { computeStatus } from "./lib/status";
-import type { Colaborador } from "./lib/types";
-import { DIAS, EVENTO_LABEL } from "./lib/types";
+import type { Colaborador, LocalTrabalho } from "./lib/types";
+import { DIAS, EVENTO_LABEL, LOCAL_TRABALHO_LABEL } from "./lib/types";
+import { CARGOS } from "./lib/cargos";
 
 interface Props {
   colabs: Colaborador[];
   onSelect: (c: Colaborador) => void;
 }
+
+const CARGO_ORDER = new Map<string, number>(CARGOS.map((c, i) => [c, i]));
+const cargoRank = (c: string) =>
+  CARGO_ORDER.has(c) ? CARGO_ORDER.get(c)! : c === "Sem cargo" ? 999 : 500;
+
+const LOCAIS: { key: LocalTrabalho; icon: typeof Building2; tone: string }[] = [
+  { key: "escritorio", icon: Building2, tone: "text-primary" },
+  { key: "rua", icon: MapPin, tone: "text-warning" },
+];
 
 export function EquipeListaView({ colabs, onSelect }: Props) {
   const [q, setQ] = React.useState("");
@@ -32,22 +42,21 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
     (c.cargo ?? "").toLowerCase().includes(q.toLowerCase()),
   );
 
-  const grouped = React.useMemo(() => {
-    const map = new Map<string, Colaborador[]>();
+  const byLocal = React.useMemo(() => {
+    const result = new Map<LocalTrabalho, Map<string, Colaborador[]>>();
+    for (const local of LOCAIS) result.set(local.key, new Map());
     for (const c of filtered) {
-      const key = c.cargo?.trim() || "Sem cargo";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(c);
+      const local = (c.local_trabalho ?? "escritorio") as LocalTrabalho;
+      const cargoKey = c.cargo?.trim() || "Sem cargo";
+      const m = result.get(local)!;
+      if (!m.has(cargoKey)) m.set(cargoKey, []);
+      m.get(cargoKey)!.push(c);
     }
-    return Array.from(map.entries()).sort(([a], [b]) => {
-      if (a === "Sem cargo") return 1;
-      if (b === "Sem cargo") return -1;
-      return a.localeCompare(b);
-    });
+    return result;
   }, [filtered]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -58,103 +67,129 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
         />
       </div>
 
-      <div className="rounded-lg border bg-card overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[260px]">Colaborador</TableHead>
-              <TableHead>Status agora</TableHead>
-              <TableHead>Hoje ({DIAS[dia]})</TableHead>
-              <TableHead>Almoça em</TableHead>
-              <TableHead>Próximo evento</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {grouped.map(([cargo, items]) => (
-              <React.Fragment key={cargo}>
-                <TableRow className="bg-muted/30 hover:bg-muted/30">
-                  <TableCell colSpan={5} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {cargo} <span className="ml-1 font-normal normal-case text-muted-foreground/70">({items.length})</span>
-                  </TableCell>
-                </TableRow>
-                {items.map((c) => {
-              const status = computeStatus(c, now);
-              const h = c.colaborador_horario?.find((x) => x.dia_semana === dia);
-              const expediente = h?.expediente_inicio
-                ? `${h.expediente_inicio.slice(0, 5)}–${h.expediente_fim?.slice(0, 5) ?? "—"}`
-                : "—";
-              const proxEvento = c.colaborador_evento
-                ?.filter((e) => e.data >= today)
-                .sort((a, b) => a.data.localeCompare(b.data))[0];
+      {LOCAIS.map(({ key, icon: Icon, tone }) => {
+        const groups = Array.from(byLocal.get(key)!.entries()).sort(
+          ([a], [b]) => cargoRank(a) - cargoRank(b),
+        );
+        const total = groups.reduce((sum, [, items]) => sum + items.length, 0);
 
-              return (
-                <TableRow
-                  key={c.id}
-                  className="cursor-pointer hover:bg-muted/40"
-                  onClick={() => onSelect(c)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        {c.foto_url && <AvatarImage src={c.foto_url} />}
-                        <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                          {c.nome
-                            .split(" ")
-                            .slice(0, 2)
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">{c.nome}</div>
-                        {c.cargo && (
-                          <div className="truncate text-xs text-muted-foreground">
-                            {c.cargo}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ColaboradorStatusBadge status={status} />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {expediente}
-                    {h?.almoco_inicio && (
-                      <span className="ml-1">
-                        · Almoço {h.almoco_inicio.slice(0, 5)}–
-                        {h.almoco_fim?.slice(0, 5)}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {h?.local_almoco ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    {proxEvento ? (
-                      <Badge variant="outline" className="text-[10px]">
-                        {EVENTO_LABEL[proxEvento.tipo]} ·{" "}
-                        {proxEvento.data.split("-").reverse().join("/")}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-                })}
-              </React.Fragment>
-            ))}
-            {filtered.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
-                  Nenhum colaborador.
-                </TableCell>
-              </TableRow>
+        return (
+          <section key={key} className="overflow-hidden rounded-lg border bg-card">
+            <header className="flex items-center justify-between gap-2 border-b bg-muted/40 px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <Icon className={`h-4 w-4 ${tone}`} />
+                <h3 className="text-sm font-semibold">{LOCAL_TRABALHO_LABEL[key]}</h3>
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                  {total}
+                </Badge>
+              </div>
+            </header>
+
+            {total === 0 ? (
+              <div className="p-6 text-center text-xs text-muted-foreground">
+                Nenhum colaborador neste local.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[260px]">Colaborador</TableHead>
+                      <TableHead>Status agora</TableHead>
+                      <TableHead>Hoje ({DIAS[dia]})</TableHead>
+                      <TableHead>Almoça em</TableHead>
+                      <TableHead>Próximo evento</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groups.map(([cargo, items]) => (
+                      <React.Fragment key={cargo}>
+                        <TableRow className="bg-muted/20 hover:bg-muted/20">
+                          <TableCell
+                            colSpan={5}
+                            className="py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                          >
+                            {cargo}
+                            <span className="ml-1.5 font-normal normal-case text-muted-foreground/70">
+                              ({items.length})
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                        {items.map((c) => {
+                          const status = computeStatus(c, now);
+                          const h = c.colaborador_horario?.find((x) => x.dia_semana === dia);
+                          const expediente = h?.expediente_inicio
+                            ? `${h.expediente_inicio.slice(0, 5)}–${h.expediente_fim?.slice(0, 5) ?? "—"}`
+                            : "—";
+                          const proxEvento = c.colaborador_evento
+                            ?.filter((e) => e.data >= today)
+                            .sort((a, b) => a.data.localeCompare(b.data))[0];
+
+                          return (
+                            <TableRow
+                              key={c.id}
+                              className="cursor-pointer hover:bg-muted/40"
+                              onClick={() => onSelect(c)}
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    {c.foto_url && <AvatarImage src={c.foto_url} />}
+                                    <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                      {c.nome
+                                        .split(" ")
+                                        .slice(0, 2)
+                                        .map((n) => n[0])
+                                        .join("")}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0">
+                                    <div className="truncate text-sm font-medium">{c.nome}</div>
+                                    {c.cargo && (
+                                      <div className="truncate text-xs text-muted-foreground">
+                                        {c.cargo}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <ColaboradorStatusBadge status={status} />
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {expediente}
+                                {h?.almoco_inicio && (
+                                  <span className="ml-1">
+                                    · Almoço {h.almoco_inicio.slice(0, 5)}–
+                                    {h.almoco_fim?.slice(0, 5)}
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">
+                                {h?.local_almoco ?? "—"}
+                              </TableCell>
+                              <TableCell>
+                                {proxEvento ? (
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {EVENTO_LABEL[proxEvento.tipo]} ·{" "}
+                                    {proxEvento.data.split("-").reverse().join("/")}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
-          </TableBody>
-        </Table>
-      </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

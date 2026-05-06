@@ -16,13 +16,27 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { CargoSelect } from "./CargoSelect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
 
 export function NovoColaboradorDialog() {
   const qc = useQueryClient();
   const [open, setOpen] = React.useState(false);
   const [foto, setFoto] = React.useState<File | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const [form, setForm] = React.useState({ nome: "", cargo: "", bio: "", email: "" });
+  const [form, setForm] = React.useState<{
+    nome: string;
+    cargo: string;
+    bio: string;
+    email: string;
+    local_trabalho: LocalTrabalho;
+  }>({ nome: "", cargo: "", bio: "", email: "", local_trabalho: "escritorio" });
 
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +65,7 @@ export function NovoColaboradorDialog() {
     toast.success("Colaborador adicionado");
     setOpen(false);
     setFoto(null);
-    setForm({ nome: "", cargo: "", bio: "", email: "" });
+    setForm({ nome: "", cargo: "", bio: "", email: "", local_trabalho: "escritorio" });
     qc.invalidateQueries({ queryKey: ["equipe"] });
   };
 
@@ -80,6 +94,21 @@ export function NovoColaboradorDialog() {
               value={form.cargo}
               onChange={(v) => setForm({ ...form, cargo: v })}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Local de trabalho</Label>
+            <Select
+              value={form.local_trabalho}
+              onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="escritorio">{LOCAL_TRABALHO_LABEL.escritorio}</SelectItem>
+                <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>E-mail</Label>

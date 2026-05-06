@@ -23,6 +23,14 @@ import { DIAS, EVENTO_LABEL } from "./lib/types";
 import { HorarioDialog } from "./HorarioDialog";
 import { FeriasDialog } from "./FeriasDialog";
 import { CargoSelect } from "./CargoSelect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
 
 interface Props {
   colab: Colaborador | null;
@@ -37,7 +45,13 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
   const [editing, setEditing] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [foto, setFoto] = React.useState<File | null>(null);
-  const [form, setForm] = React.useState({ nome: "", cargo: "", email: "", bio: "" });
+  const [form, setForm] = React.useState<{
+    nome: string;
+    cargo: string;
+    email: string;
+    bio: string;
+    local_trabalho: LocalTrabalho;
+  }>({ nome: "", cargo: "", email: "", bio: "", local_trabalho: "escritorio" });
 
   React.useEffect(() => {
     if (colab) {
@@ -46,6 +60,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
         cargo: colab.cargo ?? "",
         email: colab.email ?? "",
         bio: colab.bio ?? "",
+        local_trabalho: (colab.local_trabalho ?? "escritorio") as LocalTrabalho,
       });
       setEditing(false);
       setFoto(null);
@@ -163,6 +178,18 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                   placeholder="E-mail"
                   className="h-8"
                 />
+                <Select
+                  value={form.local_trabalho}
+                  onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="escritorio">{LOCAL_TRABALHO_LABEL.escritorio}</SelectItem>
+                    <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
+                  </SelectContent>
+                </Select>
               </>
             ) : (
               <>
@@ -170,6 +197,9 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                 {colab.cargo && (
                   <p className="text-sm text-muted-foreground">{colab.cargo}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  {LOCAL_TRABALHO_LABEL[(colab.local_trabalho ?? "escritorio") as LocalTrabalho]}
+                </p>
                 {colab.email && (
                   <p className="text-xs text-muted-foreground">{colab.email}</p>
                 )}

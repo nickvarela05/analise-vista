@@ -170,6 +170,7 @@ export type Database = {
           email: string | null
           foto_url: string | null
           id: string
+          local_trabalho: Database["public"]["Enums"]["local_trabalho"]
           nome: string
           ordem: number
           updated_at: string
@@ -182,6 +183,7 @@ export type Database = {
           email?: string | null
           foto_url?: string | null
           id?: string
+          local_trabalho?: Database["public"]["Enums"]["local_trabalho"]
           nome: string
           ordem?: number
           updated_at?: string
@@ -194,6 +196,7 @@ export type Database = {
           email?: string | null
           foto_url?: string | null
           id?: string
+          local_trabalho?: Database["public"]["Enums"]["local_trabalho"]
           nome?: string
           ordem?: number
           updated_at?: string
@@ -863,6 +866,7 @@ export type Database = {
         | "concluida"
         | "cancelada"
       evento_tipo: "folga" | "falta" | "atestado" | "atraso" | "ferias_avulso"
+      local_trabalho: "escritorio" | "rua"
       reuniao_status: "agendada" | "realizada" | "cancelada"
       reuniao_tipo:
         | "interna"
@@ -1039,6 +1043,7 @@ export const Constants = {
         "cancelada",
       ],
       evento_tipo: ["folga", "falta", "atestado", "atraso", "ferias_avulso"],
+      local_trabalho: ["escritorio", "rua"],
       reuniao_status: ["agendada", "realizada", "cancelada"],
       reuniao_tipo: [
         "interna",
