@@ -97,7 +97,9 @@ function Portfolio() {
         title="Portfólio da Equipe"
         description="Conheça quem faz parte da Análise de Requisitos."
         actions={
-          isGestor && (
+          <div className="flex items-center gap-2">
+            <GaleriaDialog canManage={isGestor} />
+            {isGestor && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> Novo colaborador</Button>
@@ -133,7 +135,8 @@ function Portfolio() {
                 </form>
               </DialogContent>
             </Dialog>
-          )
+            )}
+          </div>
         }
       />
 
@@ -160,13 +163,6 @@ function Portfolio() {
                 </div>
                 {c.bio && <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{c.bio}</p>}
                 {c.email && <p className="mt-2 text-xs text-muted-foreground">{c.email}</p>}
-                <div className="mt-3 flex justify-end">
-                  <GaleriaDialog
-                    colaboradorId={c.id}
-                    colaboradorNome={c.nome}
-                    canManage={isGestor}
-                  />
-                </div>
               </CardContent>
             </Card>
           ))}
