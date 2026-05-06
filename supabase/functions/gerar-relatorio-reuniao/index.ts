@@ -7,9 +7,23 @@ import {
   HeadingLevel,
   TextRun,
   AlignmentType,
+  Header,
+  Footer,
+  ImageRun,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  ShadingType,
+  PageNumber,
+  PageBreak,
+  LevelFormat,
+  VerticalAlign,
 } from "https://esm.sh/docx@8.5.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
+import { LOGO_BASE64 } from "../_shared/logo.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -17,196 +31,211 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-/**
- * CONTEXTO DO NEGÓCIO — usado no prompt do modelo.
- * Centralizado aqui para ser fácil de ajustar caso troquemos de provedor/modelo no futuro.
- */
+// ────────────────────────────────────────────────────────────────────────────
+// Identidade visual
+// ────────────────────────────────────────────────────────────────────────────
+const BRAND = {
+  primary: "1F4E79", // azul corporativo
+  primaryLight: "D9E2F3",
+  text: "1F2937",
+  muted: "6B7280",
+  border: "CBD5E1",
+  accent: "0EA5E9",
+};
+
+const LOGO_BYTES = Uint8Array.from(atob(LOGO_BASE64), (c) => c.charCodeAt(0));
+
+// ────────────────────────────────────────────────────────────────────────────
+// Prompt — sem "Pessoas Mencionadas", sem repetições, foco analítico
+// ────────────────────────────────────────────────────────────────────────────
 const CONTEXTO_NEGOCIO = `
 CONTEXTO DA EMPRESA:
-- Somos prestadores de serviço atuando no setor de SISTEMAS DE GESTÃO EDUCACIONAL (ERP/SaaS para escolas, faculdades e instituições de ensino).
-- Nossa área de atuação é ANÁLISE DE REQUISITOS: levantamento, refinamento, documentação e validação de requisitos funcionais e não-funcionais com clientes (instituições) e times internos (desenvolvimento, produto, suporte).
-- Trabalhamos lado a lado com stakeholders educacionais (coordenadores, secretarias acadêmicas, financeiro educacional, professores, TI da instituição) e com squads de desenvolvimento que evoluem o produto.
-- Termos comuns no nosso domínio: matrícula, rematrícula, secretaria acadêmica, diário de classe, boletim, contrato educacional, mensalidade, inadimplência, ENADE/INEP/MEC, integração com gateway de pagamento, LGPD aplicada a dados de alunos menores, calendário letivo, turmas, disciplinas, currículo, histórico escolar, PDI, BNCC.
-
-COMO TRABALHAMOS:
-- Reuniões servem para alinhar entendimento de requisitos, validar regras de negócio, destravar dúvidas com cliente, planejar entregas e registrar decisões que impactam roadmap/escopo.
-- Cada reunião deve gerar artefatos rastreáveis: requisitos identificados, regras de negócio, premissas, restrições, riscos, dependências, próximos passos com responsáveis e prazos.
+- Prestadora de serviço em SISTEMAS DE GESTÃO EDUCACIONAL (ERP/SaaS para escolas, faculdades e instituições de ensino).
+- Área: ANÁLISE DE REQUISITOS — levantamento, refinamento, documentação e validação com clientes e times de produto/desenvolvimento.
+- Termos do domínio: matrícula/rematrícula, secretaria acadêmica, diário de classe, boletim, contrato educacional, mensalidade, inadimplência, ENADE/INEP/MEC, integração com gateway de pagamento, LGPD para dados de menores, calendário letivo, turmas, disciplinas, currículo, histórico escolar, BNCC.
 `.trim();
 
-const SYSTEM_PROMPT = `Você é um analista de requisitos sênior em uma empresa prestadora de serviços para sistemas de gestão educacional.
+const SYSTEM_PROMPT = `Você é um analista de requisitos sênior em uma empresa de sistemas de gestão educacional.
 
 ${CONTEXTO_NEGOCIO}
 
 TAREFA:
-Você receberá os dados de UMA reunião (título, data, participantes, pauta, resumo, decisões, próximos passos e — quando houver — a transcrição). Gere um RELATÓRIO PROFISSIONAL E DETALHADO em português, próprio para ser entregue ao cliente ou arquivado internamente como documento de referência.
+Gerar um RELATÓRIO PROFISSIONAL em português a partir dos dados de UMA reunião (título, data, participantes, pauta, resumo, decisões, próximos passos e — quando houver — transcrição). O documento será diagramado externamente; você produz APENAS o conteúdo analítico em markdown, sem cabeçalho de identificação (nome do cliente, data, participantes etc.) — esses dados são renderizados pelo sistema em uma capa estruturada e NÃO devem ser repetidos por você.
 
 DIRETRIZES OBRIGATÓRIAS:
-1. NÃO transcreva falas literais nem cite "fulano disse que...". O relatório é executivo e analítico.
-2. Use linguagem técnica de análise de requisitos, mas acessível a stakeholders não-técnicos.
-3. Seja DETALHADO: explique contexto, motivação e impacto de cada ponto. Evite frases genéricas ("foi discutido X") — descreva o QUE, POR QUE e COMO afeta o produto/projeto.
-4. Quando a transcrição mencionar regras de negócio, fluxos, integrações, telas, perfis de usuário ou dados sensíveis (LGPD, dados de menores), DETALHE-OS em seções próprias.
-5. Se algo não estiver claro nos dados fornecidos, marque como "⚠️ A confirmar com o cliente" — NUNCA invente fatos, números, prazos ou nomes.
-6. Use markdown limpo: # para título principal, ## para seções, ### para subseções, listas com - e numeradas onde fizer sentido. Use **negrito** para destacar termos-chave.
+1. NÃO repita informações já presentes na capa: título, data, duração, tipo, participantes, responsáveis. Comece direto pela seção "Contexto e Objetivo".
+2. NÃO transcreva falas literais nem cite "fulano disse que...". Linguagem executiva e analítica.
+3. Seja DETALHADO: explique contexto, motivação e impacto. Evite frases genéricas.
+4. Detalhe regras de negócio, fluxos, integrações, telas, perfis de usuário e dados sensíveis (LGPD) em seções próprias quando aparecerem.
+5. Se algo não estiver claro, marque "⚠️ A confirmar com o cliente" — nunca invente fatos, números, prazos ou nomes.
+6. Markdown limpo: ## para seções principais, ### para subseções, listas com - e numeradas, **negrito** em termos-chave. NÃO use # (título principal — já existe na capa).
+7. Para a seção "Próximos Passos", use SEMPRE uma tabela markdown com colunas: Ação | Responsável | Prazo | Status.
+8. Omita seções inteiras quando não houver conteúdo real (não escreva "sem registros" — apenas pule a seção). EXCEÇÃO: a seção "Contexto e Objetivo" é sempre obrigatória.
 
-REGRA CRÍTICA SOBRE PARTICIPANTES (NÃO VIOLAR):
-- A lista oficial de participantes é EXATAMENTE a fornecida no campo "participantes" do JSON de entrada. Você NÃO pode adicionar, remover, renomear, corrigir ortografia, agrupar ou inferir participantes a partir da transcrição. Reproduza-a literalmente na seção "Informações Gerais".
-- Pessoas que aparecem na transcrição mas NÃO estão na lista oficial de participantes devem ser tratadas como TERCEIROS MENCIONADOS e listadas APENAS na seção "Pessoas Mencionadas" (ver estrutura abaixo). Nunca as promova a participantes.
-- Se a lista oficial estiver vazia, escreva "_Não informado._" — não tente preencher a partir da transcrição.
+ESTRUTURA (use exatamente estes títulos, nesta ordem; pule seções vazias exceto Contexto e Objetivo):
 
-ESTRUTURA OBRIGATÓRIA DO RELATÓRIO (use exatamente estes títulos de seção, omita seções sem conteúdo real, EXCETO "Informações Gerais" e "Pessoas Mencionadas" que são sempre obrigatórias):
+## Contexto e Objetivo
+2 a 4 parágrafos explicando por que a reunião aconteceu e o que se pretendia alcançar.
 
-# Relatório de Reunião — <título da reunião>
+## Pauta Detalhada
+Expanda cada item da pauta em parágrafo descritivo enriquecido com contexto do domínio educacional. Não copie a pauta crua.
 
-## 1. Informações Gerais
-- Data, duração, tipo.
-- **Participantes oficiais:** liste EXATAMENTE os nomes do campo "participantes" do JSON, sem alterar nada. Se vazio, escreva "_Não informado._".
-- **Responsáveis:** conforme JSON.
-
-## 2. Pessoas Mencionadas
-Liste pessoas, papéis ou áreas CITADAS durante a reunião (presentes na transcrição) que NÃO estão na lista oficial de participantes. Para cada uma:
-- **Nome / papel:** como apareceu (ex.: "Coordenadora pedagógica da escola X", "João do financeiro do cliente").
-- **Contexto da menção:** em que ponto foi citada e por quê (decisão pendente de aprovação dela, responsável por uma integração, etc.).
-- **Ação relacionada (se houver):** se há algo a fazer envolvendo essa pessoa.
-
-Se ninguém externo foi mencionado, escreva uma única linha: "_Nenhuma pessoa adicional mencionada._".
-
-## 3. Contexto e Objetivo
-Explique por que a reunião aconteceu e o que se pretendia alcançar. 2 a 4 parágrafos.
-
-## 4. Pauta Detalhada
-Expanda cada item da pauta original em um parágrafo descritivo. Não copie a pauta crua — enriqueça com contexto do domínio educacional.
-
-## 5. Pontos-Chave Discutidos
-Liste e DESENVOLVA os principais tópicos abordados. Para cada um:
+## Pontos-Chave Discutidos
+Para cada tópico relevante:
 - **Tópico:** nome
 - **Descrição:** o que foi tratado e por quê
-- **Impacto:** consequência para o produto/cliente/cronograma
+- **Impacto:** consequência para produto/cliente/cronograma
 
-## 6. Requisitos e Regras de Negócio Identificados
-Quando aplicável, liste requisitos funcionais (RF), não-funcionais (RNF) e regras de negócio (RN) levantados ou refinados na reunião. Use formato:
-- **RF-XX / RN-XX:** descrição clara, completa e testável.
+## Requisitos e Regras de Negócio
+Use formato:
+- **RF-XX / RNF-XX / RN-XX:** descrição clara, completa e testável.
 
-## 7. Decisões Tomadas
-Cada decisão em item próprio, explicando a decisão E sua justificativa.
+## Decisões Tomadas
+Cada decisão em item próprio, com a decisão E sua justificativa.
 
-## 8. Riscos, Premissas e Dependências
+## Riscos, Premissas e Dependências
 - **Riscos:** o que pode dar errado e como mitigar.
 - **Premissas:** o que estamos assumindo como verdadeiro.
 - **Dependências:** de quem/do quê o avanço depende.
 
-## 9. Próximos Passos
-Tabela em markdown com colunas: **Ação | Responsável | Prazo | Status**. Seja específico.
+## Próximos Passos
+Tabela markdown obrigatória: | Ação | Responsável | Prazo | Status |
 
-## 10. Pendências e Pontos em Aberto
-Itens que precisam de retorno do cliente, dúvidas não resolvidas, validações pendentes.
+## Pendências e Pontos em Aberto
+Itens que precisam de retorno do cliente ou validação pendente.
 
-## 11. Observações Finais
-Qualquer recomendação adicional do analista.
+## Observações Finais
+Recomendações adicionais do analista.
 
-REGRA DE OURO: Detalhe sem inventar. Se a fonte não trouxe informação para uma seção, escreva uma única linha: "_Sem registros adicionais nesta reunião._" — NÃO preencha com floreios.`;
+REGRA DE OURO: detalhe sem inventar; não repita o que já está na capa.`;
 
-// Conversor markdown → docx (suporta o subset que o prompt produz)
-function mdToDocx(md: string): Paragraph[] {
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers de formatação docx
+// ────────────────────────────────────────────────────────────────────────────
+const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: BRAND.border };
+const cellBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+function parseInline(text: string): TextRun[] {
+  const runs: TextRun[] = [];
+  const regex = /\*\*([^*]+)\*\*/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    if (m.index > last) runs.push(new TextRun({ text: text.slice(last, m.index), color: BRAND.text }));
+    runs.push(new TextRun({ text: m[1], bold: true, color: BRAND.text }));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) runs.push(new TextRun({ text: text.slice(last), color: BRAND.text }));
+  return runs.length ? runs : [new TextRun({ text, color: BRAND.text })];
+}
+
+function makeTable(rows: string[][]): Table {
+  if (rows.length === 0) return new Table({ rows: [] });
+  const cols = rows[0].length;
+  const tableWidth = 9360;
+  const colWidth = Math.floor(tableWidth / cols);
+  const widths = new Array(cols).fill(colWidth);
+
+  const trows = rows.map((r, i) => {
+    const isHeader = i === 0;
+    return new TableRow({
+      tableHeader: isHeader,
+      children: r.map((cellText, j) => {
+        return new TableCell({
+          width: { size: widths[j], type: WidthType.DXA },
+          borders: cellBorders,
+          shading: isHeader
+            ? { fill: BRAND.primary, type: ShadingType.CLEAR, color: "auto" }
+            : i % 2 === 0
+              ? { fill: "F8FAFC", type: ShadingType.CLEAR, color: "auto" }
+              : undefined,
+          margins: { top: 100, bottom: 100, left: 140, right: 140 },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [
+            new Paragraph({
+              spacing: { before: 0, after: 0 },
+              children: isHeader
+                ? [new TextRun({ text: cellText, bold: true, color: "FFFFFF", size: 20 })]
+                : parseInline(cellText),
+            }),
+          ],
+        });
+      }),
+    });
+  });
+
+  return new Table({
+    width: { size: tableWidth, type: WidthType.DXA },
+    columnWidths: widths,
+    rows: trows,
+  });
+}
+
+// Conversor markdown → blocos docx (Paragraph | Table)
+function mdToDocx(md: string): (Paragraph | Table)[] {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
-  const out: Paragraph[] = [];
-  let inTable = false;
-  let tableRows: string[][] = [];
+  const out: (Paragraph | Table)[] = [];
+  let tableBuf: string[][] | null = null;
 
   const flushTable = () => {
-    if (tableRows.length === 0) return;
-    // Renderiza tabela como lista textual simples para manter compatibilidade ampla
-    const [header, _sep, ...rows] = tableRows;
-    if (header) {
-      out.push(
-        new Paragraph({
-          children: [new TextRun({ text: header.join(" | "), bold: true })],
-          spacing: { before: 120, after: 60 },
-        }),
-      );
-    }
-    for (const r of rows) {
-      out.push(
-        new Paragraph({
-          children: [new TextRun({ text: "• " + r.join(" | ") })],
-          spacing: { after: 40 },
-        }),
-      );
-    }
-    tableRows = [];
-    inTable = false;
-  };
-
-  const parseInline = (text: string): TextRun[] => {
-    // **bold** + texto comum
-    const runs: TextRun[] = [];
-    const regex = /\*\*([^*]+)\*\*/g;
-    let last = 0;
-    let m: RegExpExecArray | null;
-    while ((m = regex.exec(text)) !== null) {
-      if (m.index > last) runs.push(new TextRun({ text: text.slice(last, m.index) }));
-      runs.push(new TextRun({ text: m[1], bold: true }));
-      last = m.index + m[0].length;
-    }
-    if (last < text.length) runs.push(new TextRun({ text: text.slice(last) }));
-    return runs.length ? runs : [new TextRun({ text })];
+    if (!tableBuf) return;
+    // Remove linha separadora |---|---|
+    const cleaned = tableBuf.filter((r) => !r.every((c) => /^-{2,}:?$|^:?-{2,}:?$|^:?-{2,}$/.test(c.trim())));
+    out.push(makeTable(cleaned));
+    out.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
+    tableBuf = null;
   };
 
   for (const raw of lines) {
     const line = raw.trimEnd();
 
-    // Tabela markdown
     if (/^\s*\|.*\|\s*$/.test(line)) {
-      inTable = true;
       const cells = line.split("|").slice(1, -1).map((c) => c.trim());
-      tableRows.push(cells);
+      if (!tableBuf) tableBuf = [];
+      tableBuf.push(cells);
       continue;
-    } else if (inTable) {
+    } else if (tableBuf) {
       flushTable();
     }
 
     if (!line.trim()) {
-      out.push(new Paragraph({ children: [new TextRun("")] }));
+      out.push(new Paragraph({ spacing: { after: 80 }, children: [] }));
       continue;
     }
 
     if (line.startsWith("# ")) {
-      out.push(
-        new Paragraph({
-          heading: HeadingLevel.HEADING_1,
-          alignment: AlignmentType.LEFT,
-          children: parseInline(line.slice(2)),
-          spacing: { before: 240, after: 160 },
-        }),
-      );
+      // ignora — título principal vem da capa
+      continue;
     } else if (line.startsWith("## ")) {
       out.push(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
-          children: parseInline(line.slice(3)),
-          spacing: { before: 200, after: 120 },
+          children: [new TextRun({ text: line.slice(3), bold: true, color: BRAND.primary, size: 28 })],
+          spacing: { before: 320, after: 140 },
+          border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: BRAND.primary, space: 4 } },
         }),
       );
     } else if (line.startsWith("### ")) {
       out.push(
         new Paragraph({
           heading: HeadingLevel.HEADING_3,
-          children: parseInline(line.slice(4)),
-          spacing: { before: 160, after: 100 },
+          children: [new TextRun({ text: line.slice(4), bold: true, color: BRAND.text, size: 24 })],
+          spacing: { before: 220, after: 100 },
         }),
       );
     } else if (/^\s*[-*]\s+/.test(line)) {
       out.push(
         new Paragraph({
-          children: [new TextRun({ text: "• " }), ...parseInline(line.replace(/^\s*[-*]\s+/, ""))],
-          indent: { left: 360 },
+          numbering: { reference: "bullets", level: 0 },
+          children: parseInline(line.replace(/^\s*[-*]\s+/, "")),
           spacing: { after: 60 },
         }),
       );
     } else if (/^\s*\d+\.\s+/.test(line)) {
       out.push(
         new Paragraph({
-          children: parseInline(line.trim()),
-          indent: { left: 360 },
+          numbering: { reference: "numbers", level: 0 },
+          children: parseInline(line.replace(/^\s*\d+\.\s+/, "")),
           spacing: { after: 60 },
         }),
       );
@@ -215,6 +244,7 @@ function mdToDocx(md: string): Paragraph[] {
         new Paragraph({
           children: parseInline(line),
           spacing: { after: 100 },
+          alignment: AlignmentType.JUSTIFIED,
         }),
       );
     }
@@ -223,6 +253,153 @@ function mdToDocx(md: string): Paragraph[] {
   return out;
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Capa (informações gerais — fonte única da verdade)
+// ────────────────────────────────────────────────────────────────────────────
+function fmtDate(iso?: string | null): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
+function fmtParticipantes(list: any): string {
+  if (!Array.isArray(list) || list.length === 0) return "—";
+  return list
+    .map((p: any) => {
+      if (typeof p === "string") return p;
+      if (p && typeof p === "object") return p.nome ?? p.name ?? p.email ?? JSON.stringify(p);
+      return String(p);
+    })
+    .join(", ");
+}
+
+function buildCapa(r: any): (Paragraph | Table)[] {
+  const blocks: (Paragraph | Table)[] = [];
+
+  // Título
+  blocks.push(
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      spacing: { before: 0, after: 60 },
+      children: [
+        new TextRun({ text: "RELATÓRIO DE REUNIÃO", bold: true, color: BRAND.muted, size: 20 }),
+      ],
+    }),
+  );
+  blocks.push(
+    new Paragraph({
+      alignment: AlignmentType.LEFT,
+      spacing: { before: 0, after: 240 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 16, color: BRAND.primary, space: 6 } },
+      children: [
+        new TextRun({ text: r.titulo ?? "Reunião sem título", bold: true, color: BRAND.primary, size: 40 }),
+      ],
+    }),
+  );
+
+  // Tabela de informações gerais
+  const rows: [string, string][] = [
+    ["Data e horário", fmtDate(r.data_reuniao)],
+    ["Duração", r.duracao_min ? `${r.duracao_min} min` : "—"],
+    ["Tipo", r.tipo ?? "—"],
+    ["Status", r.status ?? "—"],
+    ["Participantes", fmtParticipantes(r.participantes)],
+  ];
+
+  const infoTable = new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: [2600, 6760],
+    rows: rows.map(([k, v], i) => new TableRow({
+      children: [
+        new TableCell({
+          width: { size: 2600, type: WidthType.DXA },
+          borders: cellBorders,
+          shading: { fill: BRAND.primaryLight, type: ShadingType.CLEAR, color: "auto" },
+          margins: { top: 100, bottom: 100, left: 140, right: 140 },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({
+            spacing: { before: 0, after: 0 },
+            children: [new TextRun({ text: k, bold: true, color: BRAND.primary, size: 20 })],
+          })],
+        }),
+        new TableCell({
+          width: { size: 6760, type: WidthType.DXA },
+          borders: cellBorders,
+          shading: i % 2 === 0 ? undefined : { fill: "F8FAFC", type: ShadingType.CLEAR, color: "auto" },
+          margins: { top: 100, bottom: 100, left: 140, right: 140 },
+          verticalAlign: VerticalAlign.CENTER,
+          children: [new Paragraph({
+            spacing: { before: 0, after: 0 },
+            children: [new TextRun({ text: v, color: BRAND.text, size: 20 })],
+          })],
+        }),
+      ],
+    })),
+  });
+  blocks.push(infoTable);
+  blocks.push(new Paragraph({ spacing: { after: 240 }, children: [] }));
+
+  return blocks;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Header / Footer
+// ────────────────────────────────────────────────────────────────────────────
+function buildHeader(): Header {
+  return new Header({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.LEFT,
+        spacing: { after: 60 },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: BRAND.primary, space: 4 } },
+        children: [
+          new ImageRun({
+            type: "png",
+            data: LOGO_BYTES,
+            transformation: { width: 90, height: 30 },
+            altText: { title: "Sisteplan", description: "Logo Sisteplan", name: "logo" },
+          }),
+          new TextRun({ text: "\t" }),
+          new TextRun({ text: "Relatório de Reunião", color: BRAND.muted, size: 18, italics: true }),
+        ],
+        tabStops: [{ type: "right" as any, position: 9360 }],
+      }),
+    ],
+  });
+}
+
+function buildFooter(): Footer {
+  return new Footer({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 60 },
+        border: { top: { style: BorderStyle.SINGLE, size: 4, color: BRAND.border, space: 4 } },
+        children: [
+          new TextRun({ text: "Sisteplan · Análise de Requisitos · ", color: BRAND.muted, size: 16 }),
+          new TextRun({ text: "Página ", color: BRAND.muted, size: 16 }),
+          new TextRun({ children: [PageNumber.CURRENT], color: BRAND.muted, size: 16 }),
+          new TextRun({ text: " de ", color: BRAND.muted, size: 16 }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], color: BRAND.muted, size: 16 }),
+        ],
+      }),
+    ],
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Handler
+// ────────────────────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   const corsHeaders = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -250,7 +427,6 @@ Deno.serve(async (req) => {
       data_reuniao: r.data_reuniao,
       duracao_min: r.duracao_min,
       participantes: r.participantes ?? [],
-      participantes_detectados: r.participantes_detectados ?? [],
       pauta: r.pauta ?? "",
       resumo: r.resumo ?? "",
       decisoes: r.decisoes ?? [],
@@ -258,7 +434,6 @@ Deno.serve(async (req) => {
       transcricao: (r.transcricao ?? "").slice(0, 80000),
     };
 
-    // Chama Lovable AI Gateway
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -272,8 +447,8 @@ Deno.serve(async (req) => {
           {
             role: "user",
             content:
-              `Gere o relatório detalhado em markdown para a reunião abaixo.\n\n` +
-              `DADOS DA REUNIÃO (JSON):\n\`\`\`json\n${JSON.stringify(dadosReuniao, null, 2)}\n\`\`\``,
+              `Gere o conteúdo analítico (sem repetir capa) para a reunião abaixo.\n\n` +
+              `DADOS (JSON):\n\`\`\`json\n${JSON.stringify(dadosReuniao, null, 2)}\n\`\`\``,
           },
         ],
       }),
@@ -290,19 +465,54 @@ Deno.serve(async (req) => {
     const markdown: string = aiJson.choices?.[0]?.message?.content ?? "";
     if (!markdown.trim()) throw new Error("IA retornou conteúdo vazio");
 
-    // Monta DOCX
+    const children: (Paragraph | Table)[] = [
+      ...buildCapa(r),
+      ...mdToDocx(markdown),
+    ];
+
     const doc = new Document({
-      creator: "Sistema de Reuniões",
+      creator: "Sisteplan — Sistema de Reuniões",
       title: `Relatório — ${r.titulo}`,
       styles: {
-        default: { document: { run: { font: "Calibri", size: 22 } } },
+        default: {
+          document: { run: { font: "Calibri", size: 22, color: BRAND.text } },
+        },
+      },
+      numbering: {
+        config: [
+          {
+            reference: "bullets",
+            levels: [{
+              level: 0,
+              format: LevelFormat.BULLET,
+              text: "•",
+              alignment: AlignmentType.LEFT,
+              style: { paragraph: { indent: { left: 540, hanging: 280 } } },
+            }],
+          },
+          {
+            reference: "numbers",
+            levels: [{
+              level: 0,
+              format: LevelFormat.DECIMAL,
+              text: "%1.",
+              alignment: AlignmentType.LEFT,
+              style: { paragraph: { indent: { left: 540, hanging: 280 } } },
+            }],
+          },
+        ],
       },
       sections: [
         {
           properties: {
-            page: { margin: { top: 1134, right: 1134, bottom: 1134, left: 1134 } },
+            page: {
+              size: { width: 11906, height: 16838 }, // A4
+              margin: { top: 1440, right: 1134, bottom: 1134, left: 1134 },
+            },
           },
-          children: mdToDocx(markdown),
+          headers: { default: buildHeader() },
+          footers: { default: buildFooter() },
+          children,
         },
       ],
     });
