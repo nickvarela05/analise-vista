@@ -107,3 +107,27 @@ export const listSolicitacoesRelatorios = createServerFn({ method: "GET" }).hand
     return { ok: true as const, rows: (data ?? []) as SolicitacaoRelatorio[] };
   },
 );
+
+export const STATUS_SOLICITACAO = ["Pendente", "Feito", "Enviado"] as const;
+export type StatusSolicitacao = (typeof STATUS_SOLICITACAO)[number];
+
+/**
+ * Atualiza responsável e/ou status de uma solicitação no banco N8N.
+ */
+export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { id: string; responsavel?: string | null; status?: StatusSolicitacao }) => data,
+  )
+  .handler(async ({ data }) => {
+    const client = getN8nDbClient();
+    const patch: Record<string, unknown> = {};
+    if (data.responsavel !== undefined) patch.responsavel = data.responsavel;
+    if (data.status !== undefined) patch.status = data.status;
+    if (Object.keys(patch).length === 0) return { ok: true as const };
+    const { error } = await client
+      .from("solicitacoes_relatorios")
+      .update(patch)
+      .eq("id", data.id);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
