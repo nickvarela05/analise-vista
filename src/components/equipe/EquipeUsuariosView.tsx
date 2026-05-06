@@ -449,7 +449,27 @@ function CriarUsuarioDialog({
               <Label>Vincular colaborador</Label>
               <Select
                 value={form.colaborador_id}
-                onValueChange={(v) => setForm({ ...form, colaborador_id: v })}
+                onValueChange={(v) => {
+                  if (v === "__none__") {
+                    setForm({ ...form, colaborador_id: v });
+                    return;
+                  }
+                  const c = colabs.find((x) => x.id === v);
+                  if (c) {
+                    setForm({
+                      ...form,
+                      colaborador_id: v,
+                      nome: c.nome ?? form.nome,
+                      email: c.email ?? form.email,
+                      cargo: c.cargo ?? form.cargo,
+                    });
+                    toast.success("Dados do colaborador preenchidos", {
+                      description: "Nome, e-mail e cargo foram migrados automaticamente.",
+                    });
+                  } else {
+                    setForm({ ...form, colaborador_id: v });
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
