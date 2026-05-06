@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
+import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioRoute,
