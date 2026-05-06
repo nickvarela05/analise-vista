@@ -1,0 +1,1 @@
+ALTER TABLE public.colaborador_galeria ALTER COLUMN colaborador_id DROP NOT NULL;

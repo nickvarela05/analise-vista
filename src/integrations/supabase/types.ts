@@ -290,7 +290,7 @@ export type Database = {
       }
       colaborador_galeria: {
         Row: {
-          colaborador_id: string
+          colaborador_id: string | null
           created_at: string
           foto_url: string
           id: string
@@ -299,7 +299,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          colaborador_id: string
+          colaborador_id?: string | null
           created_at?: string
           foto_url: string
           id?: string
@@ -308,7 +308,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          colaborador_id?: string
+          colaborador_id?: string | null
           created_at?: string
           foto_url?: string
           id?: string
