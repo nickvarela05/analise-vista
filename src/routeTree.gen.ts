@@ -13,6 +13,7 @@ import { Route as TarefasRouteImport } from './routes/tarefas'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InspectN8nRouteImport } from './routes/inspect-n8n'
 import { Route as EquipeRouteImport } from './routes/equipe'
@@ -42,6 +43,11 @@ const RelatoriosRoute = RelatoriosRouteImport.update({
 const PortfolioRoute = PortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/equipe': typeof EquipeRoute
   '/inspect-n8n': typeof InspectN8nRoute
   '/login': typeof LoginRoute
+  '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByTo {
   '/equipe': typeof EquipeRoute
   '/inspect-n8n': typeof InspectN8nRoute
   '/login': typeof LoginRoute
+  '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/equipe': typeof EquipeRoute
   '/inspect-n8n': typeof InspectN8nRoute
   '/login': typeof LoginRoute
+  '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/inspect-n8n'
     | '/login'
+    | '/perfil'
     | '/portfolio'
     | '/relatorios'
     | '/reunioes'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/inspect-n8n'
     | '/login'
+    | '/perfil'
     | '/portfolio'
     | '/relatorios'
     | '/reunioes'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/inspect-n8n'
     | '/login'
+    | '/perfil'
     | '/portfolio'
     | '/relatorios'
     | '/reunioes'
@@ -205,6 +217,7 @@ export interface RootRouteChildren {
   EquipeRoute: typeof EquipeRoute
   InspectN8nRoute: typeof InspectN8nRoute
   LoginRoute: typeof LoginRoute
+  PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/portfolio'
       fullPath: '/portfolio'
       preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -325,6 +345,7 @@ const rootRouteChildren: RootRouteChildren = {
   EquipeRoute: EquipeRoute,
   InspectN8nRoute: InspectN8nRoute,
   LoginRoute: LoginRoute,
+  PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,
   RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,
