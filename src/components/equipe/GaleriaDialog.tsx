@@ -205,6 +205,7 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
                     foto={f}
                     canManage={canManage}
                     onRemove={() => remover(f.id)}
+                    onEditLegenda={(novaLegenda) => editarLegenda(f.id, novaLegenda)}
                   />
                 ))}
               </div>
