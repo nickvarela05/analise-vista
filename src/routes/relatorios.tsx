@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, FileBarChart, RefreshCw, Search, Mail, Calendar } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
@@ -25,9 +26,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listSolicitacoesRelatorios,
+  updateSolicitacaoRelatorio,
+  STATUS_SOLICITACAO,
   type SolicitacaoRelatorio,
+  type StatusSolicitacao,
 } from "@/server/n8n-db.functions";
 
 export const Route = createFileRoute("/relatorios")({
