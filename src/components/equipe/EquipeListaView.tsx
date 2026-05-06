@@ -51,6 +51,7 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
               <TableHead className="w-[260px]">Colaborador</TableHead>
               <TableHead>Status agora</TableHead>
               <TableHead>Hoje ({DIAS[dia]})</TableHead>
+              <TableHead>Almoça em</TableHead>
               <TableHead>Próximo evento</TableHead>
             </TableRow>
           </TableHeader>
