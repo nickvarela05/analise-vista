@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
+import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
 
 export const Route = createFileRoute("/portfolio")({
   component: PortfolioRoute,
@@ -139,6 +140,10 @@ function Portfolio() {
           </div>
         }
       />
+
+      <div className="mb-6">
+        <GaleriaCarousel />
+      </div>
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
