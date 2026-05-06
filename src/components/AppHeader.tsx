@@ -35,13 +35,26 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:gap-3 sm:px-4">
       <SidebarTrigger />
 
-      <div className="relative hidden flex-1 max-w-md md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar demandas, tarefas, reuniões..."
-          className="h-9 pl-9"
-        />
-      </div>
+      <button
+        type="button"
+        onClick={() => setSearchOpen(true)}
+        className="relative hidden h-9 max-w-md flex-1 items-center gap-2 rounded-md border border-input bg-background/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50 md:flex"
+      >
+        <Search className="h-4 w-4" />
+        <span>Buscar demandas, tarefas, reuniões...</span>
+        <kbd className="ml-auto hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono lg:inline">
+          Ctrl K
+        </kbd>
+      </button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden"
+        onClick={() => setSearchOpen(true)}
+        aria-label="Buscar"
+      >
+        <Search className="h-4 w-4" />
+      </Button>
 
       <div className="ml-auto flex items-center gap-2">
         <NotificationBell />
