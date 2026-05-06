@@ -264,9 +264,45 @@ function Relatorios() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusVariant(r.status)}>
-                      {r.status ?? "—"}
-                    </Badge>
+                    <Select
+                      value={r.responsavel ?? "__none__"}
+                      onValueChange={(v) =>
+                        updateMut.mutate({ id: r.id, responsavel: v === "__none__" ? null : v })
+                      }
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Atribuir..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Sem responsável —</SelectItem>
+                        {colaboradores.map((c) => (
+                          <SelectItem key={c.id} value={c.nome}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={(STATUS_SOLICITACAO as readonly string[]).includes(r.status ?? "")
+                        ? (r.status as string)
+                        : "Pendente"}
+                      onValueChange={(v) =>
+                        updateMut.mutate({ id: r.id, status: v as StatusSolicitacao })
+                      }
+                    >
+                      <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_SOLICITACAO.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {r.prazo ? format(new Date(r.prazo), "dd/MM/yyyy") : "—"}
