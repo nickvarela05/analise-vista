@@ -32,6 +32,20 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
     (c.cargo ?? "").toLowerCase().includes(q.toLowerCase()),
   );
 
+  const grouped = React.useMemo(() => {
+    const map = new Map<string, Colaborador[]>();
+    for (const c of filtered) {
+      const key = c.cargo?.trim() || "Sem cargo";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(c);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      if (a === "Sem cargo") return 1;
+      if (b === "Sem cargo") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filtered]);
+
   return (
     <div className="space-y-3">
       <div className="relative max-w-sm">
@@ -56,7 +70,14 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((c) => {
+            {grouped.map(([cargo, items]) => (
+              <React.Fragment key={cargo}>
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableCell colSpan={5} className="py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {cargo} <span className="ml-1 font-normal normal-case text-muted-foreground/70">({items.length})</span>
+                  </TableCell>
+                </TableRow>
+                {items.map((c) => {
               const status = computeStatus(c, now);
               const h = c.colaborador_horario?.find((x) => x.dia_semana === dia);
               const expediente = h?.expediente_inicio
@@ -121,7 +142,9 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
                   </TableCell>
                 </TableRow>
               );
-            })}
+                })}
+              </React.Fragment>
+            ))}
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
