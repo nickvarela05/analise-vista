@@ -19,6 +19,8 @@ import {
   startOfWeek,
   endOfWeek,
   isWithinInterval,
+  isBefore,
+  startOfDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/AppLayout";
