@@ -126,7 +126,7 @@ export function GaleriaCarousel() {
               aria-hidden
               className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
             />
-            <div className="relative flex aspect-[16/9] w-full items-center justify-center">
+            <div className="relative flex aspect-[21/9] w-full items-center justify-center">
               <img
                 key={active.id}
                 src={active.foto_url}
