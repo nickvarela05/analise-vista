@@ -124,7 +124,7 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
                   Nenhum colaborador.
                 </TableCell>
               </TableRow>
