@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, Plus, Trash2, Images } from "lucide-react";
+import { Loader2, Trash2, Images } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -22,27 +22,23 @@ interface Foto {
 }
 
 interface Props {
-  colaboradorId: string;
-  colaboradorNome: string;
   canManage: boolean;
   trigger?: React.ReactNode;
 }
 
-export function GaleriaDialog({ colaboradorId, colaboradorNome, canManage, trigger }: Props) {
+export function GaleriaDialog({ canManage, trigger }: Props) {
   const qc = useQueryClient();
   const [open, setOpen] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const [legenda, setLegenda] = React.useState("");
 
   const { data: fotos = [], isLoading } = useQuery({
-    queryKey: ["colaborador-galeria", colaboradorId],
+    queryKey: ["galeria-equipe"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador_galeria")
         .select("*")
-        .eq("colaborador_id", colaboradorId)
-        .order("ordem", { ascending: true })
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Foto[];
     },
@@ -62,7 +58,7 @@ export function GaleriaDialog({ colaboradorId, colaboradorNome, canManage, trigg
       return;
     }
     setUploading(true);
-    const path = `galeria/${colaboradorId}/${Date.now()}-${file.name}`;
+    const path = `galeria/equipe/${Date.now()}-${file.name}`;
     const { error: upErr } = await supabase.storage
       .from("colaborador-fotos")
       .upload(path, file);
@@ -73,10 +69,9 @@ export function GaleriaDialog({ colaboradorId, colaboradorNome, canManage, trigg
     }
     const { data: pub } = supabase.storage.from("colaborador-fotos").getPublicUrl(path);
     const { error } = await supabase.from("colaborador_galeria").insert({
-      colaborador_id: colaboradorId,
       foto_url: pub.publicUrl,
       legenda: legenda.trim() || null,
-      ordem: fotos.length,
+      ordem: 0,
     });
     setUploading(false);
     if (error) {
@@ -85,7 +80,7 @@ export function GaleriaDialog({ colaboradorId, colaboradorNome, canManage, trigg
     }
     setLegenda("");
     toast.success("Foto adicionada");
-    qc.invalidateQueries({ queryKey: ["colaborador-galeria", colaboradorId] });
+    qc.invalidateQueries({ queryKey: ["galeria-equipe"] });
   };
 
   const remover = async (id: string) => {
@@ -95,21 +90,21 @@ export function GaleriaDialog({ colaboradorId, colaboradorNome, canManage, trigg
       return;
     }
     toast.success("Foto removida");
-    qc.invalidateQueries({ queryKey: ["colaborador-galeria", colaboradorId] });
+    qc.invalidateQueries({ queryKey: ["galeria-equipe"] });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <Button variant="outline" size="sm">
+          <Button variant="outline">
             <Images className="mr-2 h-4 w-4" /> Galeria
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Galeria de {colaboradorNome}</DialogTitle>
+          <DialogTitle>Galeria da equipe</DialogTitle>
         </DialogHeader>
 
         {canManage && (
@@ -147,8 +142,8 @@ export function GaleriaDialog({ colaboradorId, colaboradorNome, canManage, trigg
               <div key={f.id} className="group relative overflow-hidden rounded-md border bg-card">
                 <img
                   src={f.foto_url}
-                  alt={f.legenda ?? colaboradorNome}
-                  className="h-40 w-full object-cover"
+                  alt={f.legenda ?? "Foto da equipe"}
+                  className="h-44 w-full object-cover"
                 />
                 {f.legenda && (
                   <p className="px-2 py-1.5 text-xs text-muted-foreground line-clamp-2">
