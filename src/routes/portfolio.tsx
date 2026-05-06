@@ -141,6 +141,10 @@ function Portfolio() {
         }
       />
 
+      <div className="mb-6">
+        <GaleriaCarousel />
+      </div>
+
       {isLoading ? (
         <div className="flex h-40 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : data.length === 0 ? (
