@@ -432,7 +432,7 @@ Deno.serve(async (req) => {
       resumo: r.resumo ?? "",
       decisoes: r.decisoes ?? [],
       proximos_passos: r.proximos_passos ?? "",
-      transcricao: (r.transcricao ?? "").slice(0, 80000),
+      transcricao: truncateMiddle(r.transcricao ?? "", 40000),
     };
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -442,7 +442,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: aiModel,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {
