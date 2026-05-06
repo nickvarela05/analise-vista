@@ -16,13 +16,27 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { CargoSelect } from "./CargoSelect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
 
 export function NovoColaboradorDialog() {
   const qc = useQueryClient();
   const [open, setOpen] = React.useState(false);
   const [foto, setFoto] = React.useState<File | null>(null);
   const [saving, setSaving] = React.useState(false);
-  const [form, setForm] = React.useState({ nome: "", cargo: "", bio: "", email: "" });
+  const [form, setForm] = React.useState<{
+    nome: string;
+    cargo: string;
+    bio: string;
+    email: string;
+    local_trabalho: LocalTrabalho;
+  }>({ nome: "", cargo: "", bio: "", email: "", local_trabalho: "escritorio" });
 
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
