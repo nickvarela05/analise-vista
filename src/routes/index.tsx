@@ -19,6 +19,8 @@ import {
   startOfWeek,
   endOfWeek,
   isWithinInterval,
+  isBefore,
+  startOfDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/AppLayout";
@@ -571,25 +573,40 @@ function Dashboard() {
                       : "primary";
                 const Icon =
                   a.tipo === "reuniao" ? Calendar : a.tipo === "tarefa" ? CheckSquare : Inbox;
+                const concluido =
+                  (a.tipo === "tarefa" && ["producao", "aprovado"].includes(a.status ?? "")) ||
+                  (a.tipo === "demanda" && ["concluida", "cancelada"].includes(a.status ?? "")) ||
+                  (a.tipo === "reuniao" && ["realizada", "cancelada"].includes(a.status ?? ""));
+                const atrasada =
+                  !!a.data && isBefore(new Date(a.data), startOfDay(new Date())) && !concluido;
                 return (
                   <button
                     key={`${a.tipo}-${a.id}`}
                     type="button"
                     onClick={() => openPreview(a)}
-                    className="list-item-interactive group"
+                    className={cn(
+                      "list-item-interactive group",
+                      atrasada && "border-l-2 border-l-destructive bg-destructive/5",
+                      concluido && "opacity-60",
+                    )}
                   >
                     <span className={cn("type-dot", `type-dot-${tone}`)} />
-                    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
+                    <Icon className={cn("mt-0.5 h-4 w-4 shrink-0 group-hover:text-foreground", atrasada ? "text-destructive" : "text-muted-foreground")} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium">{a.titulo}</span>
+                        <span className={cn("truncate text-sm font-medium", concluido && "line-through")}>{a.titulo}</span>
+                        {atrasada && (
+                          <Badge variant="destructive" className="text-[9px] uppercase">
+                            Atrasada
+                          </Badge>
+                        )}
                         {a.prioridade === "alta" || a.prioridade === "critica" ? (
                           <Badge variant="destructive" className="text-[9px] uppercase">
                             {a.prioridade}
                           </Badge>
                         ) : null}
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className={cn("mt-0.5 text-xs", atrasada ? "text-destructive/80" : "text-muted-foreground")}>
                         {format(new Date(a.data!), "EEE, dd/MM 'às' HH:mm", { locale: ptBR })}
                         {a.responsavel && ` · ${a.responsavel}`}
                       </p>
