@@ -222,9 +222,10 @@ function Relatorios() {
                 <TableHead>Categoria</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Solicitante</TableHead>
-                <TableHead className="min-w-[300px]">Descrição</TableHead>
+                <TableHead className="min-w-[280px]">Descrição</TableHead>
                 <TableHead>Urgência</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="min-w-[160px]">Responsável</TableHead>
+                <TableHead className="min-w-[140px]">Status</TableHead>
                 <TableHead>Prazo</TableHead>
                 <TableHead>Recebido</TableHead>
               </TableRow>
