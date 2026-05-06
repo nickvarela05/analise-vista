@@ -142,7 +142,9 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
                   </TableCell>
                 </TableRow>
               );
-            })}
+                })}
+              </React.Fragment>
+            ))}
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-sm text-muted-foreground">
