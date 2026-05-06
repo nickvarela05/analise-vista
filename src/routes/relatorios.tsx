@@ -74,6 +74,33 @@ function Relatorios() {
     refetchOnWindowFocus: false,
   });
 
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ["relatorios-colaboradores"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: (vars: { id: string; responsavel?: string | null; status?: StatusSolicitacao }) =>
+      updateSolicitacaoRelatorio({ data: vars }),
+    onSuccess: (res) => {
+      if (!res.ok) {
+        toast.error("Erro ao atualizar", { description: res.error });
+        return;
+      }
+      toast.success("Atualizado");
+      qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao atualizar", { description: e.message }),
+  });
+
   const rows: SolicitacaoRelatorio[] = data?.ok ? data.rows : [];
 
   const categorias = React.useMemo(() => {
