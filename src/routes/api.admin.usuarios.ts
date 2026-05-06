@@ -122,6 +122,7 @@ export const Route = createFileRoute("/api/admin/usuarios")({
               email: data.email,
               password: tempPassword,
               email_confirm: true,
+              app_metadata: { created_by_admin: true, role: data.role },
               user_metadata: { nome: data.nome, role: data.role },
             });
             if (error) return jsonError(error.message, 400);
