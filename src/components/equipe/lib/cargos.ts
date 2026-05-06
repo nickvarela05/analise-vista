@@ -1,4 +1,5 @@
 export const CARGOS = [
+  "Estagiário",
   "Analista de Requisitos Júnior",
   "Analista de Requisitos Pleno",
   "Analista de Requisitos Sênior",
