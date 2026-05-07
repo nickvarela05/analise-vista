@@ -28,7 +28,7 @@ const iconClass: Record<KpiTone, string> = {
   info: "kpi-icon-info",
 };
 
-export function KpiTile({
+function KpiTileImpl({
   icon: Icon,
   label,
   value,
