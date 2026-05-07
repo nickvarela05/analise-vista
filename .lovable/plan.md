@@ -1,59 +1,135 @@
-## Diagnóstico
 
-### 1. Geração do DOCX (gargalo principal: a IA)
+# Plano de Fortificação Estrutural
 
-A função `gerar-relatorio-reuniao` gasta a maior parte do tempo aguardando a resposta do **Gemini 2.5 Pro** (modelo "pesado"). A montagem do `.docx` em si é rápida (milissegundos). Outros pontos a otimizar:
-
-- Modelo `google/gemini-2.5-pro` é ~3-5x mais lento que `gemini-2.5-flash` para esse tipo de tarefa.
-- Transcrição enviada à IA é cortada em **80.000 caracteres** — quanto maior o input, maior a latência.
-- Resposta é gerada de uma única vez (não há streaming), então o usuário só recebe o arquivo no fim.
-- A logo é decodificada de base64 a cada chamada (custo pequeno, mas evitável).
-
-### 2. Loading das páginas
-
-Hoje quase tudo é buscado **no cliente** com `useQuery` após o componente montar. Isso causa o "spinner inicial" em cada navegação. Pontos observados:
-
-- Páginas como `/relatorios`, `/portfolio`, `/equipe`, `/reunioes` carregam dados via `useQuery` no `mount`, sem usar `loader` do TanStack Router → sem prefetch nem SSR.
-- `defaultPreloadStaleTime: 0` no router.tsx desativa cache de preload — cada hover refaz fetch.
-- Não há `defaultPreload: "intent"` configurado, então links não fazem prefetch ao passar o mouse.
-- Sem `staleTime` agressivo nas queries → refetch frequente.
-- Bundle grande: tudo importado eagermente em cada rota (lucide icons, dialogs, etc.) — code-splitting automático ajuda, mas algumas rotas (`reunioes.tsx` com 1251 linhas) importam muito ao subir.
+**Premissa inegociável:** nenhum comportamento visual, fluxo de usuário, rota ou regra de negócio muda. Toda refatoração é *behavior-preserving*. Cada etapa é validada visualmente antes de avançar.
 
 ---
 
-## Plano de mudanças
+## Objetivos
+1. Reduzir superfície de re-render e processamento redundante.
+2. Isolar regras de negócio em módulos puros (testáveis, reutilizáveis).
+3. Centralizar acesso a dados (queryKeys, hooks, invalidations).
+4. Eliminar código morto e duplicações.
+5. Padronizar tratamento de erro/loading sem alterar UI.
 
-### A. Acelerar o DOCX
+---
 
-1. **Trocar o modelo** para `google/gemini-2.5-flash` em `supabase/functions/gerar-relatorio-reuniao/index.ts`. Mantém qualidade analítica boa, mas com latência ~3x menor. Manter `2.5-pro` opcional via parâmetro `{ modelo: "pro" }` no body para casos críticos.
-2. **Reduzir o teto da transcrição** de 80.000 para 40.000 caracteres (suficiente para reuniões de até ~4h transcritas; reduz tempo de prompt). Adicionar truncamento inteligente (cortar pelo meio, mantendo início e fim).
-3. **Cache da logo**: mover `LOGO_BYTES` para escopo de módulo (já está) — confirmar; e não recodificar a cada request.
-4. **Toast de progresso no front**: na chamada do front, mostrar toast com "Gerando relatório (pode levar até 30s)…" e desabilitar o botão para sensação de responsividade.
-5. **Opcional (futuro)**: cachear o markdown gerado pela IA na tabela `reuniao` (coluna `relatorio_md`) — se já gerado e a reunião não mudou, regenerar só o `.docx` (instantâneo) sem chamar a IA de novo.
+## Etapa 1 — Limpeza segura (risco zero)
+- Remover `src/server/n8n-db.functions.ts` e `src/server/n8n-db.server.ts` (tela "Inspeção N8N" já foi excluída).
+- Remover ícone `Database` órfão e quaisquer imports residuais.
+- Procurar e remover imports não utilizados em todo `src/` (sem reformatar arquivos).
+- **Validação:** build limpo + navegação por todas as rotas sem mudança visual.
 
-### B. Reduzir loading das páginas
+## Etapa 2 — Camada de domínio pura (`src/lib/domain/`)
+Extrair funções já existentes (atualmente inline em rotas/componentes) para módulos puros, mantendo a mesma assinatura lógica:
 
-1. **Configurar prefetch global** em `src/router.tsx`:
-   - `defaultPreload: "intent"` (prefetch ao passar o mouse sobre um `<Link>`)
-   - `defaultPreloadStaleTime: 30_000` (reaproveita prefetch dentro de 30s)
-2. **Usar `loader` + `queryClient.ensureQueryData` nas rotas principais** (`/reunioes`, `/relatorios`, `/portfolio`, `/equipe`, `/demandas`, `/tarefas`, `/atividades`):
-   - O loader dispara a query antes do componente montar → quando a tela renderiza, os dados já estão (ou estão sendo) carregados em paralelo com o JS chunk.
-   - `useQuery` no componente continua igual, mas o cache já está quente.
-3. **Aumentar `staleTime`** das queries de 30s para 60-120s (dados não mudam tanto), eliminando refetches desnecessários ao voltar para a página.
-4. **Skeleton states leves** em vez de tela em branco / spinner central nas páginas com loader.
-5. **Remover queries duplicadas** em `reunioes.tsx` se houver (auditar) e mover componentes pesados de Dialog para arquivos separados (lazy import com `React.lazy` ou simples extração de arquivo) para reduzir o bundle inicial da rota.
+```text
+src/lib/domain/
+  cargos.ts        // cargoElegivel, agrupamentos, labels
+  copa.ts          // janela 30 min, detecção de conflito, capacidade
+  atividades.ts    // isMine, filtroEscopo, agregações por colaborador
+  kpis.ts          // contadores de tarefas/demandas/reuniões/relatórios
+  datas.ts         // helpers date-fns reutilizados (semana, range, fmt)
+```
 
-### C. Itens técnicos detalhados
+Regras: funções **puras**, sem React, sem Supabase. Os componentes passam a importar dessas libs em vez de redefinir inline. Sem mudança de saída.
 
-**Arquivos a editar:**
-- `supabase/functions/gerar-relatorio-reuniao/index.ts` — trocar modelo, reduzir cap de transcrição, aceitar `{ modelo }` opcional.
-- `src/router.tsx` — `defaultPreload: "intent"`, `defaultPreloadStaleTime: 30_000`, `staleTime: 60_000` no QueryClient.
-- `src/routes/reunioes.tsx`, `src/routes/relatorios.tsx`, `src/routes/portfolio.tsx`, `src/routes/equipe.tsx`, `src/routes/demandas.tsx`, `src/routes/tarefas.tsx`, `src/routes/atividades.tsx` — adicionar `loader` que faz `ensureQueryData` da consulta principal.
-- (Opcional) `src/routes/reunioes.tsx` — extrair `ReuniaoDialog` e `ReuniaoDrawer` para arquivos próprios para code-splitting.
+## Etapa 3 — Data layer centralizada (`src/hooks/queries/`)
+Hoje cada rota chama `supabase.from(...).select(...)` direto. Vamos consolidar **sem alterar o que é exibido**:
 
-### Resultado esperado
+```text
+src/lib/queries/
+  keys.ts                  // queryKeys factory (única fonte de verdade)
+src/hooks/queries/
+  useColaboradores.ts
+  useTarefas.ts
+  useDemandas.ts
+  useReunioes.ts
+  useRelatorios.ts
+  useChamados.ts
+  useAvisos.ts
+```
 
-- DOCX: de ~25-40s para ~8-15s (apenas trocando o modelo e reduzindo input).
-- Navegação entre páginas: spinner inicial sumindo em ~80% dos casos (prefetch on hover) e dados aparecendo "instantaneamente" em revisitas (cache + staleTime).
+- Cada hook retorna exatamente os mesmos dados que o componente já consome.
+- `staleTime` razoável (30–60 s) para cortar refetch redundante quando o usuário navega entre abas.
+- Invalidations passam a usar as chaves do `keys.ts` (evita strings espalhadas).
+- Para KPIs do dashboard, usar `select` granular ou `count: 'exact', head: true` quando só precisamos da contagem — corta payload sem mudar o número exibido.
 
-Quer que eu siga **com tudo**, ou prefere começar só pela parte A (DOCX) para já sentir a melhora antes do refactor de loaders?
+## Etapa 4 — Quebra dos arquivos-monolito
+Apenas **mover** blocos para sub-componentes/seções, sem reescrever JSX. Cada split é commitado e validado visualmente.
+
+| Arquivo (LOC) | Decomposição proposta |
+|---|---|
+| `routes/index.tsx` (1.392) | `dashboard/` → `KpisSection`, `MinhasAtribuicoesSection`, `AtribuicoesPorColaboradorChart`, `AtividadesSemanais` |
+| `routes/reunioes.tsx` (1.251) | `reunioes/` → `ReunioesList`, `ReuniaoDetail`, `ReuniaoForm`, hook `useReuniaoUploader` (já parcial) |
+| `routes/tarefas.tsx` (636) | usar `TarefaKanban`/`TarefaFilters` existentes; extrair `TarefasHeader` e `useTarefasView` |
+| `equipe/EquipeUsuariosView.tsx` (716) | `usuarios/` → `UsuariosTable`, `UsuariosFilters`, `useUsuariosActions` |
+| `equipe/GestaoCopaView.tsx` (517) | `copa/` → `CopaBoard`, `CopaSlot`, `CopaConflictAlert` + `lib/domain/copa.ts` |
+
+Regras:
+- Nada de renomear classes Tailwind, tokens, textos ou ordem visual.
+- Cada novo componente recebe props tipadas (sem `any`).
+- Componentes de lista que recebem o mesmo objeto repetidamente passam a `React.memo` + comparator simples por id.
+
+## Etapa 5 — Otimização de renderização
+- Substituir `useState` derivados por `useMemo` quando o valor depende só de props/estado existentes (alguns lugares já fazem isso; padronizar).
+- Selects granulares no React Query: `useQuery({ select: (d) => d.length })` para KPIs em vez de pegar o array inteiro.
+- `useCallback` apenas onde o handler entra em props de componente memoizado (evitar overuse).
+- Listas longas (Equipe/Atividades): adicionar `key` estável e `React.memo` no item — ganho real, zero impacto visual.
+- `defaultPreloadStaleTime: 0` confirmado no router (evita cache duplo Router+Query).
+
+## Etapa 6 — Tratamento de erro/loading padronizado
+- `errorComponent` + `pendingComponent` por rota com **exatamente** o mesmo skeleton/empty state já usado hoje (apenas movido para slot oficial do TanStack Router).
+- Hook `useToastError(error)` único para padronizar toast em mutations (mensagens preservadas).
+
+## Etapa 7 — Tipagem e segurança
+- Eliminar os 4 `any` residuais em `routes/api.admin.usuarios.ts` com tipos derivados de `Database`.
+- Auditar `requireGestor` em todos os handlers `api.admin.*` (apenas leitura, sem mudança de comportamento se já estiverem corretos).
+- Confirmar RLS continua intocada (não há migration nesta refatoração).
+
+## Etapa 8 — Rede de segurança mínima (testes)
+Adicionar **Vitest** apenas para o domínio puro extraído na Etapa 2 (não testes de UI):
+```text
+src/lib/domain/__tests__/
+  copa.test.ts        // janela 30 min, capacidade 3, conflitos
+  cargos.test.ts      // estagiário TI vs estagiário, gestor, analista
+  atividades.test.ts  // isMine, filtroEscopo
+  kpis.test.ts        // agregações
+```
+Isso protege as regras que mais sofreram iteração recente, sem tocar componentes.
+
+---
+
+## Ordem de execução e validação
+
+```text
+Etapa 1  → build OK + navegação visual            (1 commit)
+Etapa 2  → domínio extraído, comportamento igual  (1 commit por módulo)
+Etapa 8  → testes do domínio passando             (junto com Etapa 2)
+Etapa 3  → hooks de query, 1 entidade por vez     (1 commit por entidade)
+Etapa 4  → split de monolitos, 1 arquivo por vez  (1 commit por arquivo)
+Etapa 5  → memos/selects                          (1 commit)
+Etapa 6  → error/pending boundaries               (1 commit)
+Etapa 7  → tipagem fina + auditoria               (1 commit)
+```
+
+Critério de aceitação por commit: **diff visual = 0** (mesmas telas, mesmos textos, mesmas interações, mesmas requisições à API ou menos).
+
+---
+
+## Ganhos esperados (mensuráveis)
+- LOC nas rotas-monolito: **−50 a −65 %** (movido, não apagado).
+- Re-renders no dashboard ao trocar filtro: **−40 a −60 %** (memo + select granular).
+- Payload do dashboard: redução proporcional ao uso de `count: head` em KPIs.
+- Bundle inicial: ligeira redução pela remoção de `n8n-db.*` e imports órfãos.
+- Tempo para adicionar nova feature em rota refatorada: significativamente menor.
+
+## O que **NÃO** será feito neste plano
+- Nenhuma alteração de design, cor, espaçamento, componente shadcn ou copy.
+- Nenhuma mudança em RLS, tabelas ou edge functions.
+- Nenhuma migração para outra lib (mantém TanStack Query, Router, Supabase).
+- Nenhuma reescrita de drawers/dialogs grandes — apenas extração de hooks de form quando trivial e seguro.
+
+---
+
+Posso executar **Etapa 1 + Etapa 2 + Etapa 8** em uma primeira leva (limpeza + domínio puro + testes), que é a parte de maior valor com risco praticamente nulo. Aprova começar por aí?
