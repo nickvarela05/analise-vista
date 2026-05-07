@@ -247,7 +247,7 @@ function Avisos() {
         return;
       }
     }
-    qc.invalidateQueries({ queryKey: qk.avisos.leiturasDoUsuario(undefined).slice(0,1) });
+    qc.invalidateQueries({ queryKey: qk.avisos.leiturasPrefix() });
     qc.invalidateQueries({ queryKey: qk.avisos.bellLeituras() });
   };
 
@@ -266,7 +266,7 @@ function Avisos() {
     if (error) toast.error("Erro", { description: error.message });
     else {
       toast.success(`${naoLidos.length} aviso(s) marcado(s) como lidos`);
-      qc.invalidateQueries({ queryKey: qk.avisos.leiturasDoUsuario(undefined).slice(0,1) });
+      qc.invalidateQueries({ queryKey: qk.avisos.leiturasPrefix() });
       qc.invalidateQueries({ queryKey: qk.avisos.bellLeituras() });
     }
   };
