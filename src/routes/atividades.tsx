@@ -156,6 +156,13 @@ function Atividades() {
         description="Agenda consolidada — tarefas, demandas e reuniões com prazo no período."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={escopo} onValueChange={(v) => setEscopo(v as "equipe" | "minhas")} disabled={!meuColabId && escopo === "equipe"}>
+              <SelectTrigger className="w-36 sm:w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="equipe">Toda a equipe</SelectItem>
+                <SelectItem value="minhas" disabled={!meuColabId}>Minhas atribuições</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
               <SelectTrigger className="w-32 sm:w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
