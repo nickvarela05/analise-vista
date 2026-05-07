@@ -492,6 +492,19 @@ function Dashboard() {
         />
       </div>
 
+      {/* Minhas atribuições — painel inline */}
+      {meuColabId && (
+        <MinhasAtribuicoesPainel
+          nome={meuProfile?.nome ?? null}
+          colabId={meuColabId}
+          tarefas={tarefas}
+          demandas={demandas}
+          reunioes={reunioes}
+          chamados={chamados}
+          onVerTodas={() => setMinhasOpen(true)}
+        />
+      )}
+
       {/* Linha 2 — Gráficos */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel
