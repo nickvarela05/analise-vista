@@ -249,20 +249,26 @@ function Dashboard() {
       return r.responsavel_id === colabId;
     }).length;
 
-  const atribuicoes = colaboradores.map((c) => {
-    const tDoColab = countAssignees(tarefas, c.id);
-    const dDoColab = countAssignees(demandas, c.id);
-    const rDoColab = countAssignees(reunioes, c.id);
-    const relDoColab = countAssignees(chamados, c.id);
-    return {
-      nome: c.nome.split(" ")[0],
-      Tarefas: tDoColab,
-      Demandas: dDoColab,
-      Reuniões: rDoColab,
-      Relatórios: relDoColab,
-      Total: tDoColab + dDoColab + rDoColab + relDoColab,
-    };
-  });
+  const cargoElegivel = (cargo: string | null | undefined) => {
+    const c = (cargo ?? "").toLowerCase();
+    return c.includes("analista") || c.includes("gestor") || c.includes("estagi");
+  };
+  const atribuicoes = colaboradores
+    .filter((c) => cargoElegivel(c.cargo))
+    .map((c) => {
+      const tDoColab = countAssignees(tarefas, c.id);
+      const dDoColab = countAssignees(demandas, c.id);
+      const rDoColab = countAssignees(reunioes, c.id);
+      const relDoColab = countAssignees(chamados, c.id);
+      return {
+        nome: c.nome.split(" ")[0],
+        Tarefas: tDoColab,
+        Demandas: dDoColab,
+        Reuniões: rDoColab,
+        Relatórios: relDoColab,
+        Total: tDoColab + dDoColab + rDoColab + relDoColab,
+      };
+    });
 
   // Atividades semanais consolidadas
   type Atividade = PreviewItem & { _sortDate: number };
