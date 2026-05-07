@@ -9,7 +9,7 @@ const TONE_CLASS: Record<string, string> = {
   info: "border-info/30 bg-info/5 text-info",
 };
 
-export function WorkflowStep({
+function WorkflowStepImpl({
   icon: Icon,
   label,
   value,
@@ -41,3 +41,5 @@ export function WorkflowStep({
   }
   return <div className={cls}>{inner}</div>;
 }
+
+export const WorkflowStep = React.memo(WorkflowStepImpl);
