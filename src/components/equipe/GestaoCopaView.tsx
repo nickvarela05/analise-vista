@@ -98,13 +98,16 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch, dirty: true } }));
   };
 
-  // Capacidade da copa por janela de 5min
+  // Capacidade da copa: considera apenas os PRIMEIROS 30 MIN do almoço de cada pessoa.
+  const COPA_MAX = 30;
   const copaSlots = React.useMemo(() => {
     const slots: { min: number; count: number; nomes: string[] }[] = [];
     for (let m = TIMELINE_INI; m < TIMELINE_FIM; m += SNAP) {
-      const ocup = Object.values(edits).filter(
-        (e) => e.local === "Copa" && e.ai <= m && e.af > m,
-      );
+      const ocup = Object.values(edits).filter((e) => {
+        if (e.local !== "Copa") return false;
+        const copaFim = Math.min(e.af, e.ai + COPA_MAX);
+        return e.ai <= m && copaFim > m;
+      });
       slots.push({
         min: m,
         count: ocup.length,
