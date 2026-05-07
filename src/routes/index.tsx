@@ -76,10 +76,10 @@ function Dashboard() {
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [minhasOpen, setMinhasOpen] = React.useState(false);
 
-  const openPreview = (item: PreviewItem) => {
+  const openPreview = React.useCallback((item: PreviewItem) => {
     setPreview(item);
     setPreviewOpen(true);
-  };
+  }, []);
 
   const { data: meuProfile } = useQuery({
     queryKey: qk.meuProfile(user?.id),
