@@ -117,7 +117,7 @@ export function EquipeCalendarioView({ colabs }: { colabs: Colaborador[] }) {
             <Download className="mr-1 h-3.5 w-3.5" /> CSV
           </Button>
           <EventoPopover
-            colaboradores={colabs.map((c) => ({ id: c.id, nome: c.nome }))}
+            colaboradores={colabs.map((c) => ({ id: c.id, nome: c.nome, cargo: c.cargo, foto_url: c.foto_url, local_trabalho: c.local_trabalho }))}
             defaultDate={today}
             trigger={
               <Button size="sm">
