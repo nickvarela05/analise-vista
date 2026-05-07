@@ -80,7 +80,8 @@ function Tarefas() {
   });
 
   const { data: colabs = [] } = useQuery({
-    queryKey: ["tar-colabs"],
+    queryKey: qk.tarefas.colabs(),
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -93,7 +94,8 @@ function Tarefas() {
   });
 
   const { data: demandas = [] } = useQuery({
-    queryKey: ["tar-demandas-mini"],
+    queryKey: qk.tarefas.demandasMini(),
+    staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase.from("demanda").select("id, titulo").order("created_at", { ascending: false });
       return data ?? [];
@@ -101,7 +103,8 @@ function Tarefas() {
   });
 
   const { data: tarefas = [], isLoading } = useQuery({
-    queryKey: ["tarefas"],
+    queryKey: qk.tarefas.all(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*").order("created_at", { ascending: false });
       if (error) throw error;
@@ -111,7 +114,8 @@ function Tarefas() {
 
   // Contadores agregados (comentários, checklist, anexos) por tarefa
   const { data: countsRaw = { coments: [], checks: [], anexos: [] } } = useQuery({
-    queryKey: ["tar-counts"],
+    queryKey: qk.tarefas.counts(),
+    staleTime: 30_000,
     queryFn: async () => {
       const [coments, checks, anexos] = await Promise.all([
         supabase.from("todo_comentario").select("todo_id"),
