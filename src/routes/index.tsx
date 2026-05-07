@@ -44,6 +44,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { listSolicitacoesRelatorios } from "@/server/n8n-db.functions";
 import { cn } from "@/lib/utils";
+import { cargoElegivel } from "@/lib/domain/cargos";
+import { contarAtribuicoes } from "@/lib/domain/atividades";
 import {
   ResponsiveContainer,
   BarChart,
