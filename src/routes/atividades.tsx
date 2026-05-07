@@ -86,7 +86,7 @@ function Atividades() {
   const meuColabId = meuProfile?.colaborador_id ?? null;
 
   const { data: tarefas = [] } = useQuery({
-    queryKey: ["atv-tarefas"],
+    queryKey: qk.atividades.tarefas(),
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*");
       if (error) throw error;
@@ -94,7 +94,7 @@ function Atividades() {
     },
   });
   const { data: demandas = [] } = useQuery({
-    queryKey: ["atv-demandas"],
+    queryKey: qk.atividades.demandas(),
     queryFn: async () => {
       const { data, error } = await supabase.from("demanda").select("*");
       if (error) throw error;
@@ -102,7 +102,7 @@ function Atividades() {
     },
   });
   const { data: reunioes = [] } = useQuery({
-    queryKey: ["atv-reunioes"],
+    queryKey: qk.atividades.reunioes(),
     queryFn: async () => {
       const { data, error } = await supabase.from("reuniao").select("*");
       if (error) throw error;

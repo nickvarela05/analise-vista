@@ -46,7 +46,7 @@ function Equipe() {
   }, [role, authLoading, navigate]);
 
   const { data: colabs = [], isLoading } = useQuery({
-    queryKey: ["equipe"],
+    queryKey: qk.equipe(),
     enabled: role === "gestor",
     queryFn: async () => {
       const { data, error } = await supabase

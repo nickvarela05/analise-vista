@@ -69,7 +69,7 @@ function Portfolio() {
   const [busca, setBusca] = React.useState("");
 
   const { data = [], isLoading } = useQuery({
-    queryKey: ["colaboradores"],
+    queryKey: qk.colaboradores(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -238,7 +238,7 @@ function ColaboradorCard({
     }
     toast.success("Colaborador excluído");
     setConfirmOpen(false);
-    qc.invalidateQueries({ queryKey: ["colaboradores"] });
+    qc.invalidateQueries({ queryKey: qk.colaboradores() });
   };
 
   return (
@@ -417,7 +417,7 @@ function EditarColaboradorDialog({
     }
     toast.success("Colaborador atualizado");
     onOpenChange(false);
-    qc.invalidateQueries({ queryKey: ["colaboradores"] });
+    qc.invalidateQueries({ queryKey: qk.colaboradores() });
   };
 
   return (

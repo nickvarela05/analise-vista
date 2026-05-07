@@ -87,7 +87,7 @@ function Demandas() {
   const [tarefaTarget, setTarefaTarget] = React.useState<any>(null);
 
   const { data: colabs = [] } = useQuery({
-    queryKey: ["dem-colabs"],
+    queryKey: qk.demandas.colabs(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -100,7 +100,7 @@ function Demandas() {
   });
 
   const { data: demandas = [], isLoading } = useQuery({
-    queryKey: ["demandas-all"],
+    queryKey: qk.demandas.all(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("demanda")
@@ -113,7 +113,7 @@ function Demandas() {
 
   // Tarefa counts per demanda
   const { data: tarefaCounts = {} } = useQuery({
-    queryKey: ["demandas-tarefa-counts"],
+    queryKey: qk.demandas.tarefaCounts(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("todo")
@@ -129,11 +129,11 @@ function Demandas() {
   });
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["demandas-all"] });
-    qc.invalidateQueries({ queryKey: ["demandas-tarefa-counts"] });
+    qc.invalidateQueries({ queryKey: qk.demandas.all() });
+    qc.invalidateQueries({ queryKey: qk.demandas.tarefaCounts() });
     qc.invalidateQueries({ queryKey: ["demanda-tarefas"] });
-    qc.invalidateQueries({ queryKey: ["dash-demandas"] });
-    qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
+    qc.invalidateQueries({ queryKey: qk.dash.demandas() });
+    qc.invalidateQueries({ queryKey: qk.dash.atribuicoes() });
   };
 
   // Filtragem
