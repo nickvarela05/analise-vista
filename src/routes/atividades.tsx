@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/atividades")({
   component: AtividadesRoute,
@@ -58,12 +59,29 @@ const tipoColor: Record<string, string> = {
 };
 
 function Atividades() {
+  const { user } = useAuth();
   const [periodo, setPeriodo] = React.useState<Periodo>("semana");
   const [cursor, setCursor] = React.useState(new Date());
   const [tipoFiltro, setTipoFiltro] = React.useState<string>("todos");
+  const [escopo, setEscopo] = React.useState<"equipe" | "minhas">("equipe");
 
   const inicio = periodo === "semana" ? startOfWeek(cursor, { weekStartsOn: 1 }) : startOfMonth(cursor);
   const fim = periodo === "semana" ? endOfWeek(cursor, { weekStartsOn: 1 }) : endOfMonth(cursor);
+
+  const { data: meuProfile } = useQuery({
+    queryKey: ["atv-meu-profile", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("colaborador_id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const meuColabId = meuProfile?.colaborador_id ?? null;
 
   const { data: tarefas = [] } = useQuery({
     queryKey: ["atv-tarefas"],
@@ -90,24 +108,36 @@ function Atividades() {
     },
   });
 
+  const isMine = React.useCallback(
+    (r: any) => {
+      if (!meuColabId) return false;
+      if (r.equipe_toda) return true;
+      const ids: string[] = r.responsaveis_ids ?? [];
+      if (ids.length > 0) return ids.includes(meuColabId);
+      return r.responsavel_id === meuColabId;
+    },
+    [meuColabId],
+  );
+
   const todas: Atividade[] = React.useMemo(() => {
     const arr: Atividade[] = [];
     const tarefaConcluida = ["concluida", "producao", "cancelada", "reprovada"];
     const demandaConcluida = ["concluida", "cancelada"];
-    tarefas.forEach((t) => {
+    const filtroEscopo = (r: any) => (escopo === "minhas" ? isMine(r) : true);
+    tarefas.filter(filtroEscopo).forEach((t) => {
       if (t.data_prevista && !tarefaConcluida.includes(t.status))
         arr.push({ id: `t-${t.id}`, tipo: "tarefa", titulo: t.titulo, data: new Date(t.data_prevista), prioridade: t.prioridade });
     });
-    demandas.forEach((d) => {
+    demandas.filter(filtroEscopo).forEach((d) => {
       if (d.prazo && !demandaConcluida.includes(d.status))
         arr.push({ id: `d-${d.id}`, tipo: "demanda", titulo: d.titulo, data: new Date(d.prazo), prioridade: d.prioridade });
     });
-    reunioes.forEach((r) => {
+    reunioes.filter(filtroEscopo).forEach((r) => {
       if (r.status !== "cancelada")
         arr.push({ id: `r-${r.id}`, tipo: "reuniao", titulo: r.titulo, data: new Date(r.data_reuniao) });
     });
     return arr;
-  }, [tarefas, demandas, reunioes]);
+  }, [tarefas, demandas, reunioes, escopo, isMine]);
 
   const noPeriodo = todas.filter((a) => a.data >= inicio && a.data <= fim && (tipoFiltro === "todos" || a.tipo === tipoFiltro));
 
@@ -126,6 +156,13 @@ function Atividades() {
         description="Agenda consolidada — tarefas, demandas e reuniões com prazo no período."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <Select value={escopo} onValueChange={(v) => setEscopo(v as "equipe" | "minhas")} disabled={!meuColabId && escopo === "equipe"}>
+              <SelectTrigger className="w-36 sm:w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="equipe">Toda a equipe</SelectItem>
+                <SelectItem value="minhas" disabled={!meuColabId}>Minhas atribuições</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
               <SelectTrigger className="w-32 sm:w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
