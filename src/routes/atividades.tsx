@@ -110,13 +110,7 @@ function Atividades() {
   });
 
   const isMine = React.useCallback(
-    (r: any) => {
-      if (!meuColabId) return false;
-      if (r.equipe_toda) return true;
-      const ids: string[] = r.responsaveis_ids ?? [];
-      if (ids.length > 0) return ids.includes(meuColabId);
-      return r.responsavel_id === meuColabId;
-    },
+    (r: any) => isAtribuidoA(r, meuColabId),
     [meuColabId],
   );
 
