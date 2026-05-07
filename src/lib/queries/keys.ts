@@ -52,6 +52,8 @@ export const qk = {
     colabs: () => ["av-colabs"] as const,
     leiturasDoUsuario: (userId: string | undefined | null) =>
       ["avisos-leituras", userId ?? null] as const,
+    /** prefixo para invalidar leituras de qualquer usuário */
+    leiturasPrefix: () => ["avisos-leituras"] as const,
     leiturasTodas: () => ["avisos-leituras-todas"] as const,
     bellAvisos: () => ["bell-avisos"] as const,
     bellLeituras: () => ["bell-leituras"] as const,
