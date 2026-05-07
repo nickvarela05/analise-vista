@@ -208,14 +208,10 @@ function Dashboard() {
     return { solicRelatPend: r, solicOutrasPend: o };
   }, [solicitacoes]);
 
-  const { totalChamados, relatPendentes, relatEncaminhados } = React.useMemo(() => {
-    let p = 0, e = 0;
-    for (const c of chamados) {
-      if (c.status !== "finalizado") p++;
-      if (c.status === "encaminhado") e++;
-    }
-    return { totalChamados: chamados.length, relatPendentes: p, relatEncaminhados: e };
-  }, [chamados]);
+  const relatEncaminhados = React.useMemo(
+    () => chamados.filter((c) => c.status === "encaminhado").length,
+    [chamados],
+  );
 
   const { taskAbertas, taskHML, taskProd, taskUrgentes } = React.useMemo(() => {
     let abertas = 0, hml = 0, prod = 0, urg = 0;
