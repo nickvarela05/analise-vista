@@ -268,7 +268,9 @@ function Dashboard() {
 
   const cargoElegivel = (cargo: string | null | undefined) => {
     const c = (cargo ?? "").toLowerCase();
-    return c.includes("analista") || c.includes("gestor") || c.includes("estagi");
+    // Inclui apenas "Estagiário TI" entre os estagiários
+    const estagiarioOk = c.includes("estagi") && c.includes("ti");
+    return c.includes("analista") || c.includes("gestor") || estagiarioOk;
   };
   const atribuicoes = colaboradores
     .filter((c) => cargoElegivel(c.cargo))
