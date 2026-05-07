@@ -71,13 +71,30 @@ function IndexRoute() {
 }
 
 function Dashboard() {
+  const { user } = useAuth();
   const [preview, setPreview] = React.useState<PreviewItem | null>(null);
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [minhasOpen, setMinhasOpen] = React.useState(false);
 
   const openPreview = (item: PreviewItem) => {
     setPreview(item);
     setPreviewOpen(true);
   };
+
+  const { data: meuProfile } = useQuery({
+    queryKey: ["meu-profile", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("colaborador_id, nome")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const meuColabId = meuProfile?.colaborador_id ?? null;
 
   const { data: chamados = [], isLoading: loadingChamados } = useQuery({
     queryKey: ["dash-chamados"],
