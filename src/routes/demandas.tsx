@@ -32,6 +32,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { DemandaCard } from "@/components/demandas/DemandaCard";
 import { DemandaDialog } from "@/components/demandas/DemandaDialog";
 import { DemandaDetailDrawer } from "@/components/demandas/DemandaDetailDrawer";

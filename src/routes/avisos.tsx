@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/AvisoCard";
 import { AvisoDialog } from "@/components/avisos/AvisoDialog";
 

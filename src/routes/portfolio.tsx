@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
 import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
 

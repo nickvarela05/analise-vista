@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import {
   listSolicitacoesRelatorios,
   updateSolicitacaoRelatorio,

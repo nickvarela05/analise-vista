@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { EquipeKpis } from "@/components/equipe/EquipeKpis";
 import { EquipeListaView } from "@/components/equipe/EquipeListaView";
 import { EquipeGradeView } from "@/components/equipe/EquipeGradeView";
