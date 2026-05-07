@@ -131,3 +131,46 @@ export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
+
+/**
+ * Cria uma solicitação de relatório manualmente no banco N8N.
+ */
+export const createSolicitacaoRelatorio = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      categoria?: string | null;
+      tipo_base?: string | null;
+      solicitante_nome?: string | null;
+      solicitante_email?: string | null;
+      descricao?: string | null;
+      urgencia?: string | null;
+      justificativa_urgencia?: string | null;
+      prazo?: string | null;
+      responsavel?: string | null;
+      status?: StatusSolicitacao;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const client = getN8nDbClient();
+    const payload: Record<string, unknown> = {
+      categoria: data.categoria ?? "Indefinido",
+      tipo_base: data.tipo_base ?? null,
+      solicitante_nome: data.solicitante_nome ?? null,
+      solicitante_email: data.solicitante_email ?? null,
+      descricao: data.descricao ?? null,
+      urgencia: data.urgencia ?? null,
+      justificativa_urgencia: data.justificativa_urgencia ?? null,
+      prazo: data.prazo ?? null,
+      responsavel: data.responsavel ?? null,
+      status: data.status ?? "Pendente",
+      criado_em: new Date().toISOString(),
+    };
+    const { data: row, error } = await client
+      .from("solicitacoes_relatorios")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const, row: row as SolicitacaoRelatorio };
+  });
+
