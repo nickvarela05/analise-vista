@@ -17,15 +17,10 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
+import { WorkflowStep } from "@/components/dashboard/WorkflowStep";
+import { MinhasAtribuicoesPainel } from "@/components/dashboard/MinhasAtribuicoesPainel";
+import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoesDialog";
 import {
   format,
   startOfWeek,
