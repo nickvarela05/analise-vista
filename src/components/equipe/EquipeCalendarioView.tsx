@@ -189,7 +189,7 @@ export function EquipeCalendarioView({ colabs }: { colabs: Colaborador[] }) {
             return (
               <EventoPopover
                 key={i}
-                colaboradores={colabs.map((c) => ({ id: c.id, nome: c.nome }))}
+                colaboradores={colabs.map((c) => ({ id: c.id, nome: c.nome, cargo: c.cargo, foto_url: c.foto_url, local_trabalho: c.local_trabalho }))}
                 defaultDate={cell.iso}
                 trigger={dayCell}
               />
