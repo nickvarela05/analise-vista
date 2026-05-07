@@ -17,8 +17,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Colaborador, Horario } from "./lib/types";
+import {
+  COPA_CAPACIDADE,
+  COPA_WINDOW_MIN,
+  ocupacaoCopa,
+  slotsExcedidos,
+} from "@/lib/domain/copa";
 
-const COPA_CAPACIDADE = 3;
 const TIMELINE_INI = 11 * 60; // 11:00
 const TIMELINE_FIM = 15 * 60; // 15:00
 const TOTAL_MIN = TIMELINE_FIM - TIMELINE_INI;
