@@ -34,6 +34,7 @@ import {
   type SolicitacaoRelatorio,
   type StatusSolicitacao,
 } from "@/server/n8n-db.functions";
+import { NovoRelatorioDialog } from "@/components/relatorios/NovoRelatorioDialog";
 
 export const Route = createFileRoute("/relatorios")({
   component: RelatoriosRoute,
@@ -137,14 +138,20 @@ function Relatorios() {
         title="Relatórios"
         description="Solicitações de relatórios sincronizadas do banco externo (N8N)."
         actions={
-          <Button
-            variant="outline"
-            onClick={() => qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] })}
-            disabled={isFetching}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Atualizar
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() => qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] })}
+              disabled={isFetching}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Atualizar
+            </Button>
+            <NovoRelatorioDialog
+              categoriasExistentes={categorias.map((c) => c.nome)}
+              colaboradores={colaboradores}
+            />
+          </>
         }
       />
 
