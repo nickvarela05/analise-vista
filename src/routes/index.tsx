@@ -237,134 +237,147 @@ function Dashboard() {
   }).length;
 
   // Pie de status de tarefas
-  const pieTarefas = [
-    {
-      name: "Aberta",
-      value: tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length,
-      color: "var(--chart-3)",
-    },
-    {
-      name: "Em andamento",
-      value: tarefas.filter((t) => t.status === "em_andamento").length,
-      color: "var(--chart-5)",
-    },
-    {
-      name: "Encaminhada",
-      value: tarefas.filter((t) => t.status === "encaminhada").length,
-      color: "var(--chart-4)",
-    },
-    { name: "Homologação", value: taskHML, color: "var(--chart-4)" },
-    { name: "Produção", value: taskProd, color: "var(--chart-2)" },
-    {
-      name: "Concluída",
-      value: tarefas.filter((t) => t.status === "concluida").length,
-      color: "var(--chart-1)",
-    },
-  ].filter((d) => d.value > 0);
+  const pieTarefas = React.useMemo(
+    () =>
+      [
+        {
+          name: "Aberta",
+          value: tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length,
+          color: "var(--chart-3)",
+        },
+        {
+          name: "Em andamento",
+          value: tarefas.filter((t) => t.status === "em_andamento").length,
+          color: "var(--chart-5)",
+        },
+        {
+          name: "Encaminhada",
+          value: tarefas.filter((t) => t.status === "encaminhada").length,
+          color: "var(--chart-4)",
+        },
+        { name: "Homologação", value: taskHML, color: "var(--chart-4)" },
+        { name: "Produção", value: taskProd, color: "var(--chart-2)" },
+        {
+          name: "Concluída",
+          value: tarefas.filter((t) => t.status === "concluida").length,
+          color: "var(--chart-1)",
+        },
+      ].filter((d) => d.value > 0),
+    [tarefas, taskHML, taskProd],
+  );
 
   // Atribuições por colaborador (gráfico) — considera responsaveis_ids + equipe_toda
-  const totalColabsAtivos = colaboradores.length;
-  const atribuicoes = colaboradores
-    .filter((c) => cargoElegivel(c.cargo))
-    .map((c) => {
-      const tDoColab = contarAtribuicoes(tarefas, c.id);
-      const dDoColab = contarAtribuicoes(demandas, c.id);
-      const rDoColab = contarAtribuicoes(reunioes, c.id);
-      const relDoColab = contarAtribuicoes(chamados, c.id);
-      return {
-        nome: c.nome.split(" ")[0],
-        Tarefas: tDoColab,
-        Demandas: dDoColab,
-        Reuniões: rDoColab,
-        Relatórios: relDoColab,
-        Total: tDoColab + dDoColab + rDoColab + relDoColab,
-      };
-    });
+  const atribuicoes = React.useMemo(
+    () =>
+      colaboradores
+        .filter((c) => cargoElegivel(c.cargo))
+        .map((c) => {
+          const tDoColab = contarAtribuicoes(tarefas, c.id);
+          const dDoColab = contarAtribuicoes(demandas, c.id);
+          const rDoColab = contarAtribuicoes(reunioes, c.id);
+          const relDoColab = contarAtribuicoes(chamados, c.id);
+          return {
+            nome: c.nome.split(" ")[0],
+            Tarefas: tDoColab,
+            Demandas: dDoColab,
+            Reuniões: rDoColab,
+            Relatórios: relDoColab,
+            Total: tDoColab + dDoColab + rDoColab + relDoColab,
+          };
+        }),
+    [colaboradores, tarefas, demandas, reunioes, chamados],
+  );
 
   // Atividades semanais consolidadas
   type Atividade = PreviewItem & { _sortDate: number };
-  const atividades: Atividade[] = [];
-
-  tarefas.forEach((t) => {
-    if (t.data_prevista) {
-      const d = new Date(t.data_prevista);
-      if (isWithinInterval(d, { start: weekStart, end: weekEnd })) {
-        atividades.push({
-          id: t.id,
-          tipo: "tarefa",
-          titulo: t.titulo,
-          descricao: t.descricao,
-          status: t.status,
-          prioridade: t.prioridade,
-          responsavel: t.responsavel_id ? colabById.get(t.responsavel_id)?.nome : null,
-          data: d,
-          dataLabel: "Prazo",
-          _sortDate: d.getTime(),
-        });
+  const atividades = React.useMemo<Atividade[]>(() => {
+    const list: Atividade[] = [];
+    tarefas.forEach((t) => {
+      if (t.data_prevista) {
+        const d = new Date(t.data_prevista);
+        if (isWithinInterval(d, { start: weekStart, end: weekEnd })) {
+          list.push({
+            id: t.id,
+            tipo: "tarefa",
+            titulo: t.titulo,
+            descricao: t.descricao,
+            status: t.status,
+            prioridade: t.prioridade,
+            responsavel: t.responsavel_id ? colabById.get(t.responsavel_id)?.nome : null,
+            data: d,
+            dataLabel: "Prazo",
+            _sortDate: d.getTime(),
+          });
+        }
       }
-    }
-  });
-  demandas.forEach((d) => {
-    if (d.prazo) {
-      const dt = new Date(d.prazo);
+    });
+    demandas.forEach((d) => {
+      if (d.prazo) {
+        const dt = new Date(d.prazo);
+        if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
+          list.push({
+            id: d.id,
+            tipo: "demanda",
+            titulo: d.titulo,
+            descricao: d.descricao,
+            status: d.status,
+            prioridade: d.prioridade,
+            responsavel: d.responsavel_id ? colabById.get(d.responsavel_id)?.nome : null,
+            data: dt,
+            dataLabel: "Prazo",
+            tags: d.tags,
+            _sortDate: dt.getTime(),
+          });
+        }
+      }
+    });
+    reunioes.forEach((r) => {
+      const dt = new Date(r.data_reuniao);
       if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
-        atividades.push({
-          id: d.id,
-          tipo: "demanda",
-          titulo: d.titulo,
-          descricao: d.descricao,
-          status: d.status,
-          prioridade: d.prioridade,
-          responsavel: d.responsavel_id ? colabById.get(d.responsavel_id)?.nome : null,
+        list.push({
+          id: r.id,
+          tipo: "reuniao",
+          titulo: r.titulo,
+          descricao: r.pauta,
+          status: r.status,
+          responsavel: r.responsavel_id ? colabById.get(r.responsavel_id)?.nome : null,
           data: dt,
-          dataLabel: "Prazo",
-          tags: d.tags,
+          dataLabel: "Quando",
           _sortDate: dt.getTime(),
         });
       }
-    }
-  });
-  reunioes.forEach((r) => {
-    const dt = new Date(r.data_reuniao);
-    if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
-      atividades.push({
-        id: r.id,
-        tipo: "reuniao",
-        titulo: r.titulo,
-        descricao: r.pauta,
-        status: r.status,
-        responsavel: r.responsavel_id ? colabById.get(r.responsavel_id)?.nome : null,
-        data: dt,
-        dataLabel: "Quando",
-        _sortDate: dt.getTime(),
-      });
-    }
-  });
-  atividades.sort((a, b) => a._sortDate - b._sortDate);
+    });
+    list.sort((a, b) => a._sortDate - b._sortDate);
+    return list;
+  }, [tarefas, demandas, reunioes, colabById, weekStart, weekEnd]);
 
   const proximasFerias = ferias.slice(0, 4);
 
-  const horarios = colaboradores
-    .map((c) => {
-      const seg = (c.colaborador_horario ?? []).find((h: any) => h.dia_semana === 1);
-      if (!seg) return null;
-      return {
-        nome: c.nome.split(" ")[0],
-        foto: c.foto_url,
-        expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} – ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
-        almoco: seg.almoco_inicio
-          ? `${seg.almoco_inicio.slice(0, 5)} – ${seg.almoco_fim?.slice(0, 5)}`
-          : "—",
-        local: seg.local_almoco ?? "—",
-      };
-    })
-    .filter(Boolean) as {
-    nome: string;
-    foto: string | null;
-    expediente: string;
-    almoco: string;
-    local: string;
-  }[];
+  const horarios = React.useMemo(
+    () =>
+      colaboradores
+        .map((c) => {
+          const seg = (c.colaborador_horario ?? []).find((h: any) => h.dia_semana === 1);
+          if (!seg) return null;
+          return {
+            nome: c.nome.split(" ")[0],
+            foto: c.foto_url,
+            expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} – ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
+            almoco: seg.almoco_inicio
+              ? `${seg.almoco_inicio.slice(0, 5)} – ${seg.almoco_fim?.slice(0, 5)}`
+              : "—",
+            local: seg.local_almoco ?? "—",
+          };
+        })
+        .filter(Boolean) as {
+        nome: string;
+        foto: string | null;
+        expediente: string;
+        almoco: string;
+        local: string;
+      }[],
+    [colaboradores],
+  );
 
   return (
     <div className="space-y-6">
