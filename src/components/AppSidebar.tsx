@@ -10,7 +10,7 @@ import {
   Settings,
   Inbox,
   Briefcase,
-  Database,
+  
 } from "lucide-react";
 import {
   Sidebar,

@@ -15,7 +15,6 @@ import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as InspectN8nRouteImport } from './routes/inspect-n8n'
 import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DemandasRouteImport } from './routes/demandas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
@@ -53,11 +52,6 @@ const PerfilRoute = PerfilRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InspectN8nRoute = InspectN8nRouteImport.update({
-  id: '/inspect-n8n',
-  path: '/inspect-n8n',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipeRoute = EquipeRouteImport.update({
@@ -109,7 +103,6 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
   '/equipe': typeof EquipeRoute
-  '/inspect-n8n': typeof InspectN8nRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -126,7 +119,6 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
   '/equipe': typeof EquipeRoute
-  '/inspect-n8n': typeof InspectN8nRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -144,7 +136,6 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
   '/equipe': typeof EquipeRoute
-  '/inspect-n8n': typeof InspectN8nRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -163,7 +154,6 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/demandas'
     | '/equipe'
-    | '/inspect-n8n'
     | '/login'
     | '/perfil'
     | '/portfolio'
@@ -180,7 +170,6 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/demandas'
     | '/equipe'
-    | '/inspect-n8n'
     | '/login'
     | '/perfil'
     | '/portfolio'
@@ -197,7 +186,6 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/demandas'
     | '/equipe'
-    | '/inspect-n8n'
     | '/login'
     | '/perfil'
     | '/portfolio'
@@ -215,7 +203,6 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DemandasRoute: typeof DemandasRoute
   EquipeRoute: typeof EquipeRoute
-  InspectN8nRoute: typeof InspectN8nRoute
   LoginRoute: typeof LoginRoute
   PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
@@ -267,13 +254,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inspect-n8n': {
-      id: '/inspect-n8n'
-      path: '/inspect-n8n'
-      fullPath: '/inspect-n8n'
-      preLoaderRoute: typeof InspectN8nRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipe': {
@@ -343,7 +323,6 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   DemandasRoute: DemandasRoute,
   EquipeRoute: EquipeRoute,
-  InspectN8nRoute: InspectN8nRoute,
   LoginRoute: LoginRoute,
   PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,
@@ -355,3 +334,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
