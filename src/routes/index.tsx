@@ -885,6 +885,20 @@ function Dashboard() {
       </div>
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
+      <MinhasAtribuicoesDialog
+        open={minhasOpen}
+        onOpenChange={setMinhasOpen}
+        nome={meuProfile?.nome ?? null}
+        colabId={meuColabId}
+        tarefas={tarefas}
+        demandas={demandas}
+        reunioes={reunioes}
+        chamados={chamados}
+        onOpenItem={(item) => {
+          setMinhasOpen(false);
+          openPreview(item);
+        }}
+      />
     </div>
   );
 }
