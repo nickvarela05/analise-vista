@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { AssigneeCombobox } from "@/components/AssigneeCombobox";
 import { TarefaKanban } from "@/components/tarefas/TarefaKanban";
 import { TarefaDrawer } from "@/components/tarefas/TarefaDrawer";
