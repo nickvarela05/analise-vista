@@ -46,6 +46,7 @@ import { listSolicitacoesRelatorios } from "@/server/n8n-db.functions";
 import { cn } from "@/lib/utils";
 import { cargoElegivel } from "@/lib/domain/cargos";
 import { contarAtribuicoes } from "@/lib/domain/atividades";
+import { qk } from "@/lib/queries/keys";
 import {
   ResponsiveContainer,
   BarChart,
@@ -84,8 +85,9 @@ function Dashboard() {
   };
 
   const { data: meuProfile } = useQuery({
-    queryKey: ["meu-profile", user?.id],
+    queryKey: qk.meuProfile(user?.id),
     enabled: !!user?.id,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -99,7 +101,8 @@ function Dashboard() {
   const meuColabId = meuProfile?.colaborador_id ?? null;
 
   const { data: chamados = [], isLoading: loadingChamados } = useQuery({
-    queryKey: ["dash-chamados"],
+    queryKey: qk.dash.chamados(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("chamado_externo").select("*");
       if (error) throw error;
@@ -108,7 +111,8 @@ function Dashboard() {
   });
 
   const { data: tarefas = [], isLoading: loadingTarefas } = useQuery({
-    queryKey: ["dash-tarefas"],
+    queryKey: qk.dash.tarefas(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*");
       if (error) throw error;
@@ -117,7 +121,8 @@ function Dashboard() {
   });
 
   const { data: reunioes = [], isLoading: loadingReunioes } = useQuery({
-    queryKey: ["dash-reunioes"],
+    queryKey: qk.dash.reunioes(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reuniao")
@@ -129,7 +134,8 @@ function Dashboard() {
   });
 
   const { data: avisos = [], isLoading: loadingAvisos } = useQuery({
-    queryKey: ["dash-avisos"],
+    queryKey: qk.dash.avisos(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("aviso_gestor")
@@ -142,7 +148,8 @@ function Dashboard() {
   });
 
   const { data: ferias = [] } = useQuery({
-    queryKey: ["dash-ferias"],
+    queryKey: qk.dash.ferias(),
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador_ferias")
@@ -154,7 +161,8 @@ function Dashboard() {
   });
 
   const { data: colaboradores = [] } = useQuery({
-    queryKey: ["dash-colaboradores"],
+    queryKey: qk.dash.colaboradores(),
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -167,7 +175,8 @@ function Dashboard() {
   });
 
   const { data: demandas = [] } = useQuery({
-    queryKey: ["dash-demandas"],
+    queryKey: qk.dash.demandas(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("demanda").select("*");
       if (error) throw error;
@@ -176,7 +185,8 @@ function Dashboard() {
   });
 
   const { data: solicitacoesData, isLoading: loadingSolic } = useQuery({
-    queryKey: ["dash-solicitacoes-relatorios"],
+    queryKey: qk.dash.solicitacoesRelatorios(),
+    staleTime: 30_000,
     queryFn: () => listSolicitacoesRelatorios(),
   });
   const solicitacoes = solicitacoesData?.ok ? solicitacoesData.rows : [];

@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
 import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
 
@@ -68,7 +69,7 @@ function Portfolio() {
   const [busca, setBusca] = React.useState("");
 
   const { data = [], isLoading } = useQuery({
-    queryKey: ["colaboradores"],
+    queryKey: qk.colaboradores(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -237,7 +238,7 @@ function ColaboradorCard({
     }
     toast.success("Colaborador excluído");
     setConfirmOpen(false);
-    qc.invalidateQueries({ queryKey: ["colaboradores"] });
+    qc.invalidateQueries({ queryKey: qk.colaboradores() });
   };
 
   return (
@@ -416,7 +417,7 @@ function EditarColaboradorDialog({
     }
     toast.success("Colaborador atualizado");
     onOpenChange(false);
-    qc.invalidateQueries({ queryKey: ["colaboradores"] });
+    qc.invalidateQueries({ queryKey: qk.colaboradores() });
   };
 
   return (

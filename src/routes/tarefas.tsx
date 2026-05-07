@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { AssigneeCombobox } from "@/components/AssigneeCombobox";
 import { TarefaKanban } from "@/components/tarefas/TarefaKanban";
 import { TarefaDrawer } from "@/components/tarefas/TarefaDrawer";
@@ -79,7 +80,8 @@ function Tarefas() {
   });
 
   const { data: colabs = [] } = useQuery({
-    queryKey: ["tar-colabs"],
+    queryKey: qk.tarefas.colabs(),
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -92,7 +94,8 @@ function Tarefas() {
   });
 
   const { data: demandas = [] } = useQuery({
-    queryKey: ["tar-demandas-mini"],
+    queryKey: qk.tarefas.demandasMini(),
+    staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase.from("demanda").select("id, titulo").order("created_at", { ascending: false });
       return data ?? [];
@@ -100,7 +103,8 @@ function Tarefas() {
   });
 
   const { data: tarefas = [], isLoading } = useQuery({
-    queryKey: ["tarefas"],
+    queryKey: qk.tarefas.all(),
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*").order("created_at", { ascending: false });
       if (error) throw error;
@@ -110,7 +114,8 @@ function Tarefas() {
 
   // Contadores agregados (comentários, checklist, anexos) por tarefa
   const { data: countsRaw = { coments: [], checks: [], anexos: [] } } = useQuery({
-    queryKey: ["tar-counts"],
+    queryKey: qk.tarefas.counts(),
+    staleTime: 30_000,
     queryFn: async () => {
       const [coments, checks, anexos] = await Promise.all([
         supabase.from("todo_comentario").select("todo_id"),
@@ -229,7 +234,7 @@ function Tarefas() {
       equipe_toda: false,
       demanda_id: null,
     });
-    qc.invalidateQueries({ queryKey: ["tarefas"] });
+    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
   const onDropStatus = async (id: string, status: string) => {
@@ -253,7 +258,7 @@ function Tarefas() {
         valor_novo: status,
       });
     }
-    qc.invalidateQueries({ queryKey: ["tarefas"] });
+    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
   const toggleSelect = (id: string, checked: boolean) => {
@@ -276,7 +281,7 @@ function Tarefas() {
     else {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
@@ -287,7 +292,7 @@ function Tarefas() {
     else {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
@@ -299,7 +304,7 @@ function Tarefas() {
     else {
       toast.success(`${ids.length} tarefa(s) removida(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 

@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Plus, Trash2, Loader2, Clock, Plane, AlertTriangle, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/lib/queries/keys";
 import {
   Sheet,
   SheetContent,
@@ -103,7 +104,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     }
     toast.success("Atualizado");
     setEditing(false);
-    qc.invalidateQueries({ queryKey: ["equipe"] });
+    qc.invalidateQueries({ queryKey: qk.equipe() });
   };
 
   const desativar = async () => {
@@ -116,26 +117,26 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     else {
       toast.success("Colaborador desativado");
       onOpenChange(false);
-      qc.invalidateQueries({ queryKey: ["equipe"] });
+      qc.invalidateQueries({ queryKey: qk.equipe() });
     }
   };
 
   const removerEvento = async (id: string) => {
     const { error } = await supabase.from("colaborador_evento").delete().eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
-    else qc.invalidateQueries({ queryKey: ["equipe"] });
+    else qc.invalidateQueries({ queryKey: qk.equipe() });
   };
 
   const removerFerias = async (id: string) => {
     const { error } = await supabase.from("colaborador_ferias").delete().eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
-    else qc.invalidateQueries({ queryKey: ["equipe"] });
+    else qc.invalidateQueries({ queryKey: qk.equipe() });
   };
 
   const removerHorario = async (id: string) => {
     const { error } = await supabase.from("colaborador_horario").delete().eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
-    else qc.invalidateQueries({ queryKey: ["equipe"] });
+    else qc.invalidateQueries({ queryKey: qk.equipe() });
   };
 
   return (
@@ -303,7 +304,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
               open={openH}
               onOpenChange={setOpenH}
               colaboradorId={colab.id}
-              onSaved={() => qc.invalidateQueries({ queryKey: ["equipe"] })}
+              onSaved={() => qc.invalidateQueries({ queryKey: qk.equipe() })}
             />
           </TabsContent>
 
@@ -395,7 +396,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
               open={openF}
               onOpenChange={setOpenF}
               colaboradorId={colab.id}
-              onSaved={() => qc.invalidateQueries({ queryKey: ["equipe"] })}
+              onSaved={() => qc.invalidateQueries({ queryKey: qk.equipe() })}
             />
           </TabsContent>
 

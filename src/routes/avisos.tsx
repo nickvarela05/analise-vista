@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { qk } from "@/lib/queries/keys";
 import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/AvisoCard";
 import { AvisoDialog } from "@/components/avisos/AvisoDialog";
 
@@ -62,7 +63,7 @@ function Avisos() {
 
   // Colaboradores
   const { data: colabs = [] } = useQuery({
-    queryKey: ["av-colabs"],
+    queryKey: qk.avisos.colabs(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -84,7 +85,7 @@ function Avisos() {
 
   // Avisos
   const { data: avisos = [], isLoading } = useQuery({
-    queryKey: ["avisos"],
+    queryKey: qk.avisos.all(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("aviso_gestor")
@@ -97,7 +98,7 @@ function Avisos() {
 
   // Leituras do usuário
   const { data: leituras = [] } = useQuery({
-    queryKey: ["avisos-leituras", user?.id],
+    queryKey: qk.avisos.leiturasDoUsuario(user?.id),
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -116,7 +117,7 @@ function Avisos() {
 
   // Para gestor: contagem de leituras por aviso
   const { data: leiturasAgrupadas = [] } = useQuery({
-    queryKey: ["avisos-leituras-todas"],
+    queryKey: qk.avisos.leiturasTodas(),
     enabled: isGestor,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -246,8 +247,8 @@ function Avisos() {
         return;
       }
     }
-    qc.invalidateQueries({ queryKey: ["avisos-leituras"] });
-    qc.invalidateQueries({ queryKey: ["bell-leituras"] });
+    qc.invalidateQueries({ queryKey: qk.avisos.leiturasPrefix() });
+    qc.invalidateQueries({ queryKey: qk.avisos.bellLeituras() });
   };
 
   const marcarTodasLidas = async () => {
@@ -265,15 +266,15 @@ function Avisos() {
     if (error) toast.error("Erro", { description: error.message });
     else {
       toast.success(`${naoLidos.length} aviso(s) marcado(s) como lidos`);
-      qc.invalidateQueries({ queryKey: ["avisos-leituras"] });
-      qc.invalidateQueries({ queryKey: ["bell-leituras"] });
+      qc.invalidateQueries({ queryKey: qk.avisos.leiturasPrefix() });
+      qc.invalidateQueries({ queryKey: qk.avisos.bellLeituras() });
     }
   };
 
   const toggleAtivo = async (id: string, ativo: boolean) => {
     const { error } = await supabase.from("aviso_gestor").update({ ativo }).eq("id", id);
     if (error) toast.error("Erro", { description: error.message });
-    else qc.invalidateQueries({ queryKey: ["avisos"] });
+    else qc.invalidateQueries({ queryKey: qk.avisos.all() });
   };
 
   const remover = async (id: string) => {
@@ -281,15 +282,15 @@ function Avisos() {
     if (error) toast.error("Erro", { description: error.message });
     else {
       toast.success("Aviso removido");
-      qc.invalidateQueries({ queryKey: ["avisos"] });
-      qc.invalidateQueries({ queryKey: ["bell-avisos"] });
+      qc.invalidateQueries({ queryKey: qk.avisos.all() });
+      qc.invalidateQueries({ queryKey: qk.avisos.bellAvisos() });
     }
   };
 
   const onSaved = () => {
-    qc.invalidateQueries({ queryKey: ["avisos"] });
-    qc.invalidateQueries({ queryKey: ["bell-avisos"] });
-    qc.invalidateQueries({ queryKey: ["dash-avisos"] });
+    qc.invalidateQueries({ queryKey: qk.avisos.all() });
+    qc.invalidateQueries({ queryKey: qk.avisos.bellAvisos() });
+    qc.invalidateQueries({ queryKey: qk.dash.avisos() });
   };
 
   const totalDestinatarios = (a: AvisoRow) => {

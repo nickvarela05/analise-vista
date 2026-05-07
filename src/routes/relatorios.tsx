@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import {
   listSolicitacoesRelatorios,
   updateSolicitacaoRelatorio,
@@ -72,13 +73,13 @@ function Relatorios() {
   const [search, setSearch] = React.useState("");
 
   const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ["solicitacoes-relatorios"],
+    queryKey: qk.relatorios.solicitacoes(),
     queryFn: () => listSolicitacoesRelatorios(),
     refetchOnWindowFocus: false,
   });
 
   const { data: colaboradores = [] } = useQuery({
-    queryKey: ["relatorios-colaboradores"],
+    queryKey: qk.relatorios.colaboradores(),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
@@ -99,7 +100,7 @@ function Relatorios() {
         return;
       }
       toast.success("Atualizado");
-      qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] });
+      qc.invalidateQueries({ queryKey: qk.relatorios.solicitacoes() });
     },
     onError: (e: Error) => toast.error("Erro ao atualizar", { description: e.message }),
   });
@@ -141,7 +142,7 @@ function Relatorios() {
           <>
             <Button
               variant="outline"
-              onClick={() => qc.invalidateQueries({ queryKey: ["solicitacoes-relatorios"] })}
+              onClick={() => qc.invalidateQueries({ queryKey: qk.relatorios.solicitacoes() })}
               disabled={isFetching}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
