@@ -104,22 +104,28 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
   };
 
   // Capacidade da copa: considera apenas os PRIMEIROS 30 MIN do almoço de cada pessoa.
-  const copaSlots = React.useMemo(() => {
-    const ocup = ocupacaoCopa(
-      Object.values(edits),
-      TIMELINE_INI,
-      TIMELINE_FIM,
-      SNAP,
-      COPA_WINDOW_MIN,
-    );
-    return ocup.map((s) => ({
-      min: s.min,
-      count: s.count,
-      nomes: s.ids.map((id) => colabs.find((c) => c.id === id)?.nome ?? ""),
-    }));
-  }, [edits, colabs]);
+  const ocupSlots = React.useMemo(
+    () =>
+      ocupacaoCopa(
+        Object.values(edits),
+        TIMELINE_INI,
+        TIMELINE_FIM,
+        SNAP,
+        COPA_WINDOW_MIN,
+      ),
+    [edits],
+  );
+  const copaSlots = React.useMemo(
+    () =>
+      ocupSlots.map((s) => ({
+        min: s.min,
+        count: s.count,
+        nomes: s.ids.map((id) => colabs.find((c) => c.id === id)?.nome ?? ""),
+      })),
+    [ocupSlots, colabs],
+  );
 
-  const overflow = slotsExcedidos(copaSlots, COPA_CAPACIDADE);
+  const overflow = slotsExcedidos(ocupSlots, COPA_CAPACIDADE);
   const hasOverflow = overflow.length > 0;
 
   const salvar = async () => {
