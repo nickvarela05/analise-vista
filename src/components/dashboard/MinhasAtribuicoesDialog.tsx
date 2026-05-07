@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { PreviewItem } from "@/components/PreviewDialog";
 import { isAtribuidoA } from "@/lib/domain/atividades";
+import type { TarefaRow, DemandaRow, ReuniaoRow, ChamadoRow } from "@/lib/db-types";
 
 const STATUS_CONCLUIDOS = new Set([
   "concluida",
@@ -36,10 +37,10 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   nome: string | null;
   colabId: string | null;
-  tarefas: any[];
-  demandas: any[];
-  reunioes: any[];
-  chamados: any[];
+  tarefas: TarefaRow[];
+  demandas: DemandaRow[];
+  reunioes: ReuniaoRow[];
+  chamados: ChamadoRow[];
   onOpenItem: (item: PreviewItem) => void;
 }
 
