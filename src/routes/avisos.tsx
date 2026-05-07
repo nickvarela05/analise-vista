@@ -98,7 +98,7 @@ function Avisos() {
 
   // Leituras do usuário
   const { data: leituras = [] } = useQuery({
-    queryKey: ["avisos-leituras", user?.id],
+    queryKey: qk.avisos.leiturasDoUsuario(user?.id),
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase
