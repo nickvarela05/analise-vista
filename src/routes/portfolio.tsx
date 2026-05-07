@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Users as UsersIcon, Search, Mail, Sparkles, Pencil, Trash2, MoreVertical } from "lucide-react";
@@ -52,6 +53,7 @@ type Colaborador = {
 };
 
 export const Route = createFileRoute("/portfolio")({
+  errorComponent: RouteErrorBoundary,
   component: PortfolioRoute,
 });
 

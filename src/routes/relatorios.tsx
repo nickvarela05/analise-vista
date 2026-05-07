@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, FileBarChart, RefreshCw, Search, Mail, Calendar } from "lucide-react";
@@ -38,6 +39,7 @@ import {
 import { NovoRelatorioDialog } from "@/components/relatorios/NovoRelatorioDialog";
 
 export const Route = createFileRoute("/relatorios")({
+  errorComponent: RouteErrorBoundary,
   component: RelatoriosRoute,
 });
 
