@@ -46,6 +46,7 @@ import { listSolicitacoesRelatorios } from "@/server/n8n-db.functions";
 import { cn } from "@/lib/utils";
 import { cargoElegivel } from "@/lib/domain/cargos";
 import { contarAtribuicoes } from "@/lib/domain/atividades";
+import { qk } from "@/lib/queries/keys";
 import {
   ResponsiveContainer,
   BarChart,
