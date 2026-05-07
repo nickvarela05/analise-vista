@@ -16,6 +16,7 @@ import { EquipeCalendarioView } from "@/components/equipe/EquipeCalendarioView";
 import { ColaboradorDrawer } from "@/components/equipe/ColaboradorDrawer";
 import { NovoColaboradorDialog } from "@/components/equipe/NovoColaboradorDialog";
 import { EquipeUsuariosView } from "@/components/equipe/EquipeUsuariosView";
+import { GestaoCopaView } from "@/components/equipe/GestaoCopaView";
 import type { Colaborador } from "@/components/equipe/lib/types";
 
 export const Route = createFileRoute("/equipe")({
@@ -106,6 +107,7 @@ function Equipe() {
               <TabsTrigger value="lista">Lista</TabsTrigger>
               <TabsTrigger value="grade">Grade semanal</TabsTrigger>
               <TabsTrigger value="calendario">Calendário mensal</TabsTrigger>
+              <TabsTrigger value="copa">Gestão de copa</TabsTrigger>
               <TabsTrigger value="usuarios">Usuários</TabsTrigger>
             </TabsList>
 
@@ -125,6 +127,10 @@ function Equipe() {
 
             <TabsContent value="calendario" className="mt-4">
               <EquipeCalendarioView colabs={colabs} />
+            </TabsContent>
+
+            <TabsContent value="copa" className="mt-4">
+              <GestaoCopaView colabs={colabs} />
             </TabsContent>
 
             <TabsContent value="usuarios" className="mt-4">
