@@ -38,7 +38,7 @@ const items = [
   { title: "Avisos", url: "/avisos", icon: Megaphone },
   { title: "Portfólio", url: "/portfolio", icon: Briefcase },
   { title: "Equipe", url: "/equipe", icon: Users, requireGestor: true },
-  { title: "Inspeção N8N", url: "/inspect-n8n", icon: Database, requireGestor: true },
+  
 ] as const;
 
 const bottomItems = [{ title: "Configurações", url: "/configuracoes", icon: Settings }];
