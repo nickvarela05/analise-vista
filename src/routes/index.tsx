@@ -257,28 +257,13 @@ function Dashboard() {
 
   // Atribuições por colaborador (gráfico) — considera responsaveis_ids + equipe_toda
   const totalColabsAtivos = colaboradores.length;
-  const countAssignees = (rows: any[], colabId: string) =>
-    rows.filter((r) => {
-      if (r.equipe_toda) return true;
-      const ids: string[] = r.responsaveis_ids ?? [];
-      if (ids.length > 0) return ids.includes(colabId);
-      // fallback para registros antigos com responsavel_id único
-      return r.responsavel_id === colabId;
-    }).length;
-
-  const cargoElegivel = (cargo: string | null | undefined) => {
-    const c = (cargo ?? "").toLowerCase();
-    // Inclui apenas "Estagiário TI" entre os estagiários
-    const estagiarioOk = c.includes("estagi") && c.includes("ti");
-    return c.includes("analista") || c.includes("gestor") || estagiarioOk;
-  };
   const atribuicoes = colaboradores
     .filter((c) => cargoElegivel(c.cargo))
     .map((c) => {
-      const tDoColab = countAssignees(tarefas, c.id);
-      const dDoColab = countAssignees(demandas, c.id);
-      const rDoColab = countAssignees(reunioes, c.id);
-      const relDoColab = countAssignees(chamados, c.id);
+      const tDoColab = contarAtribuicoes(tarefas, c.id);
+      const dDoColab = contarAtribuicoes(demandas, c.id);
+      const rDoColab = contarAtribuicoes(reunioes, c.id);
+      const relDoColab = contarAtribuicoes(chamados, c.id);
       return {
         nome: c.nome.split(" ")[0],
         Tarefas: tDoColab,
