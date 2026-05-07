@@ -124,6 +124,8 @@ function KpiTileImpl({
   );
 }
 
+export const KpiTile = React.memo(KpiTileImpl);
+
 export function Panel({
   title,
   actions,
