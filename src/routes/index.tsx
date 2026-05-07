@@ -377,6 +377,19 @@ function Dashboard() {
       <PageHeader
         title="Painel gerencial"
         description="Visão consolidada da equipe de Análise de Requisitos."
+        actions={
+          meuColabId ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMinhasOpen(true)}
+              className="gap-2"
+            >
+              <ListChecks className="h-4 w-4" />
+              Minhas atribuições
+            </Button>
+          ) : null
+        }
       />
 
       {/* Avisos críticos */}
