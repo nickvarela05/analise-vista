@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/KpiTile";
 import { cn } from "@/lib/utils";
 import { isAtribuidoA } from "@/lib/domain/atividades";
+import type { TarefaRow, DemandaRow, ReuniaoRow, ChamadoRow } from "@/lib/db-types";
 
 const TONE_BADGE: Record<string, string> = {
   primary: "border-primary/30 bg-primary/10 text-primary",
@@ -34,10 +35,10 @@ const STATUS_CONCLUIDOS = new Set([
 interface Props {
   nome: string | null;
   colabId: string;
-  tarefas: any[];
-  demandas: any[];
-  reunioes: any[];
-  chamados: any[];
+  tarefas: TarefaRow[];
+  demandas: DemandaRow[];
+  reunioes: ReuniaoRow[];
+  chamados: ChamadoRow[];
   onVerTodas: () => void;
 }
 
