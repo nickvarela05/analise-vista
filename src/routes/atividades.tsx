@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { isAtribuidoA } from "@/lib/domain/atividades";
 
 export const Route = createFileRoute("/atividades")({
   component: AtividadesRoute,
