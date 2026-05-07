@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Users as UsersIcon, ShieldAlert } from "lucide-react";
@@ -21,6 +22,7 @@ import { GestaoCopaView } from "@/components/equipe/GestaoCopaView";
 import type { Colaborador } from "@/components/equipe/lib/types";
 
 export const Route = createFileRoute("/equipe")({
+  errorComponent: RouteErrorBoundary,
   component: EquipeRoute,
 });
 

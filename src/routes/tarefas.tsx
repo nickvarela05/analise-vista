@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Loader2, Trash2, LayoutGrid, List as ListIcon, X, ChevronDown } from "lucide-react";
@@ -47,6 +48,7 @@ import { TarefaFilters, initialFilters, type TarefaFiltersState } from "@/compon
 import { WORKFLOW, STATUS_LABEL, PRIO, normalizeStatus } from "@/components/tarefas/lib/workflow";
 
 export const Route = createFileRoute("/tarefas")({
+  errorComponent: RouteErrorBoundary,
   component: TarefasRoute,
 });
 

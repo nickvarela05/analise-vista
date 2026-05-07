@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -32,6 +33,7 @@ import { qk } from "@/lib/queries/keys";
 import { isAtribuidoA } from "@/lib/domain/atividades";
 
 export const Route = createFileRoute("/atividades")({
+  errorComponent: RouteErrorBoundary,
   component: AtividadesRoute,
 });
 

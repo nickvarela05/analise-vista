@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -47,6 +48,7 @@ import {
 } from "@/components/demandas/lib/demanda-utils";
 
 export const Route = createFileRoute("/demandas")({
+  errorComponent: RouteErrorBoundary,
   component: DemandasRoute,
 });
 

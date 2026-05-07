@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -36,6 +37,7 @@ import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/Av
 import { AvisoDialog } from "@/components/avisos/AvisoDialog";
 
 export const Route = createFileRoute("/avisos")({
+  errorComponent: RouteErrorBoundary,
   component: AvisosRoute,
 });
 

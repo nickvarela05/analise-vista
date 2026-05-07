@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import {
@@ -57,6 +58,7 @@ import {
 } from "recharts";
 
 export const Route = createFileRoute("/")({
+  errorComponent: RouteErrorBoundary,
   component: IndexRoute,
 });
 
