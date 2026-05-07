@@ -76,10 +76,10 @@ function Dashboard() {
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [minhasOpen, setMinhasOpen] = React.useState(false);
 
-  const openPreview = (item: PreviewItem) => {
+  const openPreview = React.useCallback((item: PreviewItem) => {
     setPreview(item);
     setPreviewOpen(true);
-  };
+  }, []);
 
   const { data: meuProfile } = useQuery({
     queryKey: qk.meuProfile(user?.id),
@@ -199,24 +199,33 @@ function Dashboard() {
   const isRelatorio = (cat: string | null) =>
     (cat ?? "").toLowerCase().includes("relat");
 
-  const solicRelatPend = solicitacoes.filter(
-    (s) => isPendente(s.status) && isRelatorio(s.categoria),
-  ).length;
-  const solicOutrasPend = solicitacoes.filter(
-    (s) => isPendente(s.status) && !isRelatorio(s.categoria),
-  ).length;
+  const { solicRelatPend, solicOutrasPend } = React.useMemo(() => {
+    let r = 0, o = 0;
+    for (const s of solicitacoes) {
+      if (!isPendente(s.status)) continue;
+      if (isRelatorio(s.categoria)) r++; else o++;
+    }
+    return { solicRelatPend: r, solicOutrasPend: o };
+  }, [solicitacoes]);
 
-  const totalChamados = chamados.length;
-  const relatPendentes = chamados.filter((c) => c.status !== "finalizado").length;
-  const relatEncaminhados = chamados.filter((c) => c.status === "encaminhado").length;
-
-  const tarefasAtivas = tarefas.filter(
-    (t) => !["concluida", "producao", "reprovada", "cancelada"].includes(t.status),
+  const relatEncaminhados = React.useMemo(
+    () => chamados.filter((c) => c.status === "encaminhado").length,
+    [chamados],
   );
-  const taskAbertas = tarefasAtivas.length;
-  const taskHML = tarefas.filter((t) => t.status === "homologacao").length;
-  const taskProd = tarefas.filter((t) => t.status === "producao").length;
-  const taskUrgentes = tarefasAtivas.filter((t) => t.prioridade === "alta").length;
+
+  const { taskAbertas, taskHML, taskProd, taskUrgentes } = React.useMemo(() => {
+    let abertas = 0, hml = 0, prod = 0, urg = 0;
+    for (const t of tarefas) {
+      if (t.status === "homologacao") hml++;
+      if (t.status === "producao") prod++;
+      const ativa = !["concluida", "producao", "reprovada", "cancelada"].includes(t.status);
+      if (ativa) {
+        abertas++;
+        if (t.prioridade === "alta") urg++;
+      }
+    }
+    return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg };
+  }, [tarefas]);
 
   const now = new Date();
   const avisosCrit = avisos.filter(

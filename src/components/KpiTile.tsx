@@ -28,7 +28,7 @@ const iconClass: Record<KpiTone, string> = {
   info: "kpi-icon-info",
 };
 
-export function KpiTile({
+function KpiTileImpl({
   icon: Icon,
   label,
   value,
@@ -123,6 +123,8 @@ export function KpiTile({
     </div>
   );
 }
+
+export const KpiTile = React.memo(KpiTileImpl);
 
 export function Panel({
   title,
