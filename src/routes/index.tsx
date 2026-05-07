@@ -17,15 +17,10 @@ import {
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
+import { WorkflowStep } from "@/components/dashboard/WorkflowStep";
+import { MinhasAtribuicoesPainel } from "@/components/dashboard/MinhasAtribuicoesPainel";
+import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoesDialog";
 import {
   format,
   startOfWeek,
@@ -242,134 +237,147 @@ function Dashboard() {
   }).length;
 
   // Pie de status de tarefas
-  const pieTarefas = [
-    {
-      name: "Aberta",
-      value: tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length,
-      color: "var(--chart-3)",
-    },
-    {
-      name: "Em andamento",
-      value: tarefas.filter((t) => t.status === "em_andamento").length,
-      color: "var(--chart-5)",
-    },
-    {
-      name: "Encaminhada",
-      value: tarefas.filter((t) => t.status === "encaminhada").length,
-      color: "var(--chart-4)",
-    },
-    { name: "Homologação", value: taskHML, color: "var(--chart-4)" },
-    { name: "Produção", value: taskProd, color: "var(--chart-2)" },
-    {
-      name: "Concluída",
-      value: tarefas.filter((t) => t.status === "concluida").length,
-      color: "var(--chart-1)",
-    },
-  ].filter((d) => d.value > 0);
+  const pieTarefas = React.useMemo(
+    () =>
+      [
+        {
+          name: "Aberta",
+          value: tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length,
+          color: "var(--chart-3)",
+        },
+        {
+          name: "Em andamento",
+          value: tarefas.filter((t) => t.status === "em_andamento").length,
+          color: "var(--chart-5)",
+        },
+        {
+          name: "Encaminhada",
+          value: tarefas.filter((t) => t.status === "encaminhada").length,
+          color: "var(--chart-4)",
+        },
+        { name: "Homologação", value: taskHML, color: "var(--chart-4)" },
+        { name: "Produção", value: taskProd, color: "var(--chart-2)" },
+        {
+          name: "Concluída",
+          value: tarefas.filter((t) => t.status === "concluida").length,
+          color: "var(--chart-1)",
+        },
+      ].filter((d) => d.value > 0),
+    [tarefas, taskHML, taskProd],
+  );
 
   // Atribuições por colaborador (gráfico) — considera responsaveis_ids + equipe_toda
-  const totalColabsAtivos = colaboradores.length;
-  const atribuicoes = colaboradores
-    .filter((c) => cargoElegivel(c.cargo))
-    .map((c) => {
-      const tDoColab = contarAtribuicoes(tarefas, c.id);
-      const dDoColab = contarAtribuicoes(demandas, c.id);
-      const rDoColab = contarAtribuicoes(reunioes, c.id);
-      const relDoColab = contarAtribuicoes(chamados, c.id);
-      return {
-        nome: c.nome.split(" ")[0],
-        Tarefas: tDoColab,
-        Demandas: dDoColab,
-        Reuniões: rDoColab,
-        Relatórios: relDoColab,
-        Total: tDoColab + dDoColab + rDoColab + relDoColab,
-      };
-    });
+  const atribuicoes = React.useMemo(
+    () =>
+      colaboradores
+        .filter((c) => cargoElegivel(c.cargo))
+        .map((c) => {
+          const tDoColab = contarAtribuicoes(tarefas, c.id);
+          const dDoColab = contarAtribuicoes(demandas, c.id);
+          const rDoColab = contarAtribuicoes(reunioes, c.id);
+          const relDoColab = contarAtribuicoes(chamados, c.id);
+          return {
+            nome: c.nome.split(" ")[0],
+            Tarefas: tDoColab,
+            Demandas: dDoColab,
+            Reuniões: rDoColab,
+            Relatórios: relDoColab,
+            Total: tDoColab + dDoColab + rDoColab + relDoColab,
+          };
+        }),
+    [colaboradores, tarefas, demandas, reunioes, chamados],
+  );
 
   // Atividades semanais consolidadas
   type Atividade = PreviewItem & { _sortDate: number };
-  const atividades: Atividade[] = [];
-
-  tarefas.forEach((t) => {
-    if (t.data_prevista) {
-      const d = new Date(t.data_prevista);
-      if (isWithinInterval(d, { start: weekStart, end: weekEnd })) {
-        atividades.push({
-          id: t.id,
-          tipo: "tarefa",
-          titulo: t.titulo,
-          descricao: t.descricao,
-          status: t.status,
-          prioridade: t.prioridade,
-          responsavel: t.responsavel_id ? colabById.get(t.responsavel_id)?.nome : null,
-          data: d,
-          dataLabel: "Prazo",
-          _sortDate: d.getTime(),
-        });
+  const atividades = React.useMemo<Atividade[]>(() => {
+    const list: Atividade[] = [];
+    tarefas.forEach((t) => {
+      if (t.data_prevista) {
+        const d = new Date(t.data_prevista);
+        if (isWithinInterval(d, { start: weekStart, end: weekEnd })) {
+          list.push({
+            id: t.id,
+            tipo: "tarefa",
+            titulo: t.titulo,
+            descricao: t.descricao,
+            status: t.status,
+            prioridade: t.prioridade,
+            responsavel: t.responsavel_id ? colabById.get(t.responsavel_id)?.nome : null,
+            data: d,
+            dataLabel: "Prazo",
+            _sortDate: d.getTime(),
+          });
+        }
       }
-    }
-  });
-  demandas.forEach((d) => {
-    if (d.prazo) {
-      const dt = new Date(d.prazo);
+    });
+    demandas.forEach((d) => {
+      if (d.prazo) {
+        const dt = new Date(d.prazo);
+        if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
+          list.push({
+            id: d.id,
+            tipo: "demanda",
+            titulo: d.titulo,
+            descricao: d.descricao,
+            status: d.status,
+            prioridade: d.prioridade,
+            responsavel: d.responsavel_id ? colabById.get(d.responsavel_id)?.nome : null,
+            data: dt,
+            dataLabel: "Prazo",
+            tags: d.tags,
+            _sortDate: dt.getTime(),
+          });
+        }
+      }
+    });
+    reunioes.forEach((r) => {
+      const dt = new Date(r.data_reuniao);
       if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
-        atividades.push({
-          id: d.id,
-          tipo: "demanda",
-          titulo: d.titulo,
-          descricao: d.descricao,
-          status: d.status,
-          prioridade: d.prioridade,
-          responsavel: d.responsavel_id ? colabById.get(d.responsavel_id)?.nome : null,
+        list.push({
+          id: r.id,
+          tipo: "reuniao",
+          titulo: r.titulo,
+          descricao: r.pauta,
+          status: r.status,
+          responsavel: r.responsavel_id ? colabById.get(r.responsavel_id)?.nome : null,
           data: dt,
-          dataLabel: "Prazo",
-          tags: d.tags,
+          dataLabel: "Quando",
           _sortDate: dt.getTime(),
         });
       }
-    }
-  });
-  reunioes.forEach((r) => {
-    const dt = new Date(r.data_reuniao);
-    if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
-      atividades.push({
-        id: r.id,
-        tipo: "reuniao",
-        titulo: r.titulo,
-        descricao: r.pauta,
-        status: r.status,
-        responsavel: r.responsavel_id ? colabById.get(r.responsavel_id)?.nome : null,
-        data: dt,
-        dataLabel: "Quando",
-        _sortDate: dt.getTime(),
-      });
-    }
-  });
-  atividades.sort((a, b) => a._sortDate - b._sortDate);
+    });
+    list.sort((a, b) => a._sortDate - b._sortDate);
+    return list;
+  }, [tarefas, demandas, reunioes, colabById, weekStart, weekEnd]);
 
   const proximasFerias = ferias.slice(0, 4);
 
-  const horarios = colaboradores
-    .map((c) => {
-      const seg = (c.colaborador_horario ?? []).find((h: any) => h.dia_semana === 1);
-      if (!seg) return null;
-      return {
-        nome: c.nome.split(" ")[0],
-        foto: c.foto_url,
-        expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} – ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
-        almoco: seg.almoco_inicio
-          ? `${seg.almoco_inicio.slice(0, 5)} – ${seg.almoco_fim?.slice(0, 5)}`
-          : "—",
-        local: seg.local_almoco ?? "—",
-      };
-    })
-    .filter(Boolean) as {
-    nome: string;
-    foto: string | null;
-    expediente: string;
-    almoco: string;
-    local: string;
-  }[];
+  const horarios = React.useMemo(
+    () =>
+      colaboradores
+        .map((c) => {
+          const seg = (c.colaborador_horario ?? []).find((h: any) => h.dia_semana === 1);
+          if (!seg) return null;
+          return {
+            nome: c.nome.split(" ")[0],
+            foto: c.foto_url,
+            expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} – ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
+            almoco: seg.almoco_inicio
+              ? `${seg.almoco_inicio.slice(0, 5)} – ${seg.almoco_fim?.slice(0, 5)}`
+              : "—",
+            local: seg.local_almoco ?? "—",
+          };
+        })
+        .filter(Boolean) as {
+        nome: string;
+        foto: string | null;
+        expediente: string;
+        almoco: string;
+        local: string;
+      }[],
+    [colaboradores],
+  );
 
   return (
     <div className="space-y-6">
@@ -915,475 +923,3 @@ function Dashboard() {
   );
 }
 
-function WorkflowStep({
-  icon: Icon,
-  label,
-  value,
-  tone,
-  to,
-}: {
-  icon: any;
-  label: string;
-  value: number;
-  tone: "primary" | "success" | "warning" | "info";
-  to?: string;
-}) {
-  const toneClass: Record<string, string> = {
-    primary: "border-primary/30 bg-primary/5 text-primary",
-    success: "border-success/30 bg-success/5 text-success",
-    warning: "border-warning/40 bg-warning/5 text-warning",
-    info: "border-info/30 bg-info/5 text-info",
-  };
-  const inner = (
-    <>
-      <Icon className="mb-1.5 h-4 w-4" />
-      <p className="text-2xl font-semibold tabular-nums leading-none text-foreground">{value}</p>
-      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-    </>
-  );
-  const cls = cn("workflow-step", toneClass[tone]);
-  if (to) {
-    return (
-      <Link to={to} className={cls} aria-label={`${label}: ${value}`}>
-        {inner}
-      </Link>
-    );
-  }
-  return <div className={cls}>{inner}</div>;
-}
-
-function MinhasAtribuicoesPainel({
-  nome,
-  colabId,
-  tarefas,
-  demandas,
-  reunioes,
-  chamados,
-  onVerTodas,
-}: {
-  nome: string | null;
-  colabId: string;
-  tarefas: any[];
-  demandas: any[];
-  reunioes: any[];
-  chamados: any[];
-  onVerTodas: () => void;
-}) {
-  const isMine = (r: any) => {
-    if (r.equipe_toda) return true;
-    const ids: string[] = r.responsaveis_ids ?? [];
-    if (ids.length > 0) return ids.includes(colabId);
-    return r.responsavel_id === colabId;
-  };
-
-  const minhasTarefas = tarefas.filter(isMine);
-  const minhasDemandas = demandas.filter(isMine);
-  const minhasReunioes = reunioes.filter(isMine);
-  const meusChamados = chamados.filter(isMine);
-
-  const total =
-    minhasTarefas.length + minhasDemandas.length + minhasReunioes.length + meusChamados.length;
-
-  const grupos: {
-    label: string;
-    icon: any;
-    items: any[];
-    to: "/tarefas" | "/demandas" | "/reunioes" | "/relatorios";
-    dataKey: string;
-    dataLabel: string;
-    tone: "primary" | "info" | "warning" | "success";
-  }[] = [
-    {
-      label: "Tarefas",
-      icon: CheckSquare,
-      items: minhasTarefas,
-      to: "/tarefas",
-      dataKey: "data_prevista",
-      dataLabel: "Prazo",
-      tone: "primary",
-    },
-    {
-      label: "Demandas",
-      icon: Inbox,
-      items: minhasDemandas,
-      to: "/demandas",
-      dataKey: "prazo",
-      dataLabel: "Prazo",
-      tone: "warning",
-    },
-    {
-      label: "Reuniões",
-      icon: Calendar,
-      items: minhasReunioes,
-      to: "/reunioes",
-      dataKey: "data_reuniao",
-      dataLabel: "Quando",
-      tone: "info",
-    },
-    {
-      label: "Relatórios",
-      icon: FileText,
-      items: meusChamados,
-      to: "/relatorios",
-      dataKey: "prazo",
-      dataLabel: "Prazo",
-      tone: "success",
-    },
-  ];
-
-  const toneBadge: Record<string, string> = {
-    primary: "border-primary/30 bg-primary/10 text-primary",
-    info: "border-info/30 bg-info/10 text-info",
-    warning: "border-warning/40 bg-warning/10 text-warning",
-    success: "border-success/30 bg-success/10 text-success",
-  };
-
-  return (
-    <Panel
-      title={
-        <span className="flex items-center gap-2">
-          <ListChecks className="h-4 w-4 text-primary" />
-          Minhas atribuições
-          <Badge variant="secondary" className="ml-1 h-5 text-[10px]">
-            {total}
-          </Badge>
-        </span>
-      }
-      actions={
-        <div className="flex items-center gap-3">
-          {nome && (
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              {nome}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={onVerTodas}
-            className="text-xs font-medium text-primary hover:underline"
-          >
-            Ver tudo →
-          </button>
-        </div>
-      }
-    >
-      {total === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Você não possui itens atribuídos no momento. 🎉
-        </p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {grupos.map((g) => {
-            const Icon = g.icon;
-            const sorted = [...g.items].sort((a, b) => {
-              const da = a[g.dataKey] ? new Date(a[g.dataKey]).getTime() : Infinity;
-              const db = b[g.dataKey] ? new Date(b[g.dataKey]).getTime() : Infinity;
-              return da - db;
-            });
-            return (
-              <div key={g.label} className="flex flex-col rounded-lg border bg-muted/20 p-3">
-                <div className="mb-2 flex items-center justify-between">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider",
-                      toneBadge[g.tone],
-                    )}
-                  >
-                    <Icon className="h-3 w-3" />
-                    {g.label}
-                    <span className="ml-1 rounded bg-background/60 px-1 tabular-nums">
-                      {g.items.length}
-                    </span>
-                  </span>
-                  <Link
-                    to={g.to}
-                    className="text-[10px] font-medium text-primary hover:underline"
-                  >
-                    Abrir →
-                  </Link>
-                </div>
-                {sorted.length === 0 ? (
-                  <p className="py-4 text-center text-xs text-muted-foreground">
-                    Nenhum item.
-                  </p>
-                ) : (
-                  <ul className="space-y-1">
-                    {sorted.slice(0, 4).map((it) => {
-                      const dt = it[g.dataKey] ? new Date(it[g.dataKey]) : null;
-                      const concluido = [
-                        "concluida",
-                        "cancelada",
-                        "finalizado",
-                        "realizada",
-                        "producao",
-                        "aprovado",
-                      ].includes((it.status ?? "").toLowerCase());
-                      const atrasada =
-                        dt && isBefore(dt, startOfDay(new Date())) && !concluido;
-                      return (
-                        <li key={it.id}>
-                          <Link
-                            to={g.to}
-                            className={cn(
-                              "list-item-interactive group w-full text-left",
-                              atrasada && "border-l-2 border-l-destructive bg-destructive/5",
-                            )}
-                          >
-                            <Icon
-                              className={cn(
-                                "mt-0.5 h-3.5 w-3.5 shrink-0",
-                                atrasada ? "text-destructive" : "text-muted-foreground",
-                              )}
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="truncate text-xs font-medium">
-                                  {it.titulo}
-                                </span>
-                                {atrasada && (
-                                  <Badge
-                                    variant="destructive"
-                                    className="text-[9px] uppercase"
-                                  >
-                                    Atrasada
-                                  </Badge>
-                                )}
-                              </div>
-                              <p
-                                className={cn(
-                                  "mt-0.5 text-[10px]",
-                                  atrasada
-                                    ? "text-destructive/80"
-                                    : "text-muted-foreground",
-                                )}
-                              >
-                                {dt
-                                  ? `${g.dataLabel}: ${format(dt, "dd/MM HH:mm", { locale: ptBR })}`
-                                  : "Sem data"}
-                                {it.status && ` · ${it.status}`}
-                              </p>
-                            </div>
-                            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                          </Link>
-                        </li>
-                      );
-                    })}
-                    {g.items.length > 4 && (
-                      <li>
-                        <button
-                          type="button"
-                          onClick={onVerTodas}
-                          className="block w-full py-1 text-center text-[10px] font-medium text-primary hover:underline"
-                        >
-                          + {g.items.length - 4} mais
-                        </button>
-                      </li>
-                    )}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
-function MinhasAtribuicoesDialog({
-  open,
-  onOpenChange,
-  nome,
-  colabId,
-  tarefas,
-  demandas,
-  reunioes,
-  chamados,
-  onOpenItem,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  nome: string | null;
-  colabId: string | null;
-  tarefas: any[];
-  demandas: any[];
-  reunioes: any[];
-  chamados: any[];
-  onOpenItem: (item: PreviewItem) => void;
-}) {
-  const isMine = (r: any) => {
-    if (!colabId) return false;
-    if (r.equipe_toda) return true;
-    const ids: string[] = r.responsaveis_ids ?? [];
-    if (ids.length > 0) return ids.includes(colabId);
-    return r.responsavel_id === colabId;
-  };
-
-  const minhasTarefas = tarefas.filter(isMine);
-  const minhasDemandas = demandas.filter(isMine);
-  const minhasReunioes = reunioes.filter(isMine);
-  const meusChamados = chamados.filter(isMine);
-
-  const renderList = (
-    items: any[],
-    tipo: PreviewItem["tipo"],
-    dataKey: string,
-    dataLabel: string,
-    Icon: any,
-  ) => {
-    if (items.length === 0) {
-      return (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Nenhum item atribuído a você.
-        </p>
-      );
-    }
-    const sorted = [...items].sort((a, b) => {
-      const da = a[dataKey] ? new Date(a[dataKey]).getTime() : Infinity;
-      const db = b[dataKey] ? new Date(b[dataKey]).getTime() : Infinity;
-      return da - db;
-    });
-    return (
-      <ul className="space-y-1">
-        {sorted.map((it) => {
-          const dt = it[dataKey] ? new Date(it[dataKey]) : null;
-          const atrasada =
-            dt && isBefore(dt, startOfDay(new Date())) &&
-            !["concluida", "cancelada", "finalizado", "realizada", "producao", "aprovado"].includes(
-              (it.status ?? "").toLowerCase(),
-            );
-          return (
-            <li key={it.id}>
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenItem({
-                    id: it.id,
-                    tipo,
-                    titulo: it.titulo,
-                    descricao: it.descricao ?? it.pauta ?? null,
-                    status: it.status,
-                    prioridade: it.prioridade,
-                    data: dt ?? undefined,
-                    dataLabel,
-                    tags: it.tags,
-                  })
-                }
-                className={cn(
-                  "list-item-interactive group w-full text-left",
-                  atrasada && "border-l-2 border-l-destructive bg-destructive/5",
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "mt-0.5 h-4 w-4 shrink-0",
-                    atrasada ? "text-destructive" : "text-muted-foreground",
-                  )}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium">{it.titulo}</span>
-                    {atrasada && (
-                      <Badge variant="destructive" className="text-[9px] uppercase">
-                        Atrasada
-                      </Badge>
-                    )}
-                    {(it.prioridade === "alta" || it.prioridade === "critica") && (
-                      <Badge variant="destructive" className="text-[9px] uppercase">
-                        {it.prioridade}
-                      </Badge>
-                    )}
-                    {it.status && (
-                      <Badge variant="outline" className="text-[9px] uppercase">
-                        {it.status}
-                      </Badge>
-                    )}
-                  </div>
-                  <p
-                    className={cn(
-                      "mt-0.5 text-xs",
-                      atrasada ? "text-destructive/80" : "text-muted-foreground",
-                    )}
-                  >
-                    {dt
-                      ? `${dataLabel}: ${format(dt, "EEE, dd/MM 'às' HH:mm", { locale: ptBR })}`
-                      : "Sem data"}
-                  </p>
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    );
-  };
-
-  const total =
-    minhasTarefas.length + minhasDemandas.length + minhasReunioes.length + meusChamados.length;
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <ListChecks className="h-5 w-5 text-primary" />
-            Minhas atribuições
-          </DialogTitle>
-          <DialogDescription>
-            {nome ? `${nome} · ` : ""}
-            {total} {total === 1 ? "item atribuído" : "itens atribuídos"} a você.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Tabs defaultValue="tarefas" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="tarefas" className="gap-1.5">
-              <CheckSquare className="h-3.5 w-3.5" />
-              Tarefas
-              <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                {minhasTarefas.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="demandas" className="gap-1.5">
-              <Inbox className="h-3.5 w-3.5" />
-              Demandas
-              <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                {minhasDemandas.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="reunioes" className="gap-1.5">
-              <Calendar className="h-3.5 w-3.5" />
-              Reuniões
-              <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                {minhasReunioes.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="relatorios" className="gap-1.5">
-              <FileText className="h-3.5 w-3.5" />
-              Relatórios
-              <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
-                {meusChamados.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-          <div className="mt-3 max-h-[60vh] overflow-y-auto pr-1">
-            <TabsContent value="tarefas">
-              {renderList(minhasTarefas, "tarefa", "data_prevista", "Prazo", CheckSquare)}
-            </TabsContent>
-            <TabsContent value="demandas">
-              {renderList(minhasDemandas, "demanda", "prazo", "Prazo", Inbox)}
-            </TabsContent>
-            <TabsContent value="reunioes">
-              {renderList(minhasReunioes, "reuniao", "data_reuniao", "Quando", Calendar)}
-            </TabsContent>
-            <TabsContent value="relatorios">
-              {renderList(meusChamados, "chamado", "prazo", "Prazo", FileText)}
-            </TabsContent>
-          </div>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
-}
