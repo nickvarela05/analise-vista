@@ -234,7 +234,7 @@ function Tarefas() {
       equipe_toda: false,
       demanda_id: null,
     });
-    qc.invalidateQueries({ queryKey: ["tarefas"] });
+    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
   const onDropStatus = async (id: string, status: string) => {
@@ -258,7 +258,7 @@ function Tarefas() {
         valor_novo: status,
       });
     }
-    qc.invalidateQueries({ queryKey: ["tarefas"] });
+    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
   const toggleSelect = (id: string, checked: boolean) => {
@@ -281,7 +281,7 @@ function Tarefas() {
     else {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
@@ -292,7 +292,7 @@ function Tarefas() {
     else {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
@@ -304,7 +304,7 @@ function Tarefas() {
     else {
       toast.success(`${ids.length} tarefa(s) removida(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: ["tarefas"] });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
