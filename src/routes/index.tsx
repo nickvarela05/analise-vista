@@ -374,6 +374,21 @@ function Dashboard() {
         />
       </div>
 
+      {/* === RELATÓRIOS (N8N) === */}
+      <SectionHeader title="Relatórios (canal externo)" description="Solicitações que chegam pelo fluxo N8N." />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <FunilRelatoriosCard solicitacoes={solicitacoes} />
+        <SlaUrgenciaCard solicitacoes={solicitacoes} />
+        <TopSolicitantesCard solicitacoes={solicitacoes} />
+      </div>
+
+      {/* === DISTRIBUIÇÃO DA EQUIPE === */}
+      <SectionHeader title="Distribuição da equipe" description="Quem está envolvido em quê." />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <AtribuicoesChart data={atribuicoes} />
+        <StatusTarefasPie data={pieTarefas} />
+      </div>
+
       {/* === MEU TRABALHO === */}
       {meuColabId && (
         <>
@@ -413,21 +428,6 @@ function Dashboard() {
         <TaxaReprovacaoCard tarefas={tarefas} />
         <TempoPorEtapaCard tarefas={tarefas} />
         <CategoriaOrigemCard demandas={demandas} />
-      </div>
-
-      {/* === RELATÓRIOS (N8N) === */}
-      <SectionHeader title="Relatórios (canal externo)" description="Solicitações que chegam pelo fluxo N8N." />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <FunilRelatoriosCard solicitacoes={solicitacoes} />
-        <SlaUrgenciaCard solicitacoes={solicitacoes} />
-        <TopSolicitantesCard solicitacoes={solicitacoes} />
-      </div>
-
-      {/* === DISTRIBUIÇÃO DA EQUIPE === */}
-      <SectionHeader title="Distribuição da equipe" description="Quem está envolvido em quê." />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <AtribuicoesChart data={atribuicoes} />
-        <StatusTarefasPie data={pieTarefas} />
       </div>
 
       {/* === AGENDA & PESSOAS === */}
