@@ -86,6 +86,33 @@ function Atividades() {
     },
   });
 
+  const EQUIPES: { label: string; nomes: string[] }[] = [
+    { label: "Equipe de Análise", nomes: ["nickolas", "felipe pino", "matheus", "hugo", "ewerton", "pietro"] },
+    { label: "Equipe HELP-DESK", nomes: ["larice", "karyna", "simone", "felipe lourenço", "felipe lourenco"] },
+    { label: "Equipe Técnica de Suporte", nomes: ["silvia", "ketlyn"] },
+  ];
+
+  const colabsAgrupados = React.useMemo(() => {
+    const norm = (s: string) =>
+      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const usados = new Set<string>();
+    const grupos = EQUIPES.map((g) => {
+      const items = g.nomes
+        .map((alvo) => {
+          const a = norm(alvo);
+          return colaboradores.find((c) => {
+            const n = norm(c.nome);
+            return n === a || n.startsWith(a + " ") || n.includes(" " + a);
+          });
+        })
+        .filter((c): c is { id: string; nome: string } => !!c);
+      items.forEach((c) => usados.add(c.id));
+      return { label: g.label, items };
+    });
+    const outros = colaboradores.filter((c) => !usados.has(c.id));
+    return { grupos, outros };
+  }, [colaboradores]);
+
   const { data: meuProfile } = useQuery({
     queryKey: ["atv-meu-profile", user?.id],
     enabled: !!user?.id,
@@ -178,15 +205,33 @@ function Atividades() {
               </label>
               <Select value={escopo} onValueChange={setEscopo}>
                 <SelectTrigger className="w-44 sm:w-52"><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-96">
                   <SelectItem value="equipe">Toda a equipe</SelectItem>
                   <SelectItem value="minhas" disabled={!meuColabId}>Minhas atribuições</SelectItem>
-                  {colaboradores.length > 0 && (
-                    <div className="my-1 border-t border-border" />
+                  {colabsAgrupados.grupos.map((g) =>
+                    g.items.length > 0 ? (
+                      <div key={g.label}>
+                        <div className="my-1 border-t border-border" />
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {g.label}
+                        </div>
+                        {g.items.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                        ))}
+                      </div>
+                    ) : null,
                   )}
-                  {colaboradores.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-                  ))}
+                  {colabsAgrupados.outros.length > 0 && (
+                    <div>
+                      <div className="my-1 border-t border-border" />
+                      <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Outros
+                      </div>
+                      {colabsAgrupados.outros.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                      ))}
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
