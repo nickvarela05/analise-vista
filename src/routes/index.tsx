@@ -277,8 +277,11 @@ function Dashboard() {
           const seg = (c.colaborador_horario ?? []).find((h) => h.dia_semana === 1);
           if (!seg) return null;
           return {
+            id: c.id,
             nome: c.nome.split(" ")[0],
+            nomeCompleto: c.nome,
             foto: c.foto_url,
+            localTrabalho: (c.local_trabalho ?? "escritorio") as "escritorio" | "rua",
             expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} – ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
             almoco: seg.almoco_inicio
               ? `${seg.almoco_inicio.slice(0, 5)} – ${seg.almoco_fim?.slice(0, 5)}`
@@ -389,13 +392,17 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <WorkflowChamadosPanel
-          chamados={chamados}
-          tarefas={tarefas}
-          chamadosEncaminhados={chamadosEncaminhados}
-        />
-        <HorariosPanel horarios={horarios} />
+      <div className="grid gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <WorkflowChamadosPanel
+            chamados={chamados}
+            tarefas={tarefas}
+            chamadosEncaminhados={chamadosEncaminhados}
+          />
+        </div>
+        <div className="lg:col-span-2">
+          <HorariosPanel horarios={horarios} />
+        </div>
       </div>
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
