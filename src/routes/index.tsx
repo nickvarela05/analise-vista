@@ -89,7 +89,7 @@ function Dashboard() {
     return { solicRelatPend: r, solicOutrasPend: o };
   }, [solicitacoes]);
 
-  const relatEncaminhados = React.useMemo(
+  const chamadosEncaminhados = React.useMemo(
     () => chamados.filter((c) => c.status === "encaminhado").length,
     [chamados],
   );
@@ -393,9 +393,7 @@ function Dashboard() {
         <WorkflowChamadosPanel
           chamados={chamados}
           tarefas={tarefas}
-          relatEncaminhados={relatEncaminhados}
-          taskHML={taskHML}
-          taskProd={taskProd}
+          chamadosEncaminhados={chamadosEncaminhados}
         />
         <HorariosPanel horarios={horarios} />
       </div>
