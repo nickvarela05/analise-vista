@@ -379,6 +379,8 @@ function Dashboard() {
           weekStart={weekStart}
           weekEnd={weekEnd}
           onPreview={openPreview}
+          colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))}
+          defaultColabId={meuColabId}
         />
         <EquipeAtivaPanel
           totalColaboradores={colaboradores.length}
