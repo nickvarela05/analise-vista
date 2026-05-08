@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Sun, Moon, LogOut } from "lucide-react";
 import { PreferenciasNotificacao } from "@/components/notificacoes/PreferenciasNotificacao";
+import { ConfiguracoesEmails } from "@/components/notificacoes/ConfiguracoesEmails";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/configuracoes")({
   component: ConfigRoute,
@@ -26,50 +28,65 @@ function Configuracoes() {
   const { theme, toggle } = useTheme();
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader title="Configurações" description="Preferências da conta e sessão." />
+    <div className="max-w-3xl">
+      <PageHeader title="Configurações" description="Preferências da conta, notificações e e-mails." />
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Conta</CardTitle></CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">E-mail</span>
-              <span className="font-medium">{user?.email}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Papel</span>
-              <Badge variant="outline" className="capitalize">{role ?? "—"}</Badge>
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="conta" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="conta">Conta</TabsTrigger>
+          <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
+          <TabsTrigger value="emails">E-mails</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Aparência</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Tema</p>
-                <p className="text-xs text-muted-foreground">Alternar entre claro e escuro.</p>
+        <TabsContent value="conta" className="space-y-4">
+          <Card>
+            <CardHeader><CardTitle className="text-base">Conta</CardTitle></CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">E-mail</span>
+                <span className="font-medium">{user?.email}</span>
               </div>
-              <Button variant="outline" onClick={toggle}>
-                {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
-                {theme === "dark" ? "Claro" : "Escuro"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        <PreferenciasNotificacao />
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Papel</span>
+                <Badge variant="outline" className="capitalize">{role ?? "—"}</Badge>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">Sessão</CardTitle></CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={() => signOut()}>
-              <LogOut className="mr-2 h-4 w-4" /> Encerrar sessão
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader><CardTitle className="text-base">Aparência</CardTitle></CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Tema</p>
+                  <p className="text-xs text-muted-foreground">Alternar entre claro e escuro.</p>
+                </div>
+                <Button variant="outline" onClick={toggle}>
+                  {theme === "dark" ? <Sun className="mr-2 h-4 w-4" /> : <Moon className="mr-2 h-4 w-4" />}
+                  {theme === "dark" ? "Claro" : "Escuro"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Sessão</CardTitle></CardHeader>
+            <CardContent>
+              <Button variant="destructive" onClick={() => signOut()}>
+                <LogOut className="mr-2 h-4 w-4" /> Encerrar sessão
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notificacoes">
+          <PreferenciasNotificacao />
+        </TabsContent>
+
+        <TabsContent value="emails">
+          <ConfiguracoesEmails />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
