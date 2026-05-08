@@ -197,7 +197,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const salvarEdicao = async () => {
     if (!dirty || !id) return;
     setSalvando(true);
-    const updates: Record<string, unknown> = {
+    const updates: any = {
       status: draft.status,
       prioridade: draft.prioridade,
       data_prevista: draft.data_prevista || null,
