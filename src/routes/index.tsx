@@ -408,7 +408,7 @@ function Dashboard() {
       </div>
 
       {/* === QUALIDADE & FLUXO === */}
-      <SectionHeader title="Qualidade & fluxo" description="Onde o processo trava ou perde qualidade." />
+      <SectionHeader title="Qualidade e fluxo" description="Onde o processo trava ou perde qualidade." />
       <div className="grid gap-4 lg:grid-cols-3">
         <TaxaReprovacaoCard tarefas={tarefas} />
         <TempoPorEtapaCard tarefas={tarefas} />
