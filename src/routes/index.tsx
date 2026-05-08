@@ -277,8 +277,11 @@ function Dashboard() {
           const seg = (c.colaborador_horario ?? []).find((h) => h.dia_semana === 1);
           if (!seg) return null;
           return {
+            id: c.id,
             nome: c.nome.split(" ")[0],
+            nomeCompleto: c.nome,
             foto: c.foto_url,
+            localTrabalho: (c.local_trabalho ?? "escritorio") as "escritorio" | "rua",
             expediente: `${seg.expediente_inicio?.slice(0, 5) ?? "—"} – ${seg.expediente_fim?.slice(0, 5) ?? "—"}`,
             almoco: seg.almoco_inicio
               ? `${seg.almoco_inicio.slice(0, 5)} – ${seg.almoco_fim?.slice(0, 5)}`
