@@ -1,7 +1,8 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { ArrowUpRight, Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type KpiTone = "primary" | "success" | "warning" | "destructive" | "info";
