@@ -20,16 +20,6 @@ const STATUS_ATIVAS = [
 ] as const;
 const STATUS_WIP = ["em_andamento", "homologacao", "encaminhada"] as const;
 
-const STATUS_CONCLUIDA = ["concluida", "producao"] as const;
-const STATUS_ATIVAS = [
-  "pendente",
-  "aberta",
-  "em_andamento",
-  "encaminhada",
-  "homologacao",
-] as const;
-const STATUS_WIP = ["em_andamento", "homologacao", "encaminhada"] as const;
-
 export type WeekPoint = { semana: string; concluidas: number };
 
 /** #1 Velocity: tarefas concluídas por semana (últimas N semanas) */
