@@ -14,6 +14,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
@@ -67,12 +69,14 @@ export function ImportarTarefasDialog() {
   const [erros, setErros] = React.useState<string[]>([]);
   const [arquivo, setArquivo] = React.useState<string>("");
   const [importando, setImportando] = React.useState(false);
+  const [forcarHomologacao, setForcarHomologacao] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setLinhas([]);
     setErros([]);
     setArquivo("");
+    setForcarHomologacao(false);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -136,7 +140,7 @@ export function ImportarTarefasDialog() {
     const payload = linhas.map((l) => ({
       titulo: l.titulo,
       descricao: l.descricao,
-      status: l.status as never,
+      status: (forcarHomologacao ? "homologacao" : l.status) as never,
       prioridade: l.prioridade,
       responsaveis_ids: [],
       equipe_toda: false,
@@ -199,6 +203,24 @@ export function ImportarTarefasDialog() {
             )}
           </div>
 
+          <div className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-3">
+            <Checkbox
+              id="forcar-hml"
+              checked={forcarHomologacao}
+              onCheckedChange={(v) => setForcarHomologacao(v === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="forcar-hml" className="cursor-pointer text-sm font-medium">
+                Importar tarefas de homologação
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativado, todas as tarefas importadas serão criadas com status{" "}
+                <span className="font-medium">Homologação</span>, ignorando o status da planilha.
+              </p>
+            </div>
+          </div>
+
           {erros.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -230,7 +252,7 @@ export function ImportarTarefasDialog() {
                     {linhas.slice(0, 50).map((l, i) => (
                       <tr key={i} className="border-b last:border-0">
                         <td className="px-3 py-1.5">{l.titulo}</td>
-                        <td className="px-3 py-1.5 capitalize">{l.status.replace("_", " ")}</td>
+                        <td className="px-3 py-1.5 capitalize">{(forcarHomologacao ? "homologação" : l.status.replace("_", " "))}</td>
                         <td className="px-3 py-1.5 capitalize">{l.prioridade}</td>
                       </tr>
                     ))}
