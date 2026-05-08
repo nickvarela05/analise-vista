@@ -244,7 +244,7 @@ function ResumoSemanal() {
               <div key={r.id} className="rounded-lg border p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <Badge variant="outline">
-                    {new Date(r.periodo_inicio).toLocaleDateString("pt-BR")} – {new Date(r.periodo_fim).toLocaleDateString("pt-BR")}
+                    {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} – {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {new Date(r.created_at).toLocaleString("pt-BR")}
@@ -261,8 +261,13 @@ function ResumoSemanal() {
                   </div>
                 )}
                 <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm text-foreground/90">
-                  {r.conteudo}
+                  {r.conteudo_md}
                 </div>
+                {r.insights && r.insights.length > 0 && (
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    {r.insights.map((it: string, i: number) => <li key={i}>{it}</li>)}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
