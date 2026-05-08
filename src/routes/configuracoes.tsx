@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-provider";
 import { Sun, Moon, LogOut } from "lucide-react";
+import { PreferenciasNotificacao } from "@/components/notificacoes/PreferenciasNotificacao";
 
 export const Route = createFileRoute("/configuracoes")({
   component: ConfigRoute,
