@@ -404,6 +404,3 @@ function Dashboard() {
     </div>
   );
 }
-
-// Mantido apenas para evitar warning de unused import durante refator parcial.
-void WorkflowStep;
