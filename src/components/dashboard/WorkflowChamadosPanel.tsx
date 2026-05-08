@@ -31,31 +31,34 @@ export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados 
 
   return (
     <Panel
-      title="Workflow de chamados"
+      title="Workflow de chamados e tarefas"
       actions={
         <Link to="/relatorios" className="text-xs font-medium text-primary hover:underline">
           Ver relatórios →
         </Link>
       }
     >
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Chamados externos (clientes)
+      </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <WorkflowStep
           icon={Inbox}
-          label="Aberto"
+          label="Recebidos"
           value={chamados.filter((c) => c.status === "aberto").length}
           tone="warning"
           to="/relatorios"
         />
         <WorkflowStep
           icon={ArrowRight}
-          label="Encaminhado"
+          label="Em atendimento"
           value={chamadosEncaminhados}
           tone="info"
           to="/relatorios"
         />
         <WorkflowStep
           icon={CheckSquare}
-          label="Finalizado"
+          label="Resolvidos"
           value={chamados.filter((c) => c.status === "finalizado").length}
           tone="success"
           to="/relatorios"
@@ -64,10 +67,10 @@ export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados 
 
       <div className="mt-5 border-t border-border pt-4">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Tarefas internas (workflow Sisteplan)
+          Tarefas internas — etapas do desenvolvimento
         </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <WorkflowStep icon={Inbox} label="Aberta" value={tAberta} tone="warning" to="/tarefas" />
+          <WorkflowStep icon={Inbox} label="A fazer" value={tAberta} tone="warning" to="/tarefas" />
           <WorkflowStep
             icon={Wrench}
             label="Em desenvolvimento"
@@ -77,28 +80,28 @@ export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados 
           />
           <WorkflowStep
             icon={CheckSquare}
-            label="Homologação"
+            label="Em homologação"
             value={tHomolog}
             tone="info"
             to="/tarefas"
           />
           <WorkflowStep
             icon={ShieldCheck}
-            label="Aprovado"
+            label="Aprovadas"
             value={tAprovado}
             tone="success"
             to="/tarefas"
           />
           <WorkflowStep
             icon={XCircle}
-            label="Reprovado"
+            label="Com ajustes"
             value={tReprovado}
             tone="warning"
             to="/tarefas"
           />
           <WorkflowStep
             icon={Rocket}
-            label="Produção"
+            label="Em produção"
             value={tProducao}
             tone="success"
             to="/tarefas"
