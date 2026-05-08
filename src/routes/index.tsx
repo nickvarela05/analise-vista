@@ -27,6 +27,21 @@ import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/Dashb
 import { AtividadesSemanaPanel, type Atividade } from "@/components/dashboard/AtividadesSemanaPanel";
 import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
+import { SectionHeader } from "@/components/dashboard/SectionHeader";
+import {
+  VelocitySemanalCard,
+  LeadTimeCard,
+  ThroughputCard,
+  AgingBacklogCard,
+  HeatmapPrazosCard,
+  WipColaboradorCard,
+  TaxaReprovacaoCard,
+  TempoPorEtapaCard,
+  CategoriaOrigemCard,
+  FunilRelatoriosCard,
+  SlaUrgenciaCard,
+  TopSolicitantesCard,
+} from "@/components/dashboard/analytics/AnalyticsCards";
 
 export const Route = createFileRoute("/")({
   errorComponent: RouteErrorBoundary,
@@ -309,7 +324,8 @@ function Dashboard() {
 
       <AvisosBanner avisos={avisos} onPreview={openPreview} />
 
-      {/* KPIs principais */}
+      {/* === VISÃO GERAL === */}
+      <SectionHeader title="Visão geral" description="Indicadores-chave do momento." />
       <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-5">
         <KpiTile
           icon={FileBarChart}
@@ -358,23 +374,65 @@ function Dashboard() {
         />
       </div>
 
+      {/* === MEU TRABALHO === */}
       {meuColabId && (
-        <MinhasAtribuicoesPainel
-          nome={meuProfile?.nome ?? null}
-          colabId={meuColabId}
-          tarefas={tarefas}
-          demandas={demandas}
-          reunioes={reunioes}
-          chamados={chamados}
-          onVerTodas={() => setMinhasOpen(true)}
-        />
+        <>
+          <SectionHeader title="Meu trabalho" description="Atribuições direcionadas a você." />
+          <MinhasAtribuicoesPainel
+            nome={meuProfile?.nome ?? null}
+            colabId={meuColabId}
+            tarefas={tarefas}
+            demandas={demandas}
+            reunioes={reunioes}
+            chamados={chamados}
+            onVerTodas={() => setMinhasOpen(true)}
+          />
+        </>
       )}
 
+      {/* === PRODUTIVIDADE === */}
+      <SectionHeader title="Produtividade" description="Quanto a equipe entrega e em quanto tempo." />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <VelocitySemanalCard tarefas={tarefas} />
+        <LeadTimeCard tarefas={tarefas} />
+        <ThroughputCard tarefas={tarefas} colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))} />
+      </div>
+
+      {/* === SAÚDE DO BACKLOG === */}
+      <SectionHeader title="Saúde do backlog" description="Idade das tarefas, carga atual e concentração de prazos." />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <AgingBacklogCard tarefas={tarefas} />
+        </div>
+        <WipColaboradorCard tarefas={tarefas} colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))} />
+      </div>
+      <HeatmapPrazosCard tarefas={tarefas} demandas={demandas} reunioes={reunioes} />
+
+      {/* === QUALIDADE & FLUXO === */}
+      <SectionHeader title="Qualidade & fluxo" description="Onde o processo trava ou perde qualidade." />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <TaxaReprovacaoCard tarefas={tarefas} />
+        <TempoPorEtapaCard tarefas={tarefas} />
+        <CategoriaOrigemCard demandas={demandas} />
+      </div>
+
+      {/* === RELATÓRIOS (N8N) === */}
+      <SectionHeader title="Relatórios (canal externo)" description="Solicitações que chegam pelo fluxo N8N." />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <FunilRelatoriosCard solicitacoes={solicitacoes} />
+        <SlaUrgenciaCard solicitacoes={solicitacoes} />
+        <TopSolicitantesCard solicitacoes={solicitacoes} />
+      </div>
+
+      {/* === DISTRIBUIÇÃO DA EQUIPE === */}
+      <SectionHeader title="Distribuição da equipe" description="Quem está envolvido em quê." />
       <div className="grid gap-4 lg:grid-cols-3">
         <AtribuicoesChart data={atribuicoes} />
         <StatusTarefasPie data={pieTarefas} />
       </div>
 
+      {/* === AGENDA & PESSOAS === */}
+      <SectionHeader title="Agenda & pessoas" description="Compromissos da semana, férias e horários." />
       <div className="grid gap-4 lg:grid-cols-3">
         <AtividadesSemanaPanel
           atividades={atividades}
