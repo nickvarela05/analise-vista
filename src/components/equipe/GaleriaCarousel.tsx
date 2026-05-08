@@ -115,7 +115,7 @@ export function GaleriaCarousel() {
         aria-label="Galeria da equipe"
         onKeyDown={onKeyDown}
       >
-        <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_140px]">
           {/* Hero preview */}
           <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-muted/60 to-muted ring-1 ring-border/50">
             {/* Blurred backdrop preserves aspect without cropping */}
@@ -124,14 +124,14 @@ export function GaleriaCarousel() {
               src={active.foto_url}
               alt=""
               aria-hidden
-              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-2xl"
+              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50 blur-2xl"
             />
-            <div className="relative flex aspect-[21/9] w-full items-center justify-center">
+            <div className="relative flex aspect-[16/10] w-full items-center justify-center">
               <img
                 key={active.id}
                 src={active.foto_url}
                 alt={active.legenda ?? "Foto da equipe"}
-                className="max-h-full max-w-full object-contain transition-opacity duration-500 animate-in fade-in"
+                className="h-full w-full object-contain transition-opacity duration-500 animate-in fade-in"
               />
             </div>
 
@@ -195,7 +195,7 @@ export function GaleriaCarousel() {
 
           {/* Thumbnails rail */}
           {total > 1 && (
-            <div className="flex gap-2 overflow-x-auto lg:max-h-[420px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pr-1">
+            <div className="flex gap-2 overflow-x-auto lg:max-h-[520px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pr-1">
               {fotos.map((f, i) => {
                 const isActive = i === current;
                 return (
