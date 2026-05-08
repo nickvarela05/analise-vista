@@ -317,18 +317,18 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto p-4 sm:max-w-2xl sm:p-6">
-        <SheetHeader>
-          <div className="flex items-start justify-between gap-2">
-            <SheetTitle className="text-base">{tarefa.titulo}</SheetTitle>
-            <div className="flex gap-1.5">
-              <Badge variant="outline" className={`capitalize ${statusVariant(tarefa.status)}`}>
-                {STATUS_LABEL[tarefa.status] ?? tarefa.status}
-              </Badge>
-              <Badge variant="outline" className={`capitalize ${prioVariant(tarefa.prioridade)}`}>
-                {tarefa.prioridade}
-              </Badge>
-            </div>
+        <SheetHeader className="space-y-3 pr-10">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className={`capitalize ${statusVariant(tarefa.status)}`}>
+              {STATUS_LABEL[tarefa.status] ?? tarefa.status}
+            </Badge>
+            <Badge variant="outline" className={`capitalize ${prioVariant(tarefa.prioridade)}`}>
+              {tarefa.prioridade}
+            </Badge>
           </div>
+          <SheetTitle className="text-base leading-snug sm:text-lg">
+            {tarefa.titulo}
+          </SheetTitle>
         </SheetHeader>
 
         {/* Painel rápido de edição */}
