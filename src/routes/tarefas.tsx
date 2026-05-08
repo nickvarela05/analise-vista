@@ -105,9 +105,10 @@ function Tarefas() {
   const onDropStatus = async (id: string, status: string) => {
     const tarefa = tarefas.find((t) => t.id === id);
     if (!tarefa) return;
-    const updates: Record<string, unknown> = { status };
-    if (status === "producao") updates.concluida_em = new Date().toISOString();
-    else updates.concluida_em = null;
+    const updates = {
+      status: status as TarefaRow["status"],
+      concluida_em: status === "producao" ? new Date().toISOString() : null,
+    };
     const { error } = await supabase.from("todo").update(updates).eq("id", id);
     if (error) {
       toast.error("Erro", { description: error.message });
