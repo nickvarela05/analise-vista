@@ -69,7 +69,7 @@ export function VelocitySemanalCard({ tarefas }: { tarefas: TarefaRow[] }) {
   const total = data.reduce((s, d) => s + d.concluidas, 0);
   return (
     <Panel
-      title="Velocity semanal"
+      title="Entregas por semana"
       hint="Quantidade de tarefas concluídas por semana, nas últimas 8 semanas. Tendência ascendente indica que a equipe está acelerando as entregas."
     >
       <div className="mb-2 flex items-baseline gap-2">
@@ -102,7 +102,7 @@ export function LeadTimeCard({ tarefas }: { tarefas: TarefaRow[] }) {
   const m = React.useMemo(() => computeLeadCycle(tarefas), [tarefas]);
   return (
     <Panel
-      title="Lead time"
+      title="Tempo médio de entrega"
       hint="Tempo médio (e mediano) entre a criação e a conclusão de uma tarefa. Mediana é mais robusta a casos extremos."
     >
       <div className="grid grid-cols-2 gap-3 pt-1">
@@ -127,7 +127,7 @@ export function ThroughputCard({ tarefas, colaboradores }: { tarefas: TarefaRow[
   const data = React.useMemo(() => computeThroughput(tarefas, colaboradores, 30), [tarefas, colaboradores]);
   return (
     <Panel
-      title="Throughput (30 dias)"
+      title="Quem mais entregou (30 dias)"
       hint="Quantidade de tarefas concluídas por cada pessoa nos últimos 30 dias. Útil para identificar quem está entregando mais e equilibrar a carga."
     >
       <div className="h-44">
@@ -164,7 +164,7 @@ export function AgingBacklogCard({ tarefas }: { tarefas: TarefaRow[] }) {
   const envelhecidas = data.filter((b) => b.tone === "warning" || b.tone === "destructive").reduce((s, b) => s + b.total, 0);
   return (
     <Panel
-      title="Aging do backlog"
+      title="Idade das tarefas em aberto"
       hint="Distribuição das tarefas ativas pelo tempo desde a criação. Itens com mais de 15 dias merecem atenção; com mais de 30 são alerta."
     >
       <div className="mb-3 flex items-baseline justify-between gap-2">
@@ -270,7 +270,7 @@ export function WipColaboradorCard({ tarefas, colaboradores }: { tarefas: Tarefa
   const data = React.useMemo(() => computeWip(tarefas, colaboradores), [tarefas, colaboradores]);
   return (
     <Panel
-      title="WIP por colaborador"
+      title="Carga atual por pessoa"
       hint={`Trabalho em progresso atual (em desenvolvimento, encaminhada ou homologação) por pessoa. Acima de ${WIP_LIMITE} itens simultâneos sugere sobrecarga.`}
     >
       {data.length === 0 ? (
@@ -324,7 +324,7 @@ export function TaxaReprovacaoCard({ tarefas }: { tarefas: TarefaRow[] }) {
   ].filter((d) => d.value > 0);
   return (
     <Panel
-      title="Taxa de reprovação"
+      title="Reprovações em homologação"
       hint="Percentual de tarefas reprovadas em homologação nos últimos 60 dias. Valores altos indicam falhas de qualidade ou requisitos mal alinhados."
     >
       <div className="grid grid-cols-2 items-center gap-2">
@@ -400,7 +400,7 @@ export function CategoriaOrigemCard({ demandas }: { demandas: DemandaRow[] }) {
   const { categorias, origens } = React.useMemo(() => computeCategoriaOrigem(demandas), [demandas]);
   return (
     <Panel
-      title="Categorias & origens"
+      title="De onde vêm as demandas"
       hint="De que tipo são as demandas (bug, melhoria, dúvida…) e por qual canal chegam (e-mail, reunião, chamado…)."
     >
       <div className="grid grid-cols-2 gap-2">
@@ -457,7 +457,7 @@ export function FunilRelatoriosCard({ solicitacoes }: { solicitacoes: Solic[] })
   const total = data.reduce((s, x) => s + x.total, 0);
   return (
     <Panel
-      title="Funil de relatórios"
+      title="Andamento dos relatórios"
       hint="Acompanhamento do ciclo das solicitações de relatórios: pendentes (a fazer) → feitos (prontos) → enviados (entregues)."
     >
       {total === 0 ? (
@@ -494,7 +494,7 @@ export function SlaUrgenciaCard({ solicitacoes }: { solicitacoes: Solic[] }) {
   const data = React.useMemo(() => computeSlaUrgencia(solicitacoes), [solicitacoes]);
   return (
     <Panel
-      title="SLA por urgência"
+      title="Pendências por urgência"
       hint="Quantidade de solicitações pendentes por nível de urgência e idade média (dias) desde a criação. Pendências urgentes com idade alta = risco de SLA estourado."
     >
       <div className="h-48">
@@ -525,7 +525,7 @@ export function TopSolicitantesCard({ solicitacoes }: { solicitacoes: Solic[] })
   const data = React.useMemo(() => computeTopSolicitantes(solicitacoes, 90, 8), [solicitacoes]);
   return (
     <Panel
-      title="Top solicitantes (90 dias)"
+      title="Quem mais pede relatórios (90 dias)"
       hint="Pessoas que mais pediram relatórios nos últimos 90 dias. Útil para identificar clientes recorrentes e priorizar relacionamento."
     >
       <div className="h-48">
