@@ -139,8 +139,10 @@ function Tarefas() {
 
   const bulkUpdateStatus = async (status: string) => {
     const ids = Array.from(selectedIds);
-    const updates: Record<string, unknown> = { status };
-    if (status === "producao") updates.concluida_em = new Date().toISOString();
+    const updates = {
+      status: status as TarefaRow["status"],
+      ...(status === "producao" ? { concluida_em: new Date().toISOString() } : {}),
+    };
     const { error } = await supabase.from("todo").update(updates).in("id", ids);
     if (error) toast.error("Erro", { description: error.message });
     else {
