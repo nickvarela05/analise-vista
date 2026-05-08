@@ -19,6 +19,7 @@ import { TarefaFilters, initialFilters, type TarefaFiltersState } from "@/compon
 import { normalizeStatus } from "@/components/tarefas/lib/workflow";
 import { useTarefasData } from "@/components/tarefas/useTarefasData";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
+import { ImportarTarefasDialog } from "@/components/tarefas/ImportarTarefasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
 import type { TarefaRow } from "@/lib/db-types";
