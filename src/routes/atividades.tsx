@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { isAtribuidoA } from "@/lib/domain/atividades";
+import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 
 export const Route = createFileRoute("/atividades")({
   errorComponent: RouteErrorBoundary,
@@ -49,11 +50,15 @@ type Periodo = "semana" | "mes";
 
 type Atividade = {
   id: string;
+  rawId: string;
   tipo: "tarefa" | "demanda" | "reuniao";
   titulo: string;
   data: Date;
-  prioridade?: string;
-  responsavel?: string;
+  prioridade?: string | null;
+  responsavel?: string | null;
+  descricao?: string | null;
+  status?: string | null;
+  tags?: string[] | null;
 };
 
 const tipoColor: Record<string, string> = {
@@ -69,6 +74,24 @@ function Atividades() {
   const [tipoFiltro, setTipoFiltro] = React.useState<string>("todos");
   // escopo: "equipe" | "minhas" | <colaborador_id>
   const [escopo, setEscopo] = React.useState<string>("equipe");
+  const [preview, setPreview] = React.useState<PreviewItem | null>(null);
+  const [previewOpen, setPreviewOpen] = React.useState(false);
+
+  const abrirDetalhe = React.useCallback((a: Atividade) => {
+    setPreview({
+      id: a.rawId,
+      tipo: a.tipo,
+      titulo: a.titulo,
+      descricao: a.descricao ?? null,
+      status: a.status ?? null,
+      prioridade: a.prioridade ?? null,
+      responsavel: a.responsavel ?? null,
+      data: a.data,
+      dataLabel: a.tipo === "reuniao" ? "Quando" : "Prazo",
+      tags: a.tags ?? null,
+    });
+    setPreviewOpen(true);
+  }, []);
 
   const inicio = periodo === "semana" ? startOfWeek(cursor, { weekStartsOn: 1 }) : startOfMonth(cursor);
   const fim = periodo === "semana" ? endOfWeek(cursor, { weekStartsOn: 1 }) : endOfMonth(cursor);
@@ -162,6 +185,12 @@ function Atividades() {
     [meuColabId],
   );
 
+  const colabById = React.useMemo(() => {
+    const m = new Map<string, string>();
+    colaboradores.forEach((c) => m.set(c.id, c.nome));
+    return m;
+  }, [colaboradores]);
+
   const todas: Atividade[] = React.useMemo(() => {
     const arr: Atividade[] = [];
     const tarefaConcluida = ["concluida", "producao", "cancelada", "reprovada"];
@@ -171,20 +200,50 @@ function Atividades() {
       if (escopo === "minhas") return isMine(r);
       return isAtribuidoA(r, escopo);
     };
-    tarefas.filter(filtroEscopo).forEach((t) => {
+    tarefas.filter(filtroEscopo).forEach((t: any) => {
       if (t.data_prevista && !tarefaConcluida.includes(t.status))
-        arr.push({ id: `t-${t.id}`, tipo: "tarefa", titulo: t.titulo, data: new Date(t.data_prevista), prioridade: t.prioridade });
+        arr.push({
+          id: `t-${t.id}`,
+          rawId: t.id,
+          tipo: "tarefa",
+          titulo: t.titulo,
+          data: new Date(t.data_prevista),
+          prioridade: t.prioridade,
+          status: t.status,
+          descricao: t.descricao,
+          responsavel: t.responsavel_id ? colabById.get(t.responsavel_id) ?? null : null,
+        });
     });
-    demandas.filter(filtroEscopo).forEach((d) => {
+    demandas.filter(filtroEscopo).forEach((d: any) => {
       if (d.prazo && !demandaConcluida.includes(d.status))
-        arr.push({ id: `d-${d.id}`, tipo: "demanda", titulo: d.titulo, data: new Date(d.prazo), prioridade: d.prioridade });
+        arr.push({
+          id: `d-${d.id}`,
+          rawId: d.id,
+          tipo: "demanda",
+          titulo: d.titulo,
+          data: new Date(d.prazo),
+          prioridade: d.prioridade,
+          status: d.status,
+          descricao: d.descricao,
+          tags: d.tags,
+          responsavel: d.responsavel_id ? colabById.get(d.responsavel_id) ?? null : null,
+        });
     });
-    reunioes.filter(filtroEscopo).forEach((r) => {
+    reunioes.filter(filtroEscopo).forEach((r: any) => {
       if (r.status !== "cancelada")
-        arr.push({ id: `r-${r.id}`, tipo: "reuniao", titulo: r.titulo, data: new Date(r.data_reuniao) });
+        arr.push({
+          id: `r-${r.id}`,
+          rawId: r.id,
+          tipo: "reuniao",
+          titulo: r.titulo,
+          data: new Date(r.data_reuniao),
+          status: r.status,
+          descricao: r.pauta,
+          responsavel: r.responsavel_id ? colabById.get(r.responsavel_id) ?? null : null,
+        });
     });
     return arr;
-  }, [tarefas, demandas, reunioes, escopo, isMine]);
+  }, [tarefas, demandas, reunioes, escopo, isMine, colabById]);
 
   const noPeriodo = todas.filter((a) => a.data >= inicio && a.data <= fim && (tipoFiltro === "todos" || a.tipo === tipoFiltro));
 
@@ -298,13 +357,18 @@ function Atividades() {
                     <p className="text-xs text-muted-foreground">—</p>
                   ) : (
                     doDia.map((a) => (
-                      <div key={a.id} className={`rounded-md border p-2 text-xs ${tipoColor[a.tipo]}`}>
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => abrirDetalhe(a)}
+                        className={`w-full text-left rounded-md border p-2 text-xs transition hover:brightness-110 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${tipoColor[a.tipo]}`}
+                      >
                         <Badge variant="outline" className="mb-1 text-[9px] uppercase">{a.tipo}</Badge>
                         <p className="font-medium leading-tight">{a.titulo}</p>
                         {a.tipo === "reuniao" && (
                           <p className="mt-0.5 text-[10px] opacity-80">{format(a.data, "HH:mm")}</p>
                         )}
-                      </div>
+                      </button>
                     ))
                   )}
                 </div>
@@ -332,9 +396,14 @@ function Atividades() {
                     <div className="mb-1 text-[10px] font-semibold">{format(dia, "dd")}</div>
                     <div className="space-y-1">
                       {doDia.slice(0, 3).map((a) => (
-                        <div key={a.id} className={`truncate rounded px-1 py-0.5 text-[10px] ${tipoColor[a.tipo]}`}>
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => abrirDetalhe(a)}
+                          className={`block w-full truncate text-left rounded px-1 py-0.5 text-[10px] transition hover:brightness-110 ${tipoColor[a.tipo]}`}
+                        >
                           {a.titulo}
-                        </div>
+                        </button>
                       ))}
                       {doDia.length > 3 && (
                         <p className="text-[10px] text-muted-foreground">+{doDia.length - 3}</p>
@@ -353,6 +422,8 @@ function Atividades() {
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-warning" /> Demanda</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Reunião</span>
       </div>
+
+      <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
     </div>
   );
 }
