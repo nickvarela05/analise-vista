@@ -393,9 +393,7 @@ function Dashboard() {
         <WorkflowChamadosPanel
           chamados={chamados}
           tarefas={tarefas}
-          relatEncaminhados={relatEncaminhados}
-          taskHML={taskHML}
-          taskProd={taskProd}
+          chamadosEncaminhados={chamadosEncaminhados}
         />
         <HorariosPanel horarios={horarios} />
       </div>
