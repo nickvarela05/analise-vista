@@ -1,108 +1,121 @@
-# Plano: Notificações por e-mail via N8N + Fase 3 IA
+# Plano: Fluxo N8N pronto + Finalizar Fase 3 (UI)
 
-Vamos rodar dois trilhos em paralelo. Você não precisa esperar o TI da prefeitura — o N8N cuida do envio com a infraestrutura que você já tem.
+Dois entregáveis em paralelo: (A) workflow N8N completo pra você importar, (B) interface visual da Fase 3.
 
 ---
 
-## 🔌 Trilho A — Disparo de e-mail via N8N
+## 🔌 PARTE A — Fluxo N8N "pronto pra importar"
 
-### Como vai funcionar
+Vou gerar um arquivo `n8n-workflow-email.json` que você baixa e importa no N8N em 30 segundos. O fluxo terá **5 nós**:
 
 ```
-Sistema → Cron 8h da manhã → Edge Function "dispatch-email-digest"
-                                    ↓
-                     Lê notificações pendentes não enviadas
-                                    ↓
-                     Agrupa por destinatário (1 e-mail por pessoa, não 1 por notificação)
-                                    ↓
-                     POST → Webhook N8N (com HMAC pra segurança)
-                                    ↓
-                     N8N envia o e-mail (Gmail, SMTP, SendGrid, o que você tiver lá)
-                                    ↓
-                     Marca no email_send_log: enviado / falhou
+[1. Webhook] → [2. Validar HMAC] → [3. IF assinatura ok?]
+                                       ├─ true  → [4. Send Email (SMTP)] → [5. Response 200]
+                                       └─ false → [5. Response 401]
 ```
 
-**Vantagem:** o N8N usa o que já estiver configurado nele (provavelmente já tem credencial SMTP ou Gmail conectada). Não precisa de domínio próprio, NS, nem aprovação de TI.
+### Detalhes técnicos de cada nó
 
-**Alertas críticos** (urgente, SLA estourado, aviso crítico) saem **na hora**, não esperam o digest das 8h.
+**1. Webhook (POST)**
+- Path: `/email-digest`
+- Authentication: None (a segurança é via HMAC)
+- Response Mode: "Response Node" (responde no nó 5, não imediato)
 
-### O que vou fazer
+**2. Code node — Validar HMAC**
+- JavaScript que recalcula HMAC-SHA256 do body recebido com o secret
+- Compara em tempo constante com o header `X-Signature`
+- Output: `{ valid: true/false, payload: {...} }`
 
-1. **Tabela `email_send_log`** — auditoria de envios (status, tentativas, erros, payload)
-2. **Edge Function `dispatch-email-digest`** — lê pendentes, monta payload HTML, dispara webhook
-3. **Pg_cron diário (8h)** — chama o digest
-4. **Trigger imediato** — para tipos críticos (`demanda_urgente`, `chamado_sla`, `aviso_critico`), envia na hora
-5. **Secret `N8N_EMAIL_WEBHOOK_URL`** + **`N8N_EMAIL_HMAC_SECRET`** — você cola a URL do webhook do N8N e um segredo qualquer (eu te ajudo a gerar)
-6. **Página `/configuracoes/emails`** (só gestor) — vê histórico de envios, falhas, reenvio manual
+**3. IF node**
+- Checa `{{ $json.valid }} === true`
 
-### Do seu lado (5 min no N8N)
+**4. Send Email node**
+- Tipo: SMTP (compatível com Gmail, Outlook, qualquer servidor)
+- From: configurável (vai sair do gestor)
+- To: `{{ $json.payload.to }}`
+- Subject: `{{ $json.payload.subject }}`
+- HTML: `{{ $json.payload.html }}`
+- Text: `{{ $json.payload.text }}`
 
-1. Criar workflow novo no N8N: **Webhook (POST) → Verify HMAC → Send Email**
-2. Configurar o nó "Send Email" com a credencial SMTP/Gmail que você já tem
-3. Me passar a URL do webhook (`https://seu-n8n.com/webhook/email-digest`)
-4. Eu te dou o template do workflow pronto pra importar
+**5. Respond to Webhook**
+- 200 + `{success: true}` no caminho válido
+- 401 + `{error: "Invalid signature"}` no caminho inválido
 
----
+### Guia de setup (vou escrever junto)
 
-## 🤖 Trilho B — Fase 3 IA (em paralelo)
+Markdown passo a passo:
+1. Como importar o JSON no N8N
+2. Como configurar a credencial SMTP (3 opções: Gmail App Password, Outlook, SMTP corporativo)
+3. Como pegar a URL do webhook depois de "Activate"
+4. Como gerar um HMAC secret forte (`openssl rand -hex 32` ou eu gero pra você)
+5. Como cadastrar os 2 secrets no Lovable
+6. Teste end-to-end (eu disparo um e-mail de teste pelo botão "Testar envio" na página de e-mails)
 
-### Funcionalidade 1: Resumo semanal automático
+### Arquivos que vou criar
 
-**Toda segunda-feira às 7h**, cada gestor recebe (in-app + futuramente e-mail) um resumo da semana anterior:
-
-- Tarefas concluídas vs criadas
-- Demandas em atraso
-- Chamados externos com SLA estourado
-- Top 3 colaboradores com mais entregas
-- Insights da IA: "Demandas urgentes aumentaram 30%", "Carlos tem 8 tarefas em atraso", etc.
-
-Implementação:
-- Edge function `gerar-resumo-semanal` chama Lovable AI Gateway (`google/gemini-2.5-flash`)
-- Pg_cron toda segunda 7h
-- Resultado salvo em nova tabela `resumo_semanal` + notificação in-app com link
-
-### Funcionalidade 2: Busca em linguagem natural
-
-Barra de busca global (Cmd+K ou ícone no header) onde o usuário digita:
-
-- *"demandas urgentes do Carlos esse mês"*
-- *"chamados externos abertos há mais de 7 dias"*
-- *"tarefas atrasadas da equipe pedagógica"*
-
-A IA traduz pra query SQL segura (com guardrails — só SELECT, só tabelas permitidas, escopo do usuário) e mostra resultados clicáveis.
-
-Implementação:
-- Edge function `busca-natural` recebe pergunta
-- Lovable AI gera SQL parametrizado
-- Validação rígida: bloqueia INSERT/UPDATE/DELETE/DROP, limita a tabelas allowlisted
-- Executa via Supabase com role do usuário (RLS aplica)
-- Componente `<BuscaGlobalIA />` no header
+- `/mnt/documents/n8n-workflow-email.json` — workflow pronto pra importar
+- `/mnt/documents/n8n-setup-guide.md` — guia passo a passo
+- Disponíveis no chat como artefatos pra download
 
 ---
 
-## 🔒 Segurança (mantendo prioridade Robustez)
+## 🎨 PARTE B — UI da Fase 3 (em paralelo)
 
-- HMAC SHA-256 no webhook N8N (impede chamadas falsas)
-- `email_send_log` com RLS (só gestor lê)
-- Edge functions com `verify_jwt = true` exceto o cron (que usa service_role)
-- Busca natural: SQL gerado pela IA passa por **whitelist de tabelas** + **parser** que rejeita qualquer coisa fora de SELECT
-- Rate-limit no endpoint de busca (10 req/min por usuário)
+### B1. Componente `<BuscaGlobalIA />` no header
+
+- Botão de busca no header (ícone 🔍 + atalho Ctrl/Cmd+K)
+- Dialog modal com input grande tipo command palette
+- Exemplos clicáveis: *"minhas demandas urgentes"*, *"chamados com SLA estourado"*, *"tarefas atrasadas esta semana"*
+- Loading state, exibe SQL gerado (recolhível, pra transparência), tabela de resultados clicáveis
+- Erro tratado: rate-limit, query inválida, timeout
+- Disponível pra todos os usuários autenticados
+
+### B2. Página `/resumo-semanal`
+
+- Lista os resumos semanais do usuário (do mais recente pro mais antigo)
+- Card com:
+  - Período (ex.: "07 a 13 de Maio")
+  - Métricas em destaque (cards: tarefas, demandas, chamados)
+  - Conteúdo markdown renderizado
+  - Lista de insights (bullets)
+- Botão "Gerar agora" pra forçar atualização (gestor)
+- Link na sidebar e no menu de notificações
+
+### B3. Página `/configuracoes/emails` (só gestor)
+
+Adicionar nova aba "E-mails" em Configurações:
+- **Status do webhook:** verde (configurado) / amarelo (faltam secrets) / vermelho (último envio falhou)
+- **Histórico:** tabela com filtros (status, destinatário, data) — última coluna mostra erro se falhou
+- **Stats:** enviados últimos 7 dias, taxa de sucesso, fila pendente
+- **Botão "Testar envio"** — dispara um e-mail de teste pra você confirmar o setup do N8N
+- **Botão "Reprocessar falhados"** — reseta `attempts=0` e marca como pending pros que falharam por erro temporário
+
+### B4. Sininho de notificação — adicionar tipo `resumo_semanal`
+
+Atualizar `NotificationBell` pra reconhecer o novo tipo com ícone 📊 e cor.
+
+---
+
+## 🔒 Segurança (mantida)
+
+- Página `/configuracoes/emails` protegida por role gestor
+- Botão "Testar envio" envia só pro próprio e-mail do gestor logado (evita spam)
+- Botão "Reprocessar" tem confirm dialog
+- HMAC secret nunca aparece no front
 
 ---
 
 ## ⏱️ Ordem de execução
 
-1. ✅ Migração: `email_send_log` + `resumo_semanal` + RLS
-2. ✅ Edge function `dispatch-email-digest` + secrets
-3. ✅ Edge function `gerar-resumo-semanal` + cron
-4. ✅ Edge function `busca-natural` + componente UI
-5. ✅ Página `/configuracoes/emails` (histórico de envios)
-6. 🟡 Você configura o workflow no N8N e me passa a URL → eu cadastro o secret
-
-Enquanto você ainda não cadastrou o webhook N8N, os e-mails ficam **enfileirados** em `email_send_log` com status `pending`. Quando o secret entrar, o próximo cron processa tudo de uma vez. Nada se perde.
+1. Gerar `n8n-workflow-email.json` + guia (artefatos pra download)
+2. Criar componente `BuscaGlobalIA` + integrar no header
+3. Criar página `/resumo-semanal` + rota
+4. Criar página `/configuracoes/emails` (aba) + endpoint de teste
+5. Atualizar sininho com tipo `resumo_semanal`
+6. Você importa no N8N → me passa a URL → eu peço secrets → testamos
 
 ---
 
-## ❓ Confirma pra eu começar?
+## ❓ Antes de começar, 1 pergunta pequena
 
-Só me diga se posso seguir. Vou começar pela migração + edge functions (não preciso da URL do N8N agora — você me passa quando criar o workflow lá).
+Pra eu personalizar o "From" do e-mail no fluxo N8N, qual e-mail de origem você vai usar? (ex.: `seugestor@gmail.com` se for Gmail App Password, ou `noreply@suaempresa.com` se for SMTP corporativo). Se ainda não decidiu, deixo `notifications@example.com` como placeholder e você ajusta no N8N depois.

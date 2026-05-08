@@ -15,6 +15,7 @@ import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as EquipeRouteImport } from './routes/equipe'
 import { Route as DemandasRouteImport } from './routes/demandas'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
@@ -52,6 +53,11 @@ const PerfilRoute = PerfilRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipeRoute = EquipeRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
   '/equipe': typeof EquipeRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
   '/equipe': typeof EquipeRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/demandas': typeof DemandasRoute
   '/equipe': typeof EquipeRoute
+  '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/demandas'
     | '/equipe'
+    | '/insights'
     | '/login'
     | '/perfil'
     | '/portfolio'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/demandas'
     | '/equipe'
+    | '/insights'
     | '/login'
     | '/perfil'
     | '/portfolio'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/demandas'
     | '/equipe'
+    | '/insights'
     | '/login'
     | '/perfil'
     | '/portfolio'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DemandasRoute: typeof DemandasRoute
   EquipeRoute: typeof EquipeRoute
+  InsightsRoute: typeof InsightsRoute
   LoginRoute: typeof LoginRoute
   PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipe': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   DemandasRoute: DemandasRoute,
   EquipeRoute: EquipeRoute,
+  InsightsRoute: InsightsRoute,
   LoginRoute: LoginRoute,
   PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,

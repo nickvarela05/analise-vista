@@ -10,7 +10,7 @@ import {
   Settings,
   Inbox,
   Briefcase,
-  
+  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,7 +38,7 @@ const items = [
   { title: "Avisos", url: "/avisos", icon: Megaphone },
   { title: "Portfólio", url: "/portfolio", icon: Briefcase },
   { title: "Equipe", url: "/equipe", icon: Users, requireGestor: true },
-  
+  { title: "Insights & IA", url: "/insights", icon: Sparkles },
 ] as const;
 
 const bottomItems = [{ title: "Configurações", url: "/configuracoes", icon: Settings }];
