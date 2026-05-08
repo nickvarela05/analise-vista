@@ -94,7 +94,7 @@ export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados 
             icon={XCircle}
             label="Reprovado"
             value={tReprovado}
-            tone="destructive"
+            tone="warning"
             to="/tarefas"
           />
           <WorkflowStep
