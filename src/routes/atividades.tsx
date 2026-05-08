@@ -167,6 +167,12 @@ function Atividades() {
     [meuColabId],
   );
 
+  const colabById = React.useMemo(() => {
+    const m = new Map<string, string>();
+    colaboradores.forEach((c) => m.set(c.id, c.nome));
+    return m;
+  }, [colaboradores]);
+
   const todas: Atividade[] = React.useMemo(() => {
     const arr: Atividade[] = [];
     const tarefaConcluida = ["concluida", "producao", "cancelada", "reprovada"];
@@ -176,20 +182,50 @@ function Atividades() {
       if (escopo === "minhas") return isMine(r);
       return isAtribuidoA(r, escopo);
     };
-    tarefas.filter(filtroEscopo).forEach((t) => {
+    tarefas.filter(filtroEscopo).forEach((t: any) => {
       if (t.data_prevista && !tarefaConcluida.includes(t.status))
-        arr.push({ id: `t-${t.id}`, tipo: "tarefa", titulo: t.titulo, data: new Date(t.data_prevista), prioridade: t.prioridade });
+        arr.push({
+          id: `t-${t.id}`,
+          rawId: t.id,
+          tipo: "tarefa",
+          titulo: t.titulo,
+          data: new Date(t.data_prevista),
+          prioridade: t.prioridade,
+          status: t.status,
+          descricao: t.descricao,
+          responsavel: t.responsavel_id ? colabById.get(t.responsavel_id) ?? null : null,
+        });
     });
-    demandas.filter(filtroEscopo).forEach((d) => {
+    demandas.filter(filtroEscopo).forEach((d: any) => {
       if (d.prazo && !demandaConcluida.includes(d.status))
-        arr.push({ id: `d-${d.id}`, tipo: "demanda", titulo: d.titulo, data: new Date(d.prazo), prioridade: d.prioridade });
+        arr.push({
+          id: `d-${d.id}`,
+          rawId: d.id,
+          tipo: "demanda",
+          titulo: d.titulo,
+          data: new Date(d.prazo),
+          prioridade: d.prioridade,
+          status: d.status,
+          descricao: d.descricao,
+          tags: d.tags,
+          responsavel: d.responsavel_id ? colabById.get(d.responsavel_id) ?? null : null,
+        });
     });
-    reunioes.filter(filtroEscopo).forEach((r) => {
+    reunioes.filter(filtroEscopo).forEach((r: any) => {
       if (r.status !== "cancelada")
-        arr.push({ id: `r-${r.id}`, tipo: "reuniao", titulo: r.titulo, data: new Date(r.data_reuniao) });
+        arr.push({
+          id: `r-${r.id}`,
+          rawId: r.id,
+          tipo: "reuniao",
+          titulo: r.titulo,
+          data: new Date(r.data_reuniao),
+          status: r.status,
+          descricao: r.pauta,
+          responsavel: r.responsavel_id ? colabById.get(r.responsavel_id) ?? null : null,
+        });
     });
     return arr;
-  }, [tarefas, demandas, reunioes, escopo, isMine]);
+  }, [tarefas, demandas, reunioes, escopo, isMine, colabById]);
 
   const noPeriodo = todas.filter((a) => a.data >= inicio && a.data <= fim && (tipoFiltro === "todos" || a.tipo === tipoFiltro));
 
