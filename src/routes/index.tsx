@@ -391,18 +391,7 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <WorkflowChamadosPanel
-            chamados={chamados}
-            tarefas={tarefas}
-            chamadosEncaminhados={chamadosEncaminhados}
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <HorariosPanel horarios={horarios} />
-        </div>
-      </div>
+      <HorariosPanel horarios={horarios} />
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
       <MinhasAtribuicoesDialog
