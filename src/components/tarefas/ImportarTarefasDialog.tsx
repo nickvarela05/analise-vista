@@ -252,7 +252,7 @@ export function ImportarTarefasDialog() {
                     {linhas.slice(0, 50).map((l, i) => (
                       <tr key={i} className="border-b last:border-0">
                         <td className="px-3 py-1.5">{l.titulo}</td>
-                        <td className="px-3 py-1.5 capitalize">{l.status.replace("_", " ")}</td>
+                        <td className="px-3 py-1.5 capitalize">{(forcarHomologacao ? "homologação" : l.status.replace("_", " "))}</td>
                         <td className="px-3 py-1.5 capitalize">{l.prioridade}</td>
                       </tr>
                     ))}
