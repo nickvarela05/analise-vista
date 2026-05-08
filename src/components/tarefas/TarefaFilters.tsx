@@ -135,8 +135,9 @@ export function TarefaFilters({ value, onChange, colabs }: Props) {
             <div>
               <Label className="text-xs">Responsáveis</Label>
               <ScrollArea className="mt-1.5 h-40 rounded-md border p-2">
-                <div className="space-y-1.5">
-                  {colabs.map((c) => (
+                {(() => {
+                  const { grupos, outros } = agruparColaboradoresPorEquipe(colabs);
+                  const renderItem = (c: { id: string; nome: string }) => (
                     <label
                       key={c.id}
                       className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-muted"
@@ -147,8 +148,30 @@ export function TarefaFilters({ value, onChange, colabs }: Props) {
                       />
                       <span className="text-xs">{c.nome}</span>
                     </label>
-                  ))}
-                </div>
+                  );
+                  return (
+                    <div className="space-y-2">
+                      {grupos.map((g) =>
+                        g.items.length === 0 ? null : (
+                          <div key={g.label} className="space-y-0.5">
+                            <p className="px-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              {g.label}
+                            </p>
+                            {g.items.map(renderItem)}
+                          </div>
+                        ),
+                      )}
+                      {outros.length > 0 && (
+                        <div className="space-y-0.5">
+                          <p className="px-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Outros
+                          </p>
+                          {outros.map(renderItem)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </ScrollArea>
             </div>
 
