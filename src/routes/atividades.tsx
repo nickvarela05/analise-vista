@@ -74,6 +74,24 @@ function Atividades() {
   const [tipoFiltro, setTipoFiltro] = React.useState<string>("todos");
   // escopo: "equipe" | "minhas" | <colaborador_id>
   const [escopo, setEscopo] = React.useState<string>("equipe");
+  const [preview, setPreview] = React.useState<PreviewItem | null>(null);
+  const [previewOpen, setPreviewOpen] = React.useState(false);
+
+  const abrirDetalhe = React.useCallback((a: Atividade) => {
+    setPreview({
+      id: a.rawId,
+      tipo: a.tipo,
+      titulo: a.titulo,
+      descricao: a.descricao ?? null,
+      status: a.status ?? null,
+      prioridade: a.prioridade ?? null,
+      responsavel: a.responsavel ?? null,
+      data: a.data,
+      dataLabel: a.tipo === "reuniao" ? "Quando" : "Prazo",
+      tags: a.tags ?? null,
+    });
+    setPreviewOpen(true);
+  }, []);
 
   const inicio = periodo === "semana" ? startOfWeek(cursor, { weekStartsOn: 1 }) : startOfMonth(cursor);
   const fim = periodo === "semana" ? endOfWeek(cursor, { weekStartsOn: 1 }) : endOfMonth(cursor);
