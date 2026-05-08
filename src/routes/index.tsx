@@ -392,13 +392,17 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <WorkflowChamadosPanel
-          chamados={chamados}
-          tarefas={tarefas}
-          chamadosEncaminhados={chamadosEncaminhados}
-        />
-        <HorariosPanel horarios={horarios} />
+      <div className="grid gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <WorkflowChamadosPanel
+            chamados={chamados}
+            tarefas={tarefas}
+            chamadosEncaminhados={chamadosEncaminhados}
+          />
+        </div>
+        <div className="lg:col-span-2">
+          <HorariosPanel horarios={horarios} />
+        </div>
       </div>
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
