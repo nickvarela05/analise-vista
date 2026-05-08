@@ -182,7 +182,7 @@ function Tarefas() {
     <div>
       <PageHeader
         title="Tarefas"
-        description="Fluxo: Aberta → Em andamento → Homologação → Aprovado / Ressalvas / Reprovado → Produção"
+        description="Fluxo: Aberta → Em desenvolvimento/Teste interno → Homologação → Aprovado / Ressalvas / Reprovado → Produção"
         actions={<NovaTarefaDialog colabs={colabs} demandas={demandas} />}
       />
 
