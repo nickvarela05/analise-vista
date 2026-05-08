@@ -52,7 +52,7 @@ export function statusVariant(s: string) {
     case "aprovado":
       return "bg-success/10 text-success border-success/25";
     case "aprovado_ressalvas":
-      return "bg-warning/20 text-warning-foreground border-warning/40";
+      return "bg-warning/20 text-warning border-warning/40";
     case "reprovado":
       return "bg-destructive/15 text-destructive border-destructive/30";
     case "homologacao":
@@ -63,7 +63,7 @@ export function statusVariant(s: string) {
     case "pendente":
       return "bg-muted text-muted-foreground border-border";
     case "encaminhada":
-      return "bg-warning/15 text-warning-foreground border-warning/30";
+      return "bg-warning/15 text-warning border-warning/30";
     case "concluida":
       return "bg-success/10 text-success border-success/20";
     case "cancelada":
@@ -97,7 +97,7 @@ export function columnAccent(s: string) {
 
 export function prioVariant(p: string) {
   if (p === "alta") return "bg-destructive/15 text-destructive border-destructive/30";
-  if (p === "media") return "bg-warning/20 text-warning-foreground border-warning/30";
+  if (p === "media") return "bg-warning/20 text-warning border-warning/30";
   return "bg-success/15 text-success border-success/30";
 }
 

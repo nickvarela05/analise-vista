@@ -64,7 +64,7 @@ type Atividade = {
 
 const tipoColor: Record<string, string> = {
   tarefa: "bg-info/15 text-info border-info/30",
-  demanda: "bg-warning/20 text-warning-foreground border-warning/40",
+  demanda: "bg-warning/20 text-warning border-warning/40",
   reuniao: "bg-primary/15 text-primary border-primary/30",
 };
 
