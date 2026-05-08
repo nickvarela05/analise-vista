@@ -13,6 +13,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 
 export interface AssigneeOption {
   id: string;
@@ -119,8 +120,9 @@ export function AssigneeCombobox({
                 </CommandItem>
               </CommandGroup>
               <CommandSeparator />
-              <CommandGroup heading="Colaboradores">
-                {options.map((opt) => {
+              {(() => {
+                const { grupos, outros } = agruparColaboradoresPorEquipe(options);
+                const renderItem = (opt: AssigneeOption) => {
                   const checked = selectedSet.has(opt.id);
                   return (
                     <CommandItem
@@ -144,8 +146,24 @@ export function AssigneeCombobox({
                       />
                     </CommandItem>
                   );
-                })}
-              </CommandGroup>
+                };
+                return (
+                  <>
+                    {grupos.map((g) =>
+                      g.items.length === 0 ? null : (
+                        <CommandGroup key={g.label} heading={g.label}>
+                          {g.items.map(renderItem)}
+                        </CommandGroup>
+                      ),
+                    )}
+                    {outros.length > 0 && (
+                      <CommandGroup heading="Outros">
+                        {outros.map(renderItem)}
+                      </CommandGroup>
+                    )}
+                  </>
+                );
+              })()}
             </CommandList>
           </Command>
         </PopoverContent>
