@@ -26,7 +26,6 @@ import { AvisosBanner } from "@/components/dashboard/AvisosBanner";
 import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/DashboardCharts";
 import { AtividadesSemanaPanel, type Atividade } from "@/components/dashboard/AtividadesSemanaPanel";
 import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
-import { WorkflowChamadosPanel } from "@/components/dashboard/WorkflowChamadosPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
 
 export const Route = createFileRoute("/")({
