@@ -27,6 +27,21 @@ import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/Dashb
 import { AtividadesSemanaPanel, type Atividade } from "@/components/dashboard/AtividadesSemanaPanel";
 import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
+import { SectionHeader } from "@/components/dashboard/SectionHeader";
+import {
+  VelocitySemanalCard,
+  LeadTimeCard,
+  ThroughputCard,
+  AgingBacklogCard,
+  HeatmapPrazosCard,
+  WipColaboradorCard,
+  TaxaReprovacaoCard,
+  TempoPorEtapaCard,
+  CategoriaOrigemCard,
+  FunilRelatoriosCard,
+  SlaUrgenciaCard,
+  TopSolicitantesCard,
+} from "@/components/dashboard/analytics/AnalyticsCards";
 
 export const Route = createFileRoute("/")({
   errorComponent: RouteErrorBoundary,
