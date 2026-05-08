@@ -31,9 +31,9 @@ export function computeVelocity(tarefas: TarefaRow[], weeks = 8, ref = new Date(
     buckets.push({ semana: format(ws, "dd/MM"), concluidas: 0 });
   }
   for (const t of tarefas) {
-    const ref = t.concluida_em ?? (STATUS_CONCLUIDA.includes(t.status as any) ? t.updated_at : null);
-    if (!ref) continue;
-    const d = new Date(ref);
+    const ts = t.concluida_em ?? (STATUS_CONCLUIDA.includes(t.status as any) ? t.updated_at : null);
+    if (!ts) continue;
+    const d = new Date(ts);
     const idx = Math.floor(differenceInDays(d, start) / 7);
     if (idx >= 0 && idx < weeks) buckets[idx].concluidas++;
   }
