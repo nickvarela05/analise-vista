@@ -399,7 +399,7 @@ function Dashboard() {
       </div>
 
       {/* === SAÚDE DO BACKLOG === */}
-      <SectionHeader title="Saúde do backlog" description="Idade das tarefas, carga atual e concentração de prazos." />
+      <SectionHeader title="Acompanhamento das tarefas" description="Há quanto tempo estão abertas e quanta carga cada pessoa tem." />
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AgingBacklogCard tarefas={tarefas} />
