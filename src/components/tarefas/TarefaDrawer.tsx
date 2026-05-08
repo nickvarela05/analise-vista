@@ -335,7 +335,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">Status</Label>
-            <Select value={tarefa.status} onValueChange={(v) => updateField("status", v)}>
+            <Select value={draft.status} onValueChange={(v) => setDraft((d) => ({ ...d, status: v }))}>
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -350,7 +350,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Prioridade</Label>
-            <Select value={tarefa.prioridade} onValueChange={(v) => updateField("prioridade", v)}>
+            <Select value={draft.prioridade} onValueChange={(v) => setDraft((d) => ({ ...d, prioridade: v }))}>
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -364,19 +364,21 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Prazo</Label>
+            <Label className="text-xs">
+              Prazo <span className="text-muted-foreground">(opcional)</span>
+            </Label>
             <Input
               type="date"
               className="h-8 text-xs"
-              value={tarefa.data_prevista ?? ""}
-              onChange={(e) => updateField("data_prevista", e.target.value || null)}
+              value={draft.data_prevista ?? ""}
+              onChange={(e) => setDraft((d) => ({ ...d, data_prevista: e.target.value }))}
             />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Demanda vinculada</Label>
             <Select
-              value={tarefa.demanda_id ?? "none"}
-              onValueChange={(v) => updateField("demanda_id", v === "none" ? null : v)}
+              value={draft.demanda_id ?? "none"}
+              onValueChange={(v) => setDraft((d) => ({ ...d, demanda_id: v === "none" ? null : v }))}
             >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Nenhuma" />
@@ -408,6 +410,27 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                 invalidate();
               }}
             />
+          </div>
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setDraft({
+                  status: tarefa.status ?? "",
+                  prioridade: tarefa.prioridade ?? "",
+                  data_prevista: tarefa.data_prevista ?? "",
+                  demanda_id: tarefa.demanda_id ?? null,
+                })
+              }
+              disabled={!dirty || salvando}
+            >
+              Descartar
+            </Button>
+            <Button size="sm" onClick={salvarEdicao} disabled={!dirty || salvando}>
+              {salvando ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              Salvar
+            </Button>
           </div>
         </div>
 
