@@ -396,9 +396,14 @@ function Atividades() {
                     <div className="mb-1 text-[10px] font-semibold">{format(dia, "dd")}</div>
                     <div className="space-y-1">
                       {doDia.slice(0, 3).map((a) => (
-                        <div key={a.id} className={`truncate rounded px-1 py-0.5 text-[10px] ${tipoColor[a.tipo]}`}>
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => abrirDetalhe(a)}
+                          className={`block w-full truncate text-left rounded px-1 py-0.5 text-[10px] transition hover:brightness-110 ${tipoColor[a.tipo]}`}
+                        >
                           {a.titulo}
-                        </div>
+                        </button>
                       ))}
                       {doDia.length > 3 && (
                         <p className="text-[10px] text-muted-foreground">+{doDia.length - 3}</p>
