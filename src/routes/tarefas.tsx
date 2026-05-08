@@ -184,7 +184,12 @@ function Tarefas() {
       <PageHeader
         title="Tarefas"
         description="Fluxo: Aberta → Em desenvolvimento/Teste interno → Homologação → Aprovado / Ressalvas / Reprovado → Produção"
-        actions={<NovaTarefaDialog colabs={colabs} demandas={demandas} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <ImportarTarefasDialog />
+            <NovaTarefaDialog colabs={colabs} demandas={demandas} />
+          </div>
+        }
       />
 
       <div className="mb-6">
