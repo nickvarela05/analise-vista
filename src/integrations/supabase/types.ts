@@ -461,6 +461,60 @@ export type Database = {
         }
         Relationships: []
       }
+      email_send_log: {
+        Row: {
+          attempts: number
+          body_html: string | null
+          body_text: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          notificacao_ids: string[] | null
+          recipient_email: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+          webhook_response: Json | null
+        }
+        Insert: {
+          attempts?: number
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          notificacao_ids?: string[] | null
+          recipient_email: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+          webhook_response?: Json | null
+        }
+        Update: {
+          attempts?: number
+          body_html?: string | null
+          body_text?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          notificacao_ids?: string[] | null
+          recipient_email?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+          webhook_response?: Json | null
+        }
+        Relationships: []
+      }
       invite_token: {
         Row: {
           created_at: string
@@ -609,6 +663,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      resumo_semanal: {
+        Row: {
+          conteudo_md: string
+          created_at: string
+          id: string
+          insights: string[] | null
+          metricas: Json | null
+          modelo: string | null
+          semana_fim: string
+          semana_inicio: string
+          user_id: string
+        }
+        Insert: {
+          conteudo_md: string
+          created_at?: string
+          id?: string
+          insights?: string[] | null
+          metricas?: Json | null
+          modelo?: string | null
+          semana_fim: string
+          semana_inicio: string
+          user_id: string
+        }
+        Update: {
+          conteudo_md?: string
+          created_at?: string
+          id?: string
+          insights?: string[] | null
+          metricas?: Json | null
+          modelo?: string | null
+          semana_fim?: string
+          semana_inicio?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       reuniao: {
         Row: {
@@ -992,6 +1082,7 @@ export type Database = {
         | "chamado_sla"
         | "aviso_critico"
         | "sistema"
+        | "resumo_semanal"
       reuniao_status: "agendada" | "realizada" | "cancelada"
       reuniao_tipo:
         | "interna"
@@ -1180,6 +1271,7 @@ export const Constants = {
         "chamado_sla",
         "aviso_critico",
         "sistema",
+        "resumo_semanal",
       ],
       reuniao_status: ["agendada", "realizada", "cancelada"],
       reuniao_tipo: [
