@@ -88,7 +88,7 @@ function Atividades() {
 
   const EQUIPES: { label: string; nomes: string[] }[] = [
     { label: "Equipe de Análise", nomes: ["nickolas", "felipe pino", "matheus", "hugo", "ewerton", "pietro"] },
-    { label: "Equipe HELP-DESK", nomes: ["larice", "karyna", "simone", "felipe lourenço", "felipe lourenco"] },
+    { label: "Equipe HELP-DESK", nomes: ["larice", "karyna", "simone", "fellipe lourenço", "fellipe lourenco", "felipe lourenço", "felipe lourenco"] },
     { label: "Equipe Técnica de Suporte", nomes: ["silvia", "ketlyn"] },
   ];
 
