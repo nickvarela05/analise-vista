@@ -140,7 +140,7 @@ export function ImportarTarefasDialog() {
     const payload = linhas.map((l) => ({
       titulo: l.titulo,
       descricao: l.descricao,
-      status: l.status as never,
+      status: (forcarHomologacao ? "homologacao" : l.status) as never,
       prioridade: l.prioridade,
       responsaveis_ids: [],
       equipe_toda: false,
