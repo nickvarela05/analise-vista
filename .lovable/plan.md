@@ -1,110 +1,108 @@
-# Plano de evolução do sistema
+# Plano: Notificações por e-mail via N8N + Fase 3 IA
 
-Foco principal: **robustez e segurança**, seguido de **IA aplicada**, **notificações automáticas**, **filtros globais no dashboard** e **performance**. WhatsApp fica para uma fase posterior — entrego in-app + e-mail, e a arquitetura já fica pronta para plugar Twilio/WhatsApp depois sem refatorar.
-
-A entrega é dividida em **5 fases independentes**. Cada fase é incremental e pode ser pausada/aprovada separadamente.
+Vamos rodar dois trilhos em paralelo. Você não precisa esperar o TI da prefeitura — o N8N cuida do envio com a infraestrutura que você já tem.
 
 ---
 
-## Fase 1 — Robustez e segurança (base de tudo)
+## 🔌 Trilho A — Disparo de e-mail via N8N
 
-Antes de adicionar features novas, fechar lacunas que vi auditando o schema:
+### Como vai funcionar
 
-1. **Tabela de auditoria** (`audit_log`) — quem alterou o quê, quando, valor antigo/novo. Hoje só `todo_historico` registra mudanças; demandas, reuniões, chamados externos e colaboradores não têm rastro.
-2. **Revisão de RLS** — algumas policies usam `USING (true)` para SELECT (ex.: `colaborador_evento`, `colaborador_ferias`, `aviso_gestor`). Para dados sensíveis de RH (férias, eventos) restringir a gestor + o próprio colaborador.
-3. **Política de UPDATE em `chamado_externo`** — hoje qualquer autenticado atualiza qualquer chamado. Restringir a responsável + gestor.
-4. **Trigger `updated_at`** — várias tabelas têm a coluna mas não o trigger ativo. Padronizar usando `update_updated_at_column()` que já existe.
-5. **Rodar o linter de segurança do Supabase** e corrigir tudo que aparecer como `error`.
+```
+Sistema → Cron 8h da manhã → Edge Function "dispatch-email-digest"
+                                    ↓
+                     Lê notificações pendentes não enviadas
+                                    ↓
+                     Agrupa por destinatário (1 e-mail por pessoa, não 1 por notificação)
+                                    ↓
+                     POST → Webhook N8N (com HMAC pra segurança)
+                                    ↓
+                     N8N envia o e-mail (Gmail, SMTP, SendGrid, o que você tiver lá)
+                                    ↓
+                     Marca no email_send_log: enviado / falhou
+```
 
----
+**Vantagem:** o N8N usa o que já estiver configurado nele (provavelmente já tem credencial SMTP ou Gmail conectada). Não precisa de domínio próprio, NS, nem aprovação de TI.
 
-## Fase 2 — Notificações (in-app + e-mail)
+**Alertas críticos** (urgente, SLA estourado, aviso crítico) saem **na hora**, não esperam o digest das 8h.
 
-### Modelo de dados
-- Tabela `notificacao` (id, user_id, tipo, titulo, mensagem, link, lida_em, created_at).
-- Tabela `notificacao_preferencia` (user_id, canal `in_app|email`, evento, ativo) — cada usuário escolhe o que quer receber.
+### O que vou fazer
 
-### Eventos cobertos
-- **Para o colaborador**: tarefa atribuída a ele, prazo em 24h, comentário em tarefa sua, status mudou.
-- **Para gestores**: SLA de chamado externo estourado, reprovação em homologação, novo aviso crítico, demanda urgente sem responsável há >24h.
+1. **Tabela `email_send_log`** — auditoria de envios (status, tentativas, erros, payload)
+2. **Edge Function `dispatch-email-digest`** — lê pendentes, monta payload HTML, dispara webhook
+3. **Pg_cron diário (8h)** — chama o digest
+4. **Trigger imediato** — para tipos críticos (`demanda_urgente`, `chamado_sla`, `aviso_critico`), envia na hora
+5. **Secret `N8N_EMAIL_WEBHOOK_URL`** + **`N8N_EMAIL_HMAC_SECRET`** — você cola a URL do webhook do N8N e um segredo qualquer (eu te ajudo a gerar)
+6. **Página `/configuracoes/emails`** (só gestor) — vê histórico de envios, falhas, reenvio manual
 
-### Entrega
-- **In-app**: sino no header com badge de contagem + dropdown com últimas 10. Realtime via Supabase (`postgres_changes` na tabela `notificacao`).
-- **E-mail**: usar Lovable Emails (built-in, zero config). Resumo diário às 8h com pendências do dia + alertas críticos imediatos.
-- **Arquitetura preparada para WhatsApp**: a função `enqueueNotification(userId, evento, payload)` despacha por canal. Adicionar WhatsApp depois é só implementar mais um adapter.
+### Do seu lado (5 min no N8N)
 
-### Cron
-- Job `pg_cron` a cada 15min varre prazos vencendo, SLA, etc., e insere em `notificacao`.
-- Job diário 8h dispara o digest por e-mail.
-
----
-
-## Fase 3 — IA aplicada
-
-### 3.1 Resumo semanal automático
-- Toda segunda às 7h, edge function/server function coleta dados da semana anterior (tarefas concluídas, demandas abertas/fechadas, reuniões, top performers, gargalos).
-- Envia para Lovable AI (`google/gemini-3-flash-preview`) com prompt estruturado.
-- Salva em nova tabela `resumo_semanal` e exibe um **card "Resumo da semana"** no topo do dashboard, com botão "ver completo" abrindo modal.
-- Gestores recebem por e-mail também.
-
-### 3.2 Busca em linguagem natural
-- Barra de busca no header (atalho **Cmd/Ctrl+K**).
-- Usuário digita: *"tarefas atrasadas do João nos últimos 30 dias"*, *"demandas urgentes sem responsável"*, *"reuniões da semana sobre orçamento"*.
-- Server function envia para Lovable AI usando **structured output** (`Output.object` do Vercel AI SDK) — IA retorna um JSON com filtros tipados (entidade, responsável, status, período, palavras-chave).
-- App executa a query no Supabase com esses filtros e mostra resultados agrupados (tarefas / demandas / reuniões / chamados).
-- Sem alucinação: a IA só decide *como filtrar*, não inventa dados.
+1. Criar workflow novo no N8N: **Webhook (POST) → Verify HMAC → Send Email**
+2. Configurar o nó "Send Email" com a credencial SMTP/Gmail que você já tem
+3. Me passar a URL do webhook (`https://seu-n8n.com/webhook/email-digest`)
+4. Eu te dou o template do workflow pronto pra importar
 
 ---
 
-## Fase 4 — Filtros globais no dashboard
+## 🤖 Trilho B — Fase 3 IA (em paralelo)
 
-Hoje os 10+ indicadores são fixos. Adicionar:
-- **Seletor de período** no topo: 7d / 30d / 90d / customizado.
-- **Filtro por colaborador** (multi-select) para gestores verem o painel de uma pessoa específica.
-- **Filtro por categoria/origem** das demandas.
-- Estado dos filtros persistido em URL (query params) — links compartilháveis.
-- Cada card respeita os filtros via context React + recálculo memoizado.
+### Funcionalidade 1: Resumo semanal automático
 
----
+**Toda segunda-feira às 7h**, cada gestor recebe (in-app + futuramente e-mail) um resumo da semana anterior:
 
-## Fase 5 — Performance
+- Tarefas concluídas vs criadas
+- Demandas em atraso
+- Chamados externos com SLA estourado
+- Top 3 colaboradores com mais entregas
+- Insights da IA: "Demandas urgentes aumentaram 30%", "Carlos tem 8 tarefas em atraso", etc.
 
-- Migrar `useDashboardData` para **React Query** com queries separadas e paralelas (hoje busca tudo em sequência num único hook).
-- `staleTime` de 30s + `refetchOnWindowFocus`.
-- Mover cálculos pesados dos cards analíticos para `useMemo` por card (hoje recalcula tudo a cada render do dashboard).
-- Lazy-load das seções abaixo do fold (intersection observer).
-- Skeleton loaders por card em vez de um único spinner global.
+Implementação:
+- Edge function `gerar-resumo-semanal` chama Lovable AI Gateway (`google/gemini-2.5-flash`)
+- Pg_cron toda segunda 7h
+- Resultado salvo em nova tabela `resumo_semanal` + notificação in-app com link
 
----
+### Funcionalidade 2: Busca em linguagem natural
 
-## O que NÃO está neste plano (pode entrar depois)
+Barra de busca global (Cmd+K ou ícone no header) onde o usuário digita:
 
-- WhatsApp (Twilio) — adiado a pedido. Arquitetura de notificações já fica pronta.
-- Transcrição automática de reuniões — útil mas escopo grande, melhor isolar.
-- Sugestão de prioridade ao criar tarefa — pode entrar como Fase 6.
-- App mobile dedicado.
+- *"demandas urgentes do Carlos esse mês"*
+- *"chamados externos abertos há mais de 7 dias"*
+- *"tarefas atrasadas da equipe pedagógica"*
 
----
+A IA traduz pra query SQL segura (com guardrails — só SELECT, só tabelas permitidas, escopo do usuário) e mostra resultados clicáveis.
 
-## Detalhes técnicos (referência)
-
-- Notificações realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.notificacao` + canal client-side.
-- Server functions em `src/lib/*.functions.ts` (createServerFn) com `requireSupabaseAuth`.
-- IA via `createLovableAiGatewayProvider` + Vercel AI SDK, em server route `/api/ai/*`.
-- Cron via `pg_cron` + `pg_net` chamando rotas `/api/public/hooks/*` autenticadas com `apikey` header.
-- E-mail via Lovable Emails (sem necessidade de configurar Resend manualmente).
-- Migrations separadas por fase para permitir rollback.
+Implementação:
+- Edge function `busca-natural` recebe pergunta
+- Lovable AI gera SQL parametrizado
+- Validação rígida: bloqueia INSERT/UPDATE/DELETE/DROP, limita a tabelas allowlisted
+- Executa via Supabase com role do usuário (RLS aplica)
+- Componente `<BuscaGlobalIA />` no header
 
 ---
 
-## Ordem sugerida e tempo estimado
+## 🔒 Segurança (mantendo prioridade Robustez)
 
-| Fase | Conteúdo | Por que nessa ordem |
-|------|----------|---------------------|
-| 1 | Auditoria + RLS + linter | Base de segurança antes de novos dados |
-| 2 | Notificações in-app + e-mail | Maior valor percebido, infra reaproveitada por IA |
-| 3 | IA: resumo semanal + busca natural | Diferencial competitivo |
-| 4 | Filtros globais | UX, mas requer dados/contexto das fases anteriores |
-| 5 | Performance + React Query | Otimização final, com tudo já implementado |
+- HMAC SHA-256 no webhook N8N (impede chamadas falsas)
+- `email_send_log` com RLS (só gestor lê)
+- Edge functions com `verify_jwt = true` exceto o cron (que usa service_role)
+- Busca natural: SQL gerado pela IA passa por **whitelist de tabelas** + **parser** que rejeita qualquer coisa fora de SELECT
+- Rate-limit no endpoint de busca (10 req/min por usuário)
 
-Posso começar pela Fase 1 assim que você aprovar — ou, se preferir começar por outra fase (ex.: já ir direto para notificações ou IA), me avise.
+---
+
+## ⏱️ Ordem de execução
+
+1. ✅ Migração: `email_send_log` + `resumo_semanal` + RLS
+2. ✅ Edge function `dispatch-email-digest` + secrets
+3. ✅ Edge function `gerar-resumo-semanal` + cron
+4. ✅ Edge function `busca-natural` + componente UI
+5. ✅ Página `/configuracoes/emails` (histórico de envios)
+6. 🟡 Você configura o workflow no N8N e me passa a URL → eu cadastro o secret
+
+Enquanto você ainda não cadastrou o webhook N8N, os e-mails ficam **enfileirados** em `email_send_log` com status `pending`. Quando o secret entrar, o próximo cron processa tudo de uma vez. Nada se perde.
+
+---
+
+## ❓ Confirma pra eu começar?
+
+Só me diga se posso seguir. Vou começar pela migração + edge functions (não preciso da URL do N8N agora — você me passa quando criar o workflow lá).
