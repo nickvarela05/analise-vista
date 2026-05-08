@@ -1038,6 +1038,7 @@ export type Database = {
         }
         Returns: string
       }
+      executar_busca_natural: { Args: { _sql: string }; Returns: Json }
       gerar_notificacoes_prazo: { Args: never; Returns: undefined }
       has_role: {
         Args: {
