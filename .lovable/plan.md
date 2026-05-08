@@ -1,135 +1,110 @@
-## Objetivo
-Implementar 12 novos dashboards analíticos e redesenhar a página `/` (Painel gerencial) com hierarquia visual clara, agrupamento por contexto e tooltips de ajuda (ícone `i`) em cada indicador.
+# Plano de evolução do sistema
 
-## Os 12 dashboards
+Foco principal: **robustez e segurança**, seguido de **IA aplicada**, **notificações automáticas**, **filtros globais no dashboard** e **performance**. WhatsApp fica para uma fase posterior — entrego in-app + e-mail, e a arquitetura já fica pronta para plugar Twilio/WhatsApp depois sem refatorar.
 
-| # | Nome | Fonte de dados | Visualização | O que responde |
-|---|------|----------------|--------------|----------------|
-| 1 | **Velocity semanal** | `todo` (status concluída/produção por semana, últimas 8 semanas) | Bar chart | Quantas tarefas a equipe entrega por semana? |
-| 2 | **Lead time / Cycle time** | `todo` (created_at → concluida_em / data_prevista) | KPI duplo + sparkline | Quanto tempo, em média, uma tarefa leva do início ao fim? |
-| 3 | **Throughput por colaborador** | `todo` (concluídas últimos 30d agrupado por responsável) | Bar horizontal | Quem entrega mais nos últimos 30 dias? |
-| 4 | **Aging do backlog** | `todo` (ativas, idade = hoje − created_at, em buckets 0-3 / 4-7 / 8-15 / 16-30 / 30+ dias) | Stacked bar | Há tarefas paradas há muito tempo? |
-| 5 | **Mapa de calor de prazos** | `todo` + `demanda` + `reuniao` (próximos 28 dias por dia) | Heatmap (grid 7x4) | Onde está concentrada a carga das próximas semanas? |
-| 6 | **WIP por colaborador** | `todo` (status em_andamento + homologacao por responsável) | Bar horizontal + linha de "limite saudável" (5) | Quem está sobrecarregado agora? |
-| 7 | **Taxa de reprovação em homologação** | `todo` (reprovada / (reprovada + aprovada) últimos 60d) | KPI grande + donut | Qualidade do que vai pra homologação |
-| 8 | **Tempo médio por etapa** | `todo` (delta entre status — usando `updated_at` aproximado por agora) | Funnel/Bar | Onde as tarefas ficam mais tempo? |
-| 9 | **Distribuição por categoria/origem** | `demanda` (categoria, origem) | Donut duplo | De onde vêm as demandas? |
-| 10 | **Funil de relatórios (N8N)** | `solicitacoes_relatorios` (Pendente → Feito → Enviado) | Funnel | Acompanhamento ponta-a-ponta |
-| 11 | **SLA por urgência** | `solicitacoes_relatorios` (urgência × tempo desde criado_em) | Bar agrupado | Estamos cumprindo prazo das urgentes? |
-| 12 | **Top solicitantes** | `solicitacoes_relatorios` (ranking por solicitante_nome últimos 90d) | Bar horizontal Top 8 | Quem mais demanda relatórios? |
+A entrega é dividida em **5 fases independentes**. Cada fase é incremental e pode ser pausada/aprovada separadamente.
 
-## Componentização
+---
 
-Para manter o `index.tsx` limpo, cada dashboard vira um componente isolado:
+## Fase 1 — Robustez e segurança (base de tudo)
 
-```
-src/components/dashboard/analytics/
-  ├─ VelocitySemanalCard.tsx        (#1)
-  ├─ LeadTimeCard.tsx               (#2)
-  ├─ ThroughputCard.tsx             (#3)
-  ├─ AgingBacklogCard.tsx           (#4)
-  ├─ HeatmapPrazosCard.tsx          (#5)
-  ├─ WipColaboradorCard.tsx         (#6)
-  ├─ TaxaReprovacaoCard.tsx         (#7)
-  ├─ TempoPorEtapaCard.tsx          (#8)
-  ├─ CategoriaOrigemCard.tsx        (#9)
-  ├─ FunilRelatoriosCard.tsx        (#10)
-  ├─ SlaUrgenciaCard.tsx            (#11)
-  └─ TopSolicitantesCard.tsx        (#12)
-```
+Antes de adicionar features novas, fechar lacunas que vi auditando o schema:
 
-Cada card recebe os arrays já carregados pelo `useDashboardData` (zero novas queries — performance preservada). Toda lógica de cálculo fica em `src/components/dashboard/analytics/lib/metrics.ts` para ser testável.
+1. **Tabela de auditoria** (`audit_log`) — quem alterou o quê, quando, valor antigo/novo. Hoje só `todo_historico` registra mudanças; demandas, reuniões, chamados externos e colaboradores não têm rastro.
+2. **Revisão de RLS** — algumas policies usam `USING (true)` para SELECT (ex.: `colaborador_evento`, `colaborador_ferias`, `aviso_gestor`). Para dados sensíveis de RH (férias, eventos) restringir a gestor + o próprio colaborador.
+3. **Política de UPDATE em `chamado_externo`** — hoje qualquer autenticado atualiza qualquer chamado. Restringir a responsável + gestor.
+4. **Trigger `updated_at`** — várias tabelas têm a coluna mas não o trigger ativo. Padronizar usando `update_updated_at_column()` que já existe.
+5. **Rodar o linter de segurança do Supabase** e corrigir tudo que aparecer como `error`.
 
-## Componentes de UX comuns
+---
 
-**`InfoHint`** — botão `(i)` com tooltip explicativo (usa `Tooltip` do shadcn já instalado). Aparece no header de cada Panel ao lado do título.
+## Fase 2 — Notificações (in-app + e-mail)
 
-```tsx
-<Panel
-  title="Velocity semanal"
-  hint="Quantas tarefas a equipe concluiu nas últimas 8 semanas. Tendência ascendente = aceleração."
-  ...
-/>
-```
+### Modelo de dados
+- Tabela `notificacao` (id, user_id, tipo, titulo, mensagem, link, lida_em, created_at).
+- Tabela `notificacao_preferencia` (user_id, canal `in_app|email`, evento, ativo) — cada usuário escolhe o que quer receber.
 
-→ ajuste mínimo no `Panel` (em `KpiTile.tsx`) para aceitar a prop `hint` e renderizar o ícone `Info` da Lucide com tooltip on hover/focus (acessível por teclado).
+### Eventos cobertos
+- **Para o colaborador**: tarefa atribuída a ele, prazo em 24h, comentário em tarefa sua, status mudou.
+- **Para gestores**: SLA de chamado externo estourado, reprovação em homologação, novo aviso crítico, demanda urgente sem responsável há >24h.
 
-**`SectionHeader`** — divisor de seções com título e descrição curta.
+### Entrega
+- **In-app**: sino no header com badge de contagem + dropdown com últimas 10. Realtime via Supabase (`postgres_changes` na tabela `notificacao`).
+- **E-mail**: usar Lovable Emails (built-in, zero config). Resumo diário às 8h com pendências do dia + alertas críticos imediatos.
+- **Arquitetura preparada para WhatsApp**: a função `enqueueNotification(userId, evento, payload)` despacha por canal. Adicionar WhatsApp depois é só implementar mais um adapter.
 
-## Novo layout do dashboard (redesenho)
+### Cron
+- Job `pg_cron` a cada 15min varre prazos vencendo, SLA, etc., e insere em `notificacao`.
+- Job diário 8h dispara o digest por e-mail.
 
-Seções coesas, da mais ampla (visão geral) à mais profunda (análise):
+---
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ PageHeader + AvisosBanner                                       │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 VISÃO GERAL                                                   │
-│ [ KPI ] [ KPI ] [ KPI ] [ KPI ] [ KPI ]   (5 tiles atuais)      │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 MEU TRABALHO                                                  │
-│ [ Minhas atribuições — full width ]                             │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 PRODUTIVIDADE                                                 │
-│ [ #1 Velocity 8sem ][ #2 Lead time ][ #3 Throughput 30d ]       │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 SAÚDE DO BACKLOG                                              │
-│ [ #4 Aging — 2 cols ][ #6 WIP — 1 col ]                         │
-│ [ #5 Heatmap próximos 28d — full width ]                        │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 QUALIDADE & FLUXO                                             │
-│ [ #7 Taxa reprovação ][ #8 Tempo por etapa ][ #9 Cat./Origem ]  │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 RELATÓRIOS (N8N)                                              │
-│ [ #10 Funil ][ #11 SLA urgência ][ #12 Top solicitantes ]       │
-├─────────────────────────────────────────────────────────────────┤
-│ 🟦 EQUIPE & AGENDA                                               │
-│ [ Atividades semana — 2 cols ][ Equipe ativa — 1 col ]          │
-│ [ Atribuições por colab. — 2 cols ][ Status tarefas — 1 col ]   │
-│ [ Horários — full width ]                                       │
-└─────────────────────────────────────────────────────────────────┘
-```
+## Fase 3 — IA aplicada
 
-Princípios aplicados:
-- **Agrupamento por intenção** (não por tipo de gráfico)
-- **F-pattern**: KPIs no topo, drill-down conforme desce
-- **Densidade controlada**: máx. 3 cards por linha em desktop, 1 no mobile
-- **Tooltips `(i)`** em todo card analítico explicando fórmula e período
-- **Estado vazio amigável** em cada card (mensagem + dica de ação)
-- **Skeleton states** durante loading (já existem `loading.*` no hook)
+### 3.1 Resumo semanal automático
+- Toda segunda às 7h, edge function/server function coleta dados da semana anterior (tarefas concluídas, demandas abertas/fechadas, reuniões, top performers, gargalos).
+- Envia para Lovable AI (`google/gemini-3-flash-preview`) com prompt estruturado.
+- Salva em nova tabela `resumo_semanal` e exibe um **card "Resumo da semana"** no topo do dashboard, com botão "ver completo" abrindo modal.
+- Gestores recebem por e-mail também.
 
-## Mudanças de arquivos
+### 3.2 Busca em linguagem natural
+- Barra de busca no header (atalho **Cmd/Ctrl+K**).
+- Usuário digita: *"tarefas atrasadas do João nos últimos 30 dias"*, *"demandas urgentes sem responsável"*, *"reuniões da semana sobre orçamento"*.
+- Server function envia para Lovable AI usando **structured output** (`Output.object` do Vercel AI SDK) — IA retorna um JSON com filtros tipados (entidade, responsável, status, período, palavras-chave).
+- App executa a query no Supabase com esses filtros e mostra resultados agrupados (tarefas / demandas / reuniões / chamados).
+- Sem alucinação: a IA só decide *como filtrar*, não inventa dados.
 
-**Novos**
-- `src/components/dashboard/analytics/lib/metrics.ts` (funções puras de cálculo + testes)
-- 12 cards listados acima
-- `src/components/dashboard/SectionHeader.tsx`
+---
 
-**Editados**
-- `src/components/KpiTile.tsx` → `Panel` ganha prop opcional `hint?: string` que renderiza `<InfoHint>`
-- `src/routes/index.tsx` → reorganizado em seções; importa os 12 novos cards
-- `src/components/dashboard/DashboardCharts.tsx` → adicionar `hint` aos panels existentes
+## Fase 4 — Filtros globais no dashboard
 
-**Não alterados**
-- Schema do banco (tudo é derivado dos dados já carregados)
-- `useDashboardData.ts` (todas as queries necessárias já existem)
+Hoje os 10+ indicadores são fixos. Adicionar:
+- **Seletor de período** no topo: 7d / 30d / 90d / customizado.
+- **Filtro por colaborador** (multi-select) para gestores verem o painel de uma pessoa específica.
+- **Filtro por categoria/origem** das demandas.
+- Estado dos filtros persistido em URL (query params) — links compartilháveis.
+- Cada card respeita os filtros via context React + recálculo memoizado.
 
-## Testes
-- Adicionar `src/components/dashboard/analytics/lib/__tests__/metrics.test.ts` cobrindo os cálculos críticos: lead time, aging buckets, velocity por semana, taxa de reprovação, SLA por urgência.
+---
 
-## Detalhes técnicos
-- Recharts já está instalado — usar `BarChart`, `LineChart`, `PieChart`, `FunnelChart` (precisa importar de `recharts`).
-- Heatmap (#5) feito com grid CSS puro (sem dependência nova) — cores via `color-mix` do token `--primary`.
-- Datas: usar `date-fns` (já instalado) — `startOfWeek`, `differenceInDays`, `eachDayOfInterval`.
-- Tipo de "tempo por etapa" (#8): sem coluna de transição histórica, usar aproximação por `updated_at − created_at` agrupado por status atual; deixar nota no `hint` explicando.
+## Fase 5 — Performance
 
-## Riscos / observações
-- **#8 Tempo por etapa** é aproximado (não há tabela de eventos). Se quiser precisão real, criar tabela `todo_status_log` em migração futura — fora deste escopo.
-- N8N (#10–#12) depende de `solicitacoes_relatorios` estar acessível; reaproveita query já existente.
+- Migrar `useDashboardData` para **React Query** com queries separadas e paralelas (hoje busca tudo em sequência num único hook).
+- `staleTime` de 30s + `refetchOnWindowFocus`.
+- Mover cálculos pesados dos cards analíticos para `useMemo` por card (hoje recalcula tudo a cada render do dashboard).
+- Lazy-load das seções abaixo do fold (intersection observer).
+- Skeleton loaders por card em vez de um único spinner global.
 
-## Ordem de execução
-1. Criar `metrics.ts` + testes
-2. Atualizar `Panel` com prop `hint` + componente `InfoHint`
-3. Criar os 12 cards em paralelo (componentes pequenos e isolados)
-4. Reorganizar `index.tsx` com a nova grade
-5. QA visual no preview (responsivo desktop/tablet/mobile)
+---
+
+## O que NÃO está neste plano (pode entrar depois)
+
+- WhatsApp (Twilio) — adiado a pedido. Arquitetura de notificações já fica pronta.
+- Transcrição automática de reuniões — útil mas escopo grande, melhor isolar.
+- Sugestão de prioridade ao criar tarefa — pode entrar como Fase 6.
+- App mobile dedicado.
+
+---
+
+## Detalhes técnicos (referência)
+
+- Notificações realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.notificacao` + canal client-side.
+- Server functions em `src/lib/*.functions.ts` (createServerFn) com `requireSupabaseAuth`.
+- IA via `createLovableAiGatewayProvider` + Vercel AI SDK, em server route `/api/ai/*`.
+- Cron via `pg_cron` + `pg_net` chamando rotas `/api/public/hooks/*` autenticadas com `apikey` header.
+- E-mail via Lovable Emails (sem necessidade de configurar Resend manualmente).
+- Migrations separadas por fase para permitir rollback.
+
+---
+
+## Ordem sugerida e tempo estimado
+
+| Fase | Conteúdo | Por que nessa ordem |
+|------|----------|---------------------|
+| 1 | Auditoria + RLS + linter | Base de segurança antes de novos dados |
+| 2 | Notificações in-app + e-mail | Maior valor percebido, infra reaproveitada por IA |
+| 3 | IA: resumo semanal + busca natural | Diferencial competitivo |
+| 4 | Filtros globais | UX, mas requer dados/contexto das fases anteriores |
+| 5 | Performance + React Query | Otimização final, com tudo já implementado |
+
+Posso começar pela Fase 1 assim que você aprovar — ou, se preferir começar por outra fase (ex.: já ir direto para notificações ou IA), me avise.
