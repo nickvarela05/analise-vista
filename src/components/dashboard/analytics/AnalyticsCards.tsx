@@ -546,10 +546,3 @@ export function TopSolicitantesCard({ solicitacoes }: { solicitacoes: Solic[] })
     </Panel>
   );
 }
-
-// helper local
-function cn(...c: (string | false | undefined | null)[]) {
-  return c.filter(Boolean).join(" ");
-}
-// remove unused imports warning suppression
-void LineChart; void Line;
