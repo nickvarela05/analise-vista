@@ -1,6 +1,5 @@
 import {
   startOfWeek,
-  endOfWeek,
   addWeeks,
   format,
   differenceInDays,
@@ -9,12 +8,17 @@ import {
   addDays,
   isSameDay,
 } from "date-fns";
-import type {
-  TarefaRow,
-  DemandaRow,
-  ReuniaoRow,
-  ColaboradorRow,
-} from "@/lib/db-types";
+import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
+
+const STATUS_CONCLUIDA = ["concluida", "producao"] as const;
+const STATUS_ATIVAS = [
+  "pendente",
+  "aberta",
+  "em_andamento",
+  "encaminhada",
+  "homologacao",
+] as const;
+const STATUS_WIP = ["em_andamento", "homologacao", "encaminhada"] as const;
 
 const STATUS_CONCLUIDA = ["concluida", "producao"] as const;
 const STATUS_ATIVAS = [
