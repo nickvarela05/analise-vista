@@ -67,10 +67,24 @@ function Atividades() {
   const [periodo, setPeriodo] = React.useState<Periodo>("semana");
   const [cursor, setCursor] = React.useState(new Date());
   const [tipoFiltro, setTipoFiltro] = React.useState<string>("todos");
-  const [escopo, setEscopo] = React.useState<"equipe" | "minhas">("equipe");
+  // escopo: "equipe" | "minhas" | <colaborador_id>
+  const [escopo, setEscopo] = React.useState<string>("equipe");
 
   const inicio = periodo === "semana" ? startOfWeek(cursor, { weekStartsOn: 1 }) : startOfMonth(cursor);
   const fim = periodo === "semana" ? endOfWeek(cursor, { weekStartsOn: 1 }) : endOfMonth(cursor);
+
+  const { data: colaboradores = [] } = useQuery({
+    queryKey: ["atv-colaboradores"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("colaborador")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const { data: meuProfile } = useQuery({
     queryKey: ["atv-meu-profile", user?.id],
