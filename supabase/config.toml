@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.gerar-relatorio-reuniao]
 verify_jwt = false
+
+[functions.dispatch-email-digest]
+verify_jwt = false
+
+[functions.gerar-resumo-semanal]
+verify_jwt = false
+
+[functions.busca-natural]
+verify_jwt = true
