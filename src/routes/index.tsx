@@ -197,6 +197,12 @@ function Dashboard() {
 
   const atividades = React.useMemo<Atividade[]>(() => {
     const list: Atividade[] = [];
+    const envolvidos = (resp: string | null, ids: string[] | null | undefined) => {
+      const set = new Set<string>();
+      if (resp) set.add(resp);
+      (ids ?? []).forEach((i) => i && set.add(i));
+      return Array.from(set);
+    };
     tarefas.forEach((t) => {
       if (t.data_prevista) {
         const d = new Date(t.data_prevista);
@@ -212,6 +218,8 @@ function Dashboard() {
             data: d,
             dataLabel: "Prazo",
             _sortDate: d.getTime(),
+            _envolvidosIds: envolvidos(t.responsavel_id, t.responsaveis_ids),
+            _equipeToda: t.equipe_toda ?? false,
           });
         }
       }
@@ -232,6 +240,8 @@ function Dashboard() {
             dataLabel: "Prazo",
             tags: d.tags,
             _sortDate: dt.getTime(),
+            _envolvidosIds: envolvidos(d.responsavel_id, d.responsaveis_ids),
+            _equipeToda: d.equipe_toda ?? false,
           });
         }
       }
@@ -249,6 +259,8 @@ function Dashboard() {
           data: dt,
           dataLabel: "Quando",
           _sortDate: dt.getTime(),
+          _envolvidosIds: envolvidos(r.responsavel_id, r.responsaveis_ids),
+          _equipeToda: r.equipe_toda ?? false,
         });
       }
     });
