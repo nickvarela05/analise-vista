@@ -65,9 +65,33 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const [novoComentario, setNovoComentario] = React.useState("");
   const [novoChecklistItem, setNovoChecklistItem] = React.useState("");
   const [uploadingFile, setUploadingFile] = React.useState(false);
+  const [salvando, setSalvando] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const id = tarefa?.id;
+
+  // Estado local do formulário de edição (commit no botão Salvar)
+  const [draft, setDraft] = React.useState({
+    status: tarefa?.status ?? "",
+    prioridade: tarefa?.prioridade ?? "",
+    data_prevista: tarefa?.data_prevista ?? "",
+    demanda_id: tarefa?.demanda_id ?? null,
+  });
+
+  React.useEffect(() => {
+    setDraft({
+      status: tarefa?.status ?? "",
+      prioridade: tarefa?.prioridade ?? "",
+      data_prevista: tarefa?.data_prevista ?? "",
+      demanda_id: tarefa?.demanda_id ?? null,
+    });
+  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id]);
+
+  const dirty =
+    draft.status !== (tarefa?.status ?? "") ||
+    draft.prioridade !== (tarefa?.prioridade ?? "") ||
+    (draft.data_prevista ?? "") !== (tarefa?.data_prevista ?? "") ||
+    (draft.demanda_id ?? null) !== (tarefa?.demanda_id ?? null);
 
   const { data: demandas = [] } = useQuery({
     queryKey: ["dem-list-mini"],
@@ -167,6 +191,39 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       return;
     }
     await logHistorico(field, antigo, novo);
+    invalidate();
+  };
+
+  const salvarEdicao = async () => {
+    if (!dirty || !id) return;
+    setSalvando(true);
+    const updates: any = {
+      status: draft.status,
+      prioridade: draft.prioridade,
+      data_prevista: draft.data_prevista || null,
+      demanda_id: draft.demanda_id || null,
+    };
+    if (draft.status === "producao" && tarefa.status !== "producao") {
+      updates.concluida_em = new Date().toISOString();
+    } else if (draft.status !== "producao" && tarefa.status === "producao") {
+      updates.concluida_em = null;
+    }
+    const { error } = await supabase.from("todo").update(updates).eq("id", id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Erro ao salvar", { description: error.message });
+      return;
+    }
+    const campos: Array<[string, unknown, unknown]> = [
+      ["status", tarefa.status, draft.status],
+      ["prioridade", tarefa.prioridade, draft.prioridade],
+      ["data_prevista", tarefa.data_prevista, draft.data_prevista || null],
+      ["demanda_id", tarefa.demanda_id, draft.demanda_id || null],
+    ];
+    for (const [campo, antigo, novo] of campos) {
+      if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
+    }
+    toast.success("Tarefa atualizada");
     invalidate();
   };
 
@@ -278,7 +335,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">Status</Label>
-            <Select value={tarefa.status} onValueChange={(v) => updateField("status", v)}>
+            <Select value={draft.status} onValueChange={(v) => setDraft((d) => ({ ...d, status: v }))}>
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -293,7 +350,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Prioridade</Label>
-            <Select value={tarefa.prioridade} onValueChange={(v) => updateField("prioridade", v)}>
+            <Select value={draft.prioridade} onValueChange={(v) => setDraft((d) => ({ ...d, prioridade: v }))}>
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -307,19 +364,21 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Prazo</Label>
+            <Label className="text-xs">
+              Prazo <span className="text-muted-foreground">(opcional)</span>
+            </Label>
             <Input
               type="date"
               className="h-8 text-xs"
-              value={tarefa.data_prevista ?? ""}
-              onChange={(e) => updateField("data_prevista", e.target.value || null)}
+              value={draft.data_prevista ?? ""}
+              onChange={(e) => setDraft((d) => ({ ...d, data_prevista: e.target.value }))}
             />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Demanda vinculada</Label>
             <Select
-              value={tarefa.demanda_id ?? "none"}
-              onValueChange={(v) => updateField("demanda_id", v === "none" ? null : v)}
+              value={draft.demanda_id ?? "none"}
+              onValueChange={(v) => setDraft((d) => ({ ...d, demanda_id: v === "none" ? null : v }))}
             >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Nenhuma" />
@@ -351,6 +410,27 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                 invalidate();
               }}
             />
+          </div>
+          <div className="flex justify-end gap-2 sm:col-span-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setDraft({
+                  status: tarefa.status ?? "",
+                  prioridade: tarefa.prioridade ?? "",
+                  data_prevista: tarefa.data_prevista ?? "",
+                  demanda_id: tarefa.demanda_id ?? null,
+                })
+              }
+              disabled={!dirty || salvando}
+            >
+              Descartar
+            </Button>
+            <Button size="sm" onClick={salvarEdicao} disabled={!dirty || salvando}>
+              {salvando ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
+              Salvar
+            </Button>
           </div>
         </div>
 
