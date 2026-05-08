@@ -194,6 +194,39 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     invalidate();
   };
 
+  const salvarEdicao = async () => {
+    if (!dirty || !id) return;
+    setSalvando(true);
+    const updates: Record<string, unknown> = {
+      status: draft.status,
+      prioridade: draft.prioridade,
+      data_prevista: draft.data_prevista || null,
+      demanda_id: draft.demanda_id || null,
+    };
+    if (draft.status === "producao" && tarefa.status !== "producao") {
+      updates.concluida_em = new Date().toISOString();
+    } else if (draft.status !== "producao" && tarefa.status === "producao") {
+      updates.concluida_em = null;
+    }
+    const { error } = await supabase.from("todo").update(updates).eq("id", id);
+    setSalvando(false);
+    if (error) {
+      toast.error("Erro ao salvar", { description: error.message });
+      return;
+    }
+    const campos: Array<[string, unknown, unknown]> = [
+      ["status", tarefa.status, draft.status],
+      ["prioridade", tarefa.prioridade, draft.prioridade],
+      ["data_prevista", tarefa.data_prevista, draft.data_prevista || null],
+      ["demanda_id", tarefa.demanda_id, draft.demanda_id || null],
+    ];
+    for (const [campo, antigo, novo] of campos) {
+      if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
+    }
+    toast.success("Tarefa atualizada");
+    invalidate();
+  };
+
   const adicionarComentario = async () => {
     if (!novoComentario.trim() || !user) return;
     const { error } = await supabase.from("todo_comentario").insert({
