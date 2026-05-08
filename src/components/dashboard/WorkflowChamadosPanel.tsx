@@ -1,5 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, CheckSquare, Inbox } from "lucide-react";
+import {
+  ArrowRight,
+  CheckSquare,
+  Inbox,
+  Wrench,
+  ShieldCheck,
+  XCircle,
+  Rocket,
+} from "lucide-react";
 import { Panel } from "@/components/KpiTile";
 import { WorkflowStep } from "@/components/dashboard/WorkflowStep";
 import type { ChamadoRow, TarefaRow } from "@/lib/db-types";
@@ -7,12 +15,20 @@ import type { ChamadoRow, TarefaRow } from "@/lib/db-types";
 interface Props {
   chamados: ChamadoRow[];
   tarefas: TarefaRow[];
-  relatEncaminhados: number;
-  taskHML: number;
-  taskProd: number;
+  chamadosEncaminhados: number;
 }
 
-export function WorkflowChamadosPanel({ chamados, tarefas, relatEncaminhados, taskHML, taskProd }: Props) {
+export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados }: Props) {
+  const count = (statuses: string[]) =>
+    tarefas.filter((t) => statuses.includes(t.status as string)).length;
+
+  const tAberta = count(["aberta", "pendente"]);
+  const tDesenv = count(["em_andamento"]);
+  const tHomolog = count(["homologacao", "encaminhada"]);
+  const tAprovado = count(["aprovado", "aprovado_ressalvas"]);
+  const tReprovado = count(["reprovado", "reprovada", "cancelada"]);
+  const tProducao = count(["producao", "concluida"]);
+
   return (
     <Panel
       title="Workflow de chamados"
@@ -34,7 +50,7 @@ export function WorkflowChamadosPanel({ chamados, tarefas, relatEncaminhados, ta
         <WorkflowStep
           icon={ArrowRight}
           label="Encaminhado"
-          value={relatEncaminhados}
+          value={chamadosEncaminhados}
           tone="info"
           to="/relatorios"
         />
@@ -51,27 +67,40 @@ export function WorkflowChamadosPanel({ chamados, tarefas, relatEncaminhados, ta
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Tarefas internas (workflow Sisteplan)
         </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <WorkflowStep icon={Inbox} label="Aberta" value={tAberta} tone="warning" to="/tarefas" />
           <WorkflowStep
-            icon={Inbox}
-            label="Abertura"
-            value={tarefas.filter((t) => ["aberta", "pendente"].includes(t.status)).length}
-            tone="warning"
+            icon={Wrench}
+            label="Em desenvolvimento"
+            value={tDesenv}
+            tone="primary"
             to="/tarefas"
           />
           <WorkflowStep
-            icon={ArrowRight}
-            label="Encaminhada"
-            value={tarefas.filter((t) => t.status === "encaminhada").length}
+            icon={CheckSquare}
+            label="Homologação"
+            value={tHomolog}
             tone="info"
             to="/tarefas"
           />
-          <WorkflowStep icon={CheckSquare} label="Homologação" value={taskHML} tone="primary" to="/tarefas" />
-          <WorkflowStep icon={CheckSquare} label="Produção" value={taskProd} tone="success" to="/tarefas" />
           <WorkflowStep
-            icon={CheckSquare}
-            label="Concluída"
-            value={tarefas.filter((t) => t.status === "concluida").length}
+            icon={ShieldCheck}
+            label="Aprovado"
+            value={tAprovado}
+            tone="success"
+            to="/tarefas"
+          />
+          <WorkflowStep
+            icon={XCircle}
+            label="Reprovado"
+            value={tReprovado}
+            tone="destructive"
+            to="/tarefas"
+          />
+          <WorkflowStep
+            icon={Rocket}
+            label="Produção"
+            value={tProducao}
             tone="success"
             to="/tarefas"
           />
