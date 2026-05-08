@@ -422,6 +422,8 @@ function Atividades() {
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-warning" /> Demanda</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Reunião</span>
       </div>
+
+      <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
     </div>
   );
 }
