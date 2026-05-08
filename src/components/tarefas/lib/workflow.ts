@@ -22,7 +22,7 @@ export const ALL_STATUS = [
 
 export const STATUS_LABEL: Record<string, string> = {
   aberta: "Aberta",
-  em_andamento: "Em andamento",
+  em_andamento: "Em desenvolvimento/Teste interno",
   homologacao: "Homologação",
   aprovado: "Aprovado",
   aprovado_ressalvas: "Aprovado c/ ressalvas",
