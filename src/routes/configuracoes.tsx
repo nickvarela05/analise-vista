@@ -59,8 +59,9 @@ function Configuracoes() {
             </div>
           </CardContent>
         </Card>
+        <PreferenciasNotificacao />
 
-        <Card>
+
           <CardHeader><CardTitle className="text-base">Sessão</CardTitle></CardHeader>
           <CardContent>
             <Button variant="destructive" onClick={() => signOut()}>
