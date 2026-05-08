@@ -136,8 +136,10 @@ function Portfolio() {
       </section>
 
       {/* Galeria */}
-      <section className="mx-auto w-full max-w-4xl">
-        <SectionHeader title="Galeria" subtitle="Momentos da equipe" />
+      <section className="mx-auto w-full max-w-6xl">
+        <div className="mb-4 text-center">
+          <SectionHeader title="Galeria" subtitle="Momentos da equipe" />
+        </div>
         <GaleriaCarousel />
       </section>
 
