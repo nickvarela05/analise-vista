@@ -195,7 +195,7 @@ export function GaleriaCarousel() {
 
           {/* Thumbnails rail */}
           {total > 1 && (
-            <div className="flex gap-2 overflow-x-auto lg:max-h-[420px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pr-1">
+            <div className="flex gap-2 overflow-x-auto lg:max-h-[520px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pr-1">
               {fotos.map((f, i) => {
                 const isActive = i === current;
                 return (
