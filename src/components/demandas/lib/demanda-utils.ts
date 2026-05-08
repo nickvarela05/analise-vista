@@ -51,14 +51,14 @@ export function statusBadgeClass(s: string) {
   if (s === "concluida") return "bg-success/15 text-success border-success/30";
   if (s === "cancelada") return "bg-muted text-muted-foreground border-border";
   if (s === "aberta") return "bg-info/15 text-info border-info/30";
-  if (s === "homologacao") return "bg-warning/20 text-warning-foreground border-warning/30";
+  if (s === "homologacao") return "bg-warning/20 text-warning border-warning/30";
   if (s === "aguardando_cliente") return "bg-muted text-muted-foreground border-border";
   return "bg-primary/10 text-primary border-primary/20";
 }
 
 export function prioridadeBadgeClass(p: string) {
   if (p === "critica") return "bg-destructive/15 text-destructive border-destructive/30";
-  if (p === "alta") return "bg-warning/20 text-warning-foreground border-warning/30";
+  if (p === "alta") return "bg-warning/20 text-warning border-warning/30";
   if (p === "media") return "bg-primary/10 text-primary border-primary/20";
   return "bg-muted text-muted-foreground border-border";
 }
@@ -106,7 +106,7 @@ export function prazoBadgeClass(tone: PrazoInfo["tone"]) {
     case "destructive":
       return "bg-destructive/15 text-destructive border-destructive/30";
     case "warning":
-      return "bg-warning/20 text-warning-foreground border-warning/30";
+      return "bg-warning/20 text-warning border-warning/30";
     case "info":
       return "bg-info/10 text-info border-info/30";
     default:

@@ -382,7 +382,7 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
                               <div className="min-w-0 flex-1">
                                 <div className="truncate text-sm">{t.titulo}</div>
                                 {vinculadaOutra && (
-                                  <div className="text-[10px] text-warning-foreground">
+                                  <div className="text-[10px] text-warning">
                                     Já vinculada a outra demanda — será movida
                                   </div>
                                 )}

@@ -95,7 +95,7 @@ export function TarefaCard({ tarefa, colabs, selected, onSelect, onOpen, counts,
           {prazo && (
             <span
               className={`inline-flex items-center gap-1 ${
-                atrasada ? "text-destructive font-medium" : hojeFlag ? "text-warning-foreground font-medium" : ""
+                atrasada ? "text-destructive font-medium" : hojeFlag ? "text-warning font-medium" : ""
               }`}
             >
               <Calendar className="h-3 w-3" />

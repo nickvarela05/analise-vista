@@ -54,7 +54,7 @@ function RelatoriosRoute() {
 function urgenciaVariant(u: string | null) {
   const v = (u ?? "").toLowerCase();
   if (v === "crítica" || v === "critica") return "bg-destructive/15 text-destructive border-destructive/30";
-  if (v === "alta") return "bg-warning/20 text-warning-foreground border-warning/30";
+  if (v === "alta") return "bg-warning/20 text-warning border-warning/30";
   if (v === "média" || v === "media") return "bg-primary/10 text-primary border-primary/20";
   return "bg-muted text-muted-foreground";
 }
@@ -65,7 +65,7 @@ function statusVariant(s: string | null) {
     return "bg-success/15 text-success border-success/30";
   if (v === "feito" || v === "encaminhado" || v === "em andamento")
     return "bg-info/15 text-info border-info/30";
-  if (v === "pendente") return "bg-warning/20 text-warning-foreground border-warning/40";
+  if (v === "pendente") return "bg-warning/20 text-warning border-warning/40";
   return "bg-muted text-muted-foreground";
 }
 
