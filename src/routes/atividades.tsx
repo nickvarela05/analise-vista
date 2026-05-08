@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { isAtribuidoA } from "@/lib/domain/atividades";
+import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 
 export const Route = createFileRoute("/atividades")({
   errorComponent: RouteErrorBoundary,
