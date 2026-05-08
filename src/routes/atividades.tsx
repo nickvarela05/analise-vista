@@ -50,11 +50,15 @@ type Periodo = "semana" | "mes";
 
 type Atividade = {
   id: string;
+  rawId: string;
   tipo: "tarefa" | "demanda" | "reuniao";
   titulo: string;
   data: Date;
-  prioridade?: string;
-  responsavel?: string;
+  prioridade?: string | null;
+  responsavel?: string | null;
+  descricao?: string | null;
+  status?: string | null;
+  tags?: string[] | null;
 };
 
 const tipoColor: Record<string, string> = {
