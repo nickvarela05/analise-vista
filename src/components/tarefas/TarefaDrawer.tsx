@@ -65,9 +65,33 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const [novoComentario, setNovoComentario] = React.useState("");
   const [novoChecklistItem, setNovoChecklistItem] = React.useState("");
   const [uploadingFile, setUploadingFile] = React.useState(false);
+  const [salvando, setSalvando] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const id = tarefa?.id;
+
+  // Estado local do formulário de edição (commit no botão Salvar)
+  const [draft, setDraft] = React.useState({
+    status: tarefa?.status ?? "",
+    prioridade: tarefa?.prioridade ?? "",
+    data_prevista: tarefa?.data_prevista ?? "",
+    demanda_id: tarefa?.demanda_id ?? null,
+  });
+
+  React.useEffect(() => {
+    setDraft({
+      status: tarefa?.status ?? "",
+      prioridade: tarefa?.prioridade ?? "",
+      data_prevista: tarefa?.data_prevista ?? "",
+      demanda_id: tarefa?.demanda_id ?? null,
+    });
+  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id]);
+
+  const dirty =
+    draft.status !== (tarefa?.status ?? "") ||
+    draft.prioridade !== (tarefa?.prioridade ?? "") ||
+    (draft.data_prevista ?? "") !== (tarefa?.data_prevista ?? "") ||
+    (draft.demanda_id ?? null) !== (tarefa?.demanda_id ?? null);
 
   const { data: demandas = [] } = useQuery({
     queryKey: ["dem-list-mini"],
