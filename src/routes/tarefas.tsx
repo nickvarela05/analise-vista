@@ -19,6 +19,7 @@ import { TarefaFilters, initialFilters, type TarefaFiltersState } from "@/compon
 import { normalizeStatus } from "@/components/tarefas/lib/workflow";
 import { useTarefasData } from "@/components/tarefas/useTarefasData";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
+import { ImportarTarefasDialog } from "@/components/tarefas/ImportarTarefasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
 import type { TarefaRow } from "@/lib/db-types";
@@ -182,8 +183,13 @@ function Tarefas() {
     <div>
       <PageHeader
         title="Tarefas"
-        description="Fluxo: Aberta → Em andamento → Homologação → Aprovado / Ressalvas / Reprovado → Produção"
-        actions={<NovaTarefaDialog colabs={colabs} demandas={demandas} />}
+        description="Fluxo: Aberta → Em desenvolvimento/Teste interno → Homologação → Aprovado / Ressalvas / Reprovado → Produção"
+        actions={
+          <div className="flex items-center gap-2">
+            <ImportarTarefasDialog />
+            <NovaTarefaDialog colabs={colabs} demandas={demandas} />
+          </div>
+        }
       />
 
       <div className="mb-6">
