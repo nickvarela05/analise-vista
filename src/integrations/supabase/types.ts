@@ -497,6 +497,72 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacao: {
+        Row: {
+          created_at: string
+          id: string
+          lida_em: string | null
+          link: string | null
+          mensagem: string | null
+          metadata: Json | null
+          tipo: Database["public"]["Enums"]["notificacao_tipo"]
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lida_em?: string | null
+          link?: string | null
+          mensagem?: string | null
+          metadata?: Json | null
+          tipo: Database["public"]["Enums"]["notificacao_tipo"]
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lida_em?: string | null
+          link?: string | null
+          mensagem?: string | null
+          metadata?: Json | null
+          tipo?: Database["public"]["Enums"]["notificacao_tipo"]
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notificacao_preferencia: {
+        Row: {
+          ativo: boolean
+          canal: Database["public"]["Enums"]["notificacao_canal"]
+          created_at: string
+          evento: Database["public"]["Enums"]["notificacao_tipo"]
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          canal: Database["public"]["Enums"]["notificacao_canal"]
+          created_at?: string
+          evento: Database["public"]["Enums"]["notificacao_tipo"]
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          canal?: Database["public"]["Enums"]["notificacao_canal"]
+          created_at?: string
+          evento?: Database["public"]["Enums"]["notificacao_tipo"]
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -871,6 +937,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enqueue_notificacao: {
+        Args: {
+          _link?: string
+          _mensagem?: string
+          _metadata?: Json
+          _tipo: Database["public"]["Enums"]["notificacao_tipo"]
+          _titulo: string
+          _user_id: string
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -903,6 +980,17 @@ export type Database = {
         | "cancelada"
       evento_tipo: "folga" | "falta" | "atestado" | "atraso" | "ferias_avulso"
       local_trabalho: "escritorio" | "rua"
+      notificacao_canal: "in_app" | "email"
+      notificacao_tipo:
+        | "tarefa_atribuida"
+        | "tarefa_prazo"
+        | "tarefa_comentario"
+        | "tarefa_status"
+        | "demanda_atribuida"
+        | "demanda_urgente"
+        | "chamado_sla"
+        | "aviso_critico"
+        | "sistema"
       reuniao_status: "agendada" | "realizada" | "cancelada"
       reuniao_tipo:
         | "interna"
@@ -1080,6 +1168,18 @@ export const Constants = {
       ],
       evento_tipo: ["folga", "falta", "atestado", "atraso", "ferias_avulso"],
       local_trabalho: ["escritorio", "rua"],
+      notificacao_canal: ["in_app", "email"],
+      notificacao_tipo: [
+        "tarefa_atribuida",
+        "tarefa_prazo",
+        "tarefa_comentario",
+        "tarefa_status",
+        "demanda_atribuida",
+        "demanda_urgente",
+        "chamado_sla",
+        "aviso_critico",
+        "sistema",
+      ],
       reuniao_status: ["agendada", "realizada", "cancelada"],
       reuniao_tipo: [
         "interna",
