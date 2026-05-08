@@ -406,7 +406,6 @@ function Dashboard() {
         </div>
         <WipColaboradorCard tarefas={tarefas} colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))} />
       </div>
-      <HeatmapPrazosCard tarefas={tarefas} demandas={demandas} reunioes={reunioes} />
 
       {/* === QUALIDADE & FLUXO === */}
       <SectionHeader title="Qualidade & fluxo" description="Onde o processo trava ou perde qualidade." />
