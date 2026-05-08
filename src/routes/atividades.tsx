@@ -171,30 +171,51 @@ function Atividades() {
         title="Atividades semanais"
         description="Agenda consolidada — tarefas, demandas e reuniões com prazo no período."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={escopo} onValueChange={(v) => setEscopo(v as "equipe" | "minhas")} disabled={!meuColabId && escopo === "equipe"}>
-              <SelectTrigger className="w-36 sm:w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="equipe">Toda a equipe</SelectItem>
-                <SelectItem value="minhas" disabled={!meuColabId}>Minhas atribuições</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-              <SelectTrigger className="w-32 sm:w-36"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="tarefa">Tarefas</SelectItem>
-                <SelectItem value="demanda">Demandas</SelectItem>
-                <SelectItem value="reuniao">Reuniões</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={periodo} onValueChange={(v) => setPeriodo(v as Periodo)}>
-              <SelectTrigger className="w-28 sm:w-32"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="semana">Semana</SelectItem>
-                <SelectItem value="mes">Mês</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Colaborador
+              </label>
+              <Select value={escopo} onValueChange={setEscopo}>
+                <SelectTrigger className="w-44 sm:w-52"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="equipe">Toda a equipe</SelectItem>
+                  <SelectItem value="minhas" disabled={!meuColabId}>Minhas atribuições</SelectItem>
+                  {colaboradores.length > 0 && (
+                    <div className="my-1 border-t border-border" />
+                  )}
+                  {colaboradores.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Tipo
+              </label>
+              <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+                <SelectTrigger className="w-32 sm:w-36"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="tarefa">Tarefas</SelectItem>
+                  <SelectItem value="demanda">Demandas</SelectItem>
+                  <SelectItem value="reuniao">Reuniões</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Período
+              </label>
+              <Select value={periodo} onValueChange={(v) => setPeriodo(v as Periodo)}>
+                <SelectTrigger className="w-28 sm:w-32"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="semana">Semana</SelectItem>
+                  <SelectItem value="mes">Mês</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         }
       />
