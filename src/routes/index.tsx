@@ -26,7 +26,6 @@ import { AvisosBanner } from "@/components/dashboard/AvisosBanner";
 import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/DashboardCharts";
 import { AtividadesSemanaPanel, type Atividade } from "@/components/dashboard/AtividadesSemanaPanel";
 import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
-import { WorkflowChamadosPanel } from "@/components/dashboard/WorkflowChamadosPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
 
 export const Route = createFileRoute("/")({
@@ -392,18 +391,7 @@ function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <WorkflowChamadosPanel
-            chamados={chamados}
-            tarefas={tarefas}
-            chamadosEncaminhados={chamadosEncaminhados}
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <HorariosPanel horarios={horarios} />
-        </div>
-      </div>
+      <HorariosPanel horarios={horarios} />
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
       <MinhasAtribuicoesDialog
