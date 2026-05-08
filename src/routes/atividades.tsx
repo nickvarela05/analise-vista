@@ -97,15 +97,19 @@ function Atividades() {
       s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     const usados = new Set<string>();
     const grupos = EQUIPES.map((g) => {
-      const items = g.nomes
-        .map((alvo) => {
-          const a = norm(alvo);
-          return colaboradores.find((c) => {
-            const n = norm(c.nome);
-            return n === a || n.startsWith(a + " ") || n.includes(" " + a);
-          });
-        })
-        .filter((c): c is { id: string; nome: string } => !!c);
+      const vistos = new Set<string>();
+      const items: { id: string; nome: string }[] = [];
+      g.nomes.forEach((alvo) => {
+        const a = norm(alvo);
+        const found = colaboradores.find((c) => {
+          const n = norm(c.nome);
+          return n === a || n.startsWith(a + " ") || n.includes(" " + a);
+        });
+        if (found && !vistos.has(found.id)) {
+          vistos.add(found.id);
+          items.push(found);
+        }
+      });
       items.forEach((c) => usados.add(c.id));
       return { label: g.label, items };
     });
