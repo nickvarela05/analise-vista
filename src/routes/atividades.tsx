@@ -357,13 +357,18 @@ function Atividades() {
                     <p className="text-xs text-muted-foreground">—</p>
                   ) : (
                     doDia.map((a) => (
-                      <div key={a.id} className={`rounded-md border p-2 text-xs ${tipoColor[a.tipo]}`}>
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => abrirDetalhe(a)}
+                        className={`w-full text-left rounded-md border p-2 text-xs transition hover:brightness-110 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${tipoColor[a.tipo]}`}
+                      >
                         <Badge variant="outline" className="mb-1 text-[9px] uppercase">{a.tipo}</Badge>
                         <p className="font-medium leading-tight">{a.titulo}</p>
                         {a.tipo === "reuniao" && (
                           <p className="mt-0.5 text-[10px] opacity-80">{format(a.data, "HH:mm")}</p>
                         )}
-                      </div>
+                      </button>
                     ))
                   )}
                 </div>
