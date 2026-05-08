@@ -69,12 +69,14 @@ export function ImportarTarefasDialog() {
   const [erros, setErros] = React.useState<string[]>([]);
   const [arquivo, setArquivo] = React.useState<string>("");
   const [importando, setImportando] = React.useState(false);
+  const [forcarHomologacao, setForcarHomologacao] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setLinhas([]);
     setErros([]);
     setArquivo("");
+    setForcarHomologacao(false);
     if (inputRef.current) inputRef.current.value = "";
   };
 
