@@ -5,8 +5,6 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -17,11 +15,8 @@ import {
   Cell,
 } from "recharts";
 import { Panel } from "@/components/KpiTile";
-import type {
-  TarefaRow,
-  DemandaRow,
-  ReuniaoRow,
-} from "@/lib/db-types";
+import { cn } from "@/lib/utils";
+import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
 import {
   computeVelocity,
   computeLeadCycle,
