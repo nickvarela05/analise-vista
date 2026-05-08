@@ -203,6 +203,24 @@ export function ImportarTarefasDialog() {
             )}
           </div>
 
+          <div className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-3">
+            <Checkbox
+              id="forcar-hml"
+              checked={forcarHomologacao}
+              onCheckedChange={(v) => setForcarHomologacao(v === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="forcar-hml" className="cursor-pointer text-sm font-medium">
+                Importar tarefas de homologação
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Quando ativado, todas as tarefas importadas serão criadas com status{" "}
+                <span className="font-medium">Homologação</span>, ignorando o status da planilha.
+              </p>
+            </div>
+          </div>
+
           {erros.length > 0 && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
