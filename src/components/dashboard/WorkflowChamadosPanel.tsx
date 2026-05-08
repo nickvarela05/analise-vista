@@ -32,7 +32,6 @@ export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados 
   return (
     <Panel
       title="Workflow de chamados"
-      className="lg:col-span-2"
       actions={
         <Link to="/relatorios" className="text-xs font-medium text-primary hover:underline">
           Ver relatórios →
