@@ -135,7 +135,11 @@ function Atividades() {
     const arr: Atividade[] = [];
     const tarefaConcluida = ["concluida", "producao", "cancelada", "reprovada"];
     const demandaConcluida = ["concluida", "cancelada"];
-    const filtroEscopo = (r: any) => (escopo === "minhas" ? isMine(r) : true);
+    const filtroEscopo = (r: any) => {
+      if (escopo === "equipe") return true;
+      if (escopo === "minhas") return isMine(r);
+      return isAtribuidoA(r, escopo);
+    };
     tarefas.filter(filtroEscopo).forEach((t) => {
       if (t.data_prevista && !tarefaConcluida.includes(t.status))
         arr.push({ id: `t-${t.id}`, tipo: "tarefa", titulo: t.titulo, data: new Date(t.data_prevista), prioridade: t.prioridade });
