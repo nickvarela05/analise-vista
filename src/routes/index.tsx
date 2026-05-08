@@ -33,7 +33,7 @@ import {
   LeadTimeCard,
   ThroughputCard,
   AgingBacklogCard,
-  HeatmapPrazosCard,
+  // HeatmapPrazosCard removido
   WipColaboradorCard,
   TaxaReprovacaoCard,
   TempoPorEtapaCard,
