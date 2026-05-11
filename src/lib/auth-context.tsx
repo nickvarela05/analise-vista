@@ -63,30 +63,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     let active = true;
+    let initialized = false;
+    let lastUserId: string | null = null;
 
-    const syncAuth = async (newSession: Session | null) => {
+    const syncAuth = async (newSession: Session | null, isInitial: boolean) => {
       if (!active) return;
 
       setSession(newSession);
 
       if (newSession?.user) {
-        setLoading(true);
-        await Promise.all([fetchRole(newSession.user.id), fetchMustChange(newSession.user.id)]);
-        if (active) setLoading(false);
+        const userChanged = lastUserId !== newSession.user.id;
+        lastUserId = newSession.user.id;
+
+        // Só mostra spinner global no carregamento inicial ou quando muda de usuário.
+        // Refreshes de token (ao voltar para a aba) atualizam role/must_change em segundo plano,
+        // sem desmontar a árvore — preservando diálogos abertos e estado de formulários.
+        if (isInitial || userChanged) {
+          setLoading(true);
+          await Promise.all([fetchRole(newSession.user.id), fetchMustChange(newSession.user.id)]);
+          if (active) setLoading(false);
+        } else {
+          void Promise.all([fetchRole(newSession.user.id), fetchMustChange(newSession.user.id)]);
+        }
         return;
       }
 
+      lastUserId = null;
       setRole(null);
       setMustChangePassword(false);
       setLoading(false);
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      void syncAuth(newSession);
+      const isInitial = !initialized;
+      initialized = true;
+      void syncAuth(newSession, isInitial);
     });
 
     void supabase.auth.getSession().then(({ data: { session: s } }) => {
-      void syncAuth(s);
+      if (initialized) return; // onAuthStateChange já tratou
+      initialized = true;
+      void syncAuth(s, true);
     });
 
     return () => {
