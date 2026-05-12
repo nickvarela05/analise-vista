@@ -88,6 +88,10 @@ function Configuracoes() {
         <TabsContent value="emails">
           <ConfiguracoesEmails />
         </TabsContent>
+
+        <TabsContent value="ia">
+          <ConfiguracoesIA />
+        </TabsContent>
       </Tabs>
     </div>
   );
