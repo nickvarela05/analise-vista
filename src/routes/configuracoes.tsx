@@ -9,6 +9,7 @@ import { useTheme } from "@/lib/theme-provider";
 import { Sun, Moon, LogOut } from "lucide-react";
 import { PreferenciasNotificacao } from "@/components/notificacoes/PreferenciasNotificacao";
 import { ConfiguracoesEmails } from "@/components/notificacoes/ConfiguracoesEmails";
+import { ConfiguracoesIA } from "@/components/notificacoes/ConfiguracoesIA";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -36,6 +37,7 @@ function Configuracoes() {
           <TabsTrigger value="conta">Conta</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
           <TabsTrigger value="emails">E-mails</TabsTrigger>
+          <TabsTrigger value="ia">IA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="conta" className="space-y-4">
@@ -85,6 +87,10 @@ function Configuracoes() {
 
         <TabsContent value="emails">
           <ConfiguracoesEmails />
+        </TabsContent>
+
+        <TabsContent value="ia">
+          <ConfiguracoesIA />
         </TabsContent>
       </Tabs>
     </div>
