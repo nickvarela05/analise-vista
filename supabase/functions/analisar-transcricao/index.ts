@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: await getSystemPrompt() },
           {
             role: "user",
             content: `Analise:\n\n---\n${reu.transcricao.slice(0, 60000)}\n---`,
