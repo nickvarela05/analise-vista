@@ -53,14 +53,32 @@ const initialForm: FormState = {
 export function NovaTarefaDialog({
   colabs,
   demandas,
+  open: openProp,
+  onOpenChange,
+  defaultData,
+  hideTrigger,
 }: {
   colabs: ColabMini[];
   demandas: DemandaMini[];
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  defaultData?: string;
+  hideTrigger?: boolean;
 }) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [open, setOpen] = React.useState(false);
-  const [form, setForm] = React.useState<FormState>(initialForm);
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
+  const [form, setForm] = React.useState<FormState>({ ...initialForm, data_prevista: defaultData ?? "" });
+
+  React.useEffect(() => {
+    if (open) setForm((f) => ({ ...f, data_prevista: defaultData ?? f.data_prevista }));
+  }, [open, defaultData]);
 
   const adicionar = async (e: React.FormEvent) => {
     e.preventDefault();
