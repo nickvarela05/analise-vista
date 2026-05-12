@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   startOfWeek,
   endOfWeek,
@@ -10,11 +10,22 @@ import {
   isSameDay,
   startOfMonth,
   endOfMonth,
+  startOfDay,
+  endOfDay,
   addWeeks,
   subWeeks,
+  isSameMonth,
+  differenceInCalendarDays,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, CalendarRange } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarRange,
+  Plus,
+  CheckSquare,
+  Inbox,
+} from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -27,12 +38,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { isAtribuidoA } from "@/lib/domain/atividades";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
+import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
+import { DemandaDialog } from "@/components/demandas/DemandaDialog";
 
 export const Route = createFileRoute("/atividades")({
   errorComponent: RouteErrorBoundary,
@@ -68,15 +87,40 @@ const tipoColor: Record<string, string> = {
   reuniao: "bg-primary/15 text-primary border-primary/30",
 };
 
+/** Faz parse de "YYYY-MM-DD" como data local, evitando shift de fuso. */
+function parseLocalDate(str: string | null | undefined): Date | null {
+  if (!str) return null;
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) {
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
 function Atividades() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const [periodo, setPeriodo] = React.useState<Periodo>("semana");
   const [cursor, setCursor] = React.useState(new Date());
   const [tipoFiltro, setTipoFiltro] = React.useState<string>("todos");
-  // escopo: "equipe" | "minhas" | <colaborador_id>
   const [escopo, setEscopo] = React.useState<string>("equipe");
   const [preview, setPreview] = React.useState<PreviewItem | null>(null);
   const [previewOpen, setPreviewOpen] = React.useState(false);
+
+  // Criação rápida
+  const [novaTarefaOpen, setNovaTarefaOpen] = React.useState(false);
+  const [novaDemandaOpen, setNovaDemandaOpen] = React.useState(false);
+  const [defaultData, setDefaultData] = React.useState<string | undefined>(undefined);
+
+  const abrirNovaTarefa = (data?: Date) => {
+    setDefaultData(data ? format(data, "yyyy-MM-dd") : undefined);
+    setNovaTarefaOpen(true);
+  };
+  const abrirNovaDemanda = (data?: Date) => {
+    setDefaultData(data ? format(data, "yyyy-MM-dd") : undefined);
+    setNovaDemandaOpen(true);
+  };
 
   const abrirDetalhe = React.useCallback((a: Atividade) => {
     setPreview({
@@ -94,15 +138,31 @@ function Atividades() {
     setPreviewOpen(true);
   }, []);
 
-  const inicio = periodo === "semana" ? startOfWeek(cursor, { weekStartsOn: 1 }) : startOfMonth(cursor);
-  const fim = periodo === "semana" ? endOfWeek(cursor, { weekStartsOn: 1 }) : endOfMonth(cursor);
+  const inicio = React.useMemo(
+    () =>
+      startOfDay(
+        periodo === "semana"
+          ? startOfWeek(cursor, { weekStartsOn: 1 })
+          : startOfMonth(cursor),
+      ),
+    [cursor, periodo],
+  );
+  const fim = React.useMemo(
+    () =>
+      endOfDay(
+        periodo === "semana"
+          ? endOfWeek(cursor, { weekStartsOn: 1 })
+          : endOfMonth(cursor),
+      ),
+    [cursor, periodo],
+  );
 
   const { data: colaboradores = [] } = useQuery({
     queryKey: ["atv-colaboradores"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("colaborador")
-        .select("id, nome")
+        .select("id, nome, cargo")
         .eq("ativo", true)
         .order("nome");
       if (error) throw error;
@@ -155,6 +215,12 @@ function Atividades() {
     },
   });
 
+  // Lista mínima de demandas para o select da nova tarefa
+  const demandasMini = React.useMemo(
+    () => (demandas as Array<{ id: string; titulo: string }>).map((d) => ({ id: d.id, titulo: d.titulo })),
+    [demandas],
+  );
+
   const isMine = React.useCallback(
     (r: any) => isAtribuidoA(r, meuColabId),
     [meuColabId],
@@ -176,13 +242,14 @@ function Atividades() {
       return isAtribuidoA(r, escopo);
     };
     tarefas.filter(filtroEscopo).forEach((t: any) => {
-      if (t.data_prevista && !tarefaConcluida.includes(t.status))
+      const d = parseLocalDate(t.data_prevista);
+      if (d && !tarefaConcluida.includes(t.status))
         arr.push({
           id: `t-${t.id}`,
           rawId: t.id,
           tipo: "tarefa",
           titulo: t.titulo,
-          data: new Date(t.data_prevista),
+          data: d,
           prioridade: t.prioridade,
           status: t.status,
           descricao: t.descricao,
@@ -190,13 +257,14 @@ function Atividades() {
         });
     });
     demandas.filter(filtroEscopo).forEach((d: any) => {
-      if (d.prazo && !demandaConcluida.includes(d.status))
+      const dt = parseLocalDate(d.prazo);
+      if (dt && !demandaConcluida.includes(d.status))
         arr.push({
           id: `d-${d.id}`,
           rawId: d.id,
           tipo: "demanda",
           titulo: d.titulo,
-          data: new Date(d.prazo),
+          data: dt,
           prioridade: d.prioridade,
           status: d.status,
           descricao: d.descricao,
@@ -220,15 +288,87 @@ function Atividades() {
     return arr;
   }, [tarefas, demandas, reunioes, escopo, isMine, colabById]);
 
-  const noPeriodo = todas.filter((a) => a.data >= inicio && a.data <= fim && (tipoFiltro === "todos" || a.tipo === tipoFiltro));
+  const noPeriodo = todas.filter(
+    (a) =>
+      a.data >= inicio &&
+      a.data <= fim &&
+      (tipoFiltro === "todos" || a.tipo === tipoFiltro),
+  );
 
-  const navPrev = () => setCursor(periodo === "semana" ? subWeeks(cursor, 1) : new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
-  const navNext = () => setCursor(periodo === "semana" ? addWeeks(cursor, 1) : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
+  const navPrev = () =>
+    setCursor(
+      periodo === "semana"
+        ? subWeeks(cursor, 1)
+        : new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1),
+    );
+  const navNext = () =>
+    setCursor(
+      periodo === "semana"
+        ? addWeeks(cursor, 1)
+        : new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1),
+    );
   const hoje = () => setCursor(new Date());
 
-  const dias = periodo === "semana"
-    ? Array.from({ length: 7 }, (_, i) => addDays(inicio, i))
-    : Array.from({ length: Math.ceil((fim.getTime() - inicio.getTime()) / 86400000) + 1 }, (_, i) => addDays(inicio, i));
+  // ────── Grades ──────
+  // Semana: 7 dias começando segunda
+  const diasSemana = React.useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(inicio, i)),
+    [inicio],
+  );
+
+  // Mês: alinhado a Seg–Dom, do início da semana do dia 1 até o fim da semana do último dia.
+  const diasMes = React.useMemo(() => {
+    const gridStart = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
+    const gridEnd = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
+    const total = differenceInCalendarDays(gridEnd, gridStart) + 1;
+    return Array.from({ length: total }, (_, i) => addDays(gridStart, i));
+  }, [cursor]);
+
+  const onCriado = () => {
+    qc.invalidateQueries({ queryKey: qk.atividades.tarefas() });
+    qc.invalidateQueries({ queryKey: qk.atividades.demandas() });
+  };
+
+  const novoMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" /> Novo
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => abrirNovaTarefa()}>
+          <CheckSquare className="mr-2 h-4 w-4" /> Nova tarefa
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => abrirNovaDemanda()}>
+          <Inbox className="mr-2 h-4 w-4" /> Nova demanda
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const QuickAdd = ({ data }: { data: Date }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Adicionar neste dia"
+          className="opacity-0 group-hover:opacity-100 transition rounded-full p-0.5 hover:bg-primary/10 text-muted-foreground hover:text-primary focus:outline-none focus:opacity-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuItem onSelect={() => abrirNovaTarefa(data)}>
+          <CheckSquare className="mr-2 h-4 w-4" /> Tarefa neste dia
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => abrirNovaDemanda(data)}>
+          <Inbox className="mr-2 h-4 w-4" /> Demanda com este prazo
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <div>
@@ -299,6 +439,10 @@ function Atividades() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-col gap-1 justify-end">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-transparent select-none">.</span>
+              {novoMenu}
+            </div>
           </div>
         }
       />
@@ -318,14 +462,19 @@ function Atividades() {
 
       {periodo === "semana" ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          {dias.map((dia) => {
+          {diasSemana.map((dia) => {
             const doDia = noPeriodo.filter((a) => isSameDay(a.data, dia));
             const isHoje = isSameDay(dia, new Date());
             return (
               <PanelCard
                 key={dia.toISOString()}
-                title={format(dia, "EEE dd/MM", { locale: ptBR })}
-                className={isHoje ? "ring-2 ring-primary/40" : ""}
+                title={
+                  <div className="flex items-center justify-between gap-2 group">
+                    <span>{format(dia, "EEE dd/MM", { locale: ptBR })}</span>
+                    <QuickAdd data={dia} />
+                  </div> as unknown as string
+                }
+                className={isHoje ? "ring-2 ring-primary/40 group" : "group"}
               >
                 <div className="min-h-[140px] space-y-2 sm:min-h-[180px]">
                   {doDia.length === 0 ? (
@@ -360,15 +509,36 @@ function Atividades() {
                   {d}
                 </div>
               ))}
-              {dias.map((dia) => {
+              {diasMes.map((dia) => {
                 const doDia = noPeriodo.filter((a) => isSameDay(a.data, dia));
                 const isHoje = isSameDay(dia, new Date());
+                const noMes = isSameMonth(dia, cursor);
+                const dow = dia.getDay(); // 0=dom, 6=sab
+                const isWeekend = dow === 0 || dow === 6;
                 return (
                   <div
                     key={dia.toISOString()}
-                    className={`min-h-[90px] rounded-md border p-1.5 text-xs ${isHoje ? "border-primary bg-primary/5" : "border-border"}`}
+                    className={`group min-h-[100px] rounded-md border p-1.5 text-xs transition ${
+                      isHoje
+                        ? "border-primary bg-primary/5"
+                        : noMes
+                        ? isWeekend
+                          ? "border-border bg-muted/30"
+                          : "border-border"
+                        : "border-border/50 bg-muted/10 opacity-60"
+                    }`}
                   >
-                    <div className="mb-1 text-[10px] font-semibold">{format(dia, "dd")}</div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className={`text-[10px] font-semibold ${noMes ? "" : "text-muted-foreground"}`}>
+                        {format(dia, "dd")}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {doDia.length > 0 && (
+                          <span className="text-[9px] text-muted-foreground">{doDia.length}</span>
+                        )}
+                        {noMes && <QuickAdd data={dia} />}
+                      </div>
+                    </div>
                     <div className="space-y-1">
                       {doDia.slice(0, 3).map((a) => (
                         <button
@@ -399,6 +569,39 @@ function Atividades() {
       </div>
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
+
+      {/* Dialogs de criação rápida */}
+      <NovaTarefaDialog
+        colabs={colaboradores as any}
+        demandas={demandasMini}
+        open={novaTarefaOpen}
+        onOpenChange={setNovaTarefaOpen}
+        defaultData={defaultData}
+        hideTrigger
+      />
+      <DemandaDialog
+        open={novaDemandaOpen}
+        onOpenChange={setNovaDemandaOpen}
+        colabs={colaboradores as any}
+        userId={user?.id}
+        initial={
+          defaultData
+            ? {
+                titulo: "",
+                descricao: "",
+                origem: "email",
+                categoria: "melhoria",
+                prioridade: "media",
+                solicitante: "",
+                responsaveis_ids: [],
+                equipe_toda: false,
+                prazo: defaultData,
+                tags: [],
+              }
+            : null
+        }
+        onSaved={onCriado}
+      />
     </div>
   );
 }
