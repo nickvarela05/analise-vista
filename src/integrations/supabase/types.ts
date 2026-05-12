@@ -515,6 +515,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ia_prompt_config: {
+        Row: {
+          ativo: boolean
+          chave: string
+          created_at: string
+          id: string
+          instrucoes_extras: string | null
+          prompt_sistema: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          chave: string
+          created_at?: string
+          id?: string
+          instrucoes_extras?: string | null
+          prompt_sistema: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          chave?: string
+          created_at?: string
+          id?: string
+          instrucoes_extras?: string | null
+          prompt_sistema?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       invite_token: {
         Row: {
           created_at: string
