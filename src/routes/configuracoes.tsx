@@ -37,6 +37,7 @@ function Configuracoes() {
           <TabsTrigger value="conta">Conta</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
           <TabsTrigger value="emails">E-mails</TabsTrigger>
+          <TabsTrigger value="ia">IA</TabsTrigger>
         </TabsList>
 
         <TabsContent value="conta" className="space-y-4">
