@@ -9,7 +9,23 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-const systemPrompt = `Você é um analista de reuniões. Receberá a transcrição de uma reunião em português. Extraia informações estruturadas, objetivas e profissionais. Não invente nada.`;
+const DEFAULT_SYSTEM_PROMPT = `Você é um analista de reuniões. Receberá a transcrição de uma reunião em português. Extraia informações estruturadas, objetivas e profissionais. Não invente nada.`;
+
+async function getSystemPrompt(): Promise<string> {
+  try {
+    const { data } = await admin
+      .from("ia_prompt_config")
+      .select("prompt_sistema, instrucoes_extras, ativo")
+      .eq("chave", "analise_reuniao")
+      .maybeSingle();
+    if (!data || !data.ativo || !data.prompt_sistema?.trim()) return DEFAULT_SYSTEM_PROMPT;
+    const base = data.prompt_sistema.trim();
+    const extra = data.instrucoes_extras?.trim();
+    return extra ? `${base}\n\nContexto adicional:\n${extra}` : base;
+  } catch {
+    return DEFAULT_SYSTEM_PROMPT;
+  }
+}
 
 const tool = {
   type: "function",
