@@ -11,6 +11,7 @@ export type CountsMap = Record<
 
 export type ColabMini = { id: string; nome: string; cargo: string | null };
 export type DemandaMini = { id: string; titulo: string };
+export type LoteMini = { id: string; nome: string; tipo: string; total_tarefas: number; created_at: string };
 
 /**
  * Centraliza as queries da página de Tarefas.
