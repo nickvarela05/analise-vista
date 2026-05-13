@@ -20,6 +20,7 @@ import { normalizeStatus } from "@/components/tarefas/lib/workflow";
 import { useTarefasData } from "@/components/tarefas/useTarefasData";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
 import { ImportarTarefasDialog } from "@/components/tarefas/ImportarTarefasDialog";
+import { ExportarTarefasDialog } from "@/components/tarefas/ExportarTarefasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
 import type { TarefaRow } from "@/lib/db-types";
@@ -46,7 +47,7 @@ function Tarefas() {
   const [drawerTarefa, setDrawerTarefa] = React.useState<TarefaRow | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  const { colabs, demandas, tarefas, isLoading, countsMap } = useTarefasData();
+  const { colabs, demandas, tarefas, lotes, isLoading, countsMap } = useTarefasData();
 
   // Aplica filtros
   const filtered = React.useMemo(() => {
@@ -61,6 +62,9 @@ function Tarefas() {
       }
       if (filters.comDemanda === "sim" && !t.demanda_id) return false;
       if (filters.comDemanda === "nao" && t.demanda_id) return false;
+      if (filters.origem === "homologacao" && t.origem_importacao !== "homologacao") return false;
+      if (filters.origem === "manual" && t.origem_importacao) return false;
+      if (filters.lotes.length && (!t.lote_importacao_id || !filters.lotes.includes(t.lote_importacao_id))) return false;
       if (filters.prazo !== "todos") {
         const prazo = t.data_prevista ? new Date(t.data_prevista) : null;
         if (filters.prazo === "sem_prazo" && prazo) return false;
@@ -187,6 +191,13 @@ function Tarefas() {
         actions={
           <div className="flex items-center gap-2">
             <ImportarTarefasDialog />
+            <ExportarTarefasDialog
+              todasTarefas={tarefas}
+              tarefasFiltradas={filtered}
+              colabs={colabs}
+              demandas={demandas}
+              lotes={lotes}
+            />
             <NovaTarefaDialog colabs={colabs} demandas={demandas} />
           </div>
         }
@@ -208,7 +219,7 @@ function Tarefas() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} />
+        <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} lotes={lotes} />
 
         <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "lista")} className="ml-auto">
           <TabsList className="h-9">

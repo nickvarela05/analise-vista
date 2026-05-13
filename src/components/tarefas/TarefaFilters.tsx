@@ -16,6 +16,8 @@ export interface TarefaFiltersState {
   prioridades: string[];
   prazo: "todos" | "atrasadas" | "hoje" | "semana" | "sem_prazo";
   comDemanda: "todos" | "sim" | "nao";
+  origem: "todos" | "homologacao" | "manual";
+  lotes: string[];
 }
 
 export const initialFilters: TarefaFiltersState = {
@@ -24,20 +26,25 @@ export const initialFilters: TarefaFiltersState = {
   prioridades: [],
   prazo: "todos",
   comDemanda: "todos",
+  origem: "todos",
+  lotes: [],
 };
 
 interface Props {
   value: TarefaFiltersState;
   onChange: (next: TarefaFiltersState) => void;
   colabs: { id: string; nome: string }[];
+  lotes?: { id: string; nome: string }[];
 }
 
-export function TarefaFilters({ value, onChange, colabs }: Props) {
+export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
   const activeCount =
     value.responsaveis.length +
     value.prioridades.length +
     (value.prazo !== "todos" ? 1 : 0) +
-    (value.comDemanda !== "todos" ? 1 : 0);
+    (value.comDemanda !== "todos" ? 1 : 0) +
+    (value.origem !== "todos" ? 1 : 0) +
+    value.lotes.length;
 
   const togglePrio = (p: string) => {
     onChange({
@@ -131,6 +138,46 @@ export function TarefaFilters({ value, onChange, colabs }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label className="text-xs">Origem</Label>
+              <Select value={value.origem} onValueChange={(v) => onChange({ ...value, origem: v as TarefaFiltersState["origem"] })}>
+                <SelectTrigger className="mt-1.5 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas</SelectItem>
+                  <SelectItem value="homologacao">Importadas (HML)</SelectItem>
+                  <SelectItem value="manual">Manuais</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {lotes.length > 0 && (
+              <div>
+                <Label className="text-xs">Lotes de importação</Label>
+                <ScrollArea className="mt-1.5 h-28 rounded-md border p-2">
+                  <div className="space-y-0.5">
+                    {lotes.map((l) => (
+                      <label key={l.id} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-muted">
+                        <Checkbox
+                          checked={value.lotes.includes(l.id)}
+                          onCheckedChange={() =>
+                            onChange({
+                              ...value,
+                              lotes: value.lotes.includes(l.id)
+                                ? value.lotes.filter((x) => x !== l.id)
+                                : [...value.lotes, l.id],
+                            })
+                          }
+                        />
+                        <span className="truncate text-xs">{l.nome}</span>
+                      </label>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             <div>
               <Label className="text-xs">Responsáveis</Label>

@@ -3,6 +3,7 @@ import { Upload, FileSpreadsheet, Loader2, AlertCircle } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,6 +17,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
@@ -70,6 +73,8 @@ export function ImportarTarefasDialog() {
   const [arquivo, setArquivo] = React.useState<string>("");
   const [importando, setImportando] = React.useState(false);
   const [forcarHomologacao, setForcarHomologacao] = React.useState(false);
+  const [nomeLote, setNomeLote] = React.useState("");
+  const [descricaoLote, setDescricaoLote] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -77,6 +82,8 @@ export function ImportarTarefasDialog() {
     setErros([]);
     setArquivo("");
     setForcarHomologacao(false);
+    setNomeLote("");
+    setDescricaoLote("");
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -84,6 +91,9 @@ export function ImportarTarefasDialog() {
     setArquivo(file.name);
     setErros([]);
     setLinhas([]);
+    // sugestão automática de nome de lote
+    const baseNome = file.name.replace(/\.(xlsx?|XLSX?)$/, "");
+    setNomeLote(`HML – ${baseNome} – ${format(new Date(), "dd/MM/yyyy HH:mm")}`);
     try {
       const buffer = await file.arrayBuffer();
       const wb = XLSX.read(buffer, { type: "array" });
@@ -101,7 +111,7 @@ export function ImportarTarefasDialog() {
 
         const tarefaStr = String(tarefa ?? "").trim();
         const assuntoStr = String(assunto ?? "").trim();
-        if (!tarefaStr && !assuntoStr) return; // linha vazia
+        if (!tarefaStr && !assuntoStr) return;
 
         const titulo =
           tarefaStr && assuntoStr
@@ -136,7 +146,33 @@ export function ImportarTarefasDialog() {
 
   const importar = async () => {
     if (!user || linhas.length === 0) return;
+    if (forcarHomologacao && !nomeLote.trim()) {
+      toast.error("Informe o nome do lote");
+      return;
+    }
     setImportando(true);
+
+    let loteId: string | null = null;
+    if (forcarHomologacao) {
+      const { data: lote, error: loteErr } = await supabase
+        .from("todo_importacao_lote")
+        .insert({
+          nome: nomeLote.trim(),
+          descricao: descricaoLote.trim() || null,
+          tipo: "homologacao",
+          total_tarefas: linhas.length,
+          criado_por: user.id,
+        })
+        .select("id")
+        .single();
+      if (loteErr || !lote) {
+        setImportando(false);
+        toast.error("Erro ao criar lote", { description: loteErr?.message });
+        return;
+      }
+      loteId = lote.id;
+    }
+
     const payload = linhas.map((l) => ({
       titulo: l.titulo,
       descricao: l.descricao,
@@ -145,6 +181,8 @@ export function ImportarTarefasDialog() {
       responsaveis_ids: [],
       equipe_toda: false,
       criado_por: user.id,
+      lote_importacao_id: loteId,
+      origem_importacao: forcarHomologacao ? "homologacao" : null,
     }));
     const { error } = await supabase.from("todo").insert(payload);
     setImportando(false);
@@ -152,8 +190,13 @@ export function ImportarTarefasDialog() {
       toast.error("Erro ao importar", { description: error.message });
       return;
     }
-    toast.success(`${linhas.length} tarefa(s) importada(s)`);
+    toast.success(
+      forcarHomologacao
+        ? `${linhas.length} tarefa(s) importada(s) no lote "${nomeLote}"`
+        : `${linhas.length} tarefa(s) importada(s)`,
+    );
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+    qc.invalidateQueries({ queryKey: ["tarefas", "lotes"] });
     reset();
     setOpen(false);
   };
@@ -203,22 +246,54 @@ export function ImportarTarefasDialog() {
             )}
           </div>
 
-          <div className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-3">
-            <Checkbox
-              id="forcar-hml"
-              checked={forcarHomologacao}
-              onCheckedChange={(v) => setForcarHomologacao(v === true)}
-              className="mt-0.5"
-            />
-            <div className="space-y-0.5">
-              <Label htmlFor="forcar-hml" className="cursor-pointer text-sm font-medium">
-                Importar tarefas de homologação
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Quando ativado, todas as tarefas importadas serão criadas com status{" "}
-                <span className="font-medium">Homologação</span>, ignorando o status da planilha.
-              </p>
+          <div className="space-y-3 rounded-md border border-info/30 bg-info/5 p-3">
+            <div className="flex items-start gap-2">
+              <Checkbox
+                id="forcar-hml"
+                checked={forcarHomologacao}
+                onCheckedChange={(v) => setForcarHomologacao(v === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5">
+                <Label htmlFor="forcar-hml" className="cursor-pointer text-sm font-medium">
+                  Importar tarefas de homologação
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Cria um <span className="font-medium">lote</span> rastreável e marca todas as tarefas como{" "}
+                  <span className="font-medium">Homologação</span>, ignorando o status da planilha.
+                </p>
+              </div>
             </div>
+
+            {forcarHomologacao && (
+              <div className="space-y-2 pl-6">
+                <div>
+                  <Label htmlFor="nome-lote" className="text-xs">
+                    Nome do lote <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="nome-lote"
+                    value={nomeLote}
+                    onChange={(e) => setNomeLote(e.target.value)}
+                    placeholder="Ex.: HML Sprint 23"
+                    className="mt-1 h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="desc-lote" className="text-xs">
+                    Descrição (opcional)
+                  </Label>
+                  <Textarea
+                    id="desc-lote"
+                    value={descricaoLote}
+                    onChange={(e) => setDescricaoLote(e.target.value)}
+                    placeholder="Notas sobre este lote..."
+                    rows={2}
+                    className="mt-1 text-sm"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {erros.length > 0 && (

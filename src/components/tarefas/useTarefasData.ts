@@ -11,6 +11,7 @@ export type CountsMap = Record<
 
 export type ColabMini = { id: string; nome: string; cargo: string | null };
 export type DemandaMini = { id: string; titulo: string };
+export type LoteMini = { id: string; nome: string; tipo: string; total_tarefas: number; created_at: string };
 
 /**
  * Centraliza as queries da página de Tarefas.
@@ -40,6 +41,18 @@ export function useTarefasData() {
         .select("id, titulo")
         .order("created_at", { ascending: false });
       return (data ?? []) as DemandaMini[];
+    },
+  });
+
+  const { data: lotes = [] } = useQuery<LoteMini[]>({
+    queryKey: ["tarefas", "lotes"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("todo_importacao_lote")
+        .select("id, nome, tipo, total_tarefas, created_at")
+        .order("created_at", { ascending: false });
+      return (data ?? []) as LoteMini[];
     },
   });
 
@@ -93,5 +106,5 @@ export function useTarefasData() {
     return m;
   }, [countsRaw]);
 
-  return { colabs, demandas, tarefas, isLoading, countsMap };
+  return { colabs, demandas, tarefas, lotes, isLoading, countsMap };
 }
