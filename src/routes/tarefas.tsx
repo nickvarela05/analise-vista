@@ -62,6 +62,9 @@ function Tarefas() {
       }
       if (filters.comDemanda === "sim" && !t.demanda_id) return false;
       if (filters.comDemanda === "nao" && t.demanda_id) return false;
+      if (filters.origem === "homologacao" && t.origem_importacao !== "homologacao") return false;
+      if (filters.origem === "manual" && t.origem_importacao) return false;
+      if (filters.lotes.length && (!t.lote_importacao_id || !filters.lotes.includes(t.lote_importacao_id))) return false;
       if (filters.prazo !== "todos") {
         const prazo = t.data_prevista ? new Date(t.data_prevista) : null;
         if (filters.prazo === "sem_prazo" && prazo) return false;
