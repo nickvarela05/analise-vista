@@ -34,14 +34,17 @@ interface Props {
   value: TarefaFiltersState;
   onChange: (next: TarefaFiltersState) => void;
   colabs: { id: string; nome: string }[];
+  lotes?: { id: string; nome: string }[];
 }
 
-export function TarefaFilters({ value, onChange, colabs }: Props) {
+export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
   const activeCount =
     value.responsaveis.length +
     value.prioridades.length +
     (value.prazo !== "todos" ? 1 : 0) +
-    (value.comDemanda !== "todos" ? 1 : 0);
+    (value.comDemanda !== "todos" ? 1 : 0) +
+    (value.origem !== "todos" ? 1 : 0) +
+    value.lotes.length;
 
   const togglePrio = (p: string) => {
     onChange({
