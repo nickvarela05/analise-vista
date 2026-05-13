@@ -16,6 +16,8 @@ export interface TarefaFiltersState {
   prioridades: string[];
   prazo: "todos" | "atrasadas" | "hoje" | "semana" | "sem_prazo";
   comDemanda: "todos" | "sim" | "nao";
+  origem: "todos" | "homologacao" | "manual";
+  lotes: string[];
 }
 
 export const initialFilters: TarefaFiltersState = {
@@ -24,6 +26,8 @@ export const initialFilters: TarefaFiltersState = {
   prioridades: [],
   prazo: "todos",
   comDemanda: "todos",
+  origem: "todos",
+  lotes: [],
 };
 
 interface Props {
