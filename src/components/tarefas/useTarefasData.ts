@@ -44,6 +44,18 @@ export function useTarefasData() {
     },
   });
 
+  const { data: lotes = [] } = useQuery<LoteMini[]>({
+    queryKey: ["tarefas", "lotes"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("todo_importacao_lote")
+        .select("id, nome, tipo, total_tarefas, created_at")
+        .order("created_at", { ascending: false });
+      return (data ?? []) as LoteMini[];
+    },
+  });
+
   const { data: tarefas = [], isLoading } = useQuery<TarefaRow[]>({
     queryKey: qk.tarefas.all(),
     staleTime: 30_000,
