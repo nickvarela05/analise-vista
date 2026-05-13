@@ -219,7 +219,7 @@ function Tarefas() {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} />
+        <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} lotes={lotes} />
 
         <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "lista")} className="ml-auto">
           <TabsList className="h-9">
