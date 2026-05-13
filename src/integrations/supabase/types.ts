@@ -827,6 +827,8 @@ export type Database = {
           descricao: string | null
           equipe_toda: boolean
           id: string
+          lote_importacao_id: string | null
+          origem_importacao: string | null
           prioridade: Database["public"]["Enums"]["todo_prioridade"]
           responsaveis_ids: string[]
           responsavel_id: string | null
@@ -843,6 +845,8 @@ export type Database = {
           descricao?: string | null
           equipe_toda?: boolean
           id?: string
+          lote_importacao_id?: string | null
+          origem_importacao?: string | null
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
           responsaveis_ids?: string[]
           responsavel_id?: string | null
@@ -859,6 +863,8 @@ export type Database = {
           descricao?: string | null
           equipe_toda?: boolean
           id?: string
+          lote_importacao_id?: string | null
+          origem_importacao?: string | null
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
           responsaveis_ids?: string[]
           responsavel_id?: string | null
@@ -872,6 +878,13 @@ export type Database = {
             columns: ["demanda_id"]
             isOneToOne: false
             referencedRelation: "demanda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todo_lote_importacao_id_fkey"
+            columns: ["lote_importacao_id"]
+            isOneToOne: false
+            referencedRelation: "todo_importacao_lote"
             referencedColumns: ["id"]
           },
         ]
@@ -1033,6 +1046,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      todo_importacao_lote: {
+        Row: {
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tipo: string
+          total_tarefas: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          tipo?: string
+          total_tarefas?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          total_tarefas?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
