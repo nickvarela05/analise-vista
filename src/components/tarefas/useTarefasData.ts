@@ -106,5 +106,5 @@ export function useTarefasData() {
     return m;
   }, [countsRaw]);
 
-  return { colabs, demandas, tarefas, isLoading, countsMap };
+  return { colabs, demandas, tarefas, lotes, isLoading, countsMap };
 }
