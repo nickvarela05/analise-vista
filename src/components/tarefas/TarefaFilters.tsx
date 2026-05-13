@@ -140,6 +140,46 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
             </div>
 
             <div>
+              <Label className="text-xs">Origem</Label>
+              <Select value={value.origem} onValueChange={(v) => onChange({ ...value, origem: v as TarefaFiltersState["origem"] })}>
+                <SelectTrigger className="mt-1.5 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas</SelectItem>
+                  <SelectItem value="homologacao">Importadas (HML)</SelectItem>
+                  <SelectItem value="manual">Manuais</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {lotes.length > 0 && (
+              <div>
+                <Label className="text-xs">Lotes de importação</Label>
+                <ScrollArea className="mt-1.5 h-28 rounded-md border p-2">
+                  <div className="space-y-0.5">
+                    {lotes.map((l) => (
+                      <label key={l.id} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-muted">
+                        <Checkbox
+                          checked={value.lotes.includes(l.id)}
+                          onCheckedChange={() =>
+                            onChange({
+                              ...value,
+                              lotes: value.lotes.includes(l.id)
+                                ? value.lotes.filter((x) => x !== l.id)
+                                : [...value.lotes, l.id],
+                            })
+                          }
+                        />
+                        <span className="truncate text-xs">{l.nome}</span>
+                      </label>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            <div>
               <Label className="text-xs">Responsáveis</Label>
               <ScrollArea className="mt-1.5 h-40 rounded-md border p-2">
                 {(() => {
