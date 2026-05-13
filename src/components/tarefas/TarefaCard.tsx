@@ -88,6 +88,16 @@ export function TarefaCard({ tarefa, colabs, selected, onSelect, onOpen, counts,
             <TooltipContent>Vinculada a uma demanda</TooltipContent>
           </Tooltip>
         )}
+        {tarefa.origem_importacao === "homologacao" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="h-5 border-info/40 bg-info/15 px-1.5 text-[10px] text-info hover:bg-info/20">
+                HML importada
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Tarefa importada via lote de homologação</TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
