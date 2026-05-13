@@ -191,6 +191,13 @@ function Tarefas() {
         actions={
           <div className="flex items-center gap-2">
             <ImportarTarefasDialog />
+            <ExportarTarefasDialog
+              todasTarefas={tarefas}
+              tarefasFiltradas={filtered}
+              colabs={colabs}
+              demandas={demandas}
+              lotes={lotes}
+            />
             <NovaTarefaDialog colabs={colabs} demandas={demandas} />
           </div>
         }
