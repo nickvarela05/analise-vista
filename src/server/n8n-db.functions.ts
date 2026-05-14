@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getN8nDbClient } from "./n8n-db.server";
 
 export type SolicitacaoRelatorio = {
@@ -20,10 +21,11 @@ export type SolicitacaoRelatorio = {
 
 /**
  * Lista todas as solicitações de relatórios do banco externo N8N,
- * ordenadas pelas mais recentes.
+ * ordenadas pelas mais recentes. Requer usuário autenticado.
  */
-export const listSolicitacoesRelatorios = createServerFn({ method: "GET" }).handler(
-  async () => {
+export const listSolicitacoesRelatorios = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
     const client = getN8nDbClient();
     const { data, error } = await client
       .from("solicitacoes_relatorios")
@@ -31,8 +33,7 @@ export const listSolicitacoesRelatorios = createServerFn({ method: "GET" }).hand
       .order("criado_em", { ascending: false });
     if (error) return { ok: false as const, error: error.message, rows: [] };
     return { ok: true as const, rows: (data ?? []) as SolicitacaoRelatorio[] };
-  },
-);
+  });
 
 export const STATUS_SOLICITACAO = ["Pendente", "Feito", "Enviado"] as const;
 export type StatusSolicitacao = (typeof STATUS_SOLICITACAO)[number];
@@ -41,6 +42,7 @@ export type StatusSolicitacao = (typeof STATUS_SOLICITACAO)[number];
  * Atualiza responsável e/ou status de uma solicitação no banco N8N.
  */
 export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(
     (data: { id: string; responsavel?: string | null; status?: StatusSolicitacao }) => data,
   )
@@ -62,6 +64,7 @@ export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
  * Cria uma solicitação de relatório manualmente no banco N8N.
  */
 export const createSolicitacaoRelatorio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(
     (data: {
       categoria?: string | null;
