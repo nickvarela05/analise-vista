@@ -5,6 +5,7 @@ export const CARGOS = [
   "Analista de Requisitos Pleno",
   "Analista de Requisitos Sênior",
   "Coordenador de Requisitos (Gestor)",
+  "Gerente",
   "Help-Desk",
   "Técnico de Suporte de TI",
 ] as const;
