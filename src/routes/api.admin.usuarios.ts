@@ -16,19 +16,24 @@ export type UsuarioRow = {
   email_confirmed_at: string | null;
 };
 
-/** Gera senha temporária de 12 chars: maiúsc + minúsc + dígito + símbolo. */
+/** Gera senha temporária de 12 chars usando RNG criptograficamente seguro. */
 function gerarSenhaTemporaria(): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnpqrstuvwxyz";
   const digit = "23456789";
   const symbol = "!@#$%&*?";
   const all = upper + lower + digit + symbol;
-  const rand = (set: string) => set[Math.floor(Math.random() * set.length)];
+  const randIndex = (max: number) => {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return arr[0] % max;
+  };
+  const rand = (set: string) => set[randIndex(set.length)];
   const chars = [rand(upper), rand(lower), rand(digit), rand(symbol)];
   for (let i = 0; i < 8; i++) chars.push(rand(all));
-  // shuffle
+  // Fisher-Yates shuffle com crypto random
   for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randIndex(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join("");

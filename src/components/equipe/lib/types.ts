@@ -43,7 +43,6 @@ export interface Colaborador {
   id: string;
   nome: string;
   cargo: string | null;
-  email: string | null;
   bio: string | null;
   foto_url: string | null;
   ativo: boolean;

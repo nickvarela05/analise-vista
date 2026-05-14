@@ -203,7 +203,6 @@ export type Database = {
           bio: string | null
           cargo: string | null
           created_at: string
-          email: string | null
           foto_url: string | null
           id: string
           local_trabalho: Database["public"]["Enums"]["local_trabalho"]
@@ -216,7 +215,6 @@ export type Database = {
           bio?: string | null
           cargo?: string | null
           created_at?: string
-          email?: string | null
           foto_url?: string | null
           id?: string
           local_trabalho?: Database["public"]["Enums"]["local_trabalho"]
@@ -229,7 +227,6 @@ export type Database = {
           bio?: string | null
           cargo?: string | null
           created_at?: string
-          email?: string | null
           foto_url?: string | null
           id?: string
           local_trabalho?: Database["public"]["Enums"]["local_trabalho"]

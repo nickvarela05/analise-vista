@@ -49,17 +49,15 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
   const [form, setForm] = React.useState<{
     nome: string;
     cargo: string;
-    email: string;
     bio: string;
     local_trabalho: LocalTrabalho;
-  }>({ nome: "", cargo: "", email: "", bio: "", local_trabalho: "escritorio" });
+  }>({ nome: "", cargo: "", bio: "", local_trabalho: "escritorio" });
 
   React.useEffect(() => {
     if (colab) {
       setForm({
         nome: colab.nome,
         cargo: colab.cargo ?? "",
-        email: colab.email ?? "",
         bio: colab.bio ?? "",
         local_trabalho: (colab.local_trabalho ?? "escritorio") as LocalTrabalho,
       });
@@ -173,12 +171,6 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                   value={form.cargo}
                   onChange={(v) => setForm({ ...form, cargo: v })}
                 />
-                <Input
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="E-mail"
-                  className="h-8"
-                />
                 <Select
                   value={form.local_trabalho}
                   onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
@@ -201,9 +193,6 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                 <p className="text-xs text-muted-foreground">
                   {LOCAL_TRABALHO_LABEL[(colab.local_trabalho ?? "escritorio") as LocalTrabalho]}
                 </p>
-                {colab.email && (
-                  <p className="text-xs text-muted-foreground">{colab.email}</p>
-                )}
               </>
             )}
           </div>
