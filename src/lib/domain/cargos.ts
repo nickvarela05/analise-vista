@@ -13,6 +13,8 @@
  */
 export function cargoElegivel(cargo: string | null | undefined): boolean {
   const c = (cargo ?? "").toLowerCase();
+  // "Gerente" é apenas visualizador — nunca elegível para atribuições.
+  if (c.includes("gerente")) return false;
   const estagiarioOk = c.includes("estagi") && c.includes("ti");
   return c.includes("analista") || c.includes("gestor") || estagiarioOk;
 }

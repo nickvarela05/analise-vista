@@ -15,6 +15,7 @@ describe("cargoElegivel", () => {
   it("rejeita cargos não atribuíveis", () => {
     expect(cargoElegivel("Help-Desk")).toBe(false);
     expect(cargoElegivel("Técnico de Suporte de TI")).toBe(false);
+    expect(cargoElegivel("Gerente")).toBe(false);
   });
 
   it("trata null/undefined/string vazia como falso", () => {
