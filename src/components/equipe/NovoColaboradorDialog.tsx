@@ -34,9 +34,8 @@ export function NovoColaboradorDialog() {
     nome: string;
     cargo: string;
     bio: string;
-    email: string;
     local_trabalho: LocalTrabalho;
-  }>({ nome: "", cargo: "", bio: "", email: "", local_trabalho: "escritorio" });
+  }>({ nome: "", cargo: "", bio: "", local_trabalho: "escritorio" });
 
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +64,7 @@ export function NovoColaboradorDialog() {
     toast.success("Colaborador adicionado");
     setOpen(false);
     setFoto(null);
-    setForm({ nome: "", cargo: "", bio: "", email: "", local_trabalho: "escritorio" });
+    setForm({ nome: "", cargo: "", bio: "", local_trabalho: "escritorio" });
     qc.invalidateQueries({ queryKey: ["equipe"] });
   };
 
@@ -109,14 +108,6 @@ export function NovoColaboradorDialog() {
                 <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>E-mail</Label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
           </div>
           <div className="space-y-1.5">
             <Label>Bio</Label>

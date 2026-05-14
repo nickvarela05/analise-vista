@@ -304,15 +304,6 @@ function ColaboradorCard({
         {c.bio && (
           <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{c.bio}</p>
         )}
-        {c.email && (
-          <a
-            href={`mailto:${c.email}`}
-            className="mt-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
-          >
-            <Mail className="h-3.5 w-3.5" />
-            <span className="truncate">{c.email}</span>
-          </a>
-        )}
       </CardContent>
 
       {canManage && (
@@ -367,7 +358,6 @@ function EditarColaboradorDialog({
   const [form, setForm] = React.useState({
     nome: colaborador.nome,
     cargo: colaborador.cargo ?? "",
-    email: colaborador.email ?? "",
     bio: colaborador.bio ?? "",
   });
 
@@ -376,7 +366,6 @@ function EditarColaboradorDialog({
       setForm({
         nome: colaborador.nome,
         cargo: colaborador.cargo ?? "",
-        email: colaborador.email ?? "",
         bio: colaborador.bio ?? "",
       });
       setFoto(null);
@@ -408,7 +397,6 @@ function EditarColaboradorDialog({
       .update({
         nome: form.nome,
         cargo: form.cargo || null,
-        email: form.email || null,
         bio: form.bio || null,
         foto_url,
       })
@@ -438,14 +426,6 @@ function EditarColaboradorDialog({
           <div className="space-y-1.5">
             <Label>Cargo</Label>
             <Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>E-mail</Label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
           </div>
           <div className="space-y-1.5">
             <Label>Bio</Label>
