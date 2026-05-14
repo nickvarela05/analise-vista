@@ -77,5 +77,6 @@ export const qk = {
   relatorios: {
     solicitacoes: () => ["solicitacoes-relatorios"] as const,
     colaboradores: () => ["relatorios-colaboradores"] as const,
+    inativos: () => ["relatorios-inativos"] as const,
   },
 } as const;
