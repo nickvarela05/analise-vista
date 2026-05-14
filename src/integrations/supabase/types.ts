@@ -694,6 +694,33 @@ export type Database = {
           },
         ]
       }
+      relatorio_inativo: {
+        Row: {
+          created_at: string
+          id: string
+          inativado_por: string | null
+          inativado_por_nome: string | null
+          motivo: string | null
+          solicitacao_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inativado_por?: string | null
+          inativado_por_nome?: string | null
+          motivo?: string | null
+          solicitacao_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inativado_por?: string | null
+          inativado_por_nome?: string | null
+          motivo?: string | null
+          solicitacao_id?: string
+        }
+        Relationships: []
+      }
       resumo_semanal: {
         Row: {
           conteudo_md: string
