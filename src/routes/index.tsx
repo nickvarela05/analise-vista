@@ -125,6 +125,15 @@ function Dashboard() {
     return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg };
   }, [tarefas]);
 
+  const minhasAtribCount = React.useMemo(() => {
+    if (!meuColabId) return 0;
+    return (
+      tarefas.filter((r) => isAtribuidoA(r, meuColabId)).length +
+      demandas.filter((r) => isAtribuidoA(r, meuColabId)).length +
+      reunioes.filter((r) => isAtribuidoA(r, meuColabId)).length
+    );
+  }, [tarefas, demandas, reunioes, meuColabId]);
+
   const now = React.useMemo(() => new Date(), []);
   const weekStart = React.useMemo(() => startOfWeek(now, { weekStartsOn: 1 }), [now]);
   const weekEnd = React.useMemo(() => endOfWeek(now, { weekStartsOn: 1 }), [now]);
