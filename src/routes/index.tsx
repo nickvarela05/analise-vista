@@ -346,19 +346,19 @@ function Dashboard() {
           loading={loading.solicitacoes}
         />
         <KpiTile
-          icon={Inbox}
-          label="Outras solicitações"
-          value={solicOutrasPend}
-          hint="Pendentes"
+          icon={ListChecks}
+          label="Minhas atribuições"
+          value={minhasAtribCount}
+          hint="Tarefas, demandas e reuniões"
           tone="info"
-          to="/relatorios"
-          loading={loading.solicitacoes}
+          loading={loading.tarefas || loading.reunioes}
+          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
         />
         <KpiTile
           icon={CheckSquare}
-          label="Tarefas abertas"
-          value={taskAbertas}
-          hint={`${taskUrgentes} urgentes`}
+          label="Tarefas em homologação"
+          value={taskHML}
+          hint={`${taskUrgentes} urgentes (abertas)`}
           tone="primary"
           to="/tarefas"
           loading={loading.tarefas}
