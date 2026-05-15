@@ -6,7 +6,6 @@ import {
   Megaphone,
   Calendar,
   CheckSquare,
-  Inbox,
   ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { KpiTile } from "@/components/KpiTile";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { cargoElegivel } from "@/lib/domain/cargos";
-import { contarAtribuicoes } from "@/lib/domain/atividades";
+import { contarAtribuicoes, isAtribuidoA } from "@/lib/domain/atividades";
 import { useDashboardData } from "@/components/dashboard/useDashboardData";
 import { AvisosBanner } from "@/components/dashboard/AvisosBanner";
 import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/DashboardCharts";
@@ -124,6 +123,15 @@ function Dashboard() {
     }
     return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg };
   }, [tarefas]);
+
+  const minhasAtribCount = React.useMemo(() => {
+    if (!meuColabId) return 0;
+    return (
+      tarefas.filter((r) => isAtribuidoA(r, meuColabId)).length +
+      demandas.filter((r) => isAtribuidoA(r, meuColabId)).length +
+      reunioes.filter((r) => isAtribuidoA(r, meuColabId)).length
+    );
+  }, [tarefas, demandas, reunioes, meuColabId]);
 
   const now = React.useMemo(() => new Date(), []);
   const weekStart = React.useMemo(() => startOfWeek(now, { weekStartsOn: 1 }), [now]);
@@ -337,19 +345,19 @@ function Dashboard() {
           loading={loading.solicitacoes}
         />
         <KpiTile
-          icon={Inbox}
-          label="Outras solicitações"
-          value={solicOutrasPend}
-          hint="Pendentes"
+          icon={ListChecks}
+          label="Minhas atribuições"
+          value={minhasAtribCount}
+          hint="Tarefas, demandas e reuniões"
           tone="info"
-          to="/relatorios"
-          loading={loading.solicitacoes}
+          loading={loading.tarefas || loading.reunioes}
+          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
         />
         <KpiTile
           icon={CheckSquare}
-          label="Tarefas abertas"
-          value={taskAbertas}
-          hint={`${taskUrgentes} urgentes`}
+          label="Tarefas em homologação"
+          value={taskHML}
+          hint={`${taskUrgentes} urgentes (abertas)`}
           tone="primary"
           to="/tarefas"
           loading={loading.tarefas}
