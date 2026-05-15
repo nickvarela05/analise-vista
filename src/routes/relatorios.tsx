@@ -74,6 +74,14 @@ function RelatoriosRoute() {
   );
 }
 
+/** Formata um campo `date` (YYYY-MM-DD) sem aplicar timezone — evita o "−1 dia" comum em pt-BR. */
+function fmtPrazo(s: string | null) {
+  if (!s) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return format(new Date(s), "dd/MM/yyyy");
+}
+
 function urgenciaVariant(u: string | null) {
   const v = (u ?? "").toLowerCase();
   if (v === "crítica" || v === "critica")
@@ -538,7 +546,7 @@ function CategoriaSecao({
                       </Select>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {r.prazo ? format(new Date(r.prazo), "dd/MM/yyyy") : "—"}
+                      {fmtPrazo(r.prazo)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
@@ -628,7 +636,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
           <DetalheLinha label="Categoria">{row.categoria ?? "—"}</DetalheLinha>
           <DetalheLinha label="Tipo base">{row.tipo_base ?? "—"}</DetalheLinha>
           <DetalheLinha label="Prazo">
-            {row.prazo ? format(new Date(row.prazo), "dd/MM/yyyy") : "—"}
+            {fmtPrazo(row.prazo)}
           </DetalheLinha>
           <DetalheLinha label="Recebido em">
             {row.criado_em ? format(new Date(row.criado_em), "dd/MM/yyyy HH:mm") : "—"}

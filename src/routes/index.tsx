@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 
 import { MinhasAtribuicoesPainel } from "@/components/dashboard/MinhasAtribuicoesPainel";
 import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoesDialog";
+import { MinhasAtribuicoesKpi } from "@/components/dashboard/MinhasAtribuicoesKpi";
 import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
@@ -124,13 +125,12 @@ function Dashboard() {
     return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg };
   }, [tarefas]);
 
-  const minhasAtribCount = React.useMemo(() => {
-    if (!meuColabId) return 0;
-    return (
-      tarefas.filter((r) => isAtribuidoA(r, meuColabId)).length +
-      demandas.filter((r) => isAtribuidoA(r, meuColabId)).length +
-      reunioes.filter((r) => isAtribuidoA(r, meuColabId)).length
-    );
+  const minhasAtrib = React.useMemo(() => {
+    if (!meuColabId) return { tarefas: 0, demandas: 0, reunioes: 0, total: 0 };
+    const t = tarefas.filter((r) => isAtribuidoA(r, meuColabId)).length;
+    const d = demandas.filter((r) => isAtribuidoA(r, meuColabId)).length;
+    const r = reunioes.filter((row) => isAtribuidoA(row, meuColabId)).length;
+    return { tarefas: t, demandas: d, reunioes: r, total: t + d + r };
   }, [tarefas, demandas, reunioes, meuColabId]);
 
   const now = React.useMemo(() => new Date(), []);
@@ -344,12 +344,11 @@ function Dashboard() {
           to="/relatorios"
           loading={loading.solicitacoes}
         />
-        <KpiTile
-          icon={ListChecks}
-          label="Minhas atribuições"
-          value={minhasAtribCount}
-          hint="Tarefas, demandas e reuniões"
-          tone="info"
+        <MinhasAtribuicoesKpi
+          tarefas={minhasAtrib.tarefas}
+          demandas={minhasAtrib.demandas}
+          reunioes={minhasAtrib.reunioes}
+          total={minhasAtrib.total}
           loading={loading.tarefas || loading.reunioes}
           onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
         />
