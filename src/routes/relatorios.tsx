@@ -74,6 +74,14 @@ function RelatoriosRoute() {
   );
 }
 
+/** Formata um campo `date` (YYYY-MM-DD) sem aplicar timezone — evita o "−1 dia" comum em pt-BR. */
+function fmtPrazo(s: string | null) {
+  if (!s) return "—";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return format(new Date(s), "dd/MM/yyyy");
+}
+
 function urgenciaVariant(u: string | null) {
   const v = (u ?? "").toLowerCase();
   if (v === "crítica" || v === "critica")
