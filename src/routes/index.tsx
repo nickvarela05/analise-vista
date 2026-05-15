@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { KpiTile } from "@/components/KpiTile";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { cargoElegivel } from "@/lib/domain/cargos";
-import { contarAtribuicoes } from "@/lib/domain/atividades";
+import { contarAtribuicoes, isAtribuidoA } from "@/lib/domain/atividades";
 import { useDashboardData } from "@/components/dashboard/useDashboardData";
 import { AvisosBanner } from "@/components/dashboard/AvisosBanner";
 import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/DashboardCharts";
