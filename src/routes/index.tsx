@@ -343,12 +343,11 @@ function Dashboard() {
           to="/relatorios"
           loading={loading.solicitacoes}
         />
-        <KpiTile
-          icon={ListChecks}
-          label="Minhas atribuições"
-          value={minhasAtribCount}
-          hint="Tarefas, demandas e reuniões"
-          tone="info"
+        <MinhasAtribuicoesKpi
+          tarefas={minhasAtrib.tarefas}
+          demandas={minhasAtrib.demandas}
+          reunioes={minhasAtrib.reunioes}
+          total={minhasAtrib.total}
           loading={loading.tarefas || loading.reunioes}
           onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
         />
