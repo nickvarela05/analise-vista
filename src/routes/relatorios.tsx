@@ -546,7 +546,7 @@ function CategoriaSecao({
                       </Select>
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {r.prazo ? format(new Date(r.prazo), "dd/MM/yyyy") : "—"}
+                      {fmtPrazo(r.prazo)}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
