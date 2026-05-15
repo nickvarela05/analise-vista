@@ -636,7 +636,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
           <DetalheLinha label="Categoria">{row.categoria ?? "—"}</DetalheLinha>
           <DetalheLinha label="Tipo base">{row.tipo_base ?? "—"}</DetalheLinha>
           <DetalheLinha label="Prazo">
-            {row.prazo ? format(new Date(row.prazo), "dd/MM/yyyy") : "—"}
+            {fmtPrazo(row.prazo)}
           </DetalheLinha>
           <DetalheLinha label="Recebido em">
             {row.criado_em ? format(new Date(row.criado_em), "dd/MM/yyyy HH:mm") : "—"}
