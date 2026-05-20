@@ -91,6 +91,30 @@ function urgenciaVariant(u: string | null) {
   return "bg-muted text-muted-foreground";
 }
 
+function urgenciaPeso(u: string | null) {
+  const v = (u ?? "").toLowerCase();
+  if (v === "crítica" || v === "critica") return 4;
+  if (v === "alta") return 3;
+  if (v === "média" || v === "media") return 2;
+  if (v === "baixa") return 1;
+  return 0;
+}
+
+function isSolicitacaoCat(nome: string) {
+  return nome.toLowerCase().includes("solicit");
+}
+
+function isAtrasado(r: SolicitacaoRelatorio) {
+  if (!r.prazo) return false;
+  if ((r.status ?? "").toLowerCase() === "enviado") return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(r.prazo);
+  if (!m) return false;
+  const prazo = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return prazo < hoje;
+}
+
 function statusVariant(s: string | null) {
   const v = (s ?? "").toLowerCase();
   if (v === "enviado" || v === "finalizado" || v === "concluído" || v === "concluido")
@@ -101,6 +125,14 @@ function statusVariant(s: string | null) {
   return "bg-muted text-muted-foreground";
 }
 
+const CATEGORIAS_SUGERIDAS = [
+  "Solicitação de Relatório",
+  "Notificação",
+  "Resposta",
+  "Informativo",
+  "Outros",
+] as const;
+
 type RowExt = SolicitacaoRelatorio & { _inativo: boolean };
 
 function Relatorios() {
@@ -108,7 +140,7 @@ function Relatorios() {
   const { user } = useAuth();
   const [categoria, setCategoria] = React.useState<string>("todas");
   const [search, setSearch] = React.useState("");
-  const [mostrarInativos, setMostrarInativos] = React.useState(true);
+  const [mostrarInativos, setMostrarInativos] = React.useState(false);
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
 
   const { data, isLoading, isFetching, error } = useQuery({
@@ -148,6 +180,7 @@ function Relatorios() {
       id: string;
       responsavel?: string | null;
       status?: StatusSolicitacao;
+      categoria?: string | null;
     }) => updateSolicitacaoRelatorio({ data: vars }),
     onSuccess: (res) => {
       if (!res.ok) {
@@ -187,25 +220,37 @@ function Relatorios() {
     () =>
       (data?.ok ? data.rows : []).map((r) => ({
         ...r,
-        _inativo: inativosSet.has(r.id),
+        // "Enviado" é considerado inativo automaticamente (não conta no total).
+        _inativo:
+          inativosSet.has(r.id) || (r.status ?? "").toLowerCase() === "enviado",
       })),
     [data, inativosSet],
   );
 
   // Categorias contam somente as ATIVAS
   const categorias = React.useMemo(() => {
-    const counts = new Map<string, number>();
+    const counts = new Map<string, { total: number; enviados: number; atrasados: number }>();
     for (const r of rows) {
-      if (r._inativo) continue;
       const cat = (r.categoria ?? "Indefinido").trim() || "Indefinido";
-      counts.set(cat, (counts.get(cat) ?? 0) + 1);
+      const cur = counts.get(cat) ?? { total: 0, enviados: 0, atrasados: 0 };
+      const enviado = (r.status ?? "").toLowerCase() === "enviado";
+      if (!r._inativo) cur.total += 1;
+      if (enviado) cur.enviados += 1;
+      if (!r._inativo && isAtrasado(r)) cur.atrasados += 1;
+      counts.set(cat, cur);
     }
     return Array.from(counts.entries())
-      .map(([nome, total]) => ({ nome, total }))
+      .map(([nome, m]) => ({ nome, ...m }))
       .sort((a, b) => b.total - a.total);
   }, [rows]);
 
   const totalAtivas = rows.filter((r) => !r._inativo).length;
+
+  const categoriasDisponiveis = React.useMemo(() => {
+    const set = new Set<string>(CATEGORIAS_SUGERIDAS);
+    for (const c of categorias) set.add(c.nome);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [categorias]);
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -276,8 +321,8 @@ function Relatorios() {
         }
       />
 
-      {/* Resumo por categoria — só conta ATIVAS */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Resumo por categoria — só conta ATIVAS. Categorias de solicitação ganham métricas extras. */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <button
           type="button"
           onClick={() => setCategoria("todas")}
@@ -288,21 +333,56 @@ function Relatorios() {
           <div className="text-2xl font-semibold">{totalAtivas}</div>
           <div className="text-xs text-muted-foreground">Todas (ativas)</div>
         </button>
-        {categorias.map((c) => (
-          <button
-            type="button"
-            key={c.nome}
-            onClick={() => setCategoria(c.nome)}
-            className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
-              categoria === c.nome ? "border-primary bg-primary/5" : "border-border"
-            }`}
-          >
-            <div className="text-2xl font-semibold">{c.total}</div>
-            <div className="truncate text-xs text-muted-foreground" title={c.nome}>
-              {c.nome}
-            </div>
-          </button>
-        ))}
+        {categorias.map((c) => {
+          const isSolic = isSolicitacaoCat(c.nome);
+          const selected = categoria === c.nome;
+          return (
+            <button
+              type="button"
+              key={c.nome}
+              onClick={() => setCategoria(c.nome)}
+              className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
+                selected ? "border-primary bg-primary/5" : "border-border"
+              } ${isSolic ? "sm:col-span-2" : ""}`}
+            >
+              {isSolic ? (
+                <div className="space-y-2">
+                  <div
+                    className="truncate text-xs font-medium text-muted-foreground"
+                    title={c.nome}
+                  >
+                    {c.nome}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <div className="text-2xl font-semibold leading-none">{c.total}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">Solicitações</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold leading-none text-success">
+                        {c.enviados}
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">Enviados</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold leading-none text-destructive">
+                        {c.atrasados}
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">Atrasados</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-semibold">{c.total}</div>
+                  <div className="truncate text-xs text-muted-foreground" title={c.nome}>
+                    {c.nome}
+                  </div>
+                </>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -361,6 +441,7 @@ function Relatorios() {
               total={g.items.length}
               items={g.items}
               colaboradores={colaboradores}
+              categoriasDisponiveis={categoriasDisponiveis}
               expanded={expanded}
               onToggleExpand={(id) =>
                 setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -377,27 +458,57 @@ function Relatorios() {
   );
 }
 
+type RowHandlers = {
+  colaboradores: { id: string; nome: string }[];
+  categoriasDisponiveis: string[];
+  expanded: Record<string, boolean>;
+  onToggleExpand: (id: string) => void;
+  onUpdate: (vars: {
+    id: string;
+    responsavel?: string | null;
+    status?: StatusSolicitacao;
+    categoria?: string | null;
+  }) => void;
+  onToggleAtivo: (id: string, ativarNovamente: boolean) => void;
+};
+
 function CategoriaSecao({
   nome,
   ativos,
   total,
   items,
-  colaboradores,
-  expanded,
-  onToggleExpand,
-  onUpdate,
-  onToggleAtivo,
+  ...handlers
 }: {
   nome: string;
   ativos: number;
   total: number;
   items: RowExt[];
-  colaboradores: { id: string; nome: string }[];
-  expanded: Record<string, boolean>;
-  onToggleExpand: (id: string) => void;
-  onUpdate: (vars: { id: string; responsavel?: string | null; status?: StatusSolicitacao }) => void;
-  onToggleAtivo: (id: string, ativarNovamente: boolean) => void;
-}) {
+} & RowHandlers) {
+  const isSolic = isSolicitacaoCat(nome);
+
+  // Ordena por prioridade (urgência) desc, depois prazo asc, depois recebido desc.
+  const sortByPrio = React.useCallback((arr: RowExt[]) => {
+    return [...arr].sort((a, b) => {
+      const d = urgenciaPeso(b.urgencia) - urgenciaPeso(a.urgencia);
+      if (d !== 0) return d;
+      const pa = a.prazo ?? "9999-12-31";
+      const pb = b.prazo ?? "9999-12-31";
+      if (pa !== pb) return pa.localeCompare(pb);
+      return (b.criado_em ?? "").localeCompare(a.criado_em ?? "");
+    });
+  }, []);
+
+  const itemsSorted = React.useMemo(() => sortByPrio(items), [items, sortByPrio]);
+
+  const novas = React.useMemo(
+    () => itemsSorted.filter((r) => !(r.responsavel ?? "").trim()),
+    [itemsSorted],
+  );
+  const atribuidas = React.useMemo(
+    () => itemsSorted.filter((r) => !!(r.responsavel ?? "").trim()),
+    [itemsSorted],
+  );
+
   return (
     <section>
       <div className="mb-2 flex items-baseline gap-3 px-1">
@@ -412,179 +523,259 @@ function CategoriaSecao({
         )}
       </div>
       <Separator className="mb-3" />
-      <Card className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-8" />
-              <TableHead>Tipo</TableHead>
-              <TableHead>Solicitante</TableHead>
-              <TableHead className="min-w-[280px]">Descrição</TableHead>
-              <TableHead>Urgência</TableHead>
-              <TableHead className="min-w-[160px]">Responsável</TableHead>
-              <TableHead className="min-w-[140px]">Status</TableHead>
-              <TableHead>Prazo</TableHead>
-              <TableHead>Recebido</TableHead>
-              <TableHead className="w-24 text-right">Ativa</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map((r) => {
-              const isOpen = !!expanded[r.id];
-              return (
-                <React.Fragment key={r.id}>
-                  <TableRow
-                    className={cn(
-                      "transition-opacity",
-                      r._inativo && "opacity-50 bg-muted/30",
-                    )}
-                  >
-                    <TableCell className="p-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => onToggleExpand(r.id)}
-                        aria-label={isOpen ? "Fechar detalhes" : "Abrir detalhes"}
-                      >
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {r.tipo_base ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-0.5">
-                        <span
-                          className={cn(
-                            "text-sm font-medium",
-                            r._inativo && "line-through",
-                          )}
-                        >
-                          {r.solicitante_nome ?? "—"}
-                        </span>
-                        {r.solicitante_email && (
-                          <a
-                            href={`mailto:${r.solicitante_email}`}
-                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                          >
-                            <Mail className="h-3 w-3" />
-                            {r.solicitante_email}
-                          </a>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-md">
-                      <p
-                        className={cn(
-                          "line-clamp-2 text-sm",
-                          r._inativo && "line-through",
-                        )}
-                        title={r.descricao ?? ""}
-                      >
-                        {r.descricao ?? "—"}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={`capitalize ${urgenciaVariant(r.urgencia)}`}
-                      >
-                        {r.urgencia ?? "—"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={r.responsavel ?? "__none__"}
-                        onValueChange={(v) =>
-                          onUpdate({
-                            id: r.id,
-                            responsavel: v === "__none__" ? null : v,
-                          })
-                        }
-                        disabled={r._inativo}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Atribuir..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">— Sem responsável —</SelectItem>
-                          {colaboradores.map((c) => (
-                            <SelectItem key={c.id} value={c.nome}>
-                              {c.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={
-                          (STATUS_SOLICITACAO as readonly string[]).includes(r.status ?? "")
-                            ? (r.status as string)
-                            : "Pendente"
-                        }
-                        onValueChange={(v) =>
-                          onUpdate({ id: r.id, status: v as StatusSolicitacao })
-                        }
-                        disabled={r._inativo}
-                      >
-                        <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {STATUS_SOLICITACAO.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {fmtPrazo(r.prazo)}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {r.criado_em ? format(new Date(r.criado_em), "dd/MM/yyyy HH:mm") : "—"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Switch
-                          checked={!r._inativo}
-                          onCheckedChange={() => onToggleAtivo(r.id, r._inativo)}
-                          aria-label={r._inativo ? "Reativar" : "Inativar"}
-                        />
-                        {r._inativo ? (
-                          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
-                        ) : (
-                          <Eye className="h-3.5 w-3.5 text-success" />
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableCell colSpan={10} className="p-0">
-                      <Collapsible open={isOpen}>
-                        <CollapsibleContent>
-                          <DetalhesEmail row={r} />
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </TableCell>
-                  </TableRow>
-                </React.Fragment>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+
+      {isSolic ? (
+        <div className="space-y-4">
+          <SubGrupo titulo="Novas solicitações" count={novas.length} tone="warning">
+            {novas.length === 0 ? (
+              <EmptyMini text="Nenhuma solicitação aguardando atribuição." />
+            ) : (
+              <RelatorioTable items={novas} {...handlers} />
+            )}
+          </SubGrupo>
+          <SubGrupo titulo="Já atribuídas" count={atribuidas.length} tone="info">
+            {atribuidas.length === 0 ? (
+              <EmptyMini text="Nenhuma solicitação atribuída ainda." />
+            ) : (
+              <RelatorioTable items={atribuidas} {...handlers} />
+            )}
+          </SubGrupo>
+        </div>
+      ) : (
+        <RelatorioTable items={itemsSorted} {...handlers} />
+      )}
     </section>
+  );
+}
+
+function SubGrupo({
+  titulo,
+  count,
+  tone,
+  children,
+}: {
+  titulo: string;
+  count: number;
+  tone: "warning" | "info";
+  children: React.ReactNode;
+}) {
+  const toneCls =
+    tone === "warning"
+      ? "bg-warning/10 text-warning border-warning/30"
+      : "bg-info/10 text-info border-info/30";
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2 px-1">
+        <h3 className="text-sm font-medium text-foreground">{titulo}</h3>
+        <Badge variant="outline" className={toneCls}>
+          {count}
+        </Badge>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EmptyMini({ text }: { text: string }) {
+  return (
+    <Card className="p-4 text-center text-xs text-muted-foreground">{text}</Card>
+  );
+}
+
+function RelatorioTable({
+  items,
+  colaboradores,
+  categoriasDisponiveis,
+  expanded,
+  onToggleExpand,
+  onUpdate,
+  onToggleAtivo,
+}: { items: RowExt[] } & RowHandlers) {
+  return (
+    <Card className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-8" />
+            <TableHead className="min-w-[160px]">Categoria</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead>Solicitante</TableHead>
+            <TableHead className="min-w-[280px]">Descrição</TableHead>
+            <TableHead>Urgência</TableHead>
+            <TableHead className="min-w-[160px]">Responsável</TableHead>
+            <TableHead className="min-w-[140px]">Status</TableHead>
+            <TableHead>Prazo</TableHead>
+            <TableHead>Recebido</TableHead>
+            <TableHead className="w-24 text-right">Ativa</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map((r) => {
+            const isOpen = !!expanded[r.id];
+            const catAtual = (r.categoria ?? "Indefinido").trim() || "Indefinido";
+            const opcoesCat = Array.from(new Set([catAtual, ...categoriasDisponiveis]));
+            return (
+              <React.Fragment key={r.id}>
+                <TableRow
+                  className={cn("transition-opacity", r._inativo && "opacity-50 bg-muted/30")}
+                >
+                  <TableCell className="p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => onToggleExpand(r.id)}
+                      aria-label={isOpen ? "Fechar detalhes" : "Abrir detalhes"}
+                    >
+                      {isOpen ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={catAtual}
+                      onValueChange={(v) => onUpdate({ id: r.id, categoria: v })}
+                      disabled={r._inativo}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {opcoesCat.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {r.tipo_base ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      <span
+                        className={cn("text-sm font-medium", r._inativo && "line-through")}
+                      >
+                        {r.solicitante_nome ?? "—"}
+                      </span>
+                      {r.solicitante_email && (
+                        <a
+                          href={`mailto:${r.solicitante_email}`}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                        >
+                          <Mail className="h-3 w-3" />
+                          {r.solicitante_email}
+                        </a>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-w-md">
+                    <p
+                      className={cn("line-clamp-2 text-sm", r._inativo && "line-through")}
+                      title={r.descricao ?? ""}
+                    >
+                      {r.descricao ?? "—"}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={`capitalize ${urgenciaVariant(r.urgencia)}`}
+                    >
+                      {r.urgencia ?? "—"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={r.responsavel ?? "__none__"}
+                      onValueChange={(v) =>
+                        onUpdate({
+                          id: r.id,
+                          responsavel: v === "__none__" ? null : v,
+                        })
+                      }
+                      disabled={r._inativo}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="Atribuir..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Sem responsável —</SelectItem>
+                        {colaboradores.map((c) => (
+                          <SelectItem key={c.id} value={c.nome}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      value={
+                        (STATUS_SOLICITACAO as readonly string[]).includes(r.status ?? "")
+                          ? (r.status as string)
+                          : "Pendente"
+                      }
+                      onValueChange={(v) =>
+                        onUpdate({ id: r.id, status: v as StatusSolicitacao })
+                      }
+                      disabled={r._inativo}
+                    >
+                      <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_SOLICITACAO.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {s}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {fmtPrazo(r.prazo)}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {r.criado_em ? format(new Date(r.criado_em), "dd/MM/yyyy HH:mm") : "—"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Switch
+                        checked={!r._inativo}
+                        onCheckedChange={() => onToggleAtivo(r.id, r._inativo)}
+                        aria-label={r._inativo ? "Reativar" : "Inativar"}
+                      />
+                      {r._inativo ? (
+                        <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5 text-success" />
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableCell colSpan={11} className="p-0">
+                    <Collapsible open={isOpen}>
+                      <CollapsibleContent>
+                        <DetalhesEmail row={r} />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </Card>
   );
 }
 

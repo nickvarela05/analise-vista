@@ -44,13 +44,19 @@ export type StatusSolicitacao = (typeof STATUS_SOLICITACAO)[number];
 export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: { id: string; responsavel?: string | null; status?: StatusSolicitacao }) => data,
+    (data: {
+      id: string;
+      responsavel?: string | null;
+      status?: StatusSolicitacao;
+      categoria?: string | null;
+    }) => data,
   )
   .handler(async ({ data }) => {
     const client = getN8nDbClient();
     const patch: Record<string, unknown> = {};
     if (data.responsavel !== undefined) patch.responsavel = data.responsavel;
     if (data.status !== undefined) patch.status = data.status;
+    if (data.categoria !== undefined) patch.categoria = data.categoria;
     if (Object.keys(patch).length === 0) return { ok: true as const };
     const { error } = await client
       .from("solicitacoes_relatorios")
