@@ -441,6 +441,7 @@ function Relatorios() {
               total={g.items.length}
               items={g.items}
               colaboradores={colaboradores}
+              categoriasDisponiveis={categoriasDisponiveis}
               expanded={expanded}
               onToggleExpand={(id) =>
                 setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
