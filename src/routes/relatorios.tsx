@@ -91,6 +91,30 @@ function urgenciaVariant(u: string | null) {
   return "bg-muted text-muted-foreground";
 }
 
+function urgenciaPeso(u: string | null) {
+  const v = (u ?? "").toLowerCase();
+  if (v === "crítica" || v === "critica") return 4;
+  if (v === "alta") return 3;
+  if (v === "média" || v === "media") return 2;
+  if (v === "baixa") return 1;
+  return 0;
+}
+
+function isSolicitacaoCat(nome: string) {
+  return nome.toLowerCase().includes("solicit");
+}
+
+function isAtrasado(r: SolicitacaoRelatorio) {
+  if (!r.prazo) return false;
+  if ((r.status ?? "").toLowerCase() === "enviado") return false;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(r.prazo);
+  if (!m) return false;
+  const prazo = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return prazo < hoje;
+}
+
 function statusVariant(s: string | null) {
   const v = (s ?? "").toLowerCase();
   if (v === "enviado" || v === "finalizado" || v === "concluído" || v === "concluido")
@@ -101,6 +125,14 @@ function statusVariant(s: string | null) {
   return "bg-muted text-muted-foreground";
 }
 
+const CATEGORIAS_SUGERIDAS = [
+  "Solicitação de Relatório",
+  "Notificação",
+  "Resposta",
+  "Informativo",
+  "Outros",
+] as const;
+
 type RowExt = SolicitacaoRelatorio & { _inativo: boolean };
 
 function Relatorios() {
@@ -108,7 +140,7 @@ function Relatorios() {
   const { user } = useAuth();
   const [categoria, setCategoria] = React.useState<string>("todas");
   const [search, setSearch] = React.useState("");
-  const [mostrarInativos, setMostrarInativos] = React.useState(true);
+  const [mostrarInativos, setMostrarInativos] = React.useState(false);
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
 
   const { data, isLoading, isFetching, error } = useQuery({
