@@ -321,8 +321,8 @@ function Relatorios() {
         }
       />
 
-      {/* Resumo por categoria — só conta ATIVAS */}
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* Resumo por categoria — só conta ATIVAS. Categorias de solicitação ganham métricas extras. */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <button
           type="button"
           onClick={() => setCategoria("todas")}
@@ -333,21 +333,56 @@ function Relatorios() {
           <div className="text-2xl font-semibold">{totalAtivas}</div>
           <div className="text-xs text-muted-foreground">Todas (ativas)</div>
         </button>
-        {categorias.map((c) => (
-          <button
-            type="button"
-            key={c.nome}
-            onClick={() => setCategoria(c.nome)}
-            className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
-              categoria === c.nome ? "border-primary bg-primary/5" : "border-border"
-            }`}
-          >
-            <div className="text-2xl font-semibold">{c.total}</div>
-            <div className="truncate text-xs text-muted-foreground" title={c.nome}>
-              {c.nome}
-            </div>
-          </button>
-        ))}
+        {categorias.map((c) => {
+          const isSolic = isSolicitacaoCat(c.nome);
+          const selected = categoria === c.nome;
+          return (
+            <button
+              type="button"
+              key={c.nome}
+              onClick={() => setCategoria(c.nome)}
+              className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
+                selected ? "border-primary bg-primary/5" : "border-border"
+              } ${isSolic ? "sm:col-span-2" : ""}`}
+            >
+              {isSolic ? (
+                <div className="space-y-2">
+                  <div
+                    className="truncate text-xs font-medium text-muted-foreground"
+                    title={c.nome}
+                  >
+                    {c.nome}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <div className="text-2xl font-semibold leading-none">{c.total}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">Solicitações</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold leading-none text-success">
+                        {c.enviados}
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">Enviados</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold leading-none text-destructive">
+                        {c.atrasados}
+                      </div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">Atrasados</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-2xl font-semibold">{c.total}</div>
+                  <div className="truncate text-xs text-muted-foreground" title={c.nome}>
+                    {c.nome}
+                  </div>
+                </>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
