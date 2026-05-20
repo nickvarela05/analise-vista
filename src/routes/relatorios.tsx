@@ -180,6 +180,7 @@ function Relatorios() {
       id: string;
       responsavel?: string | null;
       status?: StatusSolicitacao;
+      categoria?: string | null;
     }) => updateSolicitacaoRelatorio({ data: vars }),
     onSuccess: (res) => {
       if (!res.ok) {
@@ -219,25 +220,37 @@ function Relatorios() {
     () =>
       (data?.ok ? data.rows : []).map((r) => ({
         ...r,
-        _inativo: inativosSet.has(r.id),
+        // "Enviado" é considerado inativo automaticamente (não conta no total).
+        _inativo:
+          inativosSet.has(r.id) || (r.status ?? "").toLowerCase() === "enviado",
       })),
     [data, inativosSet],
   );
 
   // Categorias contam somente as ATIVAS
   const categorias = React.useMemo(() => {
-    const counts = new Map<string, number>();
+    const counts = new Map<string, { total: number; enviados: number; atrasados: number }>();
     for (const r of rows) {
-      if (r._inativo) continue;
       const cat = (r.categoria ?? "Indefinido").trim() || "Indefinido";
-      counts.set(cat, (counts.get(cat) ?? 0) + 1);
+      const cur = counts.get(cat) ?? { total: 0, enviados: 0, atrasados: 0 };
+      const enviado = (r.status ?? "").toLowerCase() === "enviado";
+      if (!r._inativo) cur.total += 1;
+      if (enviado) cur.enviados += 1;
+      if (!r._inativo && isAtrasado(r)) cur.atrasados += 1;
+      counts.set(cat, cur);
     }
     return Array.from(counts.entries())
-      .map(([nome, total]) => ({ nome, total }))
+      .map(([nome, m]) => ({ nome, ...m }))
       .sort((a, b) => b.total - a.total);
   }, [rows]);
 
   const totalAtivas = rows.filter((r) => !r._inativo).length;
+
+  const categoriasDisponiveis = React.useMemo(() => {
+    const set = new Set<string>(CATEGORIAS_SUGERIDAS);
+    for (const c of categorias) set.add(c.nome);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [categorias]);
 
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
