@@ -279,6 +279,9 @@ export function computeTopSolicitantes(rows: Solic[], days = 90, top = 8, ref = 
   for (const r of rows) {
     if (!r.criado_em) continue;
     if (new Date(r.criado_em) < limit) continue;
+    // Considerar apenas solicitações de relatório (ignorar notificações e outras categorias)
+    const cat = (r.categoria ?? "").toLowerCase();
+    if (!cat.includes("solicit")) continue;
     const nome = (r.solicitante_nome ?? "").trim();
     if (!nome) continue;
     map.set(nome, (map.get(nome) ?? 0) + 1);
