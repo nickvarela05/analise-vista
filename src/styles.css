@@ -254,8 +254,9 @@
 
   /* KPI tile — moderno, com ícone, número grande, tendência */
   .kpi-tile {
-    @apply relative flex flex-col gap-3 overflow-hidden rounded-xl border bg-card p-5 transition-all duration-200;
+    @apply relative flex flex-col gap-4 overflow-hidden rounded-xl border bg-card p-5 transition-all duration-200;
     box-shadow: var(--shadow-sm);
+    background: var(--gradient-surface);
   }
   .kpi-tile:hover {
     box-shadow: var(--shadow-md);
@@ -265,7 +266,7 @@
     @apply cursor-pointer outline-none;
   }
   .kpi-tile-link:hover {
-    border-color: color-mix(in oklab, var(--primary) 40%, var(--border));
+    border-color: color-mix(in oklab, var(--kpi-accent, var(--primary)) 45%, var(--border));
   }
   .kpi-tile-link:focus-visible {
     border-color: var(--ring);
@@ -280,12 +281,14 @@
     box-shadow: var(--shadow-sm);
   }
   .kpi-icon {
-    @apply flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-200;
+    @apply relative z-10 flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-200;
     background: var(--gradient-primary);
     color: var(--primary-foreground);
-    box-shadow: var(--shadow-sm);
+    box-shadow:
+      var(--shadow-sm),
+      0 0 0 4px color-mix(in oklab, var(--kpi-accent, var(--primary)) 8%, transparent);
   }
-  .kpi-tile-link:hover .kpi-icon { transform: scale(1.05); }
+  .kpi-tile-link:hover .kpi-icon { transform: scale(1.06) rotate(-2deg); }
   .kpi-icon-success { background: var(--gradient-success); color: var(--success-foreground); }
   .kpi-icon-warning { background: var(--gradient-warning); color: var(--warning-foreground); }
   .kpi-icon-destructive { background: var(--gradient-destructive); color: var(--destructive-foreground); }
@@ -298,20 +301,60 @@
     @apply inline-block h-8 w-16 animate-pulse rounded-md bg-muted;
   }
   .kpi-label {
-    @apply text-xs font-medium uppercase tracking-wider text-muted-foreground;
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
   }
   .kpi-trend-up { @apply text-success; }
   .kpi-trend-down { @apply text-destructive; }
   .kpi-trend-flat { @apply text-muted-foreground; }
 
-  /* Faixa decorativa lateral */
+  /* Tons por categoria — define accent var usado em borda/sombra/faixa */
+  .kpi-tone-primary     { --kpi-accent: var(--primary); }
+  .kpi-tone-success     { --kpi-accent: var(--success); }
+  .kpi-tone-warning     { --kpi-accent: var(--warning); }
+  .kpi-tone-destructive { --kpi-accent: var(--destructive); }
+  .kpi-tone-info        { --kpi-accent: var(--info); }
+
+  /* Faixa lateral — sempre visível (sutil), intensifica no hover */
   .kpi-tile::before {
     content: "";
-    @apply absolute left-0 top-0 h-full w-1 opacity-0 transition-opacity duration-200;
-    background: var(--gradient-primary);
+    @apply pointer-events-none absolute left-0 top-0 h-full w-[3px] opacity-60 transition-opacity duration-200;
+    background: linear-gradient(180deg,
+      color-mix(in oklab, var(--kpi-accent, var(--primary)) 90%, transparent),
+      color-mix(in oklab, var(--kpi-accent, var(--primary)) 35%, transparent));
   }
   .kpi-tile-link:hover::before,
   .kpi-tile-link:focus-visible::before { opacity: 1; }
+
+  /* Brilho radial tonal no canto superior direito */
+  .kpi-tile::after {
+    content: "";
+    @apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 transition-opacity duration-300;
+    background: radial-gradient(closest-side,
+      color-mix(in oklab, var(--kpi-accent, var(--primary)) 22%, transparent),
+      transparent 70%);
+  }
+  .kpi-tile:hover::after { opacity: 1; }
+
+  /* Slot de métrica (cards multimétrica como "Minhas atribuições") */
+  .kpi-metric-slot {
+    @apply relative flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-2.5 transition-colors;
+  }
+  .kpi-metric-slot:hover { background: color-mix(in oklab, var(--kpi-slot-accent, var(--primary)) 10%, transparent); }
+  .kpi-metric-value {
+    @apply text-2xl font-semibold leading-none tabular-nums text-foreground;
+  }
+  .kpi-metric-label {
+    @apply text-[10px] font-semibold uppercase tracking-wider text-muted-foreground;
+  }
+  .kpi-metric-icon {
+    @apply flex h-6 w-6 items-center justify-center rounded-md;
+    background: color-mix(in oklab, var(--kpi-slot-accent, var(--primary)) 14%, transparent);
+    color: var(--kpi-slot-accent, var(--primary));
+  }
+  .kpi-slot-primary { --kpi-slot-accent: var(--primary); }
+  .kpi-slot-warning { --kpi-slot-accent: var(--warning); }
+  .kpi-slot-info    { --kpi-slot-accent: var(--info); }
+  .kpi-slot-success { --kpi-slot-accent: var(--success); }
 
   /* Painel (mesma família, com header sticky opcional) */
   .panel {

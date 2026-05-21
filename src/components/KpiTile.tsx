@@ -29,6 +29,14 @@ const iconClass: Record<KpiTone, string> = {
   info: "kpi-icon-info",
 };
 
+const toneClass: Record<KpiTone, string> = {
+  primary: "kpi-tone-primary",
+  success: "kpi-tone-success",
+  warning: "kpi-tone-warning",
+  destructive: "kpi-tone-destructive",
+  info: "kpi-tone-info",
+};
+
 function KpiTileImpl({
   icon: Icon,
   label,
@@ -95,7 +103,7 @@ function KpiTileImpl({
       <Link
         to={to}
         aria-label={a11yLabel}
-        className={cn("kpi-tile kpi-tile-link group block", className)}
+        className={cn("kpi-tile kpi-tile-link group block", toneClass[tone], className)}
       >
         {content}
       </Link>
@@ -110,6 +118,7 @@ function KpiTileImpl({
         aria-label={a11yLabel}
         className={cn(
           "kpi-tile kpi-tile-link group block w-full text-left",
+          toneClass[tone],
           className,
         )}
       >
@@ -119,7 +128,7 @@ function KpiTileImpl({
   }
 
   return (
-    <div className={cn("kpi-tile", className)} aria-label={a11yLabel}>
+    <div className={cn("kpi-tile", toneClass[tone], className)} aria-label={a11yLabel}>
       {content}
     </div>
   );
