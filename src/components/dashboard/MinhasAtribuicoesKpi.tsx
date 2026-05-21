@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ArrowUpRight, CheckSquare, Inbox, Calendar, ListChecks } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -16,27 +17,27 @@ function MetricSlot({
   value,
   label,
   loading,
-  toneClass,
+  slotClass,
 }: {
-  icon: typeof CheckSquare;
+  icon: LucideIcon;
   value: number;
   label: string;
   loading?: boolean;
-  toneClass: string;
+  slotClass: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-0.5 px-1 py-1">
-      <Icon className={cn("h-3.5 w-3.5", toneClass)} aria-hidden />
-      {loading ? (
-        <span className="kpi-value-skeleton h-6 w-8" aria-hidden />
-      ) : (
-        <span className="text-2xl font-semibold leading-none tabular-nums text-foreground">
-          {value}
+    <div className={cn("kpi-metric-slot", slotClass)}>
+      <div className="flex items-center gap-1.5">
+        <span className="kpi-metric-icon" aria-hidden>
+          <Icon className="h-3.5 w-3.5" />
         </span>
-      )}
-      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
+        {loading ? (
+          <span className="kpi-value-skeleton h-6 w-6" aria-hidden />
+        ) : (
+          <span className="kpi-metric-value">{value}</span>
+        )}
+      </div>
+      <span className="kpi-metric-label">{label}</span>
     </div>
   );
 }
@@ -60,34 +61,34 @@ function MinhasAtribuicoesKpiImpl({
           <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground" />
         )}
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <p className="kpi-label">Minhas atribuições</p>
-          <span className="text-xs font-medium text-muted-foreground tabular-nums">
-            {loading ? "—" : `${total} no total`}
+          <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
+            {loading ? "—" : `${total} total`}
           </span>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-border/60 rounded-md border border-border/60 bg-muted/30">
+        <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/70 bg-muted/30 p-1">
           <MetricSlot
             icon={CheckSquare}
             value={tarefas}
             label="Tarefas"
             loading={loading}
-            toneClass="text-primary"
+            slotClass="kpi-slot-primary"
           />
           <MetricSlot
             icon={Inbox}
             value={demandas}
             label="Demandas"
             loading={loading}
-            toneClass="text-warning"
+            slotClass="kpi-slot-warning"
           />
           <MetricSlot
             icon={Calendar}
             value={reunioes}
             label="Reuniões"
             loading={loading}
-            toneClass="text-info"
+            slotClass="kpi-slot-info"
           />
         </div>
       </div>
@@ -102,14 +103,14 @@ function MinhasAtribuicoesKpiImpl({
         type="button"
         onClick={onClick}
         aria-label={a11y}
-        className="kpi-tile kpi-tile-link group block w-full text-left"
+        className="kpi-tile kpi-tile-link kpi-tone-info group block w-full text-left"
       >
         {inner}
       </button>
     );
   }
   return (
-    <div className="kpi-tile" aria-label={a11y}>
+    <div className="kpi-tile kpi-tone-info" aria-label={a11y}>
       {inner}
     </div>
   );
