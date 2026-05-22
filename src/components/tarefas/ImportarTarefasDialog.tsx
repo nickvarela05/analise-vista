@@ -152,6 +152,29 @@ export function ImportarTarefasDialog() {
     }
     setImportando(true);
 
+    // Deduplicação: busca títulos já cadastrados e preserva os existentes
+    const { data: existentes, error: existErr } = await supabase
+      .from("todo")
+      .select("titulo");
+    if (existErr) {
+      setImportando(false);
+      toast.error("Erro ao verificar tarefas existentes", { description: existErr.message });
+      return;
+    }
+    const setExistentes = new Set((existentes ?? []).map((t) => norm(t.titulo)));
+    const novas = linhas.filter((l) => !setExistentes.has(norm(l.titulo)));
+    const duplicadas = linhas.length - novas.length;
+
+    if (novas.length === 0) {
+      setImportando(false);
+      toast.info("Nenhuma tarefa nova", {
+        description: `Todas as ${linhas.length} tarefa(s) já estão cadastradas e foram preservadas.`,
+      });
+      reset();
+      setOpen(false);
+      return;
+    }
+
     let loteId: string | null = null;
     if (forcarHomologacao) {
       const { data: lote, error: loteErr } = await supabase
@@ -160,7 +183,7 @@ export function ImportarTarefasDialog() {
           nome: nomeLote.trim(),
           descricao: descricaoLote.trim() || null,
           tipo: "homologacao",
-          total_tarefas: linhas.length,
+          total_tarefas: novas.length,
           criado_por: user.id,
         })
         .select("id")
@@ -173,7 +196,7 @@ export function ImportarTarefasDialog() {
       loteId = lote.id;
     }
 
-    const payload = linhas.map((l) => ({
+    const payload = novas.map((l) => ({
       titulo: l.titulo,
       descricao: l.descricao,
       status: (forcarHomologacao ? "homologacao" : l.status) as never,
@@ -190,10 +213,11 @@ export function ImportarTarefasDialog() {
       toast.error("Erro ao importar", { description: error.message });
       return;
     }
+    const sufixo = duplicadas > 0 ? ` ${duplicadas} já existente(s) preservada(s).` : "";
     toast.success(
       forcarHomologacao
-        ? `${linhas.length} tarefa(s) importada(s) no lote "${nomeLote}"`
-        : `${linhas.length} tarefa(s) importada(s)`,
+        ? `${novas.length} tarefa(s) importada(s) no lote "${nomeLote}".${sufixo}`
+        : `${novas.length} tarefa(s) importada(s).${sufixo}`,
     );
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     qc.invalidateQueries({ queryKey: ["tarefas", "lotes"] });
