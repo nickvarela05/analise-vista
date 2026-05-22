@@ -39,6 +39,7 @@ interface FormState {
   responsaveis_ids: string[];
   equipe_toda: boolean;
   demanda_id: string | null;
+  em_teste: boolean;
 }
 
 const initialForm: FormState = {
@@ -50,6 +51,7 @@ const initialForm: FormState = {
   responsaveis_ids: [],
   equipe_toda: false,
   demanda_id: null,
+  em_teste: false,
 };
 
 export function NovaTarefaDialog({
