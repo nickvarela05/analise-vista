@@ -206,6 +206,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       prioridade: draft.prioridade,
       data_prevista: draft.data_prevista || null,
       demanda_id: draft.demanda_id || null,
+      em_teste: draft.em_teste,
     };
     if (draft.status === "producao" && tarefa.status !== "producao") {
       updates.concluida_em = new Date().toISOString();
@@ -223,6 +224,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       ["prioridade", tarefa.prioridade, draft.prioridade],
       ["data_prevista", tarefa.data_prevista, draft.data_prevista || null],
       ["demanda_id", tarefa.demanda_id, draft.demanda_id || null],
+      ["em_teste", tarefa.em_teste, draft.em_teste],
     ];
     for (const [campo, antigo, novo] of campos) {
       if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
