@@ -109,11 +109,13 @@ function Dashboard() {
     [chamados],
   );
 
-  const { taskAbertas, taskHML, taskProd, taskUrgentes } = React.useMemo(() => {
+  const { taskAbertas, taskHML, taskProd, taskUrgentes, taskEmTeste, taskHMLEmTeste } = React.useMemo(() => {
     let abertas = 0,
       hml = 0,
       prod = 0,
-      urg = 0;
+      urg = 0,
+      emTeste = 0,
+      hmlEmTeste = 0;
     for (const t of tarefas) {
       if (t.status === "homologacao") hml++;
       if (t.status === "producao") prod++;
@@ -122,8 +124,12 @@ function Dashboard() {
         abertas++;
         if (t.prioridade === "alta") urg++;
       }
+      if ((t as any).em_teste) {
+        emTeste++;
+        if (t.status === "homologacao") hmlEmTeste++;
+      }
     }
-    return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg };
+    return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg, taskEmTeste: emTeste, taskHMLEmTeste: hmlEmTeste };
   }, [tarefas]);
 
   const minhasAtrib = React.useMemo(() => {
