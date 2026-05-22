@@ -212,6 +212,22 @@ export function NovaTarefaDialog({
               }
             />
           </div>
+          <label className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-2.5 cursor-pointer hover:bg-info/10 transition">
+            <Checkbox
+              checked={form.em_teste}
+              onCheckedChange={(v) => setForm({ ...form, em_teste: v === true })}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                <FlaskConical className="h-3.5 w-3.5 text-info" />
+                Em teste
+              </span>
+              <p className="text-xs text-muted-foreground">
+                Sinaliza que esta tarefa está sob teste/validação.
+              </p>
+            </div>
+          </label>
           <DialogFooter>
             <Button type="submit">Criar</Button>
           </DialogFooter>
