@@ -15,6 +15,7 @@ import {
   Send,
   Download,
   Link2,
+  FlaskConical,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,6 +77,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     prioridade: tarefa?.prioridade ?? "",
     data_prevista: tarefa?.data_prevista ?? "",
     demanda_id: tarefa?.demanda_id ?? null,
+    em_teste: tarefa?.em_teste ?? false,
   });
 
   React.useEffect(() => {
@@ -84,14 +86,16 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       prioridade: tarefa?.prioridade ?? "",
       data_prevista: tarefa?.data_prevista ?? "",
       demanda_id: tarefa?.demanda_id ?? null,
+      em_teste: tarefa?.em_teste ?? false,
     });
-  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id]);
+  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id, tarefa?.em_teste]);
 
   const dirty =
     draft.status !== (tarefa?.status ?? "") ||
     draft.prioridade !== (tarefa?.prioridade ?? "") ||
     (draft.data_prevista ?? "") !== (tarefa?.data_prevista ?? "") ||
-    (draft.demanda_id ?? null) !== (tarefa?.demanda_id ?? null);
+    (draft.demanda_id ?? null) !== (tarefa?.demanda_id ?? null) ||
+    draft.em_teste !== (tarefa?.em_teste ?? false);
 
   const { data: demandas = [] } = useQuery({
     queryKey: ["dem-list-mini"],
@@ -202,6 +206,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       prioridade: draft.prioridade,
       data_prevista: draft.data_prevista || null,
       demanda_id: draft.demanda_id || null,
+      em_teste: draft.em_teste,
     };
     if (draft.status === "producao" && tarefa.status !== "producao") {
       updates.concluida_em = new Date().toISOString();
@@ -219,6 +224,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       ["prioridade", tarefa.prioridade, draft.prioridade],
       ["data_prevista", tarefa.data_prevista, draft.data_prevista || null],
       ["demanda_id", tarefa.demanda_id, draft.demanda_id || null],
+      ["em_teste", tarefa.em_teste, draft.em_teste],
     ];
     for (const [campo, antigo, novo] of campos) {
       if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
@@ -411,6 +417,18 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
               }}
             />
           </div>
+          <label className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-2 sm:col-span-2 cursor-pointer hover:bg-info/10 transition">
+            <Checkbox
+              checked={draft.em_teste}
+              onCheckedChange={(v) => setDraft((d) => ({ ...d, em_teste: v === true }))}
+              className="mt-0.5"
+            />
+            <span className="flex items-center gap-1.5 text-xs font-medium">
+              <FlaskConical className="h-3.5 w-3.5 text-info" />
+              Em teste
+              <span className="text-muted-foreground font-normal">— tarefa sob teste/validação</span>
+            </span>
+          </label>
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button
               size="sm"
@@ -421,6 +439,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                   prioridade: tarefa.prioridade ?? "",
                   data_prevista: tarefa.data_prevista ?? "",
                   demanda_id: tarefa.demanda_id ?? null,
+                  em_teste: tarefa.em_teste ?? false,
                 })
               }
               disabled={!dirty || salvando}

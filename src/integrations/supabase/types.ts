@@ -849,6 +849,7 @@ export type Database = {
           data_prevista: string | null
           demanda_id: string | null
           descricao: string | null
+          em_teste: boolean
           equipe_toda: boolean
           id: string
           lote_importacao_id: string | null
@@ -867,6 +868,7 @@ export type Database = {
           data_prevista?: string | null
           demanda_id?: string | null
           descricao?: string | null
+          em_teste?: boolean
           equipe_toda?: boolean
           id?: string
           lote_importacao_id?: string | null
@@ -885,6 +887,7 @@ export type Database = {
           data_prevista?: string | null
           demanda_id?: string | null
           descricao?: string | null
+          em_teste?: boolean
           equipe_toda?: boolean
           id?: string
           lote_importacao_id?: string | null

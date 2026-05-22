@@ -7,6 +7,7 @@ import {
   Calendar,
   CheckSquare,
   ListChecks,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
@@ -108,11 +109,13 @@ function Dashboard() {
     [chamados],
   );
 
-  const { taskAbertas, taskHML, taskProd, taskUrgentes } = React.useMemo(() => {
+  const { taskAbertas, taskHML, taskProd, taskUrgentes, taskEmTeste, taskHMLEmTeste } = React.useMemo(() => {
     let abertas = 0,
       hml = 0,
       prod = 0,
-      urg = 0;
+      urg = 0,
+      emTeste = 0,
+      hmlEmTeste = 0;
     for (const t of tarefas) {
       if (t.status === "homologacao") hml++;
       if (t.status === "producao") prod++;
@@ -121,8 +124,12 @@ function Dashboard() {
         abertas++;
         if (t.prioridade === "alta") urg++;
       }
+      if ((t as any).em_teste) {
+        emTeste++;
+        if (t.status === "homologacao") hmlEmTeste++;
+      }
     }
-    return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg };
+    return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg, taskEmTeste: emTeste, taskHMLEmTeste: hmlEmTeste };
   }, [tarefas]);
 
   const minhasAtrib = React.useMemo(() => {
@@ -344,19 +351,20 @@ function Dashboard() {
           to="/relatorios"
           loading={loading.solicitacoes}
         />
-        <MinhasAtribuicoesKpi
-          tarefas={minhasAtrib.tarefas}
-          demandas={minhasAtrib.demandas}
-          reunioes={minhasAtrib.reunioes}
-          total={minhasAtrib.total}
-          loading={loading.tarefas || loading.reunioes}
-          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
+        <KpiTile
+          icon={FlaskConical}
+          label="Tarefas para teste"
+          value={taskEmTeste}
+          hint="Sinalizadas como em teste"
+          tone="info"
+          to="/tarefas"
+          loading={loading.tarefas}
         />
         <KpiTile
           icon={CheckSquare}
           label="Tarefas em homologação"
           value={taskHML}
-          hint={`${taskUrgentes} urgentes (abertas)`}
+          hint={`${taskHMLEmTeste} em teste · ${taskUrgentes} urgentes`}
           tone="primary"
           to="/tarefas"
           loading={loading.tarefas}
@@ -378,6 +386,19 @@ function Dashboard() {
           tone="destructive"
           to="/avisos"
           loading={loading.avisos}
+        />
+      </div>
+
+      {/* === MINHAS ATRIBUIÇÕES === */}
+      <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
+      <div className="grid gap-3 grid-cols-1 sm:gap-4">
+        <MinhasAtribuicoesKpi
+          tarefas={minhasAtrib.tarefas}
+          demandas={minhasAtrib.demandas}
+          reunioes={minhasAtrib.reunioes}
+          total={minhasAtrib.total}
+          loading={loading.tarefas || loading.reunioes}
+          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
         />
       </div>
 

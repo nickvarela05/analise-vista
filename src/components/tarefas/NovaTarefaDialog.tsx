@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FlaskConical } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +39,7 @@ interface FormState {
   responsaveis_ids: string[];
   equipe_toda: boolean;
   demanda_id: string | null;
+  em_teste: boolean;
 }
 
 const initialForm: FormState = {
@@ -48,6 +51,7 @@ const initialForm: FormState = {
   responsaveis_ids: [],
   equipe_toda: false,
   demanda_id: null,
+  em_teste: false,
 };
 
 export function NovaTarefaDialog({
@@ -92,6 +96,7 @@ export function NovaTarefaDialog({
       equipe_toda: form.equipe_toda,
       data_prevista: form.data_prevista || null,
       demanda_id: form.demanda_id,
+      em_teste: form.em_teste,
       criado_por: user?.id,
     });
     if (error) {
@@ -207,6 +212,22 @@ export function NovaTarefaDialog({
               }
             />
           </div>
+          <label className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-2.5 cursor-pointer hover:bg-info/10 transition">
+            <Checkbox
+              checked={form.em_teste}
+              onCheckedChange={(v) => setForm({ ...form, em_teste: v === true })}
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                <FlaskConical className="h-3.5 w-3.5 text-info" />
+                Em teste
+              </span>
+              <p className="text-xs text-muted-foreground">
+                Sinaliza que esta tarefa está sob teste/validação.
+              </p>
+            </div>
+          </label>
           <DialogFooter>
             <Button type="submit">Criar</Button>
           </DialogFooter>

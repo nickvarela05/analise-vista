@@ -206,6 +206,7 @@ export function ImportarTarefasDialog() {
       criado_por: user.id,
       lote_importacao_id: loteId,
       origem_importacao: forcarHomologacao ? "homologacao" : null,
+      em_teste: forcarHomologacao,
     }));
     const { error } = await supabase.from("todo").insert(payload);
     setImportando(false);

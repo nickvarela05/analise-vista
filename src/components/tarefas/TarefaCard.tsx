@@ -1,7 +1,7 @@
 import * as React from "react";
 import { format, differenceInCalendarDays, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2 } from "lucide-react";
+import { AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,6 +96,16 @@ export function TarefaCard({ tarefa, colabs, selected, onSelect, onOpen, counts,
               </Badge>
             </TooltipTrigger>
             <TooltipContent>Tarefa importada via lote de homologação</TooltipContent>
+          </Tooltip>
+        )}
+        {tarefa.em_teste && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="h-5 gap-1 border-info/40 bg-info/15 px-1.5 text-[10px] text-info hover:bg-info/20">
+                <FlaskConical className="h-3 w-3" /> Em teste
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Tarefa sinalizada como em teste</TooltipContent>
           </Tooltip>
         )}
       </div>
