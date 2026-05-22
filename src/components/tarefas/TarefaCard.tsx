@@ -98,6 +98,16 @@ export function TarefaCard({ tarefa, colabs, selected, onSelect, onOpen, counts,
             <TooltipContent>Tarefa importada via lote de homologação</TooltipContent>
           </Tooltip>
         )}
+        {tarefa.em_teste && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="h-5 gap-1 border-info/40 bg-info/15 px-1.5 text-[10px] text-info hover:bg-info/20">
+                <FlaskConical className="h-3 w-3" /> Em teste
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Tarefa sinalizada como em teste</TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
