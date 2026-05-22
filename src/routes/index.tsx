@@ -351,19 +351,20 @@ function Dashboard() {
           to="/relatorios"
           loading={loading.solicitacoes}
         />
-        <MinhasAtribuicoesKpi
-          tarefas={minhasAtrib.tarefas}
-          demandas={minhasAtrib.demandas}
-          reunioes={minhasAtrib.reunioes}
-          total={minhasAtrib.total}
-          loading={loading.tarefas || loading.reunioes}
-          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
+        <KpiTile
+          icon={FlaskConical}
+          label="Tarefas para teste"
+          value={taskEmTeste}
+          hint="Sinalizadas como em teste"
+          tone="info"
+          to="/tarefas"
+          loading={loading.tarefas}
         />
         <KpiTile
           icon={CheckSquare}
           label="Tarefas em homologação"
           value={taskHML}
-          hint={`${taskUrgentes} urgentes (abertas)`}
+          hint={`${taskHMLEmTeste} em teste · ${taskUrgentes} urgentes`}
           tone="primary"
           to="/tarefas"
           loading={loading.tarefas}
@@ -385,6 +386,19 @@ function Dashboard() {
           tone="destructive"
           to="/avisos"
           loading={loading.avisos}
+        />
+      </div>
+
+      {/* === MINHAS ATRIBUIÇÕES === */}
+      <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
+      <div className="grid gap-3 grid-cols-1 sm:gap-4">
+        <MinhasAtribuicoesKpi
+          tarefas={minhasAtrib.tarefas}
+          demandas={minhasAtrib.demandas}
+          reunioes={minhasAtrib.reunioes}
+          total={minhasAtrib.total}
+          loading={loading.tarefas || loading.reunioes}
+          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
         />
       </div>
 
