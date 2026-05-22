@@ -7,6 +7,7 @@ import {
   Calendar,
   CheckSquare,
   ListChecks,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
