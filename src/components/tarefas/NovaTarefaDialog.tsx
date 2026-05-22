@@ -96,6 +96,7 @@ export function NovaTarefaDialog({
       equipe_toda: form.equipe_toda,
       data_prevista: form.data_prevista || null,
       demanda_id: form.demanda_id,
+      em_teste: form.em_teste,
       criado_por: user?.id,
     });
     if (error) {
