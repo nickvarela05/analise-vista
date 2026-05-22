@@ -15,6 +15,7 @@ import {
   Send,
   Download,
   Link2,
+  FlaskConical,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
