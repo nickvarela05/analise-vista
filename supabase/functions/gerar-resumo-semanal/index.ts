@@ -15,8 +15,9 @@ function startOfWeek(d: Date) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
 }
 
-function escopoAtividade(userId: string, colaboradorId?: string | null) {
-  const filtros = [`criado_por.eq.${userId}`, "equipe_toda.is.true"];
+function escopoAtividade(userId: string, colaboradorId?: string | null, incluirCriador = true) {
+  const filtros = ["equipe_toda.is.true"];
+  if (incluirCriador) filtros.push(`criado_por.eq.${userId}`);
   if (colaboradorId) {
     filtros.push(`responsavel_id.eq.${colaboradorId}`, `responsaveis_ids.cs.{${colaboradorId}}`);
   }
@@ -71,6 +72,7 @@ Deno.serve(async (req) => {
   for (const u of users ?? []) {
     try {
       const escopo = escopoAtividade(u.user_id, u.colaborador_id);
+      const escopoChamados = escopoAtividade(u.user_id, u.colaborador_id, false);
       // métricas do usuário na semana
       const [tarefas, demandas, chamados] = await Promise.all([
         admin.from("todo").select("id, status, prioridade")
@@ -80,7 +82,7 @@ Deno.serve(async (req) => {
           .or(escopo)
           .gte("created_at", inicioISO).lt("created_at", fimISO),
         admin.from("chamado_externo").select("id, status, prazo")
-          .or(escopo)
+          .or(escopoChamados)
           .gte("created_at", inicioISO).lt("created_at", fimISO),
       ]);
 
