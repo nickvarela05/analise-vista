@@ -390,17 +390,21 @@ function Dashboard() {
       </div>
 
       {/* === MINHAS ATRIBUIÇÕES === */}
-      <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
-      <div className="grid gap-3 grid-cols-1 sm:gap-4">
-        <MinhasAtribuicoesKpi
-          tarefas={minhasAtrib.tarefas}
-          demandas={minhasAtrib.demandas}
-          reunioes={minhasAtrib.reunioes}
-          total={minhasAtrib.total}
-          loading={loading.tarefas || loading.reunioes}
-          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
-        />
-      </div>
+      {meuColabId && (
+        <>
+          <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
+          <MinhasAtribuicoesPainel
+            nome={meuProfile?.nome ?? null}
+            colabId={meuColabId}
+            tarefas={tarefas}
+            demandas={demandas}
+            reunioes={reunioes}
+            chamados={chamados}
+            onVerTodas={() => setMinhasOpen(true)}
+            compact
+          />
+        </>
+      )}
 
       {/* === RELATÓRIOS (N8N) === */}
       <SectionHeader title="Relatórios (canal externo)" description="Solicitações que chegam pelo fluxo N8N." />
