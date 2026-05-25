@@ -129,6 +129,6 @@ Estrutura: ## Destaques da semana, ## Pontos de atenção (bullets), ## Recomend
   }
 
   return new Response(JSON.stringify({ gerados, erros, semana: semanaInicio.toISOString().slice(0, 10) }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 });
