@@ -191,14 +191,22 @@ function ResumoSemanal() {
   const [resumos, setResumos] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [gerando, setGerando] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
 
   async function carregar() {
     setLoading(true);
-    const { data } = await supabase
+    setErro(null);
+    const { data, error } = await supabase
       .from("resumo_semanal")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(10);
+    if (error) {
+      setErro(error.message);
+      setResumos([]);
+      setLoading(false);
+      return;
+    }
     setResumos(data ?? []);
     setLoading(false);
   }
@@ -208,9 +216,13 @@ function ResumoSemanal() {
   async function gerarAgora() {
     setGerando(true);
     try {
-      const { error } = await supabase.functions.invoke("gerar-resumo-semanal");
+      const { data, error } = await supabase.functions.invoke("gerar-resumo-semanal");
       if (error) throw error;
-      toast.success("Resumo gerado");
+      if ((data?.gerados ?? 0) > 0) {
+        toast.success("Resumo gerado", { description: `${data.gerados} resumo${data.gerados === 1 ? "" : "s"} atualizado${data.gerados === 1 ? "" : "s"}.` });
+      } else {
+        toast.info("Nenhum resumo novo", { description: "Não foram encontradas atividades na semana anterior para resumir." });
+      }
       await carregar();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao gerar");
@@ -236,6 +248,11 @@ function ResumoSemanal() {
       <CardContent>
         {loading ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
+        ) : erro ? (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{erro}</span>
+          </div>
         ) : resumos.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum resumo ainda. {role === "gestor" && "Clique em \"Gerar agora\" para criar o primeiro."}</p>
         ) : (
