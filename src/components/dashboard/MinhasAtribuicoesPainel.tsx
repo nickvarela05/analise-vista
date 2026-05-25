@@ -40,6 +40,7 @@ interface Props {
   reunioes: ReuniaoRow[];
   chamados: ChamadoRow[];
   onVerTodas: () => void;
+  compact?: boolean;
 }
 
 function MinhasAtribuicoesPainelImpl({
@@ -50,7 +51,9 @@ function MinhasAtribuicoesPainelImpl({
   reunioes,
   chamados,
   onVerTodas,
+  compact = false,
 }: Props) {
+  const maxItems = compact ? 3 : 4;
   const { minhasTarefas, minhasDemandas, minhasReunioes, meusChamados, total } =
     React.useMemo(() => {
       const mt = tarefas.filter((r) => isAtribuidoA(r, colabId));
