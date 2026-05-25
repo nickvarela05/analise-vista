@@ -15,6 +15,14 @@ function startOfWeek(d: Date) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
 }
 
+function escopoAtividade(userId: string, colaboradorId?: string | null) {
+  const filtros = [`criado_por.eq.${userId}`, "equipe_toda.is.true"];
+  if (colaboradorId) {
+    filtros.push(`responsavel_id.eq.${colaboradorId}`, `responsaveis_ids.cs.{${colaboradorId}}`);
+  }
+  return filtros.join(",");
+}
+
 async function callIA(prompt: string): Promise<{ texto: string; insights: string[] }> {
   const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -57,29 +65,34 @@ Deno.serve(async (req) => {
 
   const { data: users } = await admin
     .from("profiles")
-    .select("user_id, nome");
+    .select("user_id, colaborador_id, nome");
 
   let gerados = 0, erros = 0;
   for (const u of users ?? []) {
     try {
+      const escopo = escopoAtividade(u.user_id, u.colaborador_id);
       // métricas do usuário na semana
       const [tarefas, demandas, chamados] = await Promise.all([
         admin.from("todo").select("id, status, prioridade")
-          .or(`responsavel_id.eq.${u.user_id},responsaveis_ids.cs.{${u.user_id}}`)
+          .or(escopo)
           .gte("created_at", inicioISO).lt("created_at", fimISO),
         admin.from("demanda").select("id, status, prioridade")
-          .or(`responsavel_id.eq.${u.user_id},responsaveis_ids.cs.{${u.user_id}}`)
+          .or(escopo)
           .gte("created_at", inicioISO).lt("created_at", fimISO),
         admin.from("chamado_externo").select("id, status, prazo")
-          .or(`responsavel_id.eq.${u.user_id},responsaveis_ids.cs.{${u.user_id}}`)
+          .or(escopo)
           .gte("created_at", inicioISO).lt("created_at", fimISO),
       ]);
+
+      if (tarefas.error) throw tarefas.error;
+      if (demandas.error) throw demandas.error;
+      if (chamados.error) throw chamados.error;
 
       const t = tarefas.data ?? [], d = demandas.data ?? [], c = chamados.data ?? [];
       const metricas = {
         tarefas_total: t.length,
-        tarefas_concluidas: t.filter((x) => x.status === "concluida").length,
-        tarefas_urgentes: t.filter((x) => x.prioridade === "urgente").length,
+        tarefas_concluidas: t.filter((x) => ["concluida", "producao", "aprovado"].includes(x.status)).length,
+        tarefas_urgentes: t.filter((x) => ["urgente", "alta"].includes(x.prioridade)).length,
         demandas_total: d.length,
         demandas_em_andamento: d.filter((x) => x.status !== "concluida" && x.status !== "cancelada").length,
         chamados_total: c.length,
@@ -101,7 +114,7 @@ Estrutura: ## Destaques da semana, ## Pontos de atenção (bullets), ## Recomend
       const { texto, insights } = await callIA(prompt);
 
       // upsert resumo
-      await admin.from("resumo_semanal").upsert({
+      const { error: upsertError } = await admin.from("resumo_semanal").upsert({
         user_id: u.user_id,
         semana_inicio: semanaInicio.toISOString().slice(0, 10),
         semana_fim: semanaFim.toISOString().slice(0, 10),
@@ -110,6 +123,7 @@ Estrutura: ## Destaques da semana, ## Pontos de atenção (bullets), ## Recomend
         insights,
         modelo: "google/gemini-2.5-flash",
       }, { onConflict: "user_id,semana_inicio" });
+      if (upsertError) throw upsertError;
 
       // notificação in-app
       await admin.rpc("enqueue_notificacao", {
