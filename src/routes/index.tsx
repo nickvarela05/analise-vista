@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth-context";
 
 import { MinhasAtribuicoesPainel } from "@/components/dashboard/MinhasAtribuicoesPainel";
 import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoesDialog";
-import { MinhasAtribuicoesKpi } from "@/components/dashboard/MinhasAtribuicoesKpi";
+
 import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
