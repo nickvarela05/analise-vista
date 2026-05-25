@@ -40,6 +40,7 @@ interface Props {
   reunioes: ReuniaoRow[];
   chamados: ChamadoRow[];
   onVerTodas: () => void;
+  compact?: boolean;
 }
 
 function MinhasAtribuicoesPainelImpl({
@@ -50,7 +51,9 @@ function MinhasAtribuicoesPainelImpl({
   reunioes,
   chamados,
   onVerTodas,
+  compact = false,
 }: Props) {
+  const maxItems = compact ? 3 : 4;
   const { minhasTarefas, minhasDemandas, minhasReunioes, meusChamados, total } =
     React.useMemo(() => {
       const mt = tarefas.filter((r) => isAtribuidoA(r, colabId));
@@ -146,7 +149,7 @@ function MinhasAtribuicoesPainelImpl({
           Você não possui itens atribuídos no momento. 🎉
         </p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-4", compact && "gap-2")}>
           {grupos.map((g) => {
             const Icon = g.icon;
             const sorted = [...g.items].sort((a, b) => {
@@ -155,7 +158,7 @@ function MinhasAtribuicoesPainelImpl({
               return da - db;
             });
             return (
-              <div key={g.label} className="flex flex-col rounded-lg border bg-muted/20 p-3">
+              <div key={g.label} className={cn("flex flex-col rounded-lg border bg-muted/20", compact ? "p-2" : "p-3")}>
                 <div className="mb-2 flex items-center justify-between">
                   <span
                     className={cn(
@@ -182,7 +185,7 @@ function MinhasAtribuicoesPainelImpl({
                   </p>
                 ) : (
                   <ul className="space-y-1">
-                    {sorted.slice(0, 4).map((it) => {
+                    {sorted.slice(0, maxItems).map((it) => {
                       const dt = it[g.dataKey] ? new Date(it[g.dataKey]) : null;
                       const concluido = STATUS_CONCLUIDOS.has(
                         (it.status ?? "").toLowerCase(),
@@ -237,14 +240,14 @@ function MinhasAtribuicoesPainelImpl({
                         </li>
                       );
                     })}
-                    {g.items.length > 4 && (
+                    {g.items.length > maxItems && (
                       <li>
                         <button
                           type="button"
                           onClick={onVerTodas}
                           className="block w-full py-1 text-center text-[10px] font-medium text-primary hover:underline"
                         >
-                          + {g.items.length - 4} mais
+                          + {g.items.length - maxItems} mais
                         </button>
                       </li>
                     )}

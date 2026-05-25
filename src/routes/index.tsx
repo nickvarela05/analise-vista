@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth-context";
 
 import { MinhasAtribuicoesPainel } from "@/components/dashboard/MinhasAtribuicoesPainel";
 import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoesDialog";
-import { MinhasAtribuicoesKpi } from "@/components/dashboard/MinhasAtribuicoesKpi";
+
 import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
@@ -132,13 +132,6 @@ function Dashboard() {
     return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg, taskEmTeste: emTeste, taskHMLEmTeste: hmlEmTeste };
   }, [tarefas]);
 
-  const minhasAtrib = React.useMemo(() => {
-    if (!meuColabId) return { tarefas: 0, demandas: 0, reunioes: 0, total: 0 };
-    const t = tarefas.filter((r) => isAtribuidoA(r, meuColabId)).length;
-    const d = demandas.filter((r) => isAtribuidoA(r, meuColabId)).length;
-    const r = reunioes.filter((row) => isAtribuidoA(row, meuColabId)).length;
-    return { tarefas: t, demandas: d, reunioes: r, total: t + d + r };
-  }, [tarefas, demandas, reunioes, meuColabId]);
 
   const now = React.useMemo(() => new Date(), []);
   const weekStart = React.useMemo(() => startOfWeek(now, { weekStartsOn: 1 }), [now]);
@@ -390,17 +383,21 @@ function Dashboard() {
       </div>
 
       {/* === MINHAS ATRIBUIÇÕES === */}
-      <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
-      <div className="grid gap-3 grid-cols-1 sm:gap-4">
-        <MinhasAtribuicoesKpi
-          tarefas={minhasAtrib.tarefas}
-          demandas={minhasAtrib.demandas}
-          reunioes={minhasAtrib.reunioes}
-          total={minhasAtrib.total}
-          loading={loading.tarefas || loading.reunioes}
-          onClick={meuColabId ? () => setMinhasOpen(true) : undefined}
-        />
-      </div>
+      {meuColabId && (
+        <>
+          <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
+          <MinhasAtribuicoesPainel
+            nome={meuProfile?.nome ?? null}
+            colabId={meuColabId}
+            tarefas={tarefas}
+            demandas={demandas}
+            reunioes={reunioes}
+            chamados={chamados}
+            onVerTodas={() => setMinhasOpen(true)}
+            compact
+          />
+        </>
+      )}
 
       {/* === RELATÓRIOS (N8N) === */}
       <SectionHeader title="Relatórios (canal externo)" description="Solicitações que chegam pelo fluxo N8N." />
@@ -417,21 +414,6 @@ function Dashboard() {
         <StatusTarefasPie data={pieTarefas} />
       </div>
 
-      {/* === MEU TRABALHO === */}
-      {meuColabId && (
-        <>
-          <SectionHeader title="Meu trabalho" description="Atribuições direcionadas a você." />
-          <MinhasAtribuicoesPainel
-            nome={meuProfile?.nome ?? null}
-            colabId={meuColabId}
-            tarefas={tarefas}
-            demandas={demandas}
-            reunioes={reunioes}
-            chamados={chamados}
-            onVerTodas={() => setMinhasOpen(true)}
-          />
-        </>
-      )}
 
       {/* === PRODUTIVIDADE === */}
       <SectionHeader title="Produtividade" description="Quanto a equipe entrega e em quanto tempo." />
