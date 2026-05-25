@@ -132,13 +132,6 @@ function Dashboard() {
     return { taskAbertas: abertas, taskHML: hml, taskProd: prod, taskUrgentes: urg, taskEmTeste: emTeste, taskHMLEmTeste: hmlEmTeste };
   }, [tarefas]);
 
-  const minhasAtrib = React.useMemo(() => {
-    if (!meuColabId) return { tarefas: 0, demandas: 0, reunioes: 0, total: 0 };
-    const t = tarefas.filter((r) => isAtribuidoA(r, meuColabId)).length;
-    const d = demandas.filter((r) => isAtribuidoA(r, meuColabId)).length;
-    const r = reunioes.filter((row) => isAtribuidoA(row, meuColabId)).length;
-    return { tarefas: t, demandas: d, reunioes: r, total: t + d + r };
-  }, [tarefas, demandas, reunioes, meuColabId]);
 
   const now = React.useMemo(() => new Date(), []);
   const weekStart = React.useMemo(() => startOfWeek(now, { weekStartsOn: 1 }), [now]);
