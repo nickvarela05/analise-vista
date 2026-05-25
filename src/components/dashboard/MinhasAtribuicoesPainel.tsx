@@ -240,7 +240,7 @@ function MinhasAtribuicoesPainelImpl({
                         </li>
                       );
                     })}
-                    {g.items.length > 4 && (
+                    {g.items.length > maxItems && (
                       <li>
                         <button
                           type="button"
