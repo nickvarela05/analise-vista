@@ -247,7 +247,7 @@ function MinhasAtribuicoesPainelImpl({
                           onClick={onVerTodas}
                           className="block w-full py-1 text-center text-[10px] font-medium text-primary hover:underline"
                         >
-                          + {g.items.length - 4} mais
+                          + {g.items.length - maxItems} mais
                         </button>
                       </li>
                     )}
