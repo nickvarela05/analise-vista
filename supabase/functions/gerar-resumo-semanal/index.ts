@@ -44,7 +44,11 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   return { texto, insights };
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  const cors = corsFor(req);
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: cors });
+  }
   const hoje = new Date();
   const semanaInicio = startOfWeek(new Date(hoje.getTime() - 7 * 86400000));
   const semanaFim = new Date(semanaInicio.getTime() + 6 * 86400000);
