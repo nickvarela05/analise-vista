@@ -149,7 +149,7 @@ function MinhasAtribuicoesPainelImpl({
           Você não possui itens atribuídos no momento. 🎉
         </p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className={cn("grid gap-3 md:grid-cols-2 xl:grid-cols-4", compact && "gap-2")}>
           {grupos.map((g) => {
             const Icon = g.icon;
             const sorted = [...g.items].sort((a, b) => {
@@ -158,7 +158,7 @@ function MinhasAtribuicoesPainelImpl({
               return da - db;
             });
             return (
-              <div key={g.label} className="flex flex-col rounded-lg border bg-muted/20 p-3">
+              <div key={g.label} className={cn("flex flex-col rounded-lg border bg-muted/20", compact ? "p-2" : "p-3")}>
                 <div className="mb-2 flex items-center justify-between">
                   <span
                     className={cn(
