@@ -421,21 +421,6 @@ function Dashboard() {
         <StatusTarefasPie data={pieTarefas} />
       </div>
 
-      {/* === MEU TRABALHO === */}
-      {meuColabId && (
-        <>
-          <SectionHeader title="Meu trabalho" description="Atribuições direcionadas a você." />
-          <MinhasAtribuicoesPainel
-            nome={meuProfile?.nome ?? null}
-            colabId={meuColabId}
-            tarefas={tarefas}
-            demandas={demandas}
-            reunioes={reunioes}
-            chamados={chamados}
-            onVerTodas={() => setMinhasOpen(true)}
-          />
-        </>
-      )}
 
       {/* === PRODUTIVIDADE === */}
       <SectionHeader title="Produtividade" description="Quanto a equipe entrega e em quanto tempo." />
