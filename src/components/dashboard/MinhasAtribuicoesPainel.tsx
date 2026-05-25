@@ -185,7 +185,7 @@ function MinhasAtribuicoesPainelImpl({
                   </p>
                 ) : (
                   <ul className="space-y-1">
-                    {sorted.slice(0, 4).map((it) => {
+                    {sorted.slice(0, maxItems).map((it) => {
                       const dt = it[g.dataKey] ? new Date(it[g.dataKey]) : null;
                       const concluido = STATUS_CONCLUIDOS.has(
                         (it.status ?? "").toLowerCase(),
