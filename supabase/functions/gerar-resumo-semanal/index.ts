@@ -1,6 +1,7 @@
 // Gera resumo semanal automático para cada usuário usando Lovable AI Gateway.
 // Roda toda segunda às 7h. Salva em resumo_semanal e cria notificação in-app.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { corsFor } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -43,7 +44,11 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   return { texto, insights };
 }
 
-Deno.serve(async (_req) => {
+Deno.serve(async (req) => {
+  const cors = corsFor(req);
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: cors });
+  }
   const hoje = new Date();
   const semanaInicio = startOfWeek(new Date(hoje.getTime() - 7 * 86400000));
   const semanaFim = new Date(semanaInicio.getTime() + 6 * 86400000);
@@ -124,6 +129,6 @@ Estrutura: ## Destaques da semana, ## Pontos de atenção (bullets), ## Recomend
   }
 
   return new Response(JSON.stringify({ gerados, erros, semana: semanaInicio.toISOString().slice(0, 10) }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 });
