@@ -79,6 +79,18 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
         />
       </div>
 
+      <Button
+        type="button"
+        variant={value.emTeste ? "default" : "outline"}
+        size="sm"
+        className="h-9"
+        onClick={() => onChange({ ...value, emTeste: !value.emTeste })}
+        title="Mostrar apenas tarefas em teste"
+      >
+        <FlaskConical className="mr-1.5 h-3.5 w-3.5" />
+        Em teste
+      </Button>
+
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-9">
