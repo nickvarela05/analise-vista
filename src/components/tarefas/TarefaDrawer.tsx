@@ -445,6 +445,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                   data_prevista: tarefa.data_prevista ?? "",
                   demanda_id: tarefa.demanda_id ?? null,
                   em_teste: tarefa.em_teste ?? false,
+                  descricao: tarefa.descricao ?? "",
                 })
               }
               disabled={!dirty || salvando}
@@ -458,12 +459,15 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           </div>
         </div>
 
-        {tarefa.descricao && (
-          <div className="mt-4 rounded-lg border bg-muted/30 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Descrição</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm">{tarefa.descricao}</p>
-          </div>
-        )}
+        <div className="mt-4 space-y-1.5">
+          <Label className="text-xs">Descrição</Label>
+          <Textarea
+            value={draft.descricao ?? ""}
+            onChange={(e) => setDraft((d) => ({ ...d, descricao: e.target.value }))}
+            placeholder="Adicione uma descrição para a tarefa..."
+            className="min-h-24 text-sm"
+          />
+        </div>
 
         <Tabs defaultValue="comentarios" className="mt-4">
           <TabsList className="grid w-full grid-cols-4">
