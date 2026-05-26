@@ -78,6 +78,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     data_prevista: tarefa?.data_prevista ?? "",
     demanda_id: tarefa?.demanda_id ?? null,
     em_teste: tarefa?.em_teste ?? false,
+    descricao: tarefa?.descricao ?? "",
   });
 
   React.useEffect(() => {
@@ -87,15 +88,17 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       data_prevista: tarefa?.data_prevista ?? "",
       demanda_id: tarefa?.demanda_id ?? null,
       em_teste: tarefa?.em_teste ?? false,
+      descricao: tarefa?.descricao ?? "",
     });
-  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id, tarefa?.em_teste]);
+  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id, tarefa?.em_teste, tarefa?.descricao]);
 
   const dirty =
     draft.status !== (tarefa?.status ?? "") ||
     draft.prioridade !== (tarefa?.prioridade ?? "") ||
     (draft.data_prevista ?? "") !== (tarefa?.data_prevista ?? "") ||
     (draft.demanda_id ?? null) !== (tarefa?.demanda_id ?? null) ||
-    draft.em_teste !== (tarefa?.em_teste ?? false);
+    draft.em_teste !== (tarefa?.em_teste ?? false) ||
+    (draft.descricao ?? "") !== (tarefa?.descricao ?? "");
 
   const { data: demandas = [] } = useQuery({
     queryKey: ["dem-list-mini"],
@@ -207,6 +210,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       data_prevista: draft.data_prevista || null,
       demanda_id: draft.demanda_id || null,
       em_teste: draft.em_teste,
+      descricao: draft.descricao || null,
     };
     if (draft.status === "producao" && tarefa.status !== "producao") {
       updates.concluida_em = new Date().toISOString();
@@ -225,6 +229,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       ["data_prevista", tarefa.data_prevista, draft.data_prevista || null],
       ["demanda_id", tarefa.demanda_id, draft.demanda_id || null],
       ["em_teste", tarefa.em_teste, draft.em_teste],
+      ["descricao", tarefa.descricao, draft.descricao || null],
     ];
     for (const [campo, antigo, novo] of campos) {
       if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
@@ -440,6 +445,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                   data_prevista: tarefa.data_prevista ?? "",
                   demanda_id: tarefa.demanda_id ?? null,
                   em_teste: tarefa.em_teste ?? false,
+                  descricao: tarefa.descricao ?? "",
                 })
               }
               disabled={!dirty || salvando}
@@ -453,12 +459,15 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           </div>
         </div>
 
-        {tarefa.descricao && (
-          <div className="mt-4 rounded-lg border bg-muted/30 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Descrição</p>
-            <p className="mt-1 whitespace-pre-wrap text-sm">{tarefa.descricao}</p>
-          </div>
-        )}
+        <div className="mt-4 space-y-1.5">
+          <Label className="text-xs">Descrição</Label>
+          <Textarea
+            value={draft.descricao ?? ""}
+            onChange={(e) => setDraft((d) => ({ ...d, descricao: e.target.value }))}
+            placeholder="Adicione uma descrição para a tarefa..."
+            className="min-h-24 text-sm"
+          />
+        </div>
 
         <Tabs defaultValue="comentarios" className="mt-4">
           <TabsList className="grid w-full grid-cols-4">

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, FlaskConical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ export interface TarefaFiltersState {
   comDemanda: "todos" | "sim" | "nao";
   origem: "todos" | "homologacao" | "manual";
   lotes: string[];
+  emTeste: boolean;
 }
 
 export const initialFilters: TarefaFiltersState = {
@@ -28,6 +29,7 @@ export const initialFilters: TarefaFiltersState = {
   comDemanda: "todos",
   origem: "todos",
   lotes: [],
+  emTeste: false,
 };
 
 interface Props {
@@ -44,7 +46,8 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
     (value.prazo !== "todos" ? 1 : 0) +
     (value.comDemanda !== "todos" ? 1 : 0) +
     (value.origem !== "todos" ? 1 : 0) +
-    value.lotes.length;
+    value.lotes.length +
+    (value.emTeste ? 1 : 0);
 
   const togglePrio = (p: string) => {
     onChange({
@@ -75,6 +78,18 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
           className="h-9 w-full pl-8 sm:w-64"
         />
       </div>
+
+      <Button
+        type="button"
+        variant={value.emTeste ? "default" : "outline"}
+        size="sm"
+        className="h-9"
+        onClick={() => onChange({ ...value, emTeste: !value.emTeste })}
+        title="Mostrar apenas tarefas em teste"
+      >
+        <FlaskConical className="mr-1.5 h-3.5 w-3.5" />
+        Em teste
+      </Button>
 
       <Popover>
         <PopoverTrigger asChild>
