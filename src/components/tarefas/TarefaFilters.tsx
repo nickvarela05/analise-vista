@@ -18,6 +18,7 @@ export interface TarefaFiltersState {
   comDemanda: "todos" | "sim" | "nao";
   origem: "todos" | "homologacao" | "manual";
   lotes: string[];
+  emTeste: boolean;
 }
 
 export const initialFilters: TarefaFiltersState = {
@@ -28,6 +29,7 @@ export const initialFilters: TarefaFiltersState = {
   comDemanda: "todos",
   origem: "todos",
   lotes: [],
+  emTeste: false,
 };
 
 interface Props {
