@@ -78,6 +78,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     data_prevista: tarefa?.data_prevista ?? "",
     demanda_id: tarefa?.demanda_id ?? null,
     em_teste: tarefa?.em_teste ?? false,
+    descricao: tarefa?.descricao ?? "",
   });
 
   React.useEffect(() => {
@@ -87,15 +88,17 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       data_prevista: tarefa?.data_prevista ?? "",
       demanda_id: tarefa?.demanda_id ?? null,
       em_teste: tarefa?.em_teste ?? false,
+      descricao: tarefa?.descricao ?? "",
     });
-  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id, tarefa?.em_teste]);
+  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id, tarefa?.em_teste, tarefa?.descricao]);
 
   const dirty =
     draft.status !== (tarefa?.status ?? "") ||
     draft.prioridade !== (tarefa?.prioridade ?? "") ||
     (draft.data_prevista ?? "") !== (tarefa?.data_prevista ?? "") ||
     (draft.demanda_id ?? null) !== (tarefa?.demanda_id ?? null) ||
-    draft.em_teste !== (tarefa?.em_teste ?? false);
+    draft.em_teste !== (tarefa?.em_teste ?? false) ||
+    (draft.descricao ?? "") !== (tarefa?.descricao ?? "");
 
   const { data: demandas = [] } = useQuery({
     queryKey: ["dem-list-mini"],
