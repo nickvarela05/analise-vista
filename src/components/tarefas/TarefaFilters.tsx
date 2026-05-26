@@ -46,7 +46,8 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
     (value.prazo !== "todos" ? 1 : 0) +
     (value.comDemanda !== "todos" ? 1 : 0) +
     (value.origem !== "todos" ? 1 : 0) +
-    value.lotes.length;
+    value.lotes.length +
+    (value.emTeste ? 1 : 0);
 
   const togglePrio = (p: string) => {
     onChange({
