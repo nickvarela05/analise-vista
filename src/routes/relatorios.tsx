@@ -749,7 +749,6 @@ function RelatorioTable({
                       onValueChange={(v) =>
                         onUpdate({ id: r.id, status: v as StatusSolicitacao })
                       }
-                      disabled={r._inativo}
                     >
                       <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
                         <SelectValue />
