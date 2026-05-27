@@ -4,10 +4,12 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sparkles, Loader2, AlertCircle, Calendar, RefreshCw,
   TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
-  ListChecks, Inbox, Clock, Target, ArrowRight,
+  ListChecks, Inbox, Clock, Target, ArrowRight, UserSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +25,7 @@ export const Route = createFileRoute("/insights")({
 });
 
 function InsightsPage() {
+  const { role } = useAuth();
   return (
     <div className="space-y-6">
       <PageHeader
@@ -30,6 +33,141 @@ function InsightsPage() {
         description="Resumos executivos gerados por IA para sua semana."
       />
       <ResumoSemanal />
+      {role === "gestor" && <ResumoPorFuncionario />}
+    </div>
+  );
+}
+
+function ResumoPorFuncionario() {
+  const [funcionarios, setFuncionarios] = React.useState<Array<{ user_id: string; nome: string; cargo: string | null; avatar_url: string | null }>>([]);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [resumos, setResumos] = React.useState<any[]>([]);
+  const [activeIdx, setActiveIdx] = React.useState(0);
+  const [loadingList, setLoadingList] = React.useState(true);
+  const [loadingResumos, setLoadingResumos] = React.useState(false);
+  const [erro, setErro] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      setLoadingList(true);
+      const { data: roles, error: rolesErr } = await supabase
+        .from("user_roles").select("user_id").eq("role", "analista");
+      if (rolesErr) { setErro(rolesErr.message); setLoadingList(false); return; }
+      const ids = (roles ?? []).map((r: any) => r.user_id);
+      if (ids.length === 0) { setFuncionarios([]); setLoadingList(false); return; }
+      const { data: profs, error: pErr } = await supabase
+        .from("profiles").select("user_id, nome, cargo, avatar_url").in("user_id", ids);
+      if (pErr) { setErro(pErr.message); setLoadingList(false); return; }
+      const list = (profs ?? []).slice().sort((a: any, b: any) => (a.nome ?? "").localeCompare(b.nome ?? ""));
+      setFuncionarios(list as any);
+      setLoadingList(false);
+    })();
+  }, []);
+
+  React.useEffect(() => {
+    if (!selectedId) { setResumos([]); return; }
+    (async () => {
+      setLoadingResumos(true);
+      setErro(null);
+      const { data, error } = await supabase
+        .from("resumo_semanal").select("*").eq("user_id", selectedId)
+        .order("semana_inicio", { ascending: false }).limit(12);
+      if (error) { setErro(error.message); setResumos([]); setLoadingResumos(false); return; }
+      setResumos(data ?? []);
+      setActiveIdx(0);
+      setLoadingResumos(false);
+    })();
+  }, [selectedId]);
+
+  const selecionado = funcionarios.find((f) => f.user_id === selectedId);
+  const resumoAtivo = resumos[activeIdx];
+
+  return (
+    <div className="space-y-4">
+      <Card className="overflow-hidden border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-background to-background">
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-violet-500/15 p-2.5 text-violet-600 dark:text-violet-400">
+              <UserSearch className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Resumo semanal do funcionário</CardTitle>
+              <CardDescription className="mt-1">
+                Visão gerencial: selecione um analista ou estagiário de TI para ver o resumo individual.
+              </CardDescription>
+            </div>
+          </div>
+          <div className="w-full md:w-72">
+            <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)} disabled={loadingList || funcionarios.length === 0}>
+              <SelectTrigger>
+                <SelectValue placeholder={loadingList ? "Carregando…" : funcionarios.length === 0 ? "Nenhum analista cadastrado" : "Selecionar funcionário"} />
+              </SelectTrigger>
+              <SelectContent>
+                {funcionarios.map((f) => (
+                  <SelectItem key={f.user_id} value={f.user_id}>
+                    {f.nome}{f.cargo ? ` — ${f.cargo}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {!selectedId ? (
+        <Card><CardContent className="p-10 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400">
+            <UserSearch className="h-6 w-6" />
+          </div>
+          <p className="text-sm font-medium">Selecione um funcionário</p>
+          <p className="mt-1 text-xs text-muted-foreground">Escolha um analista/estagiário acima para visualizar o resumo semanal individual.</p>
+        </CardContent></Card>
+      ) : loadingResumos ? (
+        <Card><CardContent className="p-6"><div className="flex items-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Carregando resumos…</div></CardContent></Card>
+      ) : erro ? (
+        <Card><CardContent className="p-6"><div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{erro}</span></div></CardContent></Card>
+      ) : resumos.length === 0 ? (
+        <Card><CardContent className="p-10 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground"><Sparkles className="h-6 w-6" /></div>
+          <p className="text-sm font-medium">Nenhum resumo gerado ainda para este colaborador</p>
+          <p className="mt-1 text-xs text-muted-foreground">Os resumos são gerados automaticamente toda segunda-feira às 7h.</p>
+        </CardContent></Card>
+      ) : (
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-11 w-11 ring-2 ring-violet-500/30">
+                  <AvatarImage src={selecionado?.avatar_url ?? undefined} alt={selecionado?.nome} />
+                  <AvatarFallback>{(selecionado?.nome ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="text-sm font-semibold leading-tight">{selecionado?.nome}</div>
+                  <div className="text-xs text-muted-foreground">{selecionado?.cargo ?? "—"}</div>
+                </div>
+              </div>
+              {resumos.length > 1 && (
+                <div className="w-full sm:w-64">
+                  <Select value={String(activeIdx)} onValueChange={(v) => setActiveIdx(Number(v))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resumos.map((r, i) => (
+                        <SelectItem key={r.id} value={String(i)}>
+                          {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} – {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
+                          {i === 0 ? " (mais recente)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {resumoAtivo && <ResumoCard resumo={resumoAtivo} destaque={activeIdx === 0} />}
+        </div>
+      )}
     </div>
   );
 }
