@@ -1,102 +1,39 @@
+## Objetivo
 
-# Plano: Lotes de importação e exportação de relatórios na aba Tarefas
+Na aba **Insights & IA**, adicionar uma nova seção **"Resumo semanal do funcionário"**, onde o gestor pode selecionar um analista/estagiário por vez e visualizar o resumo semanal individual daquele colaborador.
 
-## Objetivos
-1. Marcar tarefas importadas via "Importar tarefas de homologação" com uma flag visível e filtrável.
-2. Agrupar cada importação em um **lote nomeado** (rastreável e reutilizável para exportação).
-3. Permitir **exportar relatório** das tarefas (todas ou filtradas por lote/status) em Excel e PDF.
+## Comportamento
 
----
+- Visível apenas para usuários com papel `gestor` (a lista de outros funcionários é uma visão gerencial; o RLS de `resumo_semanal` já permite ao gestor ler todos).
+- Aparece **abaixo** do bloco atual de resumos executivos, sem remover nada do que já existe.
+- Seletor (dropdown) lista todos os usuários com papel `analista` (incluindo estagiários, que hoje compartilham esse papel — diferenciados pelo campo `cargo` em `profiles`, mostrado entre parênteses no item).
+- Ao escolher um colaborador:
+  - Carrega o **resumo semanal mais recente** daquele `user_id` em `resumo_semanal`.
+  - Renderiza usando o mesmo componente `ResumoCard` já existente (KPIs, seções markdown, insights), mantendo o padrão visual.
+  - Mostra um seletor secundário com as últimas semanas disponíveis para o funcionário (caso queira navegar para resumos anteriores).
+- Estados tratados: carregando, sem colaborador selecionado, colaborador sem resumo gerado ainda, erro de fetch.
+- Para usuários não-gestores: a seção fica oculta (eles continuam vendo apenas o próprio resumo no bloco existente).
 
-## 1. Banco de dados (migration)
+## Detalhes técnicos
 
-### Nova tabela `todo_importacao_lote`
-- `nome` (text, obrigatório — definido pelo usuário no momento da importação)
-- `descricao` (text, opcional)
-- `tipo` (text, default `homologacao`) — espaço para futuros tipos
-- `total_tarefas` (int)
-- `criado_por` (uuid)
-- `created_at`
+Arquivo a editar: `src/routes/insights.tsx`
 
-RLS: equipe lê; autenticado cria; gestor/criador atualiza/exclui.
+1. Novo componente `ResumoPorFuncionario` adicionado dentro do mesmo arquivo, renderizado em `InsightsPage` após `<ResumoSemanal />`, condicionado a `role === "gestor"`.
+2. Busca de funcionários:
+   - `select user_id, role` de `user_roles` onde `role = 'analista'`.
+   - Join client-side com `profiles` (`user_id, nome, cargo, avatar_url`) para nome de exibição.
+3. Busca de resumos do selecionado:
+   - `select * from resumo_semanal where user_id = $selected order by semana_inicio desc limit 12`.
+   - Estado local guarda a lista; índice ativo controla qual resumo exibir (default 0 = mais recente).
+4. UI:
+   - Card de cabeçalho com título, descrição e o `Select` (shadcn) de funcionário.
+   - Avatar + nome + cargo do funcionário selecionado em destaque.
+   - `Select` secundário compacto com as semanas disponíveis (formato `dd/MM – dd/MM`).
+   - Reuso de `ResumoCard` para o corpo.
+   - Empty state: "Nenhum resumo gerado ainda para este colaborador."
 
-### Alterações em `todo`
-- `lote_importacao_id` (uuid, FK → `todo_importacao_lote.id`, nullable)
-- `origem_importacao` (text, nullable) — ex.: `"homologacao"`, útil mesmo se o lote for excluído
-- Índice em `lote_importacao_id`
+## Não-objetivos
 
-> Tarefas criadas manualmente continuam com esses campos `null`.
-
----
-
-## 2. Importação (`ImportarTarefasDialog`)
-
-Quando "Importar tarefas de homologação" estiver marcada:
-- Exibir campo obrigatório **"Nome do lote"** (sugestão automática: `HML – {nome do arquivo} – {data}`).
-- Campo opcional "Descrição do lote".
-- Fluxo:
-  1. Cria registro em `todo_importacao_lote`.
-  2. Insere tarefas em `todo` com `lote_importacao_id` + `origem_importacao = 'homologacao'` + `status = 'homologacao'`.
-  3. Atualiza `total_tarefas` no lote.
-- Mensagem de sucesso: `"X tarefas importadas no lote {nome}"`.
-
-Importações **sem** o checkbox seguem como hoje (sem lote).
-
----
-
-## 3. UI da aba Tarefas
-
-### Identificação visual
-- `TarefaCard` e `TarefasLista`: badge **"HML importada"** (cor `info`) quando `origem_importacao === 'homologacao'`.
-- Tooltip exibe o nome do lote.
-
-### Filtros (`TarefaFilters`)
-- Novo filtro **"Lote de importação"** (combobox carregando lotes existentes; opções: "Todos", lote específico, "Sem lote").
-- Novo filtro **"Origem"**: Todas / Importadas HML / Manuais.
-
-### Drawer da tarefa
-- Mostrar lote vinculado (nome + data) na seção de metadados quando existir.
-
----
-
-## 4. Exportação de relatório
-
-Novo botão **"Exportar"** no header da tela `/tarefas`, ao lado de "Importar planilha".
-
-Abre dialog `ExportarTarefasDialog` com:
-- **Escopo**:
-  - Todas as tarefas filtradas atualmente (respeita filtros da tela), **ou**
-  - Selecionar lote(s) específico(s) (multi-select), **ou**
-  - Selecionar status (multi-select; "todos" disponível).
-- **Formato**: Excel (`.xlsx`) ou PDF.
-- **Colunas incluídas**: título, descrição, status, prioridade, responsáveis (nomes), prazo, lote, origem, criado em, concluído em, demanda vinculada.
-
-Implementação:
-- Excel via `xlsx` (já instalado) — uma planilha "Tarefas" + (se múltiplos lotes) planilha resumo "Lotes".
-- PDF via `jspdf` + `jspdf-autotable` (adicionar dependência) — layout em tabela com cabeçalho do filtro aplicado.
-- Nome do arquivo: `tarefas-{escopo}-{YYYYMMDD}.xlsx|pdf`.
-
----
-
-## 5. Arquivos afetados
-
-**Novos**
-- `supabase/migrations/{ts}_lotes_importacao_tarefas.sql`
-- `src/components/tarefas/ExportarTarefasDialog.tsx`
-- `src/lib/tarefas/export.ts` (helpers de geração Excel/PDF)
-
-**Editados**
-- `src/components/tarefas/ImportarTarefasDialog.tsx` — campos do lote + criação do registro
-- `src/components/tarefas/TarefaFilters.tsx` — filtros de lote/origem
-- `src/components/tarefas/TarefaCard.tsx` e `TarefasLista.tsx` — badge HML
-- `src/components/tarefas/TarefaDrawer.tsx` — exibir lote
-- `src/components/tarefas/useTarefasData.ts` — carregar lotes + aplicar filtros
-- `src/routes/tarefas.tsx` — botão "Exportar" no header
-- `src/integrations/supabase/types.ts` (gerado automaticamente após migration)
-
----
-
-## Perguntas para confirmar antes de implementar
-1. **Formato preferido do relatório**: Excel, PDF, ou ambos (como proposto)?
-2. **Lote opcional ou obrigatório** quando o checkbox HML estiver marcado? (Proposta: obrigatório, com sugestão automática.)
-3. Importações **manuais** (sem checkbox HML) também devem permitir nomear um lote, ou lotes só existem para HML por enquanto?
+- Não altera a edge function `gerar-resumo-semanal` (ela já gera por usuário).
+- Não cria tabelas nem migrações novas.
+- Não toca no bloco existente de "Resumos executivos com IA".
