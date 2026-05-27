@@ -233,12 +233,23 @@ function Relatorios() {
 
   const rows: RowExt[] = React.useMemo(
     () =>
-      (data?.ok ? data.rows : []).map((r) => ({
-        ...r,
-        // "Enviado" é considerado inativo automaticamente (não conta no total).
-        _inativo:
-          inativosSet.has(r.id) || (r.status ?? "").toLowerCase() === "enviado",
-      })),
+      (data?.ok ? data.rows : []).map((r) => {
+        // Solicitantes "Google" (nome ou e-mail) são inativados automaticamente.
+        const nome = (r.solicitante_nome ?? "").toLowerCase();
+        const email = (r.solicitante_email ?? "").toLowerCase();
+        const isGoogle =
+          nome === "google" ||
+          nome.includes("google") ||
+          /@(.*\.)?google\.com$/.test(email);
+        return {
+          ...r,
+          // "Enviado" e solicitantes Google são considerados inativos automaticamente.
+          _inativo:
+            inativosSet.has(r.id) ||
+            (r.status ?? "").toLowerCase() === "enviado" ||
+            isGoogle,
+        };
+      }),
     [data, inativosSet],
   );
 
