@@ -8,6 +8,14 @@ import {
   CheckSquare,
   ListChecks,
   FlaskConical,
+  Compass,
+  Inbox,
+  Users,
+  Gauge,
+  Activity,
+  ShieldCheck,
+  CalendarClock,
+  UserCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
