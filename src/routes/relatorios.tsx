@@ -196,11 +196,13 @@ function Relatorios() {
   const toggleAtivoMut = useMutation({
     mutationFn: async (vars: { solicitacaoId: string; ativarNovamente: boolean }) => {
       if (vars.ativarNovamente) {
-        const { error } = await supabase
+        const { data: deleted, error } = await supabase
           .from("relatorio_inativo")
           .delete()
-          .eq("solicitacao_id", vars.solicitacaoId);
+          .eq("solicitacao_id", vars.solicitacaoId)
+          .select("id");
         if (error) throw error;
+        return { reativado: (deleted ?? []).length > 0 };
       } else {
         const { error } = await supabase.from("relatorio_inativo").insert({
           solicitacao_id: vars.solicitacaoId,
@@ -208,10 +210,23 @@ function Relatorios() {
           inativado_por_nome: user?.email ?? null,
         });
         if (error) throw error;
+        return { reativado: false };
       }
     },
-    onSuccess: () => {
+    onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: qk.relatorios.inativos() });
+      if (vars.ativarNovamente) {
+        if (res?.reativado) {
+          toast.success("Relatório reativado");
+        } else {
+          toast.info("Nada para reativar", {
+            description:
+              "Este item pode estar inativo por estar com status 'Enviado'. Altere o status para reativá-lo.",
+          });
+        }
+      } else {
+        toast.success("Relatório inativado");
+      }
     },
     onError: (e: Error) => toast.error("Erro ao alternar status", { description: e.message }),
   });
