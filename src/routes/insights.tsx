@@ -4,11 +4,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Sparkles, Loader2, AlertCircle, Code2, Calendar, RefreshCw,
+  Sparkles, Loader2, AlertCircle, Calendar, RefreshCw,
   TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
   ListChecks, Inbox, Clock, Target, ArrowRight,
 } from "lucide-react";
@@ -25,170 +22,16 @@ export const Route = createFileRoute("/insights")({
   ),
 });
 
-const EXEMPLOS = [
-  "minhas demandas urgentes",
-  "tarefas atrasadas esta semana",
-  "chamados com prazo estourado",
-  "reuniões dos últimos 30 dias",
-];
-
 function InsightsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
         title="Insights & IA"
-        description="Busca em linguagem natural e resumos executivos gerados por IA."
+        description="Resumos executivos gerados por IA para sua semana."
       />
-      <Tabs defaultValue="busca" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="busca">
-            <Sparkles className="mr-2 h-4 w-4" /> Busca natural
-          </TabsTrigger>
-          <TabsTrigger value="resumo">
-            <Calendar className="mr-2 h-4 w-4" /> Resumo semanal
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="busca"><BuscaIA /></TabsContent>
-        <TabsContent value="resumo"><ResumoSemanal /></TabsContent>
-      </Tabs>
+      <ResumoSemanal />
     </div>
   );
-}
-
-function BuscaIA() {
-  const [pergunta, setPergunta] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [erro, setErro] = React.useState<string | null>(null);
-  const [resultado, setResultado] = React.useState<{ sql_gerado: string; resultados: any[] } | null>(null);
-  const [showSql, setShowSql] = React.useState(false);
-
-  async function executar(q?: string) {
-    const query = (q ?? pergunta).trim();
-    if (query.length < 3) return;
-    setPergunta(query);
-    setLoading(true);
-    setErro(null);
-    setResultado(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("busca-natural", {
-        body: { pergunta: query },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) {
-        setErro(data.error);
-        if (data.sql_gerado) setResultado({ sql_gerado: data.sql_gerado, resultados: [] });
-      } else {
-        setResultado(data);
-      }
-    } catch (e: any) {
-      setErro(e?.message ?? "Falha na busca");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const colunas = resultado?.resultados?.[0] ? Object.keys(resultado.resultados[0]) : [];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Pergunte em português</CardTitle>
-        <CardDescription>
-          A IA gera uma consulta SQL segura (só leitura, com seus filtros de acesso) e mostra os resultados.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <form
-          onSubmit={(e) => { e.preventDefault(); executar(); }}
-          className="flex gap-2"
-        >
-          <Input
-            value={pergunta}
-            onChange={(e) => setPergunta(e.target.value)}
-            placeholder="Ex.: minhas tarefas atrasadas"
-            disabled={loading}
-            maxLength={500}
-          />
-          <Button type="submit" disabled={loading || pergunta.trim().length < 3}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            <span className="ml-2 hidden sm:inline">Buscar</span>
-          </Button>
-        </form>
-
-        <div className="flex flex-wrap gap-2">
-          {EXEMPLOS.map((ex) => (
-            <Badge
-              key={ex}
-              variant="outline"
-              className="cursor-pointer hover:bg-accent"
-              onClick={() => executar(ex)}
-            >
-              {ex}
-            </Badge>
-          ))}
-        </div>
-
-        {erro && (
-          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{erro}</span>
-          </div>
-        )}
-
-        {resultado && (
-          <div className="space-y-3">
-            <div>
-              <Button variant="ghost" size="sm" onClick={() => setShowSql(!showSql)} className="h-7 px-2 text-xs">
-                <Code2 className="mr-1 h-3 w-3" /> {showSql ? "Ocultar" : "Ver"} SQL gerado
-              </Button>
-              {showSql && (
-                <pre className="mt-2 overflow-x-auto rounded bg-muted p-3 text-xs">
-                  <code>{resultado.sql_gerado}</code>
-                </pre>
-              )}
-            </div>
-
-            {resultado.resultados.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum resultado.</p>
-            ) : (
-              <div className="overflow-x-auto rounded border">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      {colunas.map((c) => (
-                        <th key={c} className="px-3 py-2 text-left font-medium">{c}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resultado.resultados.slice(0, 50).map((row, i) => (
-                      <tr key={i} className="border-t">
-                        {colunas.map((c) => (
-                          <td key={c} className="px-3 py-2 text-muted-foreground">
-                            {formatCell(row[c])}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                  {resultado.resultados.length} resultado{resultado.resultados.length !== 1 ? "s" : ""}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function formatCell(v: any): string {
-  if (v == null) return "—";
-  if (typeof v === "object") return JSON.stringify(v);
-  if (typeof v === "string" && v.length > 80) return v.slice(0, 80) + "…";
-  return String(v);
 }
 
 function ResumoSemanal() {
@@ -303,14 +146,14 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
       <div className="relative border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Badge className="bg-primary/15 text-primary hover:bg-primary/20 border-0">
-              <Calendar className="mr-1.5 h-3 w-3" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary">
+              <Calendar className="h-3 w-3" />
               {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} – {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
-            </Badge>
+            </span>
             {destaque && (
-              <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-400">
-                <Sparkles className="mr-1 h-3 w-3" /> Mais recente
-              </Badge>
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                <Sparkles className="h-3 w-3" /> Mais recente
+              </span>
             )}
           </div>
           <span className="text-xs text-muted-foreground">
