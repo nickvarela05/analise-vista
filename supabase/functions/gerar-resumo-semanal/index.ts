@@ -119,14 +119,18 @@ Deno.serve(async (req) => {
       // pula se não teve atividade
       if (t.length === 0 && d.length === 0 && c.length === 0) continue;
 
-      const prompt = `Gere um resumo executivo curto (máx 200 palavras) da semana de ${semanaInicio.toLocaleDateString("pt-BR")} a ${semanaFim.toLocaleDateString("pt-BR")} para ${u.nome ?? "o colaborador"}.
+      const taxaConclusao = metricas.tarefas_total > 0
+        ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
+        : 0;
 
-Métricas:
-- Tarefas: ${metricas.tarefas_total} criadas, ${metricas.tarefas_concluidas} concluídas, ${metricas.tarefas_urgentes} urgentes
-- Demandas: ${metricas.demandas_total} novas, ${metricas.demandas_em_andamento} em andamento
-- Chamados externos: ${metricas.chamados_total} novos, ${metricas.chamados_sla_estourado} com SLA estourado
+      const prompt = `Briefing semanal para **${u.nome ?? "o colaborador"}** — período de ${semanaInicio.toLocaleDateString("pt-BR")} a ${semanaFim.toLocaleDateString("pt-BR")}.
 
-Estrutura: ## Destaques da semana, ## Pontos de atenção (bullets), ## Recomendação.`;
+Dados consolidados da semana:
+- Tarefas: ${metricas.tarefas_total} criadas · ${metricas.tarefas_concluidas} concluídas (${taxaConclusao}% conclusão) · ${metricas.tarefas_urgentes} urgentes/alta prioridade
+- Demandas: ${metricas.demandas_total} novas · ${metricas.demandas_em_andamento} em andamento
+- Chamados externos: ${metricas.chamados_total} novos · ${metricas.chamados_sla_estourado} com SLA estourado
+
+Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (três seções, bullets curtos com **negrito** em números e termos-chave). Conecte os números a uma narrativa: o que avançou, onde está o risco, e o que fazer na próxima semana.`;
 
       const { texto, insights } = await callIA(prompt);
 
