@@ -8,6 +8,14 @@ import {
   CheckSquare,
   ListChecks,
   FlaskConical,
+  
+  Inbox,
+  Users,
+  Gauge,
+  Activity,
+  ShieldCheck,
+  CalendarClock,
+  UserCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
@@ -17,8 +25,7 @@ import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoe
 
 import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
-import { KpiTile } from "@/components/KpiTile";
+import { DashboardHero, type PulseItem } from "@/components/dashboard/DashboardHero";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { cargoElegivel } from "@/lib/domain/cargos";
 import { contarAtribuicoes, isAtribuidoA } from "@/lib/domain/atividades";
@@ -315,14 +322,23 @@ function Dashboard() {
     [colaboradores],
   );
 
+  const pulseItems: PulseItem[] = [
+    { icon: FileBarChart, label: "Solicitações", value: solicRelatPend, hint: "Relatórios pendentes", tone: "amber",   to: "/relatorios" },
+    { icon: FlaskConical, label: "Em teste",     value: taskEmTeste,    hint: "Tarefas sinalizadas",  tone: "cyan",    to: "/tarefas" },
+    { icon: CheckSquare,  label: "Homologação",  value: taskHML,        hint: `${taskUrgentes} urgentes`, tone: "indigo", to: "/tarefas" },
+    { icon: Calendar,     label: "Reuniões",     value: reunioesSemana, hint: "Nesta semana",         tone: "violet",  to: "/reunioes" },
+    { icon: Megaphone,    label: "Avisos",       value: avisosCrit,     hint: `${avisos.length} ativos`,  tone: "rose",   to: "/avisos" },
+  ];
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Painel gerencial"
-        description="Visão consolidada da equipe de Análise de Requisitos."
+      <DashboardHero
+        nome={meuProfile?.nome ?? null}
+        subtitle="Visão consolidada da equipe de Análise de Requisitos."
+        pulse={pulseItems}
         actions={
           meuColabId ? (
-            <Button variant="outline" size="sm" onClick={() => setMinhasOpen(true)} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setMinhasOpen(true)} className="gap-2 backdrop-blur">
               <ListChecks className="h-4 w-4" />
               Minhas atribuições
             </Button>
@@ -332,60 +348,15 @@ function Dashboard() {
 
       <AvisosBanner avisos={avisos} onPreview={openPreview} />
 
-      {/* === VISÃO GERAL === */}
-      <SectionHeader title="Visão geral" description="Indicadores-chave do momento." />
-      <div className="grid gap-3 grid-cols-2 sm:gap-4 lg:grid-cols-5">
-        <KpiTile
-          icon={FileBarChart}
-          label="Solicitações de relatórios"
-          value={solicRelatPend}
-          hint="Pendentes"
-          tone="warning"
-          to="/relatorios"
-          loading={loading.solicitacoes}
-        />
-        <KpiTile
-          icon={FlaskConical}
-          label="Tarefas para teste"
-          value={taskEmTeste}
-          hint="Sinalizadas como em teste"
-          tone="info"
-          to="/tarefas"
-          loading={loading.tarefas}
-        />
-        <KpiTile
-          icon={CheckSquare}
-          label="Tarefas em homologação"
-          value={taskHML}
-          hint={`${taskHMLEmTeste} em teste · ${taskUrgentes} urgentes`}
-          tone="primary"
-          to="/tarefas"
-          loading={loading.tarefas}
-        />
-        <KpiTile
-          icon={Calendar}
-          label="Reuniões nesta semana"
-          value={reunioesSemana}
-          hint={`${reunioes.length} no total`}
-          tone="info"
-          to="/reunioes"
-          loading={loading.reunioes}
-        />
-        <KpiTile
-          icon={Megaphone}
-          label="Avisos críticos"
-          value={avisosCrit}
-          hint={`${avisos.length} avisos ativos`}
-          tone="destructive"
-          to="/avisos"
-          loading={loading.avisos}
-        />
-      </div>
-
       {/* === MINHAS ATRIBUIÇÕES === */}
       {meuColabId && (
         <>
-          <SectionHeader title="Minhas atribuições" description="O que está direcionado a você." />
+          <SectionHeader
+            title="Minhas atribuições"
+            description="O que está direcionado a você."
+            icon={UserCircle2}
+            tone="primary"
+          />
           <MinhasAtribuicoesPainel
             nome={meuProfile?.nome ?? null}
             colabId={meuColabId}
@@ -400,7 +371,12 @@ function Dashboard() {
       )}
 
       {/* === RELATÓRIOS (N8N) === */}
-      <SectionHeader title="Relatórios (canal externo)" description="Solicitações que chegam pelo fluxo N8N." />
+      <SectionHeader
+        title="Relatórios (canal externo)"
+        description="Solicitações que chegam pelo fluxo N8N."
+        icon={Inbox}
+        tone="amber"
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         <FunilRelatoriosCard solicitacoes={solicitacoes} />
         <SlaUrgenciaCard solicitacoes={solicitacoes} />
@@ -408,15 +384,24 @@ function Dashboard() {
       </div>
 
       {/* === DISTRIBUIÇÃO DA EQUIPE === */}
-      <SectionHeader title="Distribuição da equipe" description="Quem está envolvido em quê." />
+      <SectionHeader
+        title="Distribuição da equipe"
+        description="Quem está envolvido em quê."
+        icon={Users}
+        tone="violet"
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         <AtribuicoesChart data={atribuicoes} />
         <StatusTarefasPie data={pieTarefas} />
       </div>
 
-
       {/* === PRODUTIVIDADE === */}
-      <SectionHeader title="Produtividade" description="Quanto a equipe entrega e em quanto tempo." />
+      <SectionHeader
+        title="Produtividade"
+        description="Quanto a equipe entrega e em quanto tempo."
+        icon={Gauge}
+        tone="emerald"
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         <VelocitySemanalCard tarefas={tarefas} />
         <LeadTimeCard tarefas={tarefas} />
@@ -424,7 +409,12 @@ function Dashboard() {
       </div>
 
       {/* === SAÚDE DO BACKLOG === */}
-      <SectionHeader title="Acompanhamento das tarefas" description="Há quanto tempo estão abertas e quanta carga cada pessoa tem." />
+      <SectionHeader
+        title="Acompanhamento das tarefas"
+        description="Há quanto tempo estão abertas e quanta carga cada pessoa tem."
+        icon={Activity}
+        tone="sky"
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AgingBacklogCard tarefas={tarefas} />
@@ -433,7 +423,12 @@ function Dashboard() {
       </div>
 
       {/* === QUALIDADE & FLUXO === */}
-      <SectionHeader title="Qualidade e fluxo" description="Onde o processo trava ou perde qualidade." />
+      <SectionHeader
+        title="Qualidade e fluxo"
+        description="Onde o processo trava ou perde qualidade."
+        icon={ShieldCheck}
+        tone="indigo"
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         <TaxaReprovacaoCard tarefas={tarefas} />
         <TempoPorEtapaCard tarefas={tarefas} />
@@ -441,7 +436,12 @@ function Dashboard() {
       </div>
 
       {/* === AGENDA & PESSOAS === */}
-      <SectionHeader title="Agenda & pessoas" description="Compromissos da semana, férias e horários." />
+      <SectionHeader
+        title="Agenda & pessoas"
+        description="Compromissos da semana, férias e horários."
+        icon={CalendarClock}
+        tone="rose"
+      />
       <div className="grid gap-4 lg:grid-cols-3">
         <AtividadesSemanaPanel
           atividades={atividades}
@@ -459,6 +459,7 @@ function Dashboard() {
       </div>
 
       <HorariosPanel horarios={horarios} />
+
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />
       <MinhasAtribuicoesDialog
