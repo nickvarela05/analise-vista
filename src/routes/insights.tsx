@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Sparkles, Loader2, AlertCircle, Code2, Calendar, RefreshCw } from "lucide-react";
+import {
+  Sparkles, Loader2, AlertCircle, Code2, Calendar, RefreshCw,
+  TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
+  ListChecks, Inbox, Clock, Target, ArrowRight,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
