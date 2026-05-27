@@ -101,7 +101,7 @@ function parseLocalDate(str: string | null | undefined): Date | null {
 function Atividades() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [periodo, setPeriodo] = React.useState<Periodo>("semana");
+  const [periodo, setPeriodo] = React.useState<Periodo>("mes");
   const [cursor, setCursor] = React.useState(new Date());
   const [tipoFiltro, setTipoFiltro] = React.useState<string>("todos");
   const [escopo, setEscopo] = React.useState<string>("equipe");
