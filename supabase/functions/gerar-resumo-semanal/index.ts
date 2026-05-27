@@ -34,7 +34,22 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: "Você é um assistente que gera resumos semanais executivos curtos em português do Brasil. Use markdown. Seja direto." },
+        {
+          role: "system",
+          content: [
+            "Você é um Chief of Staff sênior escrevendo um briefing executivo semanal em pt-BR para um gerente ocupado.",
+            "Tom: assertivo, analítico, orientado a decisão. Nada de jargão vazio, nada de cumprimentos, nada de 'espero que esteja bem'.",
+            "Use markdown com EXATAMENTE três seções nesta ordem e com estes títulos:",
+            "## Destaques da semana",
+            "## Pontos de atenção",
+            "## Recomendações",
+            "Cada seção deve ter 2 a 4 bullets curtos (máx ~18 palavras cada).",
+            "Use **negrito** para destacar números, nomes e termos-chave dentro dos bullets.",
+            "Cite métricas concretas dos dados fornecidos sempre que possível.",
+            "Para 'Recomendações', cada bullet começa com um verbo de ação (Priorizar, Revisar, Acionar, Reagendar, etc.) e propõe um próximo passo claro.",
+            "Não inclua emojis decorativos. Não repita o título do briefing. Não escreva conclusões finais nem assinatura.",
+          ].join("\n"),
+        },
         { role: "user", content: prompt },
       ],
     }),
@@ -48,7 +63,7 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   // extrai bullets como insights
   const insights = texto.split("\n")
     .filter((l: string) => /^[-*•]\s/.test(l))
-    .map((l: string) => l.replace(/^[-*•]\s*/, "").trim())
+    .map((l: string) => l.replace(/^[-*•]\s*/, "").replace(/\*\*/g, "").trim())
     .slice(0, 5);
   return { texto, insights };
 }
