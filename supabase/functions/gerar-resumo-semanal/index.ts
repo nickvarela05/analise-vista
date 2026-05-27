@@ -34,7 +34,22 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: "Você é um assistente que gera resumos semanais executivos curtos em português do Brasil. Use markdown. Seja direto." },
+        {
+          role: "system",
+          content: [
+            "Você é um Chief of Staff sênior escrevendo um briefing executivo semanal em pt-BR para um gerente ocupado.",
+            "Tom: assertivo, analítico, orientado a decisão. Nada de jargão vazio, nada de cumprimentos, nada de 'espero que esteja bem'.",
+            "Use markdown com EXATAMENTE três seções nesta ordem e com estes títulos:",
+            "## Destaques da semana",
+            "## Pontos de atenção",
+            "## Recomendações",
+            "Cada seção deve ter 2 a 4 bullets curtos (máx ~18 palavras cada).",
+            "Use **negrito** para destacar números, nomes e termos-chave dentro dos bullets.",
+            "Cite métricas concretas dos dados fornecidos sempre que possível.",
+            "Para 'Recomendações', cada bullet começa com um verbo de ação (Priorizar, Revisar, Acionar, Reagendar, etc.) e propõe um próximo passo claro.",
+            "Não inclua emojis decorativos. Não repita o título do briefing. Não escreva conclusões finais nem assinatura.",
+          ].join("\n"),
+        },
         { role: "user", content: prompt },
       ],
     }),
@@ -48,7 +63,7 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   // extrai bullets como insights
   const insights = texto.split("\n")
     .filter((l: string) => /^[-*•]\s/.test(l))
-    .map((l: string) => l.replace(/^[-*•]\s*/, "").trim())
+    .map((l: string) => l.replace(/^[-*•]\s*/, "").replace(/\*\*/g, "").trim())
     .slice(0, 5);
   return { texto, insights };
 }
@@ -104,14 +119,18 @@ Deno.serve(async (req) => {
       // pula se não teve atividade
       if (t.length === 0 && d.length === 0 && c.length === 0) continue;
 
-      const prompt = `Gere um resumo executivo curto (máx 200 palavras) da semana de ${semanaInicio.toLocaleDateString("pt-BR")} a ${semanaFim.toLocaleDateString("pt-BR")} para ${u.nome ?? "o colaborador"}.
+      const taxaConclusao = metricas.tarefas_total > 0
+        ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
+        : 0;
 
-Métricas:
-- Tarefas: ${metricas.tarefas_total} criadas, ${metricas.tarefas_concluidas} concluídas, ${metricas.tarefas_urgentes} urgentes
-- Demandas: ${metricas.demandas_total} novas, ${metricas.demandas_em_andamento} em andamento
-- Chamados externos: ${metricas.chamados_total} novos, ${metricas.chamados_sla_estourado} com SLA estourado
+      const prompt = `Briefing semanal para **${u.nome ?? "o colaborador"}** — período de ${semanaInicio.toLocaleDateString("pt-BR")} a ${semanaFim.toLocaleDateString("pt-BR")}.
 
-Estrutura: ## Destaques da semana, ## Pontos de atenção (bullets), ## Recomendação.`;
+Dados consolidados da semana:
+- Tarefas: ${metricas.tarefas_total} criadas · ${metricas.tarefas_concluidas} concluídas (${taxaConclusao}% conclusão) · ${metricas.tarefas_urgentes} urgentes/alta prioridade
+- Demandas: ${metricas.demandas_total} novas · ${metricas.demandas_em_andamento} em andamento
+- Chamados externos: ${metricas.chamados_total} novos · ${metricas.chamados_sla_estourado} com SLA estourado
+
+Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (três seções, bullets curtos com **negrito** em números e termos-chave). Conecte os números a uma narrativa: o que avançou, onde está o risco, e o que fazer na próxima semana.`;
 
       const { texto, insights } = await callIA(prompt);
 
