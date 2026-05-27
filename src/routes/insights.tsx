@@ -4,10 +4,12 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sparkles, Loader2, AlertCircle, Calendar, RefreshCw,
   TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
-  ListChecks, Inbox, Clock, Target, ArrowRight,
+  ListChecks, Inbox, Clock, Target, ArrowRight, UserSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
