@@ -25,7 +25,7 @@ import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoe
 
 import { startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { DashboardHero, type PulseItem } from "@/components/dashboard/DashboardHero";
 import { KpiTile } from "@/components/KpiTile";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { cargoElegivel } from "@/lib/domain/cargos";
