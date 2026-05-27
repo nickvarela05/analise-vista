@@ -8,7 +8,7 @@ import {
   CheckSquare,
   ListChecks,
   FlaskConical,
-  Compass,
+  
   Inbox,
   Users,
   Gauge,
