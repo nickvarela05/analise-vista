@@ -21,6 +21,7 @@ import {
   Download,
   Sparkles,
   CheckCheck,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isThisMonth, isFuture } from "date-fns";
