@@ -26,9 +26,9 @@ import { toast } from "sonner";
 import { format, isThisMonth, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { EmptyState } from "@/components/EmptyState";
-import { KpiTile } from "@/components/KpiTile";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
