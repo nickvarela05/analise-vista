@@ -1,7 +1,8 @@
 import * as React from "react";
+import { Inbox } from "lucide-react";
 import { TarefaCard } from "./TarefaCard";
-import { WORKFLOW, STATUS_LABEL, STATUS_DESCRIPTION, columnAccent, normalizeStatus } from "./lib/workflow";
-import { Badge } from "@/components/ui/badge";
+import { WORKFLOW, STATUS_LABEL, STATUS_DESCRIPTION, normalizeStatus } from "./lib/workflow";
+import { cn } from "@/lib/utils";
 
 interface Props {
   tarefas: any[];
@@ -12,6 +13,17 @@ interface Props {
   onDropStatus: (id: string, status: string) => void;
   countsMap: Record<string, { comentarios: number; checklistTotal: number; checklistDone: number; anexos: number }>;
 }
+
+// Tom por coluna (gradiente do header + ring drag-over + pill do contador)
+const COL_TONE: Record<string, { wash: string; bar: string; pill: string; ring: string; text: string }> = {
+  aberta:             { wash: "from-slate-500/15 via-slate-500/5",   bar: "bg-slate-400",   pill: "bg-slate-500/15 text-slate-700 dark:text-slate-300",   ring: "ring-slate-400/40",  text: "text-slate-700 dark:text-slate-200" },
+  em_andamento:       { wash: "from-primary/20 via-primary/5",       bar: "bg-primary",     pill: "bg-primary/15 text-primary",                            ring: "ring-primary/40",    text: "text-primary" },
+  homologacao:        { wash: "from-sky-500/20 via-sky-500/5",       bar: "bg-sky-500",     pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",          ring: "ring-sky-500/40",    text: "text-sky-700 dark:text-sky-300" },
+  aprovado:           { wash: "from-emerald-500/20 via-emerald-500/5", bar: "bg-emerald-500", pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300", ring: "ring-emerald-500/40", text: "text-emerald-700 dark:text-emerald-300" },
+  aprovado_ressalvas: { wash: "from-amber-500/20 via-amber-500/5",   bar: "bg-amber-500",   pill: "bg-amber-500/15 text-amber-700 dark:text-amber-300",    ring: "ring-amber-500/40",  text: "text-amber-700 dark:text-amber-300" },
+  reprovado:          { wash: "from-rose-500/20 via-rose-500/5",     bar: "bg-rose-500",    pill: "bg-rose-500/15 text-rose-700 dark:text-rose-300",       ring: "ring-rose-500/40",   text: "text-rose-700 dark:text-rose-300" },
+  producao:           { wash: "from-violet-500/20 via-violet-500/5", bar: "bg-violet-500",  pill: "bg-violet-500/15 text-violet-700 dark:text-violet-300", ring: "ring-violet-500/40", text: "text-violet-700 dark:text-violet-300" },
+};
 
 export function TarefaKanban({
   tarefas,
@@ -38,21 +50,17 @@ export function TarefaKanban({
   return (
     <div className="w-full overflow-x-auto">
       <div
-        className="grid gap-2 pb-4"
-        style={{
-          gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(0, 1fr))`,
-        }}
+        className="grid gap-2.5 pb-4"
+        style={{ gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(0, 1fr))` }}
       >
         {WORKFLOW.map((status) => {
           const items = grouped[status] ?? [];
           const isOver = dragOver === status;
+          const tone = COL_TONE[status] ?? COL_TONE.aberta;
           return (
             <div
               key={status}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(status);
-              }}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(status); }}
               onDragLeave={() => setDragOver(null)}
               onDrop={(e) => {
                 e.preventDefault();
@@ -60,26 +68,40 @@ export function TarefaKanban({
                 setDragOver(null);
                 if (id) onDropStatus(id, status);
               }}
-              className={`flex min-w-0 flex-col rounded-lg border-t-2 bg-muted/40 p-2 transition ${columnAccent(
-                status,
-              )} ${isOver ? "bg-muted ring-2 ring-primary/40" : ""}`}
+              className={cn(
+                "group/col relative flex min-w-0 flex-col overflow-hidden rounded-xl border bg-card/60 backdrop-blur transition-all",
+                isOver && cn("ring-2 -translate-y-0.5 shadow-md", tone.ring),
+              )}
             >
-              <div className="mb-2 flex items-start justify-between gap-1 px-1">
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-[11px] font-semibold uppercase tracking-wide">
-                    {STATUS_LABEL[status]}
-                  </h3>
-                  <p className="truncate text-[10px] text-muted-foreground">{STATUS_DESCRIPTION[status]}</p>
+              {/* Header com gradient tonal */}
+              <div className={cn("relative overflow-hidden bg-gradient-to-b to-transparent px-3 py-2.5", tone.wash)}>
+                <div className={cn("absolute left-0 top-0 h-full w-[3px]", tone.bar)} />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className={cn("truncate text-[11px] font-bold uppercase tracking-[0.08em]", tone.text)}>
+                      {STATUS_LABEL[status]}
+                    </h3>
+                    <p className="truncate text-[10px] text-muted-foreground">
+                      {STATUS_DESCRIPTION[status]}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "inline-flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums",
+                      tone.pill,
+                    )}
+                  >
+                    {items.length}
+                  </span>
                 </div>
-                <Badge variant="secondary" className="h-5 shrink-0 text-[10px]">
-                  {items.length}
-                </Badge>
               </div>
 
-              <div className="flex min-h-[120px] flex-col gap-2">
+              {/* Coluna */}
+              <div className="flex min-h-[140px] flex-col gap-2 p-2">
                 {items.length === 0 ? (
-                  <div className="flex h-20 items-center justify-center rounded-md border border-dashed px-1 text-center text-[10px] text-muted-foreground">
-                    Arraste aqui
+                  <div className="flex h-24 flex-col items-center justify-center gap-1 rounded-md border border-dashed px-2 text-center text-[10px] text-muted-foreground/70">
+                    <Inbox className="h-4 w-4 opacity-60" />
+                    <span>Arraste aqui</span>
                   </div>
                 ) : (
                   items.map((t) => (
