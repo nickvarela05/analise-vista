@@ -445,6 +445,7 @@ function KanbanView({
       {KANBAN_STATUS.map((status) => {
         const items = grouped[status] ?? [];
         const isOver = overCol === status;
+        const tone = COL_TONE[status];
         return (
           <div
             key={status}
@@ -455,21 +456,24 @@ function KanbanView({
             onDragLeave={() => setOverCol(null)}
             onDrop={() => onDropTo(status)}
             className={cn(
-              "flex flex-col rounded-lg border bg-muted/30 p-2 transition-colors",
-              isOver && "border-primary bg-primary/5",
+              "flex flex-col rounded-xl border bg-card/60 p-2 backdrop-blur transition-all",
+              isOver && `ring-2 ring-offset-1 ring-offset-background ${tone.ring} bg-card/80`,
             )}
           >
-            <div className="mb-2 flex items-center justify-between px-1">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {STATUS_LABEL[status]}
-              </h3>
-              <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <div className={cn("mb-2 flex items-center justify-between rounded-lg px-2 py-1.5 bg-gradient-to-r", tone.headerBg)}>
+              <div className="flex items-center gap-1.5">
+                <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                <h3 className={cn("text-[11px] font-semibold uppercase tracking-wide", tone.text)}>
+                  {STATUS_LABEL[status]}
+                </h3>
+              </div>
+              <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", tone.badge)}>
                 {items.length}
               </span>
             </div>
             <div className="flex flex-1 flex-col gap-2 min-h-[80px]">
               {items.length === 0 ? (
-                <p className="px-1 py-4 text-center text-[11px] text-muted-foreground/70">
+                <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">
                   Solte aqui
                 </p>
               ) : (
@@ -497,6 +501,52 @@ function KanbanView({
     </div>
   );
 }
+
+const COL_TONE: Record<string, { headerBg: string; text: string; dot: string; badge: string; ring: string }> = {
+  aberta: {
+    headerBg: "from-sky-500/15 to-sky-500/5",
+    text: "text-sky-700 dark:text-sky-300",
+    dot: "bg-sky-500",
+    badge: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    ring: "ring-sky-500/40",
+  },
+  em_analise: {
+    headerBg: "from-violet-500/15 to-violet-500/5",
+    text: "text-violet-700 dark:text-violet-300",
+    dot: "bg-violet-500",
+    badge: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+    ring: "ring-violet-500/40",
+  },
+  em_andamento: {
+    headerBg: "from-indigo-500/15 to-indigo-500/5",
+    text: "text-indigo-700 dark:text-indigo-300",
+    dot: "bg-indigo-500",
+    badge: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+    ring: "ring-indigo-500/40",
+  },
+  aguardando_cliente: {
+    headerBg: "from-amber-500/15 to-amber-500/5",
+    text: "text-amber-700 dark:text-amber-300",
+    dot: "bg-amber-500",
+    badge: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    ring: "ring-amber-500/40",
+  },
+  homologacao: {
+    headerBg: "from-cyan-500/15 to-cyan-500/5",
+    text: "text-cyan-700 dark:text-cyan-300",
+    dot: "bg-cyan-500",
+    badge: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
+    ring: "ring-cyan-500/40",
+  },
+  concluida: {
+    headerBg: "from-emerald-500/15 to-emerald-500/5",
+    text: "text-emerald-700 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    ring: "ring-emerald-500/40",
+  },
+};
+
 
 function ListaView({
   demandas,
