@@ -25,9 +25,12 @@ import {
   Plus,
   CheckSquare,
   Inbox,
+  Video,
+  CalendarDays,
+  AlertTriangle,
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PanelCard } from "@/components/StatCard";
@@ -52,6 +55,7 @@ import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
 import { DemandaDialog } from "@/components/demandas/DemandaDialog";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/atividades")({
   errorComponent: RouteErrorBoundary,
@@ -370,12 +374,44 @@ function Atividades() {
     </DropdownMenu>
   );
 
+  // KPIs do período
+  const kpiTotal = noPeriodo.length;
+  const kpiTar = noPeriodo.filter((a) => a.tipo === "tarefa").length;
+  const kpiDem = noPeriodo.filter((a) => a.tipo === "demanda").length;
+  const kpiReu = noPeriodo.filter((a) => a.tipo === "reuniao").length;
+  const hojeDate = new Date();
+  const kpiHoje = noPeriodo.filter((a) => isSameDay(a.data, hojeDate)).length;
+  const kpiAtrasadas = noPeriodo.filter(
+    (a) => a.tipo !== "reuniao" && a.data < startOfDay(hojeDate),
+  ).length;
+
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-4">
+      <PageHero
+        icon={CalendarRange}
+        tone="sky"
+        eyebrow="Operação"
         title="Atividades semanais"
         description="Agenda consolidada — tarefas, demandas e reuniões com prazo no período."
-        actions={
+        actions={novoMenu}
+        stats={[
+          { label: "No período", value: kpiTotal, icon: CalendarDays, tone: "sky" },
+          { label: "Tarefas", value: kpiTar, icon: CheckSquare, tone: "primary" },
+          { label: "Demandas", value: kpiDem, icon: Inbox, tone: "indigo" },
+          { label: "Reuniões", value: kpiReu, icon: Video, tone: "violet" },
+          { label: "Hoje", value: kpiHoje, icon: CalendarRange, tone: "emerald" },
+          {
+            label: "Atrasadas",
+            value: kpiAtrasadas,
+            icon: AlertTriangle,
+            tone: kpiAtrasadas > 0 ? "destructive" : "amber",
+            pulse: kpiAtrasadas > 0,
+          },
+        ]}
+      />
+
+      <div className="rounded-xl border bg-card/60 p-3 backdrop-blur">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -439,24 +475,24 @@ function Atividades() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 justify-end">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-transparent select-none">.</span>
-              {novoMenu}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={navPrev} className="hover:border-sky-500/40 hover:text-sky-600">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={hoje} className="hover:border-sky-500/40 hover:text-sky-600">
+              Hoje
+            </Button>
+            <Button variant="outline" size="icon" onClick={navNext} className="hover:border-sky-500/40 hover:text-sky-600">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <div className="ml-2 hidden items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs font-medium sm:flex">
+              <CalendarRange className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+              <span>
+                {format(inicio, "dd 'de' MMM", { locale: ptBR })} – {format(fim, "dd 'de' MMM yyyy", { locale: ptBR })}
+              </span>
             </div>
           </div>
-        }
-      />
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={navPrev}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" onClick={hoje}>Hoje</Button>
-          <Button variant="outline" size="icon" onClick={navNext}><ChevronRight className="h-4 w-4" /></Button>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-          <CalendarRange className="h-4 w-4 text-muted-foreground" />
-          <span className="hidden sm:inline">{format(inicio, "dd 'de' MMMM", { locale: ptBR })} – {format(fim, "dd 'de' MMMM yyyy", { locale: ptBR })}</span>
-          <span className="sm:hidden">{format(inicio, "dd/MM", { locale: ptBR })} – {format(fim, "dd/MM/yy", { locale: ptBR })}</span>
         </div>
       </div>
 
@@ -470,11 +506,16 @@ function Atividades() {
                 key={dia.toISOString()}
                 title={
                   <div className="flex items-center justify-between gap-2 group">
-                    <span>{format(dia, "EEE dd/MM", { locale: ptBR })}</span>
+                    <span className={cn(isHoje && "text-sky-700 dark:text-sky-300")}>
+                      {format(dia, "EEE dd/MM", { locale: ptBR })}
+                    </span>
                     <QuickAdd data={dia} />
                   </div> as unknown as string
                 }
-                className={isHoje ? "ring-2 ring-primary/40 group" : "group"}
+                className={cn(
+                  "group transition",
+                  isHoje && "ring-2 ring-sky-500/40 bg-gradient-to-br from-sky-500/5 to-transparent",
+                )}
               >
                 <div className="min-h-[140px] space-y-2 sm:min-h-[180px]">
                   {doDia.length === 0 ? (
@@ -518,15 +559,13 @@ function Atividades() {
                 return (
                   <div
                     key={dia.toISOString()}
-                    className={`group min-h-[100px] rounded-md border p-1.5 text-xs transition ${
-                      isHoje
-                        ? "border-primary bg-primary/5"
-                        : noMes
-                        ? isWeekend
-                          ? "border-border bg-muted/30"
-                          : "border-border"
-                        : "border-border/50 bg-muted/10 opacity-60"
-                    }`}
+                    className={cn(
+                      "group min-h-[100px] rounded-md border p-1.5 text-xs transition",
+                      isHoje && "border-sky-500/60 bg-sky-500/5 ring-1 ring-sky-500/30",
+                      !isHoje && noMes && isWeekend && "border-border bg-muted/30",
+                      !isHoje && noMes && !isWeekend && "border-border",
+                      !isHoje && !noMes && "border-border/50 bg-muted/10 opacity-60",
+                    )}
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <span className={`text-[10px] font-semibold ${noMes ? "" : "text-muted-foreground"}`}>
@@ -562,7 +601,8 @@ function Atividades() {
         </PanelCard>
       )}
 
-      <div className="mt-6 flex items-center gap-4 text-xs">
+      <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg border bg-card/40 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
+        <span className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground/70">Legenda</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-info" /> Tarefa</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-warning" /> Demanda</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Reunião</span>
