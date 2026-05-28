@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus, ListChecks, FlaskConical, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FlaskConical } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +28,8 @@ import { qk } from "@/lib/queries/keys";
 import { AssigneeCombobox } from "@/components/AssigneeCombobox";
 import { WORKFLOW, STATUS_LABEL, PRIO } from "@/components/tarefas/lib/workflow";
 import type { ColabMini, DemandaMini } from "@/components/tarefas/useTarefasData";
+import { DialogHero } from "@/components/shared/DialogHero";
+import { DialogSection } from "@/components/shared/DialogSection";
 
 interface FormState {
   titulo: string;
