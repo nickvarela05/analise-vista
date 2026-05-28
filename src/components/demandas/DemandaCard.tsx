@@ -9,8 +9,8 @@ import {
   describePrazo,
   prazoBadgeClass,
   prioridadeBadgeClass,
-  prioridadeSideClass,
 } from "./lib/demanda-utils";
+
 
 interface DemandaCardProps {
   demanda: {
