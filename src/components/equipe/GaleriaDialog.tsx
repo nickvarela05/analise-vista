@@ -29,6 +29,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DialogHero } from "@/components/shared/DialogHero";
+import { DialogSection } from "@/components/shared/DialogSection";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Foto {
@@ -161,57 +163,78 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl gap-0 overflow-hidden p-0">
+        <DialogHeader className="sr-only">
           <DialogTitle>Galeria da equipe</DialogTitle>
         </DialogHeader>
 
-        {canManage && (
-          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-            <Label className="text-xs">Adicionar foto</Label>
-            <Input
-              placeholder="Legenda (opcional)"
-              value={legenda}
-              onChange={(e) => setLegenda(e.target.value)}
-            />
-            <div className="flex items-center gap-2">
-              <Input type="file" accept="image/*" onChange={onUpload} disabled={uploading} />
-              {uploading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            </div>
-            {items.length > 1 && (
-              <p className="text-[11px] text-muted-foreground">
-                Dica: arraste as fotos para reordenar.
-              </p>
-            )}
-          </div>
-        )}
+        <div className="px-6 pt-6">
+          <DialogHero
+            icon={Images}
+            tone="violet"
+            eyebrow="Portfólio"
+            title="Galeria da equipe"
+            description="Compartilhe momentos do time. Arraste para reordenar as fotos."
+          />
+        </div>
 
-        {isLoading ? (
-          <div className="flex h-32 items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
-            <Images className="h-8 w-8 opacity-50" />
-            Nenhuma foto na galeria ainda.
-          </div>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
-              <div className="grid max-h-[60vh] gap-3 overflow-y-auto sm:grid-cols-2 md:grid-cols-3">
-                {items.map((f) => (
-                  <SortableFoto
-                    key={f.id}
-                    foto={f}
-                    canManage={canManage}
-                    onRemove={() => remover(f.id)}
-                    onEditLegenda={(novaLegenda) => editarLegenda(f.id, novaLegenda)}
+        <div className="max-h-[75vh] space-y-4 overflow-y-auto px-6 py-5">
+          {canManage && (
+            <DialogSection title="Adicionar foto" icon={Images} variant="tinted">
+              <div className="space-y-2">
+                <Label className="text-xs">Legenda (opcional)</Label>
+                <Input
+                  placeholder="Ex.: Confraternização de fim de ano"
+                  value={legenda}
+                  onChange={(e) => setLegenda(e.target.value)}
+                  className="focus-visible:ring-violet-500/40"
+                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={onUpload}
+                    disabled={uploading}
+                    className="cursor-pointer file:cursor-pointer focus-visible:ring-violet-500/40"
                   />
-                ))}
+                  {uploading && <Loader2 className="h-4 w-4 animate-spin text-violet-500" />}
+                </div>
+                {items.length > 1 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Dica: arraste as fotos para reordenar.
+                  </p>
+                )}
               </div>
-            </SortableContext>
-          </DndContext>
-        )}
+            </DialogSection>
+          )}
+
+          {isLoading ? (
+            <div className="flex h-32 items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
+              <Images className="h-8 w-8 opacity-50" />
+              Nenhuma foto na galeria ainda.
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  {items.map((f) => (
+                    <SortableFoto
+                      key={f.id}
+                      foto={f}
+                      canManage={canManage}
+                      onRemove={() => remover(f.id)}
+                      onEditLegenda={(novaLegenda) => editarLegenda(f.id, novaLegenda)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
