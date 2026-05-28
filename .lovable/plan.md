@@ -1,105 +1,69 @@
 
-## Parte 1 — Incluir Nickolas Varela no "Resumo semanal do funcionário"
+## Redesign — Aba Tarefas (tom emerald)
 
-### Diagnóstico
-Consultando o banco, Nickolas tem `role = 'gestor'` (não `analista`). Por isso ele não aparece no seletor — o filtro atual em `src/routes/insights.tsx` busca apenas `user_roles.role = 'analista'`.
+Aplicar a mesma linguagem visual da Dashboard e do Insights & IA, sem alterar lógica de negócio, dados, RLS ou queries.
 
-### Mudança
-Arquivo: `src/routes/insights.tsx` (função `ResumoPorFuncionario`)
+### Arquivos afetados
+- `src/routes/tarefas.tsx` — substituir `PageHeader` + `StatCard` por hero novo; reestilizar toolbar.
+- `src/components/tarefas/TarefaKanban.tsx` — redesenhar header/colunas/empty-state.
+- `src/components/tarefas/TarefaCard.tsx` — redesenhar card (gradiente sutil, accent bar, hover, progress de checklist).
+- `src/components/shared/PageHero.tsx` — **novo** componente reutilizável (será reusado nas demais abas).
+- `src/components/shared/StatPill.tsx` — **novo** KPI pill reutilizável.
 
-- Trocar o filtro de `eq("role", "analista")` por `in("role", ["analista", "gestor"])`, para que todos os colaboradores que efetivamente geram resumos semanais apareçam no seletor (analistas, estagiários e gestores como o Nickolas).
-- Ordenação por nome continua igual.
-- Nenhuma alteração em RLS, migrações ou edge function.
+### 1) Hero (novo componente compartilhado `PageHero`)
+- Card com `rounded-2xl border bg-gradient-to-br from-{tone}/10 via-background to-background shadow-sm`.
+- Glows tonais (top-right e bottom-left) usando blur-3xl.
+- Ícone tonal em badge (`rounded-2xl bg-{tone}/15 ring-1 ring-{tone}/20`).
+- Eyebrow "Fluxo de trabalho" uppercase tracking, título grande com gradient text, descrição curta, data atual em pt-BR.
+- Slot de actions à direita (mantém Importar / Exportar / Nova).
+- Slot de KPIs em grid responsivo (2/3/6 colunas) usando `StatPill`.
 
-> Observação: já que o gestor logado também passará a aparecer na lista, ele poderá visualizar o próprio resumo por aqui além do bloco principal — comportamento desejado e consistente.
+Para Tarefas, tom = **emerald**, ícone = `CheckSquare`, título = "Tarefas", subtítulo = "Acompanhe o fluxo da equipe — da ideia até a produção.".
 
----
+### 2) StatPill (novo compartilhado)
+- Tile compacto: ícone tonal, label uppercase, valor grande tabular-nums, hint opcional, `tone` (sky/emerald/violet/amber/rose/indigo/cyan/primary/destructive).
+- Hover sutil (`-translate-y-0.5 shadow-md`), gradiente tonal de fundo.
 
-## Parte 2 — Redesign das 8 abas restantes (UI/UX "uau")
+### 3) KPIs (mantém os 6 atuais com ícones)
+| Item              | Tom        | Ícone           |
+|-------------------|------------|-----------------|
+| Ativas            | primary    | Activity        |
+| Atrasadas         | destructive| AlertTriangle   |
+| Vencendo hoje     | amber      | Clock           |
+| Homologação       | sky        | FlaskConical    |
+| Aprovadas         | emerald    | CheckCircle2    |
+| Em produção       | violet     | Rocket          |
 
-### Objetivo
-Aplicar a mesma linguagem visual já implementada em **Dashboard** e **Insights & IA**:
-- Hero/cabeçalho com gradiente sutil, ícone tonal, descrição contextual e KPIs vivos.
-- Cards com bordas suaves, gradientes em camadas (`from-primary/X via-... to-...`), `ring`, sombra elegante e estados hover.
-- Tipografia hierárquica (título grande com gradient text, label uppercase tracking, números destacados).
-- Cores tonais por contexto (cada aba ganha uma "cor mãe" reutilizando a paleta já presente no `AppSidebar`).
-- Microinterações (transições, ícones animados, badges com pulso quando relevante).
-- Empty states ilustrados e loading skeletons consistentes.
+### 4) Toolbar
+- Card sutil envolvendo `TarefaFilters` + switch de visão.
+- Switch Kanban/Lista vira um `segmented control` com ícones (`LayoutGrid` / `ListIcon`), pill emerald quando ativo.
 
-### Mapeamento de tom por aba (alinhado ao sidebar atual)
+### 5) Kanban — colunas
+- Header de coluna: faixa de gradiente tonal por status (`from-{tone}/15 via-{tone}/5 to-transparent`), título em peso forte, descrição em xs, contador como pill tonal (em vez de `Badge` neutro).
+- Coluna: `rounded-xl border bg-card/60 backdrop-blur` no lugar do `bg-muted/40`; ring tonal sutil quando drag-over.
+- Empty state: ícone `Inbox` esmaecido + microcopy.
 
-| Aba                  | Cor tonal | Ícone âncora     |
-| -------------------- | --------- | ---------------- |
-| Atividades semanais  | sky       | CalendarRange    |
-| Reuniões             | indigo    | Calendar         |
-| Tarefas              | emerald   | CheckSquare      |
-| Demandas             | cyan      | Inbox            |
-| Avisos               | rose      | Megaphone        |
-| Portfólio            | indigo    | Briefcase        |
-| Equipe               | violet    | Users            |
-| Configurações        | primary   | Settings         |
+### 6) Card de tarefa (`TarefaCard`)
+- `rounded-xl border bg-card` com **accent bar lateral** de 3px por prioridade (alta=rose, media=amber, baixa=emerald) usando gradient vertical.
+- Hover: `-translate-y-0.5 shadow-lg ring-1 ring-{tone}/20`.
+- Quando atrasada: glow rose sutil no canto + badge "Atrasada" com pulse.
+- Título com `tracking-tight`, descrição em `text-muted-foreground/80`.
+- **Progress bar de checklist** abaixo dos badges quando `checklistTotal > 0` (barra fininha emerald).
+- Prazo: chip com ícone Calendar; tom warning para hoje, destructive com pulse para atrasada, neutro para futuro distante, info quando dentro de 3 dias.
+- Avatares dos responsáveis com `ring-2 ring-background`, fallback gradient `from-emerald-500/30 to-emerald-500/10`.
+- Checkbox de seleção sai do hover-only para sempre visível em opacidade baixa (60%) → 100% no hover/selecionado, posicionado top-right.
+- Badge "Demanda", "HML importada", "Em teste" com cores tonais e ícones consistentes.
 
-### Componentes compartilhados a criar (reuso entre todas as abas)
-
-`src/components/shared/`:
-1. **`PageHero.tsx`** — hero genérico (título com gradient, descrição, ícone tonal em badge com glow, slot de actions e slot de KPIs). Substitui/estende `PageHeader` nas abas redesenhadas (sem quebrar quem usa `PageHeader` puro).
-2. **`StatPill.tsx`** — pílula de KPI compacta (label, valor, ícone, delta opcional, variant tonal).
-3. **`SectionShell.tsx`** — card com header (ícone tonal + título + descrição + actions) e conteúdo, padronizando todas as seções.
-4. **`EmptyStatePro.tsx`** — empty state com ilustração via ícone grande + halo gradiente.
-
-Esses componentes seguem o padrão já usado em `DashboardHero` e `SectionHeader`, garantindo coerência.
-
-### Aba a aba (escopo de UI; lógica/dados intactos)
-
-1. **Atividades semanais (`src/routes/atividades.tsx`)**
-   - Hero sky com KPIs: total semana, % concluído, em atraso, próxima entrega.
-   - Linha do tempo semanal redesenhada (cards por dia com gradient header e badges de status).
-   - Filtros/segmented control no topo da lista; cada item ganha avatar do responsável, prioridade colorida e progresso.
-
-2. **Reuniões (`src/routes/reunioes.tsx`)**
-   - Hero indigo com KPIs: agendadas hoje, esta semana, com transcrição pendente, decisões registradas.
-   - Cards de reunião com hora destacada, participantes em avatares sobrepostos, badges de status (`agendada/realizada`), accent bar lateral.
-   - Drawer/preview de transcrição com tipografia editorial reutilizando o padrão do `ResumoCard`.
-
-3. **Tarefas (`src/routes/tarefas.tsx`)**
-   - Hero emerald com KPIs: pendentes, em andamento, em teste, concluídas hoje.
-   - Kanban redesenhado: colunas com header tonal (gradiente por status), contadores em pill, cards com prioridade colorida, prazo com tom alerta quando próximo/vencido, checklist progress bar.
-   - Toolbar (busca + filtros + visão lista/kanban) unificada.
-
-4. **Demandas (`src/routes/demandas.tsx`)**
-   - Hero cyan com KPIs: abertas, em análise, aguardando solicitante, encerradas no mês.
-   - Cards com categoria/origem como chips tonais, SLA visual (barra de tempo decorrido), solicitante destacado.
-   - Agrupamento por status com headers acordeon estilizados.
-
-5. **Avisos (`src/routes/avisos.tsx`)**
-   - Hero rose com KPIs: ativos, não lidos por mim, expirando em 7 dias, leitura média.
-   - Cards de aviso com gradient por `tipo` (informativo/urgente/comemorativo), autor + carimbo de data destacado, contador de leituras (avatares).
-   - Banner fixo para aviso urgente ativo no topo.
-
-6. **Portfólio (`src/routes/portfolio.tsx`)**
-   - Hero indigo com KPIs do portfólio (projetos ativos, clientes, módulos, releases).
-   - Grid de cards de projeto com capa, tags, responsáveis (avatar stack) e estado.
-   - Visão detalhe com tabs estilizadas e timeline.
-
-7. **Equipe (`src/routes/equipe.tsx`)** — restrito a gestor
-   - Hero violet com KPIs: disponíveis agora, em reunião, em férias, fora do expediente.
-   - `EquipeKpis` reestilizado usando `StatPill`.
-   - Tabs (Lista / Grade / Calendário / Copa / Usuários) com underline animado e ícones.
-   - Cards de colaborador com avatar, status com bullet pulsante, badge de equipe (Análise/Help-Desk/Suporte) e horário do dia em mini-timeline.
-
-8. **Configurações (`src/routes/configuracoes.tsx`)**
-   - Hero primary com subtítulo dinâmico ("Olá, {nome} — ajuste sua experiência").
-   - Tabs (Conta / Notificações / E-mails / IA) redesenhadas como segmented control vertical em telas largas (sidebar de configuração) com painel à direita.
-   - Cards de conta com avatar grande, role como badge gradiente, e ações (tema, sessão) em "action tiles" coloridas.
+### 7) Empty state geral
+- Quando `filtered.length === 0`, usar card grande com ícone gradiente (`CheckSquare` em halo emerald), título e descrição centrados, botão "Nova tarefa" inline.
 
 ### Não-objetivos
-- Não alterar lógica de negócio, queries, RLS, edge functions ou estrutura de dados.
-- Não trocar nomes das abas, rotas ou permissões.
-- Não introduzir bibliotecas novas — somente Tailwind, shadcn e lucide já presentes.
-- Não tocar nas abas Dashboard e Insights & IA (já feitas).
+- Não alterar `useTarefasData`, `TarefaDrawer`, `TarefaFilters`, `Importar/Exportar/Nova dialogs`, `TarefasBulkBar`, `TarefasLista` (essa será incluída na mesma estética, mas apenas estilos das linhas — sem mudar colunas/dados).
+- Não trocar a lógica de drag-and-drop nem o normalizeStatus.
+- Não tocar em rotas, permissões ou queries.
 
-### Ordem de execução sugerida
-1. Parte 1 (ajuste do seletor — mudança mínima).
-2. Criar componentes compartilhados em `src/components/shared/`.
-3. Redesenhar abas na ordem: Tarefas → Demandas → Atividades semanais → Reuniões → Avisos → Portfólio → Equipe → Configurações.
-4. QA visual em cada aba antes de seguir para a próxima.
+### Verificação
+1. Build passa.
+2. Visual em /tarefas: hero emerald renderizado, KPIs vivos, kanban com headers tonais, cards com accent bar e progress de checklist.
+3. Drag-and-drop continua funcionando entre colunas.
+4. Filtros, seleção em massa e drawer continuam funcionais.
