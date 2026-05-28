@@ -374,12 +374,44 @@ function Atividades() {
     </DropdownMenu>
   );
 
+  // KPIs do período
+  const kpiTotal = noPeriodo.length;
+  const kpiTar = noPeriodo.filter((a) => a.tipo === "tarefa").length;
+  const kpiDem = noPeriodo.filter((a) => a.tipo === "demanda").length;
+  const kpiReu = noPeriodo.filter((a) => a.tipo === "reuniao").length;
+  const hojeDate = new Date();
+  const kpiHoje = noPeriodo.filter((a) => isSameDay(a.data, hojeDate)).length;
+  const kpiAtrasadas = noPeriodo.filter(
+    (a) => a.tipo !== "reuniao" && a.data < startOfDay(hojeDate),
+  ).length;
+
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-4">
+      <PageHero
+        icon={CalendarRange}
+        tone="sky"
+        eyebrow="Operação"
         title="Atividades semanais"
         description="Agenda consolidada — tarefas, demandas e reuniões com prazo no período."
-        actions={
+        actions={novoMenu}
+        stats={[
+          { label: "No período", value: kpiTotal, icon: CalendarDays, tone: "sky" },
+          { label: "Tarefas", value: kpiTar, icon: CheckSquare, tone: "primary" },
+          { label: "Demandas", value: kpiDem, icon: Inbox, tone: "indigo" },
+          { label: "Reuniões", value: kpiReu, icon: Video, tone: "violet" },
+          { label: "Hoje", value: kpiHoje, icon: CalendarRange, tone: "emerald" },
+          {
+            label: "Atrasadas",
+            value: kpiAtrasadas,
+            icon: AlertTriangle,
+            tone: kpiAtrasadas > 0 ? "destructive" : "amber",
+            pulse: kpiAtrasadas > 0,
+          },
+        ]}
+      />
+
+      <div className="rounded-xl border bg-card/60 p-3 backdrop-blur">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -443,24 +475,24 @@ function Atividades() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 justify-end">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-transparent select-none">.</span>
-              {novoMenu}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={navPrev} className="hover:border-sky-500/40 hover:text-sky-600">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={hoje} className="hover:border-sky-500/40 hover:text-sky-600">
+              Hoje
+            </Button>
+            <Button variant="outline" size="icon" onClick={navNext} className="hover:border-sky-500/40 hover:text-sky-600">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <div className="ml-2 hidden items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs font-medium sm:flex">
+              <CalendarRange className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
+              <span>
+                {format(inicio, "dd 'de' MMM", { locale: ptBR })} – {format(fim, "dd 'de' MMM yyyy", { locale: ptBR })}
+              </span>
             </div>
           </div>
-        }
-      />
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={navPrev}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" onClick={hoje}>Hoje</Button>
-          <Button variant="outline" size="icon" onClick={navNext}><ChevronRight className="h-4 w-4" /></Button>
-        </div>
-        <div className="flex items-center gap-2 text-xs font-medium sm:text-sm">
-          <CalendarRange className="h-4 w-4 text-muted-foreground" />
-          <span className="hidden sm:inline">{format(inicio, "dd 'de' MMMM", { locale: ptBR })} – {format(fim, "dd 'de' MMMM yyyy", { locale: ptBR })}</span>
-          <span className="sm:hidden">{format(inicio, "dd/MM", { locale: ptBR })} – {format(fim, "dd/MM/yy", { locale: ptBR })}</span>
         </div>
       </div>
 
