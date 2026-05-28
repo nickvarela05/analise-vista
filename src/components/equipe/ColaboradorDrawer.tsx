@@ -283,7 +283,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
           </div>
         </div>
 
-        <Tabs defaultValue="horario" className="mt-4 px-6">
+        <Tabs defaultValue="horario" className="mt-4 px-6 pb-6">
           <TabsList
             className={cn(
               "grid w-full grid-cols-4 bg-card/60 backdrop-blur ring-1 ring-border",
