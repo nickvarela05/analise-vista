@@ -601,7 +601,8 @@ function Atividades() {
         </PanelCard>
       )}
 
-      <div className="mt-6 flex items-center gap-4 text-xs">
+      <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg border bg-card/40 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
+        <span className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground/70">Legenda</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-info" /> Tarefa</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-warning" /> Demanda</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Reunião</span>
