@@ -559,15 +559,13 @@ function Atividades() {
                 return (
                   <div
                     key={dia.toISOString()}
-                    className={`group min-h-[100px] rounded-md border p-1.5 text-xs transition ${
-                      isHoje
-                        ? "border-primary bg-primary/5"
-                        : noMes
-                        ? isWeekend
-                          ? "border-border bg-muted/30"
-                          : "border-border"
-                        : "border-border/50 bg-muted/10 opacity-60"
-                    }`}
+                    className={cn(
+                      "group min-h-[100px] rounded-md border p-1.5 text-xs transition",
+                      isHoje && "border-sky-500/60 bg-sky-500/5 ring-1 ring-sky-500/30",
+                      !isHoje && noMes && isWeekend && "border-border bg-muted/30",
+                      !isHoje && noMes && !isWeekend && "border-border",
+                      !isHoje && !noMes && "border-border/50 bg-muted/10 opacity-60",
+                    )}
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <span className={`text-[10px] font-semibold ${noMes ? "" : "text-muted-foreground"}`}>
