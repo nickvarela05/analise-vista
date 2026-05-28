@@ -51,7 +51,7 @@ function ResumoPorFuncionario() {
     (async () => {
       setLoadingList(true);
       const { data: roles, error: rolesErr } = await supabase
-        .from("user_roles").select("user_id").eq("role", "analista");
+        .from("user_roles").select("user_id, role").in("role", ["analista", "gestor"]);
       if (rolesErr) { setErro(rolesErr.message); setLoadingList(false); return; }
       const ids = (roles ?? []).map((r: any) => r.user_id);
       if (ids.length === 0) { setFuncionarios([]); setLoadingList(false); return; }
