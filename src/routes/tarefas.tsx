@@ -188,12 +188,15 @@ function Tarefas() {
   };
 
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-5">
+      <PageHero
+        eyebrow="Fluxo de trabalho"
         title="Tarefas"
-        description="Fluxo: Aberta → Em desenvolvimento/Teste interno → Homologação → Aprovado / Ressalvas / Reprovado → Produção"
+        description="Acompanhe o andamento da equipe — da abertura à produção, com visão por status e prioridade."
+        icon={CheckSquare}
+        tone="emerald"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ImportarTarefasDialog />
             <ExportarTarefasDialog
               todasTarefas={tarefas}
@@ -205,32 +208,25 @@ function Tarefas() {
             <NovaTarefaDialog colabs={colabs} demandas={demandas} />
           </div>
         }
+        stats={[
+          { icon: Activity,       label: "Ativas",        value: counts.ativas,    tone: "primary",     hint: "Em curso" },
+          { icon: AlertTriangle,  label: "Atrasadas",     value: counts.atrasadas, tone: "destructive", pulse: counts.atrasadas > 0, hint: "Prazo vencido" },
+          { icon: Clock,          label: "Vencem hoje",   value: counts.hoje,      tone: "amber",       hint: "Foco do dia" },
+          { icon: FlaskConical,   label: "Homologação",   value: counts.hml,       tone: "sky",         hint: "Em validação" },
+          { icon: CheckCircle2,   label: "Aprovadas",     value: counts.aprovado,  tone: "emerald",     hint: "Prontas p/ subir" },
+          { icon: Rocket,         label: "Em produção",   value: counts.producao,  tone: "violet",      hint: "Entregues" },
+        ]}
       />
 
-      <div className="mb-6">
-        <StatCard
-          title="Visão geral"
-          size="sm"
-          items={[
-            { value: counts.ativas, label: "Ativas", tone: "primary" },
-            { value: counts.atrasadas, label: "Atrasadas", tone: "destructive" },
-            { value: counts.hoje, label: "Vencendo hoje", tone: "warning" },
-            { value: counts.hml, label: "Homologação", tone: "info" },
-            { value: counts.aprovado, label: "Aprovadas", tone: "success" },
-            { value: counts.producao, label: "Em produção", tone: "success" },
-          ]}
-        />
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/60 p-2 backdrop-blur">
         <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} lotes={lotes} />
 
         <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "lista")} className="ml-auto">
-          <TabsList className="h-9">
-            <TabsTrigger value="kanban" className="text-xs">
+          <TabsList className="h-9 bg-muted/60">
+            <TabsTrigger value="kanban" className="text-xs data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300">
               <LayoutGrid className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Kanban</span>
             </TabsTrigger>
-            <TabsTrigger value="lista" className="text-xs">
+            <TabsTrigger value="lista" className="text-xs data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300">
               <ListIcon className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Lista</span>
             </TabsTrigger>
           </TabsList>
