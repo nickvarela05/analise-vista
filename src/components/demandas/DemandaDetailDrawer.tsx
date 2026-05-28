@@ -148,33 +148,39 @@ export function DemandaDetailDrawer({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader className="space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <SheetTitle className="text-lg leading-snug pr-4">{demanda.titulo}</SheetTitle>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant="outline" className={cn("capitalize", prioridadeBadgeClass(demanda.prioridade))}>
-                {demanda.prioridade}
-              </Badge>
-              <Badge variant="outline" className={cn("capitalize", statusBadgeClass(demanda.status))}>
-                {STATUS_LABEL[demanda.status as DemandaStatus] ?? demanda.status}
-              </Badge>
-              <Badge variant="outline" className="capitalize text-muted-foreground">
-                {demanda.categoria.replace(/_/g, " ")}
-              </Badge>
-              <Badge variant="outline" className="capitalize text-muted-foreground">
-                origem: {demanda.origem}
-              </Badge>
-              {prazo && (
-                <Badge variant="outline" className={cn("gap-1", prazoBadgeClass(prazo.tone))}>
-                  <Calendar className="h-3 w-3" />
-                  {prazo.label}
-                </Badge>
-              )}
-            </div>
-            <SheetDescription className="sr-only">Detalhes da demanda</SheetDescription>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto p-6">
+          <SheetHeader className="sr-only">
+            <SheetTitle>{demanda.titulo}</SheetTitle>
+            <SheetDescription>Detalhes da demanda</SheetDescription>
           </SheetHeader>
+          <DialogHero
+            icon={Inbox}
+            tone="indigo"
+            eyebrow="Demanda"
+            title={demanda.titulo}
+            chips={
+              <>
+                <Badge variant="outline" className={cn("capitalize", prioridadeBadgeClass(demanda.prioridade))}>
+                  {demanda.prioridade}
+                </Badge>
+                <Badge variant="outline" className={cn("capitalize", statusBadgeClass(demanda.status))}>
+                  {STATUS_LABEL[demanda.status as DemandaStatus] ?? demanda.status}
+                </Badge>
+                <Badge variant="outline" className="capitalize text-muted-foreground">
+                  {demanda.categoria.replace(/_/g, " ")}
+                </Badge>
+                <Badge variant="outline" className="capitalize text-muted-foreground">
+                  origem: {demanda.origem}
+                </Badge>
+                {prazo && (
+                  <Badge variant="outline" className={cn("gap-1", prazoBadgeClass(prazo.tone))}>
+                    <Calendar className="h-3 w-3" />
+                    {prazo.label}
+                  </Badge>
+                )}
+              </>
+            }
+          />
 
           <div className="mt-6 space-y-6">
             {/* Ações rápidas */}
