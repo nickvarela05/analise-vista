@@ -12,6 +12,7 @@ import {
   Search,
   Inbox,
   CheckCheck,
+  Megaphone,
 } from "lucide-react";
 import {
   isToday,
@@ -19,14 +20,11 @@ import {
   isThisWeek,
   isThisMonth,
   parseISO,
-  format,
 } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { KpiTile } from "@/components/KpiTile";
+import { PageHero } from "@/components/shared/PageHero";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -63,7 +61,6 @@ function Avisos() {
   const [urgencia, setUrgencia] = React.useState<FiltroUrgencia>("todos");
   const [escopo, setEscopo] = React.useState<FiltroEscopo>("todos");
 
-  // Colaboradores
   const { data: colabs = [] } = useQuery({
     queryKey: qk.avisos.colabs(),
     queryFn: async () => {
@@ -85,7 +82,6 @@ function Avisos() {
     [colabs],
   );
 
-  // Avisos
   const { data: avisos = [], isLoading } = useQuery({
     queryKey: qk.avisos.all(),
     queryFn: async () => {
@@ -98,7 +94,6 @@ function Avisos() {
     },
   });
 
-  // Leituras do usuário
   const { data: leituras = [] } = useQuery({
     queryKey: qk.avisos.leiturasDoUsuario(user?.id),
     enabled: !!user,
@@ -117,7 +112,6 @@ function Avisos() {
     [leituras],
   );
 
-  // Para gestor: contagem de leituras por aviso
   const { data: leiturasAgrupadas = [] } = useQuery({
     queryKey: qk.avisos.leiturasTodas(),
     enabled: isGestor,
@@ -139,14 +133,11 @@ function Avisos() {
     return m;
   }, [leiturasAgrupadas]);
 
-  // ----- Filtragem -----
   const isParaMim = React.useCallback(
     (a: AvisoRow) => {
       const ids = new Set<string>();
       if (a.colaborador_id) ids.add(a.colaborador_id);
       (a.colaboradores_ids ?? []).forEach((id) => ids.add(id));
-      // Equipe toda OU o usuário é destinatário
-      // (não temos colaborador_id ↔ user_id direto; usamos o e-mail como heurística)
       const meuColab = colabs.find(
         (c) => c.id && user && (c as any).email === user.email,
       );
@@ -171,20 +162,19 @@ function Avisos() {
         )
           return false;
       }
-      // Esconde inativos para não-gestores
       if (!isGestor && !a.ativo) return false;
-      // Esconde expirados para não-gestores
       if (!isGestor && a.expira_em && new Date(a.expira_em).getTime() < now)
         return false;
       return true;
     });
   }, [avisos, urgencia, escopo, lidos, busca, isGestor, isParaMim]);
 
-  // KPIs
   const kpis = React.useMemo(() => {
     const now = Date.now();
     const ativos = avisos.filter((a) => a.ativo);
     const criticos = ativos.filter((a) => a.tipo === "critico");
+    const alertas = ativos.filter((a) => a.tipo === "alerta");
+    const informativos = ativos.filter((a) => a.tipo === "informativo");
     const naoLidos = ativos.filter((a) => !lidos.has(a.id));
     const expirandoHoje = ativos.filter((a) => {
       if (!a.expira_em) return false;
@@ -194,12 +184,13 @@ function Avisos() {
     return {
       ativos: ativos.length,
       criticos: criticos.length,
+      alertas: alertas.length,
+      informativos: informativos.length,
       naoLidos: naoLidos.length,
       expirandoHoje: expirandoHoje.length,
     };
   }, [avisos, lidos]);
 
-  // Agrupamento por data
   const grupos = React.useMemo(() => {
     const buckets: Record<string, AvisoRow[]> = {
       Hoje: [],
@@ -208,7 +199,6 @@ function Avisos() {
       "Este mês": [],
       Anteriores: [],
     };
-    // Críticos não-lidos sobem
     const ordenados = [...filtrados].sort((a, b) => {
       const aDestaque = a.tipo === "critico" && a.ativo && !lidos.has(a.id) ? 1 : 0;
       const bDestaque = b.tipo === "critico" && b.ativo && !lidos.has(b.id) ? 1 : 0;
@@ -227,7 +217,6 @@ function Avisos() {
     return buckets;
   }, [filtrados, lidos]);
 
-  // ----- Ações -----
   const marcarLido = async (avisoId: string, lido: boolean) => {
     if (!user) return;
     if (lido) {
@@ -303,12 +292,15 @@ function Avisos() {
   };
 
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-5">
+      <PageHero
+        eyebrow="Comunicação interna"
         title="Avisos"
         description="Comunicados internos com prioridade, destinatários e leitura confirmada."
+        icon={Megaphone}
+        tone="amber"
         actions={
-          <div className="flex items-center gap-2">
+          <>
             {user && (
               <Button variant="outline" size="sm" onClick={marcarTodasLidas}>
                 <CheckCheck className="mr-2 h-4 w-4" />
@@ -321,51 +313,64 @@ function Avisos() {
                   setEditing(null);
                   setDialogOpen(true);
                 }}
+                className="bg-amber-500 text-white hover:bg-amber-600"
               >
                 <Plus className="mr-2 h-4 w-4" /> Novo aviso
               </Button>
             )}
-          </div>
+          </>
         }
+        stats={[
+          { icon: Bell, label: "Ativos", value: kpis.ativos, tone: "amber" },
+          {
+            icon: AlertTriangle,
+            label: "Críticos",
+            value: kpis.criticos,
+            tone: "destructive",
+            pulse: kpis.criticos > 0,
+          },
+          { icon: AlertCircle, label: "Alertas", value: kpis.alertas, tone: "amber" },
+          { icon: Info, label: "Informativos", value: kpis.informativos, tone: "sky" },
+          {
+            icon: Inbox,
+            label: "Não lidos",
+            value: kpis.naoLidos,
+            tone: "primary",
+            pulse: kpis.naoLidos > 0,
+          },
+          {
+            icon: AlertCircle,
+            label: "Expiram 24h",
+            value: kpis.expirandoHoje,
+            tone: "rose",
+          },
+        ]}
       />
 
-      {/* KPIs */}
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        <KpiTile icon={Bell} label="Avisos ativos" value={kpis.ativos} tone="primary" />
-        <KpiTile
-          icon={AlertTriangle}
-          label="Críticos"
-          value={kpis.criticos}
-          tone="destructive"
-        />
-        <KpiTile icon={Inbox} label="Não lidos por mim" value={kpis.naoLidos} tone="warning" />
-        <KpiTile
-          icon={AlertCircle}
-          label="Expirando em 24h"
-          value={kpis.expirandoHoje}
-          tone="info"
-        />
-      </div>
-
-      {/* Filtros */}
-      <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
-        <Tabs value={urgencia} onValueChange={(v) => setUrgencia(v as FiltroUrgencia)} className="w-full sm:w-auto">
-          <TabsList className="w-full overflow-x-auto sm:w-auto">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card/60 p-2 backdrop-blur sm:gap-3">
+        <Tabs
+          value={urgencia}
+          onValueChange={(v) => setUrgencia(v as FiltroUrgencia)}
+        >
+          <TabsList className="bg-muted/60">
             <TabsTrigger value="todos">Todos</TabsTrigger>
-            <TabsTrigger value="critico" className="gap-1">
+            <TabsTrigger value="critico" className="gap-1 data-[state=active]:text-destructive">
               <AlertTriangle className="h-3 w-3" /> Críticos
             </TabsTrigger>
-            <TabsTrigger value="alerta" className="gap-1">
+            <TabsTrigger value="alerta" className="gap-1 data-[state=active]:text-amber-600">
               <AlertCircle className="h-3 w-3" /> Alertas
             </TabsTrigger>
-            <TabsTrigger value="informativo" className="gap-1">
+            <TabsTrigger value="informativo" className="gap-1 data-[state=active]:text-sky-600">
               <Info className="h-3 w-3" /> Informativos
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
+        <div className="hidden h-6 w-px bg-border sm:block" />
+
         <Tabs value={escopo} onValueChange={(v) => setEscopo(v as FiltroEscopo)}>
-          <TabsList>
+          <TabsList className="bg-muted/60">
             <TabsTrigger value="todos">Todos</TabsTrigger>
             <TabsTrigger value="nao_lidos">Não lidos</TabsTrigger>
             <TabsTrigger value="para_mim">Para mim</TabsTrigger>
@@ -408,11 +413,13 @@ function Avisos() {
             ([titulo, items]) =>
               items.length > 0 && (
                 <section key={titulo}>
-                  <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {titulo}{" "}
-                    <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-muted-foreground">
+                  <h2 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="h-px flex-none w-4 bg-gradient-to-r from-amber-500/50 to-transparent" />
+                    {titulo}
+                    <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-300">
                       {items.length}
                     </span>
+                    <span className="h-px flex-1 bg-border/60" />
                   </h2>
                   <div className="space-y-2">
                     {items.map((a) => (
@@ -451,9 +458,6 @@ function Avisos() {
         userId={user?.id}
         onSaved={onSaved}
       />
-
-      {/* keep import */}
-      <span className="hidden">{format(new Date(), "yyyy", { locale: ptBR })}</span>
     </div>
   );
 }
