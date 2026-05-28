@@ -6,6 +6,7 @@ import {
   Calendar,
   Edit2,
   ExternalLink,
+  Inbox,
   ListChecks,
   Loader2,
   Plus,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
+import { DialogHero } from "@/components/shared/DialogHero";
 import {
   Sheet,
   SheetContent,
