@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import logoUrl from "@/assets/logo.png";
+import logoUrl from "@/assets/logo-sisteplan-mark.png";
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (

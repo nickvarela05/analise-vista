@@ -26,7 +26,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logoUrl from "@/assets/logo.png";
+import logoMark from "@/assets/logo-sisteplan-mark.png";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
 
@@ -123,17 +123,21 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
         <Link to="/" className="group flex items-center gap-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary/25 via-primary/10 to-violet-500/15 ring-1 ring-primary/30 shadow-sm transition-all group-hover:shadow-primary/20 group-hover:shadow-lg">
-            <div className="pointer-events-none absolute -inset-1 bg-gradient-to-tr from-primary/0 via-primary/15 to-violet-500/20 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
-            <img src={logoUrl} alt="" className="relative h-7 w-7 object-contain" />
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-sidebar/40 ring-1 ring-emerald-500/30 shadow-sm transition-all group-hover:shadow-emerald-500/30 group-hover:shadow-lg">
+            <div className="pointer-events-none absolute -inset-1 bg-gradient-to-tr from-emerald-500/0 via-emerald-500/15 to-teal-400/20 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
+            <img
+              src={logoMark}
+              alt=""
+              className="relative h-7 w-7 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
+            />
           </div>
           {!collapsed && (
             <div className="flex min-w-0 flex-col leading-tight">
-              <span className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-sm font-bold tracking-wide text-transparent">
-                SISTEPLAN
+              <span className="text-sm font-bold uppercase tracking-[0.22em] text-sidebar-foreground">
+                Sisteplan
               </span>
-              <span className="flex items-center gap-1 text-[9.5px] uppercase tracking-[0.16em] text-sidebar-foreground/55">
-                <Sparkles className="h-2.5 w-2.5 text-primary/80" />
+              <span className="mt-0.5 flex items-center gap-1 text-[9.5px] uppercase tracking-[0.16em] text-sidebar-foreground/55">
+                <Sparkles className="h-2.5 w-2.5 text-emerald-400" />
                 Análise de Requisitos
               </span>
             </div>
