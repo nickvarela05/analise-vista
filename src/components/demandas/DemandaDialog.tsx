@@ -1,6 +1,8 @@
 import * as React from "react";
 import { format } from "date-fns";
-import { CalendarIcon, X, Check, ListTodo } from "lucide-react";
+import { CalendarIcon, X, Check, ListTodo, Inbox, Sparkles } from "lucide-react";
+import { DialogHero } from "@/components/shared/DialogHero";
+import { DialogSection } from "@/components/shared/DialogSection";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,13 +186,25 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-6">
+        <DialogHeader className="sr-only">
           <DialogTitle>{isEditing ? "Editar demanda" : "Nova demanda"}</DialogTitle>
         </DialogHeader>
+        <DialogHero
+          icon={Inbox}
+          tone="indigo"
+          eyebrow="Demandas"
+          title={isEditing ? "Editar demanda" : "Nova demanda"}
+          description={
+            isEditing
+              ? "Atualize os dados da demanda e suas tarefas vinculadas."
+              : "Registre uma nova demanda e dispare ações com base nela."
+          }
+        />
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Título *</Label>
+          <DialogSection title="Resumo" variant="default">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Título *</Label>
             <Input
               autoFocus
               value={form.titulo}
@@ -288,64 +302,58 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
               />
             </div>
           </div>
+          </DialogSection>
 
-          <div className="space-y-1.5">
-            <Label>Atribuir a</Label>
-            <AssigneeCombobox
-              options={colabs}
-              selectedIds={form.responsaveis_ids}
-              equipeToda={form.equipe_toda}
-              onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Tags</Label>
-            <div className="flex gap-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addTag();
-                  }
-                }}
-                placeholder="Digite e pressione Enter"
+          <DialogSection title="Atribuição & tags" variant="tinted">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Atribuir a</Label>
+              <AssigneeCombobox
+                options={colabs}
+                selectedIds={form.responsaveis_ids}
+                equipeToda={form.equipe_toda}
+                onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
               />
-              <Button type="button" variant="outline" onClick={addTag}>
-                Adicionar
-              </Button>
             </div>
-            {(form.tags ?? []).length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {(form.tags ?? []).map((t) => (
-                  <Badge key={t} variant="secondary" className="gap-1 text-[10px]">
-                    {t}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(t)}
-                      className="ml-0.5 rounded-sm hover:bg-background/40"
-                      aria-label={`Remover ${t}`}
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
 
-          <div className="space-y-1.5">
-            <Label className="flex items-center gap-1.5">
-              <ListTodo className="h-3.5 w-3.5" />
-              Vincular tarefas
-              {tarefasSelecionadas.length > 0 && (
-                <Badge variant="secondary" className="ml-1 h-5 text-[10px]">
-                  {tarefasSelecionadas.length}
-                </Badge>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tags</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                  placeholder="Digite e pressione Enter"
+                />
+                <Button type="button" variant="outline" onClick={addTag}>
+                  Adicionar
+                </Button>
+              </div>
+              {(form.tags ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {(form.tags ?? []).map((t) => (
+                    <Badge key={t} variant="secondary" className="gap-1 text-[10px]">
+                      {t}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(t)}
+                        className="ml-0.5 rounded-sm hover:bg-background/40"
+                        aria-label={`Remover ${t}`}
+                      >
+                        <X className="h-2.5 w-2.5" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
               )}
-            </Label>
+            </div>
+          </DialogSection>
+
+          <DialogSection title="Tarefas vinculadas" icon={ListTodo} variant="default">
             <Popover open={tarefasOpen} onOpenChange={setTarefasOpen}>
               <PopoverTrigger asChild>
                 <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
@@ -399,15 +407,20 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
             <p className="text-[11px] text-muted-foreground">
               As tarefas selecionadas serão automaticamente vinculadas a esta demanda.
             </p>
-          </div>
+          </DialogSection>
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? "Salvando..." : isEditing ? "Salvar alterações" : "Criar demanda"}
-            </Button>
+          <DialogFooter className="-mx-6 -mb-6 mt-2 border-t bg-card/60 px-6 py-3 backdrop-blur sm:justify-between">
+            <p className="hidden text-[11px] text-muted-foreground sm:flex sm:items-center sm:gap-1">
+              <Sparkles className="h-3 w-3" /> Tags ajudam a busca e relatórios
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Salvando..." : isEditing ? "Salvar alterações" : "Criar demanda"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

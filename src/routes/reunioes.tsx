@@ -21,6 +21,7 @@ import {
   Download,
   Sparkles,
   CheckCheck,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isThisMonth, isFuture } from "date-fns";
@@ -74,6 +75,7 @@ import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 import { UploadAudioReuniao } from "@/components/reunioes/UploadAudioReuniao";
 import { TranscricaoFormatada } from "@/components/reunioes/TranscricaoFormatada";
+import { DialogHero } from "@/components/shared/DialogHero";
 import {
   Accordion,
   AccordionContent,
@@ -852,10 +854,21 @@ function Reunioes() {
 
       {/* Form criar/editar */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-6">
+          <DialogHeader className="sr-only">
             <DialogTitle>{editingId ? "Editar reunião" : "Nova reunião"}</DialogTitle>
           </DialogHeader>
+          <DialogHero
+            icon={Video}
+            tone="violet"
+            eyebrow="Reuniões"
+            title={editingId ? "Editar reunião" : "Nova reunião"}
+            description={
+              editingId
+                ? "Atualize informações, anexe áudio e re-execute a transcrição se necessário."
+                : "Agende uma reunião e, opcionalmente, anexe áudio para transcrição automática."
+            }
+          />
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label>Título</Label>

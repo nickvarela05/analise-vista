@@ -40,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox } from "@/components/AssigneeCombobox";
 import { WORKFLOW, STATUS_LABEL, statusVariant, prioVariant, PRIO } from "./lib/workflow";
+import { DialogHero } from "@/components/shared/DialogHero";
 
 interface Props {
   tarefa: any | null;
@@ -328,19 +329,30 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto p-4 sm:max-w-2xl sm:p-6">
-        <SheetHeader className="space-y-3 pr-10">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className={`capitalize ${statusVariant(tarefa.status)}`}>
-              {STATUS_LABEL[tarefa.status] ?? tarefa.status}
-            </Badge>
-            <Badge variant="outline" className={`capitalize ${prioVariant(tarefa.prioridade)}`}>
-              {tarefa.prioridade}
-            </Badge>
-          </div>
-          <SheetTitle className="text-base leading-snug sm:text-lg">
-            {tarefa.titulo}
-          </SheetTitle>
+        <SheetHeader className="sr-only">
+          <SheetTitle>{tarefa.titulo}</SheetTitle>
         </SheetHeader>
+        <DialogHero
+          icon={ListChecks}
+          tone="primary"
+          eyebrow="Tarefa"
+          title={tarefa.titulo}
+          chips={
+            <>
+              <Badge variant="outline" className={`capitalize ${statusVariant(tarefa.status)}`}>
+                {STATUS_LABEL[tarefa.status] ?? tarefa.status}
+              </Badge>
+              <Badge variant="outline" className={`capitalize ${prioVariant(tarefa.prioridade)}`}>
+                {tarefa.prioridade}
+              </Badge>
+              {tarefa.em_teste && (
+                <Badge variant="outline" className="gap-1 border-info/30 bg-info/5 text-info">
+                  <FlaskConical className="h-3 w-3" /> em teste
+                </Badge>
+              )}
+            </>
+          }
+        />
 
         {/* Painel rápido de edição */}
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
