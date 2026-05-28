@@ -26,15 +26,17 @@ import { toast } from "sonner";
 import { format, isThisMonth, isFuture } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { EmptyState } from "@/components/EmptyState";
-import { KpiTile } from "@/components/KpiTile";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Dialog,
@@ -139,6 +141,25 @@ function statusBadgeClass(s: string) {
   if (s === "cancelada") return "bg-destructive/15 text-destructive border-destructive/30";
   return "";
 }
+
+const REUNIAO_TONE: Record<string, { accent: string; statusBadge: string; dot: string }> = {
+  agendada: {
+    accent: "from-sky-500/80 via-sky-500/40 to-transparent",
+    statusBadge: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    dot: "bg-sky-500",
+  },
+  realizada: {
+    accent: "from-emerald-500/80 via-emerald-500/40 to-transparent",
+    statusBadge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+  },
+  cancelada: {
+    accent: "from-rose-500/80 via-rose-500/40 to-transparent",
+    statusBadge: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    dot: "bg-rose-500",
+  },
+};
+
 
 function Reunioes() {
   const { user } = useAuth();
@@ -551,86 +572,100 @@ function Reunioes() {
   ).length;
 
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-5">
+      <PageHero
+        eyebrow="Conversas e decisões"
         title="Reuniões"
-        description="Pautas, resumos, transcrições, participantes, responsável e prazos."
+        description="Pautas, resumos, transcrições, participantes e próximos passos — com IA."
+        icon={CalIcon}
+        tone="violet"
         actions={
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Nova reunião
+          <Button
+            onClick={openCreate}
+            className="gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/20 hover:from-violet-500/90 hover:to-fuchsia-500/90"
+          >
+            <Plus className="h-4 w-4" /> Nova reunião
           </Button>
         }
+        statsGridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+        stats={[
+          { icon: CalIcon, label: "Total", value: total, tone: "violet", hint: "Registradas" },
+          {
+            icon: CalendarDays,
+            label: "Agendadas",
+            value: agendadas,
+            tone: "sky",
+            hint: `${proximas} futuras`,
+          },
+          { icon: CheckCircle2, label: "Realizadas", value: realizadas, tone: "emerald", hint: "Concluídas" },
+          {
+            icon: XCircle,
+            label: "Canceladas",
+            value: canceladas,
+            tone: canceladas > 0 ? "rose" : "emerald",
+            hint: canceladas > 0 ? "Revisar motivos" : "Sem cancelamentos",
+          },
+          { icon: Sparkles, label: "Neste mês", value: noMes, tone: "amber", hint: "Ritmo do time" },
+        ]}
       />
 
-      <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiTile icon={CalIcon} label="Total" value={total} tone="primary" loading={isLoading} />
-        <KpiTile
-          icon={CalendarDays}
-          label="Agendadas"
-          value={agendadas}
-          hint={`${proximas} futuras`}
-          tone="info"
-          loading={isLoading}
-        />
-        <KpiTile icon={CheckCircle2} label="Realizadas" value={realizadas} tone="success" loading={isLoading} />
-        <KpiTile icon={XCircle} label="Canceladas" value={canceladas} tone="destructive" loading={isLoading} />
-        <KpiTile icon={CalIcon} label="Neste mês" value={noMes} tone="warning" loading={isLoading} />
+      {/* Toolbar */}
+      <div className="rounded-xl border bg-card/60 p-3 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título, resumo, pauta..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-8"
+            />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-9 w-36">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos status</SelectItem>
+              {STATUS.map((s) => (
+                <SelectItem key={s} value={s} className="capitalize">
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger className="h-9 w-36">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos tipos</SelectItem>
+              {TIPOS.map((t) => (
+                <SelectItem key={t} value={t} className="capitalize">
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(search || filterStatus !== "todos" || filterTipo !== "todos") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setFilterStatus("todos");
+                setFilterTipo("todos");
+              }}
+            >
+              Limpar
+            </Button>
+          )}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {filtered.length} de {data.length}
+          </span>
+        </div>
       </div>
 
-      {/* Filtros */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por título, resumo, pauta..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-8"
-          />
-        </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-9 w-36">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos status</SelectItem>
-            {STATUS.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterTipo} onValueChange={setFilterTipo}>
-          <SelectTrigger className="h-9 w-36">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos tipos</SelectItem>
-            {TIPOS.map((t) => (
-              <SelectItem key={t} value={t} className="capitalize">
-                {t}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {(search || filterStatus !== "todos" || filterTipo !== "todos") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSearch("");
-              setFilterStatus("todos");
-              setFilterTipo("todos");
-            }}
-          >
-            Limpar
-          </Button>
-        )}
-        <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} de {data.length}
-        </span>
-      </div>
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
@@ -643,122 +678,177 @@ function Reunioes() {
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((r: any) => (
-            <Card
-              key={r.id}
-              className="group cursor-pointer transition hover:border-primary/50 hover:shadow-md"
-              onClick={() => setOpenDetail(r)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="truncate text-sm">{r.titulo}</CardTitle>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                      <CalIcon className="h-3 w-3" />
-                      {format(new Date(r.data_reuniao), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      {r.duracao_min ? (
-                        <>
-                          <span className="mx-0.5">·</span>
-                          <Clock className="h-3 w-3" />
-                          {r.duracao_min} min
-                        </>
-                      ) : null}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant="outline" className={`capitalize text-[10px] ${statusBadgeClass(r.status)}`}>
-                        {r.status}
-                      </Badge>
-                      <Badge variant="outline" className="capitalize text-[10px]">
-                        {r.tipo}
-                      </Badge>
+          {filtered.map((r: any) => {
+            const tone = REUNIAO_TONE[r.status] ?? REUNIAO_TONE.agendada;
+            const isFuturo = r.status === "agendada" && isFuture(new Date(r.data_reuniao));
+            const hasIA = !!(r.transcricao && r.resumo);
+            return (
+              <div
+                key={r.id}
+                className={cn(
+                  "group relative cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition-all",
+                  "hover:-translate-y-0.5 hover:shadow-lg hover:border-foreground/15",
+                )}
+                onClick={() => setOpenDetail(r)}
+              >
+                {/* top accent strip */}
+                <span
+                  aria-hidden
+                  className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", tone.accent)}
+                />
+                {/* hover wash */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/0 to-fuchsia-500/0 opacity-0 transition-opacity group-hover:opacity-100 group-hover:from-violet-500/[0.04] group-hover:to-fuchsia-500/[0.04]"
+                />
+
+                <div className="relative p-4 pt-5 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold leading-snug text-foreground">
+                        {r.titulo}
+                      </h3>
+                      <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1">
+                          <CalIcon className="h-3 w-3" />
+                          {format(new Date(r.data_reuniao), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                        {r.duracao_min ? (
+                          <>
+                            <span className="text-muted-foreground/40">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {r.duracao_min}min
+                            </span>
+                          </>
+                        ) : null}
+                        {isFuturo && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-1.5 py-0.5 font-medium text-sky-700 dark:text-sky-300">
+                            futura
+                          </span>
+                        )}
+                      </p>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setOpenDetail(r)}>
-                            <ExternalLink className="mr-2 h-4 w-4" /> Visualizar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openEdit(r)}>
-                            <Pencil className="mr-2 h-4 w-4" /> Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setConfirmDelete(r)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="flex items-center gap-1">
+                      <div className="flex flex-col items-end gap-1">
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize",
+                            tone.statusBadge,
+                          )}
+                        >
+                          <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                          {r.status}
+                        </span>
+                        <Badge variant="outline" className="capitalize text-[10px] text-muted-foreground">
+                          {r.tipo}
+                        </Badge>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setOpenDetail(r)}>
+                              <ExternalLink className="mr-2 h-4 w-4" /> Visualizar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEdit(r)}>
+                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setConfirmDelete(r)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 pt-0 text-sm">
-                {r.resumo && <p className="line-clamp-2 text-xs text-muted-foreground">{r.resumo}</p>}
-                <div onClick={(e) => e.stopPropagation()}>
-                  <AssigneeBadges
-                    selectedIds={r.responsaveis_ids}
-                    equipeToda={r.equipe_toda}
-                    options={colabs}
-                    max={2}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {r.transcricao && r.resumo && (
-                    <Badge
-                      variant="outline"
-                      className="gap-1 border-primary/30 bg-primary/5 text-[10px] text-primary"
+
+                  {/* IA Resumo destacado */}
+                  {r.resumo && (
+                    <div
+                      className={cn(
+                        "rounded-lg border p-2.5 text-xs leading-relaxed",
+                        hasIA
+                          ? "border-violet-500/20 bg-gradient-to-br from-violet-500/[0.06] to-fuchsia-500/[0.04] text-foreground/80"
+                          : "border-border/50 bg-muted/40 text-muted-foreground",
+                      )}
                     >
-                      <Sparkles className="h-3 w-3" /> IA
-                    </Badge>
+                      {hasIA && (
+                        <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                          <Sparkles className="h-3 w-3" />
+                          Resumo IA
+                        </div>
+                      )}
+                      <p className="line-clamp-3">{r.resumo}</p>
+                    </div>
                   )}
-                  {r.transcricao_status === "processando" && (
-                    <Badge variant="outline" className="gap-1 text-[10px]">
-                      <Loader2 className="h-3 w-3 animate-spin" /> processando
-                    </Badge>
-                  )}
-                  {r.transcricao_status === "erro" && (
-                    <Badge variant="destructive" className="text-[10px]">⚠️ erro IA</Badge>
-                  )}
-                  {r.participantes && r.participantes.length > 0 && (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <Users className="h-3 w-3" /> {r.participantes.length}
-                    </Badge>
-                  )}
-                  {r.transcricao && (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <FileText className="h-3 w-3" /> transcrição
-                    </Badge>
-                  )}
-                  {r.proximos_passos && (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <ListChecks className="h-3 w-3" /> próximos
-                    </Badge>
-                  )}
-                  {r.audio_path && <Badge variant="secondary" className="text-[10px]">🎵 áudio</Badge>}
+
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <AssigneeBadges
+                      selectedIds={r.responsaveis_ids}
+                      equipeToda={r.equipe_toda}
+                      options={colabs}
+                      max={3}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1">
+                    {r.transcricao_status === "processando" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                        <Loader2 className="h-3 w-3 animate-spin" /> processando
+                      </span>
+                    )}
+                    {r.transcricao_status === "erro" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                        ⚠ erro IA
+                      </span>
+                    )}
+                    {r.participantes && r.participantes.length > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        <Users className="h-3 w-3" /> {r.participantes.length}
+                      </span>
+                    )}
+                    {r.transcricao && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        <FileText className="h-3 w-3" /> transcrição
+                      </span>
+                    )}
+                    {r.proximos_passos && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                        <CheckCheck className="h-3 w-3" /> próximos passos
+                      </span>
+                    )}
+                    {r.audio_path && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        🎵 áudio
+                      </span>
+                    )}
+                  </div>
+
+                  <div onClick={(e) => e.stopPropagation()} className="pt-1">
+                    <AssigneeCombobox
+                      options={colabs}
+                      selectedIds={r.responsaveis_ids ?? []}
+                      equipeToda={!!r.equipe_toda}
+                      onChange={(n) => updateAssignees(r.id, n)}
+                      placeholder="Atribuir..."
+                    />
+                  </div>
                 </div>
-                <div onClick={(e) => e.stopPropagation()} className="pt-1">
-                  <AssigneeCombobox
-                    options={colabs}
-                    selectedIds={r.responsaveis_ids ?? []}
-                    equipeToda={!!r.equipe_toda}
-                    onChange={(n) => updateAssignees(r.id, n)}
-                    placeholder="Atribuir..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
+
 
       {/* Form criar/editar */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
