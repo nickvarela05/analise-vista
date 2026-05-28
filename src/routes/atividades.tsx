@@ -506,11 +506,16 @@ function Atividades() {
                 key={dia.toISOString()}
                 title={
                   <div className="flex items-center justify-between gap-2 group">
-                    <span>{format(dia, "EEE dd/MM", { locale: ptBR })}</span>
+                    <span className={cn(isHoje && "text-sky-700 dark:text-sky-300")}>
+                      {format(dia, "EEE dd/MM", { locale: ptBR })}
+                    </span>
                     <QuickAdd data={dia} />
                   </div> as unknown as string
                 }
-                className={isHoje ? "ring-2 ring-primary/40 group" : "group"}
+                className={cn(
+                  "group transition",
+                  isHoje && "ring-2 ring-sky-500/40 bg-gradient-to-br from-sky-500/5 to-transparent",
+                )}
               >
                 <div className="min-h-[140px] space-y-2 sm:min-h-[180px]">
                   {doDia.length === 0 ? (
