@@ -13,12 +13,12 @@ import {
   Plus,
   Search,
   TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { EmptyState } from "@/components/EmptyState";
-import { KpiTile } from "@/components/KpiTile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,6 +46,7 @@ import {
   describePrazo,
   type DemandaStatus,
 } from "@/components/demandas/lib/demanda-utils";
+
 
 export const Route = createFileRoute("/demandas")({
   errorComponent: RouteErrorBoundary,
