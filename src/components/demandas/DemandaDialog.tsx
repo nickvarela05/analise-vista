@@ -1,6 +1,8 @@
 import * as React from "react";
 import { format } from "date-fns";
-import { CalendarIcon, X, Check, ListTodo } from "lucide-react";
+import { CalendarIcon, X, Check, ListTodo, Inbox, Sparkles } from "lucide-react";
+import { DialogHero } from "@/components/shared/DialogHero";
+import { DialogSection } from "@/components/shared/DialogSection";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,13 +186,25 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-6">
+        <DialogHeader className="sr-only">
           <DialogTitle>{isEditing ? "Editar demanda" : "Nova demanda"}</DialogTitle>
         </DialogHeader>
+        <DialogHero
+          icon={Inbox}
+          tone="indigo"
+          eyebrow="Demandas"
+          title={isEditing ? "Editar demanda" : "Nova demanda"}
+          description={
+            isEditing
+              ? "Atualize os dados da demanda e suas tarefas vinculadas."
+              : "Registre uma nova demanda e dispare ações com base nela."
+          }
+        />
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label>Título *</Label>
+          <DialogSection title="Resumo" variant="default">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Título *</Label>
             <Input
               autoFocus
               value={form.titulo}
