@@ -119,118 +119,129 @@ export function NovaTarefaDialog({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="max-w-xl overflow-hidden p-6">
+        <DialogHeader className="sr-only">
           <DialogTitle>Nova tarefa</DialogTitle>
         </DialogHeader>
-        <form onSubmit={adicionar} className="space-y-3">
-          <div className="space-y-1.5">
-            <Label>Título</Label>
-            <Input
-              value={form.titulo}
-              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              autoFocus
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Descrição</Label>
-            <Textarea
-              rows={3}
-              value={form.descricao}
-              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <DialogHero
+          icon={ListChecks}
+          tone="primary"
+          eyebrow="Tarefas"
+          title="Nova tarefa"
+          description="Crie uma tarefa e atribua a um ou mais responsáveis."
+        />
+        <form onSubmit={adicionar} className="space-y-4">
+          <DialogSection title="Detalhes" variant="default">
             <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {WORKFLOW.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STATUS_LABEL[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prioridade</Label>
-              <Select
-                value={form.prioridade}
-                onValueChange={(v) => setForm({ ...form, prioridade: v as FormState["prioridade"] })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIO.map((p) => (
-                    <SelectItem key={p} value={p} className="capitalize">
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prazo</Label>
+              <Label className="text-xs">Título</Label>
               <Input
-                type="date"
-                value={form.data_prevista}
-                onChange={(e) => setForm({ ...form, data_prevista: e.target.value })}
+                value={form.titulo}
+                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                autoFocus
+                placeholder="Resumo curto da tarefa"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Demanda vinculada</Label>
-              <Select
-                value={form.demanda_id ?? "none"}
-                onValueChange={(v) => setForm({ ...form, demanda_id: v === "none" ? null : v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Nenhuma" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhuma</SelectItem>
-                  {demandas.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.titulo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Descrição</Label>
+              <Textarea
+                rows={3}
+                value={form.descricao}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                placeholder="Contexto, critérios de aceite..."
+              />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Atribuir a</Label>
-            <AssigneeCombobox
-              options={colabs}
-              selectedIds={form.responsaveis_ids}
-              equipeToda={form.equipe_toda}
-              onChange={(n) =>
-                setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })
-              }
-            />
-          </div>
-          <label className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-2.5 cursor-pointer hover:bg-info/10 transition">
-            <Checkbox
-              checked={form.em_teste}
-              onCheckedChange={(v) => setForm({ ...form, em_teste: v === true })}
-              className="mt-0.5"
-            />
-            <div className="space-y-0.5">
-              <span className="flex items-center gap-1.5 text-sm font-medium">
-                <FlaskConical className="h-3.5 w-3.5 text-info" />
-                Em teste
-              </span>
-              <p className="text-xs text-muted-foreground">
-                Sinaliza que esta tarefa está sob teste/validação.
-              </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Status</Label>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {WORKFLOW.map((s) => (
+                      <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prioridade</Label>
+                <Select
+                  value={form.prioridade}
+                  onValueChange={(v) => setForm({ ...form, prioridade: v as FormState["prioridade"] })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PRIO.map((p) => (
+                      <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Prazo</Label>
+                <Input
+                  type="date"
+                  value={form.data_prevista}
+                  onChange={(e) => setForm({ ...form, data_prevista: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Demanda vinculada</Label>
+                <Select
+                  value={form.demanda_id ?? "none"}
+                  onValueChange={(v) => setForm({ ...form, demanda_id: v === "none" ? null : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma</SelectItem>
+                    {demandas.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.titulo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </label>
-          <DialogFooter>
-            <Button type="submit">Criar</Button>
+          </DialogSection>
+
+          <DialogSection title="Atribuição" variant="tinted">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Atribuir a</Label>
+              <AssigneeCombobox
+                options={colabs}
+                selectedIds={form.responsaveis_ids}
+                equipeToda={form.equipe_toda}
+                onChange={(n) =>
+                  setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })
+                }
+              />
+            </div>
+            <label className="flex items-start gap-2 rounded-md border border-info/30 bg-info/5 p-2.5 cursor-pointer hover:bg-info/10 transition">
+              <Checkbox
+                checked={form.em_teste}
+                onCheckedChange={(v) => setForm({ ...form, em_teste: v === true })}
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5">
+                <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <FlaskConical className="h-3.5 w-3.5 text-info" />
+                  Em teste
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  Sinaliza que esta tarefa está sob teste/validação.
+                </p>
+              </div>
+            </label>
+          </DialogSection>
+
+          <DialogFooter className="-mx-6 -mb-6 mt-4 border-t bg-card/60 px-6 py-3 backdrop-blur sm:justify-between">
+            <p className="hidden text-[11px] text-muted-foreground sm:flex sm:items-center sm:gap-1">
+              <Sparkles className="h-3 w-3" /> Atalho: pressione Enter para criar
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="submit">
+                <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
