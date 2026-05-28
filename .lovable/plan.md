@@ -67,3 +67,139 @@ Para Tarefas, tom = **emerald**, ícone = `CheckSquare`, título = "Tarefas", su
 2. Visual em /tarefas: hero emerald renderizado, KPIs vivos, kanban com headers tonais, cards com accent bar e progress de checklist.
 3. Drag-and-drop continua funcionando entre colunas.
 4. Filtros, seleção em massa e drawer continuam funcionais.
+
+---
+
+## Redesign — Sistema de Modais & Drawers (linguagem comum)
+
+Objetivo: levar a mesma linguagem visual do `PageHero` para dentro de toda criação/edição/detalhe da aplicação. Cada modal/drawer adota o **tom da aba** (Tarefas=emerald, Demandas=indigo, Reuniões=violet, Avisos=amber, Equipe=cyan, Portfólio=fuchsia, Configurações=slate, Atividades=primary), mantendo um padrão sistêmico.
+
+### Componentes compartilhados novos
+- `src/components/shared/DialogHero.tsx`
+  - Cabeçalho tonal para `DialogContent`/`SheetContent`: gradiente diagonal `from-{tone}/12 via-background to-background`, glow `blur-3xl` no canto, ícone em badge tonal (`rounded-2xl ring-1 ring-{tone}/25`), eyebrow uppercase, título `text-xl tracking-tight` com gradient text, descrição em `text-muted-foreground`. Slot opcional para chips de status/IA à direita.
+- `src/components/shared/DialogSection.tsx`
+  - Bloco interno reutilizável: título pequeno uppercase (`Section`), descrição opcional, área de campos com `space-y-3`. Variantes `default` e `tinted` (fundo `bg-{tone}/5 ring-1 ring-{tone}/10`).
+- `src/components/shared/FormField.tsx` (opcional, se reduzir repetição)
+  - Wrapper que padroniza `Label + helper text + erro` sem mexer no `react-hook-form` existente.
+- `src/components/shared/DialogFooterBar.tsx`
+  - Footer sticky com `border-t bg-background/80 backdrop-blur`, ações primárias à direita (`Button` com gradient sutil quando relevante), secundárias à esquerda (Cancelar/Excluir), mensagens contextuais de salvamento ("Salvando...", "Última edição há 2 min").
+
+### Padrão sistêmico aplicado a TODO modal/drawer
+1. **DialogContent maior**: `max-w-2xl` para formulários simples, `max-w-3xl` para complexos com abas; drawers a `sm:max-w-xl`/`sm:max-w-2xl`. Padding interno em `p-0` para deixar o `DialogHero` colado nas bordas.
+2. **Estrutura**: `DialogHero` → corpo com `space-y-5 px-6 py-5` (ou `Tabs` quando o formulário for grande) → `DialogFooterBar` sticky.
+3. **Tabs internas** (quando aplicável): visual translúcido `bg-card/60 backdrop-blur ring-1 ring-border`, pill tonal no ativo.
+4. **Inputs**: mantêm shadcn, mas adicionamos focus ring tonal (`focus-visible:ring-{tone}/40`) via util `inputToneClass(tone)`.
+5. **Blocos IA**: caixas com gradiente `from-violet-500/10 via-fuchsia-500/5 to-transparent`, ícone `Sparkles`, microcopy "Gerado por IA" e botão para regenerar.
+6. **Estados**: skeletons tonais, empty states com ícone gradiente, erros via `Alert` com borda tonal `destructive`.
+7. **Acessibilidade**: foco no primeiro campo, `aria-describedby` da descrição do `DialogHero`, `ESC`/overlay-click mantidos.
+
+---
+
+## Redesign de modais — abas já redesenhadas
+
+### Aba Tarefas (tom emerald)
+- `src/components/tarefas/NovaTarefaDialog.tsx`
+  - Trocar `DialogHeader` por `DialogHero` emerald (ícone `Plus` em halo). Adicionar bloco "Detalhes" + "Atribuição" como `DialogSection`. Checkbox "Em teste" vira tile tonal info maior. Footer com `DialogFooterBar` (Cancelar + Criar tarefa em verde gradient).
+- `src/components/tarefas/TarefaDrawer.tsx`
+  - Header com `DialogHero` emerald + chips de status/prioridade/atrasada à direita.
+  - Reorganizar conteúdo em abas: **Visão geral**, **Checklist**, **Histórico/Comentários**, **Vínculos** (demanda/reunião).
+  - Painel lateral fixo (em telas largas) com: responsáveis, prazo, prioridade, status — cada um como `StatPill` compacto editável.
+  - Botões de ação (concluir, mover, excluir) consolidados no `DialogFooterBar`.
+- `src/components/tarefas/ImportarTarefasDialog.tsx`
+  - `DialogHero` emerald com ícone `Upload`, passos numerados (1. Upload → 2. Mapear → 3. Confirmar) em um stepper tonal no topo.
+- `src/components/tarefas/ExportarTarefasDialog.tsx`
+  - `DialogHero` emerald com ícone `Download`, opções como cards selecionáveis (CSV/XLSX/PDF) em vez de radios soltos.
+
+### Aba Demandas (tom indigo)
+- `src/components/demandas/DemandaDialog.tsx`
+  - `DialogHero` indigo (ícone `Inbox`/`MessagesSquare`). Layout em duas colunas no desktop: esquerda formulário, direita "Resumo da demanda" com chips de categoria/prioridade/SLA.
+  - Bloco IA "Sugerir categorização" com gradiente violeta-fuchsia.
+- `src/components/demandas/DemandaDetailDrawer.tsx`
+  - Header com `DialogHero` indigo + accent bar lateral por prioridade (igual ao card).
+  - Abas: **Resumo**, **Tarefas vinculadas**, **Histórico**, **Anexos**.
+  - Mini-timeline tonal indigo na aba Histórico.
+- `src/components/demandas/CriarTarefaDialog.tsx`
+  - Reaproveita `DialogHero` indigo (criação a partir da demanda) com badge "vinda da Demanda X".
+
+### Aba Reuniões (tom violet)
+- Dialogs atualmente embutidos em `src/routes/reunioes.tsx` (Nova reunião / Editar reunião / Detalhe). **Extrair** para arquivos próprios:
+  - `src/components/reunioes/ReuniaoDialog.tsx` (cria + edita).
+  - `src/components/reunioes/ReuniaoDetailDrawer.tsx` (visualização).
+- `ReuniaoDialog`: `DialogHero` violet (ícone `Video`), campos em `DialogSection`: **Quando** (data/hora/duração), **Quem** (participantes via `AssigneeCombobox`), **O quê** (título/agenda), **Mídia** (`UploadAudioReuniao` em card tonal).
+- `ReuniaoDetailDrawer`: abas **Resumo IA**, **Transcrição** (usa `TranscricaoFormatada` com novo cabeçalho violet), **Próximos passos**, **Anexos**. Bloco "Resumo IA" reutilizando o mesmo gradiente violet→fuchsia já criado na rota.
+- `src/components/reunioes/UploadAudioReuniao.tsx`: card violet com dropzone gradient + barra de progresso tonal; estado "Transcrevendo..." com shimmer.
+
+---
+
+## A adicionar ao plano — abas pendentes (rotas + modais)
+
+Para cada aba abaixo: redesenho da rota (PageHero + KPIs + toolbar + listas/cards) **e** dos respectivos modais/drawers seguindo o sistema acima. Tom indicado entre parênteses.
+
+### Aba Atividades semanais (tom primary/sky)
+- Rota: `src/routes/atividades.tsx`.
+  - `PageHero` primary (ícone `CalendarRange`), KPIs: **Atividades na semana**, **Concluídas**, **Pendentes**, **Por colaborador (top 1)**, **Geradas por IA**.
+  - Toolbar com seletor de semana (chevrons + date pill), filtro por colaborador (incluir **Nickolas Varela** no `select`), toggle "Mostrar resumo IA".
+  - Painel "Resumo semanal" com cards por colaborador (avatar + métricas + bullets gerados pela IA, gradient sky).
+- Modais:
+  - `GerarResumoSemanalDialog` (novo, se não houver): hero sky, passos "Selecionar período → Selecionar colaboradores → Gerar". Botão final em gradient.
+  - `EditarAtividadeDialog`/popover: hero compacto sky.
+
+### Aba Avisos (tom amber)
+- Rota: `src/routes/avisos.tsx` — `PageHero` amber (ícone `Megaphone`), KPIs: **Ativos**, **Lidos**, **Pendentes**, **Críticos**, **Agendados**.
+  - Cards de aviso com accent bar por severidade (info/warning/critical), badge "Novo", contador de leitores.
+- `src/components/avisos/AvisoDialog.tsx`
+  - `DialogHero` amber (ícone `Megaphone`).
+  - Seções: **Mensagem**, **Audiência** (toda equipe / colaboradores específicos), **Agendamento** (publicar agora / agendar), **Anexos**.
+  - Pré-visualização ao vivo do card de aviso à direita em desktop.
+- `NotificationBell`: dropdown reestilizado com agrupamento por dia + chips tonais.
+
+### Aba Portfólio (tom fuchsia)
+- Rota: `src/routes/portfolio.tsx` — `PageHero` fuchsia (ícone `Briefcase`), KPIs: **Projetos**, **Clientes**, **Em produção**, **Concluídos no ano**, **Destaque do mês**.
+  - Grid de projetos em masonry/bento com hover scale + accent gradient fuchsia→pink, badges de stack/cliente.
+  - Filtros: cliente, ano, tipo.
+- Modais:
+  - `NovoProjetoDialog`/`EditarProjetoDialog`: `DialogHero` fuchsia, seções **Identidade** (nome/cliente/ano), **Mídia** (capa + galeria), **Descrição** (rich text com IA opcional para gerar resumo), **Tags & métricas**.
+  - `ProjetoDetailDrawer`: galeria carrossel + bloco de métricas + bloco IA "Resumo do projeto".
+
+### Aba Equipe (tom cyan)
+- Rota: `src/routes/equipe.tsx` — `PageHero` cyan (ícone `Users`), KPIs: **Total**, **Ativos hoje**, **Em férias**, **Aniversariantes do mês**, **Vagas abertas**.
+  - Toolbar com toggle de visão (Grade/Lista/Calendário/Usuários/Copa) como segmented control cyan.
+  - Cards de colaborador: avatar grande, accent bar por status, chips de cargo/equipe, "online agora" com dot pulsante.
+- Modais/Drawers:
+  - `ColaboradorDrawer.tsx`: `DialogHero` cyan com avatar + nome + cargo; abas **Perfil**, **Horários**, **Férias**, **Histórico**, **Galeria**.
+  - `NovoColaboradorDialog.tsx`: hero cyan, formulário em duas colunas, upload de foto com preview circular.
+  - `HorarioDialog.tsx`: hero cyan; grid semanal visual com slots clicáveis em vez de só inputs de hora.
+  - `FeriasDialog.tsx`: hero cyan; date range picker visual + cálculo automático de dias úteis.
+  - `GaleriaDialog.tsx`: hero cyan; dropzone + grid de thumbs com hover.
+  - `EventoPopover.tsx`: popover cyan compacto com chips.
+  - `ConvidarUsuarioDialog.tsx` / `CriarUsuarioDialog.tsx` / `TempPasswordDialog.tsx`: hero cyan; senha temporária em chip monoespaçado + botão copiar.
+
+### Aba Configurações (tom slate/primary)
+- Rota: `src/routes/configuracoes.tsx` — `PageHero` slate (ícone `Settings`), sem KPIs pesados; em vez disso "cards de área" (Notificações, IA, E-mails, Conta, Aparência) com ícone tonal próprio.
+  - Navegação em sidebar fixa à esquerda em desktop, accordion no mobile.
+- Subcomponentes:
+  - `ConfiguracoesEmails.tsx`, `ConfiguracoesIA.tsx`, `PreferenciasNotificacao.tsx`: cada bloco em `DialogSection tinted` com toggles maiores, descrições e badge "IA"/"Beta" quando aplicável.
+- Modais auxiliares (alterar senha, conectar provedor, etc.): `DialogHero` slate.
+
+---
+
+## Resumo semanal do funcionário — incluir Nickolas Varela
+- Em `supabase/functions/gerar-resumo-semanal/index.ts` e nas queries que alimentam o painel: garantir que **Nickolas Varela** aparece na lista de colaboradores elegíveis (sem hardcode — vem da tabela `colaborador`; se estiver inativo, marcar `ativo=true`).
+- Validar no front (`src/routes/atividades.tsx` + filtros de colaborador) que ele aparece nos selects e no painel de resumo. Caso o filtro tenha allowlist, adicionar o id.
+
+---
+
+## Ordem sugerida de execução (uma aba por vez)
+1. **Tarefas — modais** (Nova, Drawer, Importar, Exportar).
+2. **Demandas — modais** (Demanda, DetailDrawer, CriarTarefa).
+3. **Reuniões — extrair + redesenhar** ReuniaoDialog + ReuniaoDetailDrawer + UploadAudio.
+4. **Atividades semanais** (rota + modais) + incluir Nickolas Varela.
+5. **Avisos** (rota + AvisoDialog + NotificationBell).
+6. **Portfólio** (rota + Novo/Editar/Detail).
+7. **Equipe** (rota + todos os drawers/dialogs listados).
+8. **Configurações** (rota + subcomponentes).
+
+### Não-objetivos (sistêmicos)
+- Não alterar contratos de dados, RLS, schemas, edge functions (exceto a inclusão do Nickolas no resumo semanal).
+- Não trocar libs (continua shadcn + Radix + react-hook-form).
+- Não introduzir regressões de acessibilidade (foco, ESC, leitura por leitor de tela).
