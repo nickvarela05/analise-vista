@@ -2,13 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, LayoutGrid, List as ListIcon } from "lucide-react";
+import {
+  Loader2, LayoutGrid, List as ListIcon,
+  Activity, AlertTriangle, Clock, FlaskConical, CheckCircle2, Rocket,
+  CheckSquare,
+} from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, isWithinInterval, addDays, startOfDay } from "date-fns";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { EmptyState } from "@/components/EmptyState";
-import { StatCard } from "@/components/StatCard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
