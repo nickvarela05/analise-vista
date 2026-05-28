@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   CheckCircle2,
-  Clock,
   Inbox,
   LayoutGrid,
   List,
@@ -13,12 +12,13 @@ import {
   Plus,
   Search,
   TrendingUp,
+  Sparkles,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { EmptyState } from "@/components/EmptyState";
-import { KpiTile } from "@/components/KpiTile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,6 +46,7 @@ import {
   describePrazo,
   type DemandaStatus,
 } from "@/components/demandas/lib/demanda-utils";
+
 
 export const Route = createFileRoute("/demandas")({
   errorComponent: RouteErrorBoundary,
@@ -223,122 +224,130 @@ function Demandas() {
   );
 
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-5">
+      <PageHero
+        eyebrow="Fluxo de demandas"
         title="Demandas"
         description="Solicitações recebidas pela equipe — internas, clientes e automações."
+        icon={Inbox}
+        tone="indigo"
         actions={
-          <Button onClick={() => { setEditing(null); setOpenCreate(true); }}>
-            <Plus className="mr-2 h-4 w-4" /> Nova demanda
+          <Button
+            onClick={() => { setEditing(null); setOpenCreate(true); }}
+            className="gap-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/20 hover:from-indigo-500/90 hover:to-violet-500/90"
+          >
+            <Plus className="h-4 w-4" /> Nova demanda
           </Button>
         }
+        statsGridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+        stats={[
+          { icon: Inbox, label: "Ativas", value: kpis.ativas, tone: "indigo", hint: "Em fluxo" },
+          { icon: Sparkles, label: "Novas", value: kpis.novas, tone: "sky", hint: "A iniciar" },
+          {
+            icon: AlertCircle,
+            label: "Atrasadas",
+            value: kpis.atrasadas,
+            tone: kpis.atrasadas > 0 ? "destructive" : "emerald",
+            pulse: kpis.atrasadas > 0,
+            hint: kpis.atrasadas > 0 ? "Requer atenção" : "Tudo no prazo",
+          },
+          {
+            icon: TrendingUp,
+            label: "Críticas",
+            value: kpis.criticas,
+            tone: kpis.criticas > 0 ? "rose" : "emerald",
+            hint: "Prioridade máxima",
+          },
+          {
+            icon: CheckCircle2,
+            label: "Concluídas no mês",
+            value: kpis.concluidasMes,
+            tone: "emerald",
+            hint: "Entregues",
+          },
+        ]}
       />
 
-      {/* KPIs */}
-      <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-5">
-        <KpiTile
-          icon={Inbox}
-          label="Ativas"
-          value={kpis.ativas}
-          tone="info"
-          loading={isLoading}
-          hint="Não concluídas/canceladas"
-        />
-        <KpiTile
-          icon={Clock}
-          label="Novas (a iniciar)"
-          value={kpis.novas}
-          tone="primary"
-          loading={isLoading}
-          hint="Status: aberta"
-        />
-        <KpiTile
-          icon={AlertCircle}
-          label="Atrasadas"
-          value={kpis.atrasadas}
-          tone={kpis.atrasadas > 0 ? "destructive" : "primary"}
-          loading={isLoading}
-          hint={kpis.atrasadas > 0 ? "Requer atenção" : "Tudo no prazo"}
-        />
-        <KpiTile
-          icon={TrendingUp}
-          label="Críticas"
-          value={kpis.criticas}
-          tone={kpis.criticas > 0 ? "warning" : "primary"}
-          loading={isLoading}
-        />
-        <KpiTile
-          icon={CheckCircle2}
-          label="Concluídas (mês)"
-          value={kpis.concluidasMes}
-          tone="success"
-          loading={isLoading}
-          className="col-span-2 md:col-span-1"
-        />
-      </div>
-
-      {/* Filtros */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-auto sm:max-w-xs sm:flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar título, descrição, tag..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-        <Select value={prioFilter} onValueChange={setPrioFilter}>
-          <SelectTrigger className="w-[140px] sm:w-36"><SelectValue placeholder="Prioridade" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas prioridades</SelectItem>
-            {PRIORIDADE_OPTS.map((p) => (
-              <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={respFilter} onValueChange={setRespFilter}>
-          <SelectTrigger className="w-[160px] sm:w-44"><SelectValue placeholder="Responsável" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos responsáveis</SelectItem>
-            <SelectItem value="__equipe__">Equipe toda</SelectItem>
-            <SelectItem value="__sem__">Sem responsável</SelectItem>
-            {colabs.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Tabs value={prazoFilter} onValueChange={(v) => setPrazoFilter(v as PrazoFilter)} className="w-full sm:w-auto">
-          <TabsList className="h-9 w-full overflow-x-auto sm:w-auto">
-            <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
-            <TabsTrigger value="atrasadas" className="text-xs">Atrasadas</TabsTrigger>
-            <TabsTrigger value="hoje" className="text-xs">Hoje</TabsTrigger>
-            <TabsTrigger value="semana" className="text-xs">7 dias</TabsTrigger>
-            <TabsTrigger value="sem_prazo" className="text-xs">Sem prazo</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {view === "lista" && (
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px] sm:w-44"><SelectValue /></SelectTrigger>
+      {/* Toolbar */}
+      <div className="rounded-xl border bg-card/60 p-3 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-auto sm:max-w-xs sm:flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar título, descrição, tag..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-8"
+            />
+          </div>
+          <Select value={prioFilter} onValueChange={setPrioFilter}>
+            <SelectTrigger className="h-9 w-[140px] sm:w-36"><SelectValue placeholder="Prioridade" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Todos os status</SelectItem>
-              {STATUS_OPTS.map((s) => (
-                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+              <SelectItem value="todas">Todas prioridades</SelectItem>
+              {PRIORIDADE_OPTS.map((p) => (
+                <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-        )}
-        <div className="ml-auto">
-          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as ViewMode)}>
-            <ToggleGroupItem value="kanban" aria-label="Kanban" className="h-9">
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
-            <ToggleGroupItem value="lista" aria-label="Lista" className="h-9">
-              <List className="h-4 w-4" />
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <Select value={respFilter} onValueChange={setRespFilter}>
+            <SelectTrigger className="h-9 w-[160px] sm:w-44"><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos responsáveis</SelectItem>
+              <SelectItem value="__equipe__">Equipe toda</SelectItem>
+              <SelectItem value="__sem__">Sem responsável</SelectItem>
+              {colabs.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Tabs value={prazoFilter} onValueChange={(v) => setPrazoFilter(v as PrazoFilter)} className="w-full sm:w-auto">
+            <TabsList className="h-9 w-full overflow-x-auto sm:w-auto">
+              <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
+              <TabsTrigger value="atrasadas" className="text-xs">Atrasadas</TabsTrigger>
+              <TabsTrigger value="hoje" className="text-xs">Hoje</TabsTrigger>
+              <TabsTrigger value="semana" className="text-xs">7 dias</TabsTrigger>
+              <TabsTrigger value="sem_prazo" className="text-xs">Sem prazo</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {view === "lista" && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-[160px] sm:w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os status</SelectItem>
+                {STATUS_OPTS.map((s) => (
+                  <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="ml-auto">
+            <ToggleGroup
+              type="single"
+              value={view}
+              onValueChange={(v) => v && setView(v as ViewMode)}
+              className="rounded-lg border bg-background p-0.5"
+            >
+              <ToggleGroupItem
+                value="kanban"
+                aria-label="Kanban"
+                className="h-8 gap-1.5 rounded-md px-2.5 text-xs data-[state=on]:bg-indigo-500/15 data-[state=on]:text-indigo-600 dark:data-[state=on]:text-indigo-400"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Kanban</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="lista"
+                aria-label="Lista"
+                className="h-8 gap-1.5 rounded-md px-2.5 text-xs data-[state=on]:bg-indigo-500/15 data-[state=on]:text-indigo-600 dark:data-[state=on]:text-indigo-400"
+              >
+                <List className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Lista</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
         </div>
       </div>
+
 
       {/* Conteúdo */}
       {isLoading ? (
@@ -436,6 +445,7 @@ function KanbanView({
       {KANBAN_STATUS.map((status) => {
         const items = grouped[status] ?? [];
         const isOver = overCol === status;
+        const tone = COL_TONE[status];
         return (
           <div
             key={status}
@@ -446,21 +456,24 @@ function KanbanView({
             onDragLeave={() => setOverCol(null)}
             onDrop={() => onDropTo(status)}
             className={cn(
-              "flex flex-col rounded-lg border bg-muted/30 p-2 transition-colors",
-              isOver && "border-primary bg-primary/5",
+              "flex flex-col rounded-xl border bg-card/60 p-2 backdrop-blur transition-all",
+              isOver && `ring-2 ring-offset-1 ring-offset-background ${tone.ring} bg-card/80`,
             )}
           >
-            <div className="mb-2 flex items-center justify-between px-1">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {STATUS_LABEL[status]}
-              </h3>
-              <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <div className={cn("mb-2 flex items-center justify-between rounded-lg px-2 py-1.5 bg-gradient-to-r", tone.headerBg)}>
+              <div className="flex items-center gap-1.5">
+                <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                <h3 className={cn("text-[11px] font-semibold uppercase tracking-wide", tone.text)}>
+                  {STATUS_LABEL[status]}
+                </h3>
+              </div>
+              <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", tone.badge)}>
                 {items.length}
               </span>
             </div>
             <div className="flex flex-1 flex-col gap-2 min-h-[80px]">
               {items.length === 0 ? (
-                <p className="px-1 py-4 text-center text-[11px] text-muted-foreground/70">
+                <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">
                   Solte aqui
                 </p>
               ) : (
@@ -488,6 +501,52 @@ function KanbanView({
     </div>
   );
 }
+
+const COL_TONE: Record<string, { headerBg: string; text: string; dot: string; badge: string; ring: string }> = {
+  aberta: {
+    headerBg: "from-sky-500/15 to-sky-500/5",
+    text: "text-sky-700 dark:text-sky-300",
+    dot: "bg-sky-500",
+    badge: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    ring: "ring-sky-500/40",
+  },
+  em_analise: {
+    headerBg: "from-violet-500/15 to-violet-500/5",
+    text: "text-violet-700 dark:text-violet-300",
+    dot: "bg-violet-500",
+    badge: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+    ring: "ring-violet-500/40",
+  },
+  em_andamento: {
+    headerBg: "from-indigo-500/15 to-indigo-500/5",
+    text: "text-indigo-700 dark:text-indigo-300",
+    dot: "bg-indigo-500",
+    badge: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+    ring: "ring-indigo-500/40",
+  },
+  aguardando_cliente: {
+    headerBg: "from-amber-500/15 to-amber-500/5",
+    text: "text-amber-700 dark:text-amber-300",
+    dot: "bg-amber-500",
+    badge: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    ring: "ring-amber-500/40",
+  },
+  homologacao: {
+    headerBg: "from-cyan-500/15 to-cyan-500/5",
+    text: "text-cyan-700 dark:text-cyan-300",
+    dot: "bg-cyan-500",
+    badge: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
+    ring: "ring-cyan-500/40",
+  },
+  concluida: {
+    headerBg: "from-emerald-500/15 to-emerald-500/5",
+    text: "text-emerald-700 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    ring: "ring-emerald-500/40",
+  },
+};
+
 
 function ListaView({
   demandas,
