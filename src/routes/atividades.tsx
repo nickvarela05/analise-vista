@@ -25,9 +25,12 @@ import {
   Plus,
   CheckSquare,
   Inbox,
+  Video,
+  CalendarDays,
+  AlertTriangle,
 } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PanelCard } from "@/components/StatCard";
@@ -52,6 +55,7 @@ import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
 import { DemandaDialog } from "@/components/demandas/DemandaDialog";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/atividades")({
   errorComponent: RouteErrorBoundary,
