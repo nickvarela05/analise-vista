@@ -53,7 +53,7 @@ function ResumoPorFuncionario() {
       const { data: roles, error: rolesErr } = await supabase
         .from("user_roles").select("user_id, role").in("role", ["analista", "gestor"]);
       if (rolesErr) { setErro(rolesErr.message); setLoadingList(false); return; }
-      const ids = (roles ?? []).map((r: any) => r.user_id);
+      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
       if (ids.length === 0) { setFuncionarios([]); setLoadingList(false); return; }
       const { data: profs, error: pErr } = await supabase
         .from("profiles").select("user_id, nome, cargo, avatar_url").in("user_id", ids);
