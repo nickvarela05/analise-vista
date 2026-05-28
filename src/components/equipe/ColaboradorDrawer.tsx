@@ -149,116 +149,171 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     else qc.invalidateQueries({ queryKey: qk.equipe() });
   };
 
+  const LocalIcon =
+    (colab.local_trabalho ?? "escritorio") === "rua" ? MapPin : Building2;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-4 overflow-y-auto sm:max-w-lg">
-        <SheetHeader className="space-y-1">
+      <SheetContent className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-lg">
+        <SheetHeader className="sr-only">
           <SheetTitle>Colaborador</SheetTitle>
-          <SheetDescription>
-            Informações, horário, eventos e férias.
-          </SheetDescription>
         </SheetHeader>
 
-        <div className="flex items-start gap-4">
-          <Avatar className="h-20 w-20 ring-2 ring-primary/20">
-            {colab.foto_url && <AvatarImage src={colab.foto_url} />}
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {colab.nome
-                .split(" ")
-                .slice(0, 2)
-                .map((n) => n[0])
-                .join("")}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-1">
+        {/* Hero do colaborador (gradiente cyan) */}
+        <div className="relative overflow-hidden border-b bg-gradient-to-br from-cyan-500/15 via-background to-background px-6 py-5">
+          <div className="pointer-events-none absolute -top-16 -right-12 h-44 w-44 rounded-full bg-cyan-500/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-sky-500/10 blur-3xl" />
+          <div className="relative flex items-start gap-4">
+            <Avatar className="h-20 w-20 ring-4 ring-cyan-500/15">
+              {colab.foto_url && <AvatarImage src={colab.foto_url} />}
+              <AvatarFallback className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300">
+                {colab.nome
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              {editing ? (
+                <>
+                  <Input
+                    value={form.nome}
+                    onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                    placeholder="Nome"
+                    className="h-8 focus-visible:ring-cyan-500/40"
+                  />
+                  <CargoSelect
+                    value={form.cargo}
+                    onChange={(v) => setForm({ ...form, cargo: v })}
+                  />
+                  <Select
+                    value={form.local_trabalho}
+                    onValueChange={(v) =>
+                      setForm({ ...form, local_trabalho: v as LocalTrabalho })
+                    }
+                  >
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="escritorio">
+                        {LOCAL_TRABALHO_LABEL.escritorio}
+                      </SelectItem>
+                      <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              ) : (
+                <>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Equipe · Colaborador
+                  </p>
+                  <h3 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-xl font-semibold leading-tight tracking-tight text-transparent">
+                    {colab.nome}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {colab.cargo && (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-cyan-500/40 bg-cyan-500/10 text-[10px] text-cyan-700 dark:text-cyan-300"
+                      >
+                        <Briefcase className="h-3 w-3" />
+                        {colab.cargo}
+                      </Badge>
+                    )}
+                    <Badge variant="outline" className="gap-1 text-[10px]">
+                      <LocalIcon className="h-3 w-3" />
+                      {
+                        LOCAL_TRABALHO_LABEL[
+                          (colab.local_trabalho ?? "escritorio") as LocalTrabalho
+                        ]
+                      }
+                    </Badge>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {editing && (
+            <div className="relative mt-4 space-y-1.5">
+              <Label className="text-xs">Trocar foto</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
+                className="cursor-pointer file:cursor-pointer focus-visible:ring-cyan-500/40"
+              />
+            </div>
+          )}
+
+          <div className="relative mt-4 flex flex-wrap gap-2">
             {editing ? (
               <>
-                <Input
-                  value={form.nome}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                  placeholder="Nome"
-                  className="h-8"
-                />
-                <CargoSelect
-                  value={form.cargo}
-                  onChange={(v) => setForm({ ...form, cargo: v })}
-                />
-                <Select
-                  value={form.local_trabalho}
-                  onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
+                <Button
+                  size="sm"
+                  onClick={salvar}
+                  disabled={saving}
+                  className="bg-cyan-500 text-white hover:bg-cyan-600"
                 >
-                  <SelectTrigger className="h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="escritorio">{LOCAL_TRABALHO_LABEL.escritorio}</SelectItem>
-                    <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
-                  </SelectContent>
-                </Select>
+                  {saving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                  Salvar
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                  Cancelar
+                </Button>
               </>
             ) : (
               <>
-                <h3 className="text-lg font-semibold leading-tight">{colab.nome}</h3>
-                {colab.cargo && (
-                  <p className="text-sm text-muted-foreground">{colab.cargo}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {LOCAL_TRABALHO_LABEL[(colab.local_trabalho ?? "escritorio") as LocalTrabalho]}
-                </p>
+                <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={desativar}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="mr-1 h-3.5 w-3.5" /> Desativar
+                </Button>
               </>
             )}
           </div>
         </div>
 
-        {editing && (
-          <div className="space-y-1.5">
-            <Label className="text-xs">Trocar foto</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
-            />
-          </div>
-        )}
-
-        <div className="flex flex-wrap gap-2">
-          {editing ? (
-            <>
-              <Button size="sm" onClick={salvar} disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-                Salvar
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-                Cancelar
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-                Editar
-              </Button>
-              <Button size="sm" variant="ghost" onClick={desativar}>
-                <Trash2 className="mr-1 h-3.5 w-3.5" /> Desativar
-              </Button>
-            </>
-          )}
-        </div>
-
-        <Tabs defaultValue="horario" className="mt-2">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="horario">
+        <Tabs defaultValue="horario" className="mt-4 px-6">
+          <TabsList
+            className={cn(
+              "grid w-full grid-cols-4 bg-card/60 backdrop-blur ring-1 ring-border",
+            )}
+          >
+            <TabsTrigger
+              value="horario"
+              className="data-[state=active]:text-cyan-600 dark:data-[state=active]:text-cyan-400"
+            >
               <Clock className="mr-1 h-3.5 w-3.5" />
               Horário
             </TabsTrigger>
-            <TabsTrigger value="eventos">
+            <TabsTrigger
+              value="eventos"
+              className="data-[state=active]:text-rose-600 dark:data-[state=active]:text-rose-400"
+            >
               <AlertTriangle className="mr-1 h-3.5 w-3.5" />
               Eventos
             </TabsTrigger>
-            <TabsTrigger value="ferias">
+            <TabsTrigger
+              value="ferias"
+              className="data-[state=active]:text-sky-600 dark:data-[state=active]:text-sky-400"
+            >
               <Plane className="mr-1 h-3.5 w-3.5" />
               Férias
             </TabsTrigger>
-            <TabsTrigger value="bio">
+            <TabsTrigger
+              value="bio"
+              className="data-[state=active]:text-primary"
+            >
               <UserIcon className="mr-1 h-3.5 w-3.5" />
               Bio
             </TabsTrigger>
