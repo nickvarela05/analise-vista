@@ -121,16 +121,36 @@ export function AppSidebar() {
       collapsible="icon"
       className="border-r border-sidebar-border bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95"
     >
-      <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
-        <Link to="/" className="group flex items-center gap-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-sidebar/40 ring-1 ring-emerald-500/30 shadow-sm transition-all group-hover:shadow-emerald-500/30 group-hover:shadow-lg">
+      <SidebarHeader
+        className={cn(
+          "border-b border-sidebar-border py-4",
+          collapsed ? "px-0" : "px-3",
+        )}
+      >
+        <Link
+          to="/"
+          className={cn(
+            "group flex items-center gap-3",
+            collapsed && "justify-center gap-0",
+          )}
+        >
+          <div
+            className={cn(
+              "relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-sidebar/40 ring-1 ring-emerald-500/30 shadow-sm transition-all group-hover:shadow-emerald-500/30 group-hover:shadow-lg",
+              collapsed ? "h-9 w-9" : "h-10 w-10",
+            )}
+          >
             <div className="pointer-events-none absolute -inset-1 bg-gradient-to-tr from-emerald-500/0 via-emerald-500/15 to-teal-400/20 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
             <img
               src={logoMark}
               alt=""
-              className="relative h-7 w-7 object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]"
+              className={cn(
+                "relative object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]",
+                collapsed ? "h-6 w-6" : "h-7 w-7",
+              )}
             />
           </div>
+
           {!collapsed && (
             <div className="flex min-w-0 flex-col leading-tight">
               <span className="text-sm font-bold uppercase tracking-[0.22em] text-sidebar-foreground">
