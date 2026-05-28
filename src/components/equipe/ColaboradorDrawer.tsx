@@ -1,6 +1,18 @@
 import * as React from "react";
 import { format } from "date-fns";
-import { Plus, Trash2, Loader2, Clock, Plane, AlertTriangle, User as UserIcon } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Loader2,
+  Clock,
+  Plane,
+  AlertTriangle,
+  User as UserIcon,
+  Pencil,
+  Building2,
+  MapPin,
+  Briefcase,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/queries/keys";
@@ -9,7 +21,6 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -24,6 +35,7 @@ import { DIAS, EVENTO_LABEL } from "./lib/types";
 import { HorarioDialog } from "./HorarioDialog";
 import { FeriasDialog } from "./FeriasDialog";
 import { CargoSelect } from "./CargoSelect";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
