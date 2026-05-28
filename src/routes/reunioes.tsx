@@ -551,86 +551,100 @@ function Reunioes() {
   ).length;
 
   return (
-    <div>
-      <PageHeader
+    <div className="space-y-5">
+      <PageHero
+        eyebrow="Conversas e decisões"
         title="Reuniões"
-        description="Pautas, resumos, transcrições, participantes, responsável e prazos."
+        description="Pautas, resumos, transcrições, participantes e próximos passos — com IA."
+        icon={CalIcon}
+        tone="violet"
         actions={
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" /> Nova reunião
+          <Button
+            onClick={openCreate}
+            className="gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/20 hover:from-violet-500/90 hover:to-fuchsia-500/90"
+          >
+            <Plus className="h-4 w-4" /> Nova reunião
           </Button>
         }
+        statsGridClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+        stats={[
+          { icon: CalIcon, label: "Total", value: total, tone: "violet", hint: "Registradas" },
+          {
+            icon: CalendarDays,
+            label: "Agendadas",
+            value: agendadas,
+            tone: "sky",
+            hint: `${proximas} futuras`,
+          },
+          { icon: CheckCircle2, label: "Realizadas", value: realizadas, tone: "emerald", hint: "Concluídas" },
+          {
+            icon: XCircle,
+            label: "Canceladas",
+            value: canceladas,
+            tone: canceladas > 0 ? "rose" : "emerald",
+            hint: canceladas > 0 ? "Revisar motivos" : "Sem cancelamentos",
+          },
+          { icon: Sparkles, label: "Neste mês", value: noMes, tone: "amber", hint: "Ritmo do time" },
+        ]}
       />
 
-      <div className="mb-4 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiTile icon={CalIcon} label="Total" value={total} tone="primary" loading={isLoading} />
-        <KpiTile
-          icon={CalendarDays}
-          label="Agendadas"
-          value={agendadas}
-          hint={`${proximas} futuras`}
-          tone="info"
-          loading={isLoading}
-        />
-        <KpiTile icon={CheckCircle2} label="Realizadas" value={realizadas} tone="success" loading={isLoading} />
-        <KpiTile icon={XCircle} label="Canceladas" value={canceladas} tone="destructive" loading={isLoading} />
-        <KpiTile icon={CalIcon} label="Neste mês" value={noMes} tone="warning" loading={isLoading} />
+      {/* Toolbar */}
+      <div className="rounded-xl border bg-card/60 p-3 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título, resumo, pauta..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-8"
+            />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-9 w-36">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos status</SelectItem>
+              {STATUS.map((s) => (
+                <SelectItem key={s} value={s} className="capitalize">
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger className="h-9 w-36">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos tipos</SelectItem>
+              {TIPOS.map((t) => (
+                <SelectItem key={t} value={t} className="capitalize">
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(search || filterStatus !== "todos" || filterTipo !== "todos") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setFilterStatus("todos");
+                setFilterTipo("todos");
+              }}
+            >
+              Limpar
+            </Button>
+          )}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {filtered.length} de {data.length}
+          </span>
+        </div>
       </div>
 
-      {/* Filtros */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por título, resumo, pauta..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9 pl-8"
-          />
-        </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="h-9 w-36">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos status</SelectItem>
-            {STATUS.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={filterTipo} onValueChange={setFilterTipo}>
-          <SelectTrigger className="h-9 w-36">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos tipos</SelectItem>
-            {TIPOS.map((t) => (
-              <SelectItem key={t} value={t} className="capitalize">
-                {t}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {(search || filterStatus !== "todos" || filterTipo !== "todos") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setSearch("");
-              setFilterStatus("todos");
-              setFilterTipo("todos");
-            }}
-          >
-            Limpar
-          </Button>
-        )}
-        <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} de {data.length}
-        </span>
-      </div>
 
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
