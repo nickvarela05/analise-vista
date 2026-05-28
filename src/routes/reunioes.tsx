@@ -142,6 +142,25 @@ function statusBadgeClass(s: string) {
   return "";
 }
 
+const REUNIAO_TONE: Record<string, { accent: string; statusBadge: string; dot: string }> = {
+  agendada: {
+    accent: "from-sky-500/80 via-sky-500/40 to-transparent",
+    statusBadge: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    dot: "bg-sky-500",
+  },
+  realizada: {
+    accent: "from-emerald-500/80 via-emerald-500/40 to-transparent",
+    statusBadge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+  },
+  cancelada: {
+    accent: "from-rose-500/80 via-rose-500/40 to-transparent",
+    statusBadge: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    dot: "bg-rose-500",
+  },
+};
+
+
 function Reunioes() {
   const { user } = useAuth();
   const qc = useQueryClient();
