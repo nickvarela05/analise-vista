@@ -12,7 +12,7 @@ import {
   Inbox,
   Users,
   Gauge,
-  Activity,
+  // Activity removido (seção "Acompanhamento das tarefas" foi mesclada)
   ShieldCheck,
   CalendarClock,
   UserCircle2,
