@@ -58,7 +58,15 @@ function ResumoPorFuncionario() {
       const { data: profs, error: pErr } = await supabase
         .from("profiles").select("user_id, nome, cargo, avatar_url").in("user_id", ids);
       if (pErr) { setErro(pErr.message); setLoadingList(false); return; }
-      const list = (profs ?? []).slice().sort((a: any, b: any) => (a.nome ?? "").localeCompare(b.nome ?? ""));
+      // Whitelist: apenas os analistas relevantes para o resumo gerencial.
+      const ALLOWED = ["felipe pino", "hugo figueiredo", "matheus nogueira", "nickolas", "pietro clissa"];
+      const list = (profs ?? [])
+        .filter((p: any) => {
+          const n = (p.nome ?? "").toLowerCase();
+          return ALLOWED.some((a) => n.includes(a));
+        })
+        .slice()
+        .sort((a: any, b: any) => (a.nome ?? "").localeCompare(b.nome ?? ""));
       setFuncionarios(list as any);
       setLoadingList(false);
     })();

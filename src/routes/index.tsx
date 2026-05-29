@@ -12,7 +12,7 @@ import {
   Inbox,
   Users,
   Gauge,
-  Activity,
+  // Activity removido (seção "Acompanhamento das tarefas" foi mesclada)
   ShieldCheck,
   CalendarClock,
   UserCircle2,
@@ -38,16 +38,11 @@ import { HorariosPanel, type HorarioItem } from "@/components/dashboard/Horarios
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import {
   VelocitySemanalCard,
-  LeadTimeCard,
   ThroughputCard,
   AgingBacklogCard,
-  // HeatmapPrazosCard removido
-  WipColaboradorCard,
   TaxaReprovacaoCard,
-  TempoPorEtapaCard,
   CategoriaOrigemCard,
   FunilRelatoriosCard,
-  SlaUrgenciaCard,
   TopSolicitantesCard,
 } from "@/components/dashboard/analytics/AnalyticsCards";
 
@@ -377,9 +372,8 @@ function Dashboard() {
         icon={Inbox}
         tone="amber"
       />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <FunilRelatoriosCard solicitacoes={solicitacoes} />
-        <SlaUrgenciaCard solicitacoes={solicitacoes} />
         <TopSolicitantesCard solicitacoes={solicitacoes} />
       </div>
 
@@ -390,36 +384,22 @@ function Dashboard() {
         icon={Users}
         tone="violet"
       />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <AtribuicoesChart data={atribuicoes} />
         <StatusTarefasPie data={pieTarefas} />
       </div>
 
-      {/* === PRODUTIVIDADE === */}
+      {/* === PRODUTIVIDADE & BACKLOG === */}
       <SectionHeader
-        title="Produtividade"
-        description="Quanto a equipe entrega e em quanto tempo."
+        title="Produtividade e backlog"
+        description="Quanto a equipe entrega e como está o acúmulo de tarefas."
         icon={Gauge}
         tone="emerald"
       />
       <div className="grid gap-4 lg:grid-cols-3">
         <VelocitySemanalCard tarefas={tarefas} />
-        <LeadTimeCard tarefas={tarefas} />
         <ThroughputCard tarefas={tarefas} colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))} />
-      </div>
-
-      {/* === SAÚDE DO BACKLOG === */}
-      <SectionHeader
-        title="Acompanhamento das tarefas"
-        description="Há quanto tempo estão abertas e quanta carga cada pessoa tem."
-        icon={Activity}
-        tone="sky"
-      />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <AgingBacklogCard tarefas={tarefas} />
-        </div>
-        <WipColaboradorCard tarefas={tarefas} colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))} />
+        <AgingBacklogCard tarefas={tarefas} />
       </div>
 
       {/* === QUALIDADE & FLUXO === */}
@@ -429,11 +409,11 @@ function Dashboard() {
         icon={ShieldCheck}
         tone="indigo"
       />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <TaxaReprovacaoCard tarefas={tarefas} />
-        <TempoPorEtapaCard tarefas={tarefas} />
         <CategoriaOrigemCard demandas={demandas} />
       </div>
+
 
       {/* === AGENDA & PESSOAS === */}
       <SectionHeader
