@@ -38,16 +38,11 @@ import { HorariosPanel, type HorarioItem } from "@/components/dashboard/Horarios
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import {
   VelocitySemanalCard,
-  LeadTimeCard,
   ThroughputCard,
   AgingBacklogCard,
-  // HeatmapPrazosCard removido
-  WipColaboradorCard,
   TaxaReprovacaoCard,
-  TempoPorEtapaCard,
   CategoriaOrigemCard,
   FunilRelatoriosCard,
-  SlaUrgenciaCard,
   TopSolicitantesCard,
 } from "@/components/dashboard/analytics/AnalyticsCards";
 
