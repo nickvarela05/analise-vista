@@ -28,13 +28,7 @@ const TIMELINE_INI = 11 * 60; // 11:00
 const TIMELINE_FIM = 15 * 60; // 15:00
 const TOTAL_MIN = TIMELINE_FIM - TIMELINE_INI;
 const SNAP = 5; // minutos
-const DIAS = [
-  { v: 1, label: "Segunda" },
-  { v: 2, label: "Terça" },
-  { v: 3, label: "Quarta" },
-  { v: 4, label: "Quinta" },
-  { v: 5, label: "Sexta" },
-];
+const DIAS_SEMANA = [1, 2, 3, 4, 5];
 
 function toMin(t: string | null | undefined): number | null {
   if (!t) return null;
