@@ -752,8 +752,14 @@ function UnidadeDrawer({
       setSaving(false);
       return;
     }
-    const { data, error } = await supabase
-      .from("unidades_rede" as never)
+    const { data, error } = await (supabase
+      .from("unidades_rede" as never) as never as {
+        update: (p: typeof patch) => {
+          eq: (c: string, v: string) => {
+            select: () => { single: () => Promise<{ data: unknown; error: { message: string } | null }> };
+          };
+        };
+      })
       .update(patch)
       .eq("id", form.id)
       .select()
