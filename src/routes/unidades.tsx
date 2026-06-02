@@ -3,8 +3,13 @@ import * as React from "react";
 import {
   Building2, MapPin, School, Layers, Search, X, Download, FileSpreadsheet,
   FileText, Filter, LayoutGrid, List, Hash, Map as MapIcon, Compass, Sparkles, Briefcase,
-  ChevronRight, Users2, Loader2,
+  ChevronRight, Users2, Loader2, Pencil, Save,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHero } from "@/components/shared/PageHero";
@@ -374,7 +379,16 @@ function UnidadesPage() {
         <UnidadesCards data={filtradas} onSelect={setSelected} />
       )}
 
-      <UnidadeDrawer unidade={selected} onOpenChange={(o) => !o && setSelected(null)} />
+      <UnidadeDrawer
+        unidade={selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+        onSaved={(updated) => {
+          setUnidades((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+          setSelected(updated);
+        }}
+        tiposExistentes={tiposUnicos}
+        zonasExistentes={zonasUnicas}
+      />
     </div>
   );
 }
@@ -703,28 +717,145 @@ function UnidadesCards({
 }
 
 function UnidadeDrawer({
-  unidade, onOpenChange,
-}: { unidade: Unidade | null; onOpenChange: (open: boolean) => void }) {
-  if (!unidade) return null;
-  const t = tipoTone(unidade.tipo);
+  unidade, onOpenChange, onSaved, tiposExistentes, zonasExistentes,
+}: {
+  unidade: Unidade | null;
+  onOpenChange: (open: boolean) => void;
+  onSaved: (u: Unidade) => void;
+  tiposExistentes: string[];
+  zonasExistentes: string[];
+}) {
+  const [editing, setEditing] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [form, setForm] = React.useState<Unidade | null>(unidade);
+
+  React.useEffect(() => {
+    setForm(unidade);
+    setEditing(false);
+  }, [unidade?.id]);
+
+  if (!unidade || !form) return null;
+  const t = tipoTone(form.tipo);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const patch = {
+      cod_unidade: form.cod_unidade.trim(),
+      tipo: form.tipo.trim().toUpperCase(),
+      nome: form.nome.trim(),
+      zona: form.zona?.trim() || null,
+      bairro: form.bairro?.trim() || null,
+      endereco: form.endereco?.trim() || null,
+    };
+    if (!patch.cod_unidade || !patch.tipo || !patch.nome) {
+      toast.error("Código, tipo e nome são obrigatórios");
+      setSaving(false);
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from("unidades_rede")
+      .update(patch)
+      .eq("id", form.id)
+      .select()
+      .single();
+    setSaving(false);
+    if (error) {
+      toast.error("Falha ao salvar", { description: error.message });
+      return;
+    }
+    toast.success("Unidade atualizada");
+    onSaved(data as unknown as Unidade);
+    setEditing(false);
+  };
+
+  const cancelar = () => {
+    setForm(unidade);
+    setEditing(false);
+  };
+
   return (
     <Sheet open onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader className="text-left">
           <div className={cn("inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider ring-1", t.bg, t.text, t.ring)}>
             <span className={cn("h-1.5 w-1.5 rounded-full", t.bar)} />
-            {unidade.tipo}
+            {form.tipo}
           </div>
-          <SheetTitle className="text-xl">{unidade.nome}</SheetTitle>
-          <SheetDescription className="flex items-center gap-1.5 text-xs">
-            <Hash className="h-3 w-3" /> Código {unidade.cod_unidade}
-          </SheetDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <SheetTitle className="text-xl">{unidade.nome}</SheetTitle>
+              <SheetDescription className="flex items-center gap-1.5 text-xs">
+                <Hash className="h-3 w-3" /> Código {unidade.cod_unidade}
+              </SheetDescription>
+            </div>
+            {!editing ? (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEditing(true)}>
+                <Pencil className="h-3.5 w-3.5" /> Editar
+              </Button>
+            ) : (
+              <div className="flex gap-1.5">
+                <Button size="sm" variant="ghost" onClick={cancelar} disabled={saving}>Cancelar</Button>
+                <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving}>
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Salvar
+                </Button>
+              </div>
+            )}
+          </div>
         </SheetHeader>
 
         <div className="mt-6 space-y-4">
-          <InfoRow icon={Compass} label="Zona" value={unidade.zona ?? "—"} />
-          <InfoRow icon={MapIcon} label="Bairro" value={unidade.bairro ?? "—"} />
-          <InfoRow icon={MapPin}  label="Endereço" value={unidade.endereco ?? "—"} multiline />
+          {editing ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Código</Label>
+                  <Input value={form.cod_unidade} onChange={(e) => setForm({ ...form, cod_unidade: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tipo</Label>
+                  <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {tiposExistentes.map((tp) => <SelectItem key={tp} value={tp}>{tp}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Nome</Label>
+                <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Zona</Label>
+                  <Select value={form.zona ?? "__none__"} onValueChange={(v) => setForm({ ...form, zona: v === "__none__" ? null : v })}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">—</SelectItem>
+                      {zonasExistentes.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                      {["SUL","NORTE","CENTRO","NI"].filter((z) => !zonasExistentes.includes(z)).map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Bairro</Label>
+                  <Input value={form.bairro ?? ""} onChange={(e) => setForm({ ...form, bairro: e.target.value })} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Endereço</Label>
+                <Textarea rows={3} value={form.endereco ?? ""} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+              </div>
+            </div>
+          ) : (
+            <>
+              <InfoRow icon={Compass} label="Zona" value={unidade.zona ?? "—"} />
+              <InfoRow icon={MapIcon} label="Bairro" value={unidade.bairro ?? "—"} />
+              <InfoRow icon={MapPin}  label="Endereço" value={unidade.endereco ?? "—"} multiline />
+            </>
+          )}
 
           <div className="rounded-xl border border-dashed border-violet-500/30 bg-violet-500/[0.04] p-4">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">
