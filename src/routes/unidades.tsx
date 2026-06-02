@@ -3,8 +3,13 @@ import * as React from "react";
 import {
   Building2, MapPin, School, Layers, Search, X, Download, FileSpreadsheet,
   FileText, Filter, LayoutGrid, List, Hash, Map as MapIcon, Compass, Sparkles, Briefcase,
-  ChevronRight, Users2, Loader2,
+  ChevronRight, Users2, Loader2, Pencil, Save,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import * as XLSX from "xlsx";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHero } from "@/components/shared/PageHero";
