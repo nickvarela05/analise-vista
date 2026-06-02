@@ -10,6 +10,7 @@ import {
   Settings,
   Inbox,
   Briefcase,
+  Building2,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -68,6 +69,7 @@ const groups: NavGroup[] = [
     items: [
       { title: "Avisos",    url: "/avisos",    icon: Megaphone, tone: "rose" },
       { title: "Portfólio", url: "/portfolio", icon: Briefcase, tone: "indigo" },
+      { title: "Unidades",  url: "/unidades",  icon: Building2, tone: "emerald" },
       { title: "Equipe",    url: "/equipe",    icon: Users,     tone: "violet", requireGestor: true },
     ],
   },
