@@ -152,9 +152,9 @@ function UnidadesPage() {
   const totalBairros = new Set(escolasDataset.map((u) => u.bairro).filter(Boolean)).size;
 
   const totaisPorTipo = React.useMemo(() => {
-    const m: Map<string, number> = new Map();
-    unidades.forEach((u) => m.set(u.tipo, (m.get(u.tipo) ?? 0) + 1));
-    return Array.from(m.entries())
+    const m: Record<string, number> = {};
+    unidades.forEach((u) => { m[u.tipo] = (m[u.tipo] ?? 0) + 1; });
+    return Object.entries(m)
       .map(([tipo, count]) => ({ tipo, count }))
       .sort((a, b) => b.count - a.count);
   }, [unidades]);
