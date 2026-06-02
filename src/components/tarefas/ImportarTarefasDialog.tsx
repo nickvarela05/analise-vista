@@ -41,6 +41,7 @@ const norm = (s: unknown) =>
 function mapearStatus(raw: unknown): WorkflowStatus {
   const s = norm(raw);
   if (!s) return "aberta";
+  if (s.startsWith("cancel") || s.startsWith("encerr")) return "encerrada";
   if (s.startsWith("aberta")) return "aberta";
   if (s.startsWith("encaminhada")) return "em_andamento";
   if (s.includes("homologa") || s.includes("correc")) return "homologacao";
@@ -152,38 +153,59 @@ export function ImportarTarefasDialog() {
     }
     setImportando(true);
 
-    // Deduplicação: busca títulos já cadastrados e preserva os existentes
+    // Busca tarefas existentes (título, status, created_at) para decidir caso a caso.
     const { data: existentes, error: existErr } = await supabase
       .from("todo")
-      .select("titulo");
+      .select("id, titulo, status, created_at");
     if (existErr) {
       setImportando(false);
       toast.error("Erro ao verificar tarefas existentes", { description: existErr.message });
       return;
     }
-    const setExistentes = new Set((existentes ?? []).map((t) => norm(t.titulo)));
-    const novas = linhas.filter((l) => !setExistentes.has(norm(l.titulo)));
-    const duplicadas = linhas.length - novas.length;
+    const mapaExistentes = new Map<string, { id: string; status: string; created_at: string }>();
+    (existentes ?? []).forEach((t) => {
+      mapaExistentes.set(norm(t.titulo), { id: t.id, status: t.status, created_at: t.created_at });
+    });
 
-    if (novas.length === 0) {
-      setImportando(false);
-      toast.info("Nenhuma tarefa nova", {
-        description: `Todas as ${linhas.length} tarefa(s) já estão cadastradas e foram preservadas.`,
-      });
-      reset();
-      setOpen(false);
-      return;
+    const limite5Meses = Date.now() - 1000 * 60 * 60 * 24 * 30 * 5;
+    const novas: LinhaImport[] = [];
+    const atualizarHml: { id: string }[] = [];
+    const restaurarEncerrada: { id: string; status: WorkflowStatus }[] = [];
+    let preservadas = 0;
+
+    for (const l of linhas) {
+      const existente = mapaExistentes.get(norm(l.titulo));
+      if (!existente) {
+        novas.push(l);
+        continue;
+      }
+      if (forcarHomologacao) {
+        // Sobrescreve apenas quando a flag de homologação está marcada.
+        atualizarHml.push({ id: existente.id });
+        continue;
+      }
+      // Sem flag de homologação: preserva, exceto se a tarefa existente está "encerrada"
+      // (provavelmente expirada por 5 meses) e o import traz status em aberto.
+      const expirada =
+        existente.status === "encerrada" &&
+        new Date(existente.created_at).getTime() < limite5Meses;
+      if (expirada && l.status !== "encerrada") {
+        restaurarEncerrada.push({ id: existente.id, status: l.status });
+      } else {
+        preservadas++;
+      }
     }
 
     let loteId: string | null = null;
-    if (forcarHomologacao) {
+    if (forcarHomologacao && (novas.length > 0 || atualizarHml.length > 0)) {
+      const total = novas.length + atualizarHml.length;
       const { data: lote, error: loteErr } = await supabase
         .from("todo_importacao_lote")
         .insert({
           nome: nomeLote.trim(),
           descricao: descricaoLote.trim() || null,
           tipo: "homologacao",
-          total_tarefas: novas.length,
+          total_tarefas: total,
           criado_por: user.id,
         })
         .select("id")
@@ -196,30 +218,62 @@ export function ImportarTarefasDialog() {
       loteId = lote.id;
     }
 
-    const payload = novas.map((l) => ({
-      titulo: l.titulo,
-      descricao: l.descricao,
-      status: (forcarHomologacao ? "homologacao" : l.status) as never,
-      prioridade: l.prioridade,
-      responsaveis_ids: [],
-      equipe_toda: false,
-      criado_por: user.id,
-      lote_importacao_id: loteId,
-      origem_importacao: forcarHomologacao ? "homologacao" : null,
-      em_teste: forcarHomologacao,
-    }));
-    const { error } = await supabase.from("todo").insert(payload);
-    setImportando(false);
-    if (error) {
-      toast.error("Erro ao importar", { description: error.message });
-      return;
+    // Inserir novas
+    if (novas.length > 0) {
+      const payload = novas.map((l) => ({
+        titulo: l.titulo,
+        descricao: l.descricao,
+        status: (forcarHomologacao ? "homologacao" : l.status) as never,
+        prioridade: l.prioridade,
+        responsaveis_ids: [],
+        equipe_toda: false,
+        criado_por: user.id,
+        lote_importacao_id: loteId,
+        origem_importacao: forcarHomologacao ? "homologacao" : null,
+        em_teste: forcarHomologacao,
+      }));
+      const { error } = await supabase.from("todo").insert(payload);
+      if (error) {
+        setImportando(false);
+        toast.error("Erro ao importar", { description: error.message });
+        return;
+      }
     }
-    const sufixo = duplicadas > 0 ? ` ${duplicadas} já existente(s) preservada(s).` : "";
-    toast.success(
-      forcarHomologacao
-        ? `${novas.length} tarefa(s) importada(s) no lote "${nomeLote}".${sufixo}`
-        : `${novas.length} tarefa(s) importada(s).${sufixo}`,
-    );
+
+    // Atualizar existentes para Homologação (somente quando flag marcada)
+    if (atualizarHml.length > 0 && forcarHomologacao) {
+      const ids = atualizarHml.map((a) => a.id);
+      const { error } = await supabase
+        .from("todo")
+        .update({
+          status: "homologacao" as never,
+          em_teste: true,
+          origem_importacao: "homologacao",
+          lote_importacao_id: loteId,
+        })
+        .in("id", ids);
+      if (error) {
+        setImportando(false);
+        toast.error("Erro ao mover existentes p/ HML", { description: error.message });
+        return;
+      }
+    }
+
+    // Restaurar tarefas encerradas (>5 meses) usando o status do import
+    for (const r of restaurarEncerrada) {
+      await supabase
+        .from("todo")
+        .update({ status: r.status as never })
+        .eq("id", r.id);
+    }
+
+    setImportando(false);
+    const partes: string[] = [];
+    if (novas.length) partes.push(`${novas.length} nova(s)`);
+    if (atualizarHml.length) partes.push(`${atualizarHml.length} movida(s) p/ HML`);
+    if (restaurarEncerrada.length) partes.push(`${restaurarEncerrada.length} reaberta(s)`);
+    if (preservadas) partes.push(`${preservadas} preservada(s)`);
+    toast.success(`Import concluído: ${partes.join(", ") || "nada a fazer"}.`);
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     qc.invalidateQueries({ queryKey: ["tarefas", "lotes"] });
     reset();
