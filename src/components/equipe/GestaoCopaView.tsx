@@ -60,16 +60,13 @@ interface SlotEdit {
 
 export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
   const qc = useQueryClient();
-  const [dia, setDia] = React.useState<number>(() => {
-    const d = new Date().getDay();
-    return d >= 1 && d <= 5 ? d : 1;
-  });
   const [saving, setSaving] = React.useState(false);
 
   const initialEdits = React.useMemo<Record<string, SlotEdit>>(() => {
     const map: Record<string, SlotEdit> = {};
     for (const c of colabs) {
-      const h = c.colaborador_horario?.find((x) => x.dia_semana === dia);
+      // Horários são iguais em todos os dias: usa o primeiro registro disponível.
+      const h = c.colaborador_horario?.[0];
       const ai = toMin(h?.almoco_inicio) ?? 12 * 60;
       const af = toMin(h?.almoco_fim) ?? 13 * 60;
       const local = (h?.local_almoco === "Fora" ? "Fora" : "Copa") as "Copa" | "Fora";
@@ -86,7 +83,7 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
       };
     }
     return map;
-  }, [colabs, dia]);
+  }, [colabs]);
 
   const [edits, setEdits] = React.useState<Record<string, SlotEdit>>(initialEdits);
   React.useEffect(() => setEdits(initialEdits), [initialEdits]);
@@ -126,15 +123,18 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
     const dirty = Object.values(edits).filter((e) => e.dirty);
     if (!dirty.length) return;
     setSaving(true);
-    const rows = dirty.map((e) => ({
-      colaborador_id: e.colaborador_id,
-      dia_semana: dia,
-      expediente_inicio: e.expediente_inicio,
-      expediente_fim: e.expediente_fim,
-      almoco_inicio: fromMin(e.ai),
-      almoco_fim: fromMin(e.af),
-      local_almoco: e.local,
-    }));
+    // Aplica o mesmo horário para todos os dias úteis (seg–sex).
+    const rows = dirty.flatMap((e) =>
+      DIAS_SEMANA.map((dia_semana) => ({
+        colaborador_id: e.colaborador_id,
+        dia_semana,
+        expediente_inicio: e.expediente_inicio,
+        expediente_fim: e.expediente_fim,
+        almoco_inicio: fromMin(e.ai),
+        almoco_fim: fromMin(e.af),
+        local_almoco: e.local,
+      })),
+    );
     const { error } = await supabase
       .from("colaborador_horario")
       .upsert(rows, { onConflict: "colaborador_id,dia_semana" });
@@ -143,7 +143,7 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
       toast.error("Erro ao salvar", { description: error.message });
       return;
     }
-    toast.success(`${dirty.length} horário(s) atualizado(s)`);
+    toast.success(`${dirty.length} colaborador(es) atualizado(s) em todos os dias`);
     qc.invalidateQueries({ queryKey: ["equipe"] });
   };
 
@@ -161,26 +161,12 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
               <div>
                 <div className="text-sm font-semibold">Gestão de copa</div>
                 <div className="text-xs text-muted-foreground">
-                  Arraste o bloco para mover, ou as bordas para redimensionar.
+                  Arraste o bloco para mover, ou as bordas para redimensionar. Vale para todos os dias da semana.
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Dia:</span>
-              <Select value={String(dia)} onValueChange={(v) => setDia(Number(v))}>
-                <SelectTrigger className="h-8 w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIAS.map((d) => (
-                    <SelectItem key={d.v} value={String(d.v)}>
-                      {d.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
+
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="gap-1">
               <Users className="h-3 w-3" /> Capacidade copa: {COPA_CAPACIDADE}
