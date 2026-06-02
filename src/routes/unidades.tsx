@@ -752,14 +752,9 @@ function UnidadeDrawer({
       setSaving(false);
       return;
     }
-    const { data, error } = await (supabase
-      .from("unidades_rede" as never) as never as {
-        update: (p: typeof patch) => {
-          eq: (c: string, v: string) => {
-            select: () => { single: () => Promise<{ data: unknown; error: { message: string } | null }> };
-          };
-        };
-      })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from("unidades_rede")
       .update(patch)
       .eq("id", form.id)
       .select()
