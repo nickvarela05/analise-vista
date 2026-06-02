@@ -58,7 +58,6 @@ import {
   STATUS_SOLICITACAO,
   type SolicitacaoRelatorio,
   type StatusSolicitacao,
-} from "@/server/n8n-db.functions";
 } from "@/lib/n8n-db.functions";
 import { NovoRelatorioDialog } from "@/components/relatorios/NovoRelatorioDialog";
 
