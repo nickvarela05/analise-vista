@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
-import { listSolicitacoesRelatorios } from "@/server/n8n-db.functions";
+import { listSolicitacoesRelatorios } from "@/lib/n8n-db.functions";
 import type {
   TarefaRow,
   DemandaRow,

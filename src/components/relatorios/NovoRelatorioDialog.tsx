@@ -27,6 +27,7 @@ import {
   STATUS_SOLICITACAO,
   type StatusSolicitacao,
 } from "@/server/n8n-db.functions";
+} from "@/lib/n8n-db.functions";
 
 const URGENCIAS = ["Baixa", "Média", "Alta", "Crítica"] as const;
 
