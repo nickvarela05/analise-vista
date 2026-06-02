@@ -1107,6 +1107,48 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades_rede: {
+        Row: {
+          bairro: string | null
+          cod_unidade: string
+          created_at: string
+          endereco: string | null
+          id: string
+          nome: string
+          polo: string | null
+          tecnicos: string[]
+          tipo: string
+          updated_at: string
+          zona: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          cod_unidade: string
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome: string
+          polo?: string | null
+          tecnicos?: string[]
+          tipo: string
+          updated_at?: string
+          zona?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          cod_unidade?: string
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome?: string
+          polo?: string | null
+          tecnicos?: string[]
+          tipo?: string
+          updated_at?: string
+          zona?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
