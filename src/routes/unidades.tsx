@@ -379,7 +379,16 @@ function UnidadesPage() {
         <UnidadesCards data={filtradas} onSelect={setSelected} />
       )}
 
-      <UnidadeDrawer unidade={selected} onOpenChange={(o) => !o && setSelected(null)} />
+      <UnidadeDrawer
+        unidade={selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+        onSaved={(updated) => {
+          setUnidades((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+          setSelected(updated);
+        }}
+        tiposExistentes={tiposUnicos}
+        zonasExistentes={zonasUnicas}
+      />
     </div>
   );
 }
