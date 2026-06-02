@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import {
   Building2, MapPin, School, Layers, Search, X, Download, FileSpreadsheet,
-  FileText, Filter, LayoutGrid, List, Hash, Map, Compass, Sparkles, Briefcase,
+  FileText, Filter, LayoutGrid, List, Hash, Map as MapIcon, Compass, Sparkles, Briefcase,
   ChevronRight, Users2, Loader2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -723,7 +723,7 @@ function UnidadeDrawer({
 
         <div className="mt-6 space-y-4">
           <InfoRow icon={Compass} label="Zona" value={unidade.zona ?? "—"} />
-          <InfoRow icon={Map}     label="Bairro" value={unidade.bairro ?? "—"} />
+          <InfoRow icon={MapIcon} label="Bairro" value={unidade.bairro ?? "—"} />
           <InfoRow icon={MapPin}  label="Endereço" value={unidade.endereco ?? "—"} multiline />
 
           <div className="rounded-xl border border-dashed border-violet-500/30 bg-violet-500/[0.04] p-4">
