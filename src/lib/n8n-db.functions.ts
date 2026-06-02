@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getN8nDbClient } from "@/server/n8n-db.server";
+import { getN8nDbClient } from "@/lib/n8n-db.server";
 
 export type SolicitacaoRelatorio = {
   id: string;
