@@ -60,6 +60,23 @@ export function useTarefasData() {
     queryKey: qk.tarefas.all(),
     staleTime: 30_000,
     queryFn: async () => {
+      // Auto-encerra tarefas em aberto com mais de 5 meses.
+      const limite = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30 * 5).toISOString();
+      await supabase
+        .from("todo")
+        .update({ status: "encerrada" as never })
+        .lt("created_at", limite)
+        .in("status", [
+          "aberta",
+          "em_andamento",
+          "homologacao",
+          "aprovado",
+          "aprovado_ressalvas",
+          "reprovado",
+          "pendente",
+          "encaminhada",
+        ] as never);
+
       const { data, error } = await supabase
         .from("todo")
         .select("*")

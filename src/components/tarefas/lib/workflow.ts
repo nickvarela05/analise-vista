@@ -7,6 +7,7 @@ export const WORKFLOW = [
   "aprovado_ressalvas",
   "reprovado",
   "producao",
+  "encerrada",
 ] as const;
 
 export type WorkflowStatus = (typeof WORKFLOW)[number];
@@ -28,6 +29,7 @@ export const STATUS_LABEL: Record<string, string> = {
   aprovado_ressalvas: "Aprovado c/ ressalvas",
   reprovado: "Reprovado",
   producao: "Produção",
+  encerrada: "Encerrada",
   pendente: "Pendente",
   concluida: "Concluída",
   cancelada: "Cancelada",
@@ -42,6 +44,7 @@ export const STATUS_DESCRIPTION: Record<string, string> = {
   aprovado_ressalvas: "Aprovado com pendências",
   reprovado: "Necessita ajustes",
   producao: "Em ambiente produtivo (final)",
+  encerrada: "Encerrada (cancelada ou expirada por 5 meses)",
 };
 
 // Cores semânticas por status (usa tokens do design system)
@@ -66,6 +69,7 @@ export function statusVariant(s: string) {
       return "bg-warning/15 text-warning border-warning/30";
     case "concluida":
       return "bg-success/10 text-success border-success/20";
+    case "encerrada":
     case "cancelada":
       return "bg-muted text-muted-foreground border-border";
     default:
@@ -90,6 +94,8 @@ export function columnAccent(s: string) {
       return "border-t-primary";
     case "aberta":
       return "border-t-muted-foreground/40";
+    case "encerrada":
+      return "border-t-muted-foreground/40";
     default:
       return "border-t-border";
   }
@@ -109,6 +115,18 @@ export function normalizeStatus(s: string): WorkflowStatus {
   if (s === "pendente") return "aberta";
   if (s === "concluida") return "producao";
   if (s === "encaminhada") return "homologacao";
-  if (s === "cancelada") return "reprovado";
+  if (s === "cancelada") return "encerrada";
   return s as WorkflowStatus;
 }
+
+// Status considerados "abertos" (não finalizados) para regras de import/expiração.
+export const STATUS_ABERTOS: readonly string[] = [
+  "aberta",
+  "em_andamento",
+  "homologacao",
+  "aprovado",
+  "aprovado_ressalvas",
+  "reprovado",
+  "pendente",
+  "encaminhada",
+];

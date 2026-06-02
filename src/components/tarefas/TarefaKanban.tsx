@@ -23,6 +23,7 @@ const COL_TONE: Record<string, { wash: string; bar: string; pill: string; ring: 
   aprovado_ressalvas: { wash: "from-amber-500/20 via-amber-500/5",   bar: "bg-amber-500",   pill: "bg-amber-500/15 text-amber-700 dark:text-amber-300",    ring: "ring-amber-500/40",  text: "text-amber-700 dark:text-amber-300" },
   reprovado:          { wash: "from-rose-500/20 via-rose-500/5",     bar: "bg-rose-500",    pill: "bg-rose-500/15 text-rose-700 dark:text-rose-300",       ring: "ring-rose-500/40",   text: "text-rose-700 dark:text-rose-300" },
   producao:           { wash: "from-violet-500/20 via-violet-500/5", bar: "bg-violet-500",  pill: "bg-violet-500/15 text-violet-700 dark:text-violet-300", ring: "ring-violet-500/40", text: "text-violet-700 dark:text-violet-300" },
+  encerrada:          { wash: "from-zinc-500/15 via-zinc-500/5",     bar: "bg-zinc-400",    pill: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",       ring: "ring-zinc-500/40",   text: "text-zinc-700 dark:text-zinc-200" },
 };
 
 export function TarefaKanban({
