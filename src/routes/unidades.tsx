@@ -200,25 +200,25 @@ function UnidadesPage() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), "Resumo");
 
     // Por tipo
-    const tipoCount = new Map<string, number>();
-    filtradas.forEach((u) => tipoCount.set(u.tipo, (tipoCount.get(u.tipo) ?? 0) + 1));
-    const porTipo = Array.from(tipoCount.entries())
+    const tipoCount: Record<string, number> = {};
+    filtradas.forEach((u) => { tipoCount[u.tipo] = (tipoCount[u.tipo] ?? 0) + 1; });
+    const porTipo = Object.entries(tipoCount)
       .sort((a, b) => b[1] - a[1])
       .map(([Tipo, Quantidade]) => ({ Tipo, Quantidade }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porTipo), "Por Tipo");
 
     // Por zona
-    const zonaCount = new Map<string, number>();
-    filtradas.forEach((u) => zonaCount.set(u.zona ?? "—", (zonaCount.get(u.zona ?? "—") ?? 0) + 1));
-    const porZona = Array.from(zonaCount.entries())
+    const zonaCount: Record<string, number> = {};
+    filtradas.forEach((u) => { const k = u.zona ?? "—"; zonaCount[k] = (zonaCount[k] ?? 0) + 1; });
+    const porZona = Object.entries(zonaCount)
       .sort((a, b) => b[1] - a[1])
       .map(([Zona, Quantidade]) => ({ Zona, Quantidade }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porZona), "Por Zona");
 
     // Por bairro
-    const bairroCount = new Map<string, number>();
-    filtradas.forEach((u) => bairroCount.set(u.bairro ?? "—", (bairroCount.get(u.bairro ?? "—") ?? 0) + 1));
-    const porBairro = Array.from(bairroCount.entries())
+    const bairroCount: Record<string, number> = {};
+    filtradas.forEach((u) => { const k = u.bairro ?? "—"; bairroCount[k] = (bairroCount[k] ?? 0) + 1; });
+    const porBairro = Object.entries(bairroCount)
       .sort((a, b) => b[1] - a[1])
       .map(([Bairro, Quantidade]) => ({ Bairro, Quantidade }));
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porBairro), "Por Bairro");
