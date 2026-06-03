@@ -344,6 +344,34 @@ export function ImportarTarefasDialog() {
             )}
           </div>
 
+          <div className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
+            <p className="font-medium text-foreground">Como o import trata tarefas existentes:</p>
+            <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
+              <li>Tarefas novas (não cadastradas) são sempre incluídas.</li>
+              <li>Tarefas em <span className="font-medium">Aberta</span>, <span className="font-medium">Em desenvolvimento</span> ou <span className="font-medium">Encerrada</span> têm o status atualizado pela planilha.</li>
+              <li>Tarefas em <span className="font-medium">Homologação</span>, <span className="font-medium">Aprovado</span>, <span className="font-medium">Aprovado c/ ressalvas</span>, <span className="font-medium">Reprovado</span> ou <span className="font-medium">Produção</span> são preservadas — exceto se a flag abaixo estiver marcada.</li>
+            </ul>
+          </div>
+
+          {!forcarHomologacao && (
+            <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 p-3">
+              <Checkbox
+                id="atualizar-finais"
+                checked={atualizarFinais}
+                onCheckedChange={(v) => setAtualizarFinais(v === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5">
+                <Label htmlFor="atualizar-finais" className="cursor-pointer text-sm font-medium">
+                  Atualizar status de tarefas em estágios finais
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Força a atualização do status mesmo para tarefas em Homologação, Aprovado, Aprovado c/ ressalvas, Reprovado ou Produção.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3 rounded-md border border-info/30 bg-info/5 p-3">
             <div className="flex items-start gap-2">
               <Checkbox
