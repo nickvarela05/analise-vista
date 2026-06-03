@@ -77,12 +77,21 @@ export function useTarefasData() {
           "encaminhada",
         ] as never);
 
-      const { data, error } = await supabase
-        .from("todo")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as TarefaRow[];
+      // Paginação manual para superar o limite padrão de 1000 linhas do PostgREST.
+      const pageSize = 1000;
+      const all: TarefaRow[] = [];
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("todo")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as TarefaRow[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+      }
+      return all;
     },
   });
 
