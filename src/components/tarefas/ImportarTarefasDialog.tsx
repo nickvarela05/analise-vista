@@ -290,7 +290,7 @@ export function ImportarTarefasDialog() {
     const partes: string[] = [];
     if (novas.length) partes.push(`${novas.length} nova(s)`);
     if (atualizarHml.length) partes.push(`${atualizarHml.length} movida(s) p/ HML`);
-    if (restaurarEncerrada.length) partes.push(`${restaurarEncerrada.length} reaberta(s)`);
+    if (totalAtualizadas) partes.push(`${totalAtualizadas} status atualizado(s)`);
     if (preservadas) partes.push(`${preservadas} preservada(s)`);
     toast.success(`Import concluído: ${partes.join(", ") || "nada a fazer"}.`);
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
