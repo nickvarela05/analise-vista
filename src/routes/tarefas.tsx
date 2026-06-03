@@ -175,6 +175,17 @@ function Tarefas() {
     }
   };
 
+  const bulkUpdateEmTeste = async (value: boolean) => {
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("todo").update({ em_teste: value }).in("id", ids);
+    if (error) toast.error("Erro", { description: error.message });
+    else {
+      toast.success(`${ids.length} tarefa(s) ${value ? "marcadas" : "desmarcadas"} como em teste`);
+      clearSelection();
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+    }
+  };
+
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!confirm(`Excluir ${ids.length} tarefa(s)?`)) return;
@@ -185,6 +196,17 @@ function Tarefas() {
       clearSelection();
       qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
+  };
+
+  const selectAll = () => setSelectedIds(new Set(filtered.map((t) => t.id)));
+  const selectByStatus = (status: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      filtered.forEach((t) => {
+        if (normalizeStatus(t.status) === status) next.add(t.id);
+      });
+      return next;
+    });
   };
 
   return (
