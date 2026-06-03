@@ -169,10 +169,19 @@ export function ImportarTarefasDialog() {
       mapaExistentes.set(norm(t.titulo), { id: t.id, status: t.status, created_at: t.created_at });
     });
 
-    const limite5Meses = Date.now() - 1000 * 60 * 60 * 24 * 30 * 5;
+    // Status considerados "em aberto" — podem ter o status atualizado pelo import no modo padrão.
+    const STATUS_ATUALIZAVEIS = new Set([
+      "aberta",
+      "em_andamento",
+      "encerrada",
+      "pendente",
+      "encaminhada",
+      "cancelada",
+    ]);
+
     const novas: LinhaImport[] = [];
     const atualizarHml: { id: string }[] = [];
-    const restaurarEncerrada: { id: string; status: WorkflowStatus }[] = [];
+    const atualizarStatus = new Map<WorkflowStatus, string[]>();
     let preservadas = 0;
 
     for (const l of linhas) {
@@ -182,20 +191,21 @@ export function ImportarTarefasDialog() {
         continue;
       }
       if (forcarHomologacao) {
-        // Sobrescreve apenas quando a flag de homologação está marcada.
         atualizarHml.push({ id: existente.id });
         continue;
       }
-      // Sem flag de homologação: preserva, exceto se a tarefa existente está "encerrada"
-      // (provavelmente expirada por 5 meses) e o import traz status em aberto.
-      const expirada =
-        existente.status === "encerrada" &&
-        new Date(existente.created_at).getTime() < limite5Meses;
-      if (expirada && l.status !== "encerrada") {
-        restaurarEncerrada.push({ id: existente.id, status: l.status });
-      } else {
+      const podeAtualizar = atualizarFinais || STATUS_ATUALIZAVEIS.has(existente.status);
+      if (!podeAtualizar) {
         preservadas++;
+        continue;
       }
+      if (existente.status === l.status) {
+        preservadas++;
+        continue;
+      }
+      const arr = atualizarStatus.get(l.status) ?? [];
+      arr.push(existente.id);
+      atualizarStatus.set(l.status, arr);
     }
 
     let loteId: string | null = null;
@@ -220,7 +230,6 @@ export function ImportarTarefasDialog() {
       loteId = lote.id;
     }
 
-    // Inserir novas
     if (novas.length > 0) {
       const payload = novas.map((l) => ({
         titulo: l.titulo,
@@ -242,7 +251,6 @@ export function ImportarTarefasDialog() {
       }
     }
 
-    // Atualizar existentes para Homologação (somente quando flag marcada)
     if (atualizarHml.length > 0 && forcarHomologacao) {
       const ids = atualizarHml.map((a) => a.id);
       const { error } = await supabase
@@ -261,12 +269,21 @@ export function ImportarTarefasDialog() {
       }
     }
 
-    // Restaurar tarefas encerradas (>5 meses) usando o status do import
-    for (const r of restaurarEncerrada) {
-      await supabase
-        .from("todo")
-        .update({ status: r.status as never })
-        .eq("id", r.id);
+    let totalAtualizadas = 0;
+    if (!forcarHomologacao) {
+      for (const [status, ids] of atualizarStatus.entries()) {
+        if (ids.length === 0) continue;
+        const { error } = await supabase
+          .from("todo")
+          .update({ status: status as never })
+          .in("id", ids);
+        if (error) {
+          setImportando(false);
+          toast.error("Erro ao atualizar status", { description: error.message });
+          return;
+        }
+        totalAtualizadas += ids.length;
+      }
     }
 
     setImportando(false);
