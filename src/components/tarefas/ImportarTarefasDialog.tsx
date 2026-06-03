@@ -74,6 +74,7 @@ export function ImportarTarefasDialog() {
   const [arquivo, setArquivo] = React.useState<string>("");
   const [importando, setImportando] = React.useState(false);
   const [forcarHomologacao, setForcarHomologacao] = React.useState(false);
+  const [atualizarFinais, setAtualizarFinais] = React.useState(false);
   const [nomeLote, setNomeLote] = React.useState("");
   const [descricaoLote, setDescricaoLote] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -83,6 +84,7 @@ export function ImportarTarefasDialog() {
     setErros([]);
     setArquivo("");
     setForcarHomologacao(false);
+    setAtualizarFinais(false);
     setNomeLote("");
     setDescricaoLote("");
     if (inputRef.current) inputRef.current.value = "";
@@ -167,10 +169,19 @@ export function ImportarTarefasDialog() {
       mapaExistentes.set(norm(t.titulo), { id: t.id, status: t.status, created_at: t.created_at });
     });
 
-    const limite5Meses = Date.now() - 1000 * 60 * 60 * 24 * 30 * 5;
+    // Status considerados "em aberto" — podem ter o status atualizado pelo import no modo padrão.
+    const STATUS_ATUALIZAVEIS = new Set([
+      "aberta",
+      "em_andamento",
+      "encerrada",
+      "pendente",
+      "encaminhada",
+      "cancelada",
+    ]);
+
     const novas: LinhaImport[] = [];
     const atualizarHml: { id: string }[] = [];
-    const restaurarEncerrada: { id: string; status: WorkflowStatus }[] = [];
+    const atualizarStatus = new Map<WorkflowStatus, string[]>();
     let preservadas = 0;
 
     for (const l of linhas) {
@@ -180,20 +191,21 @@ export function ImportarTarefasDialog() {
         continue;
       }
       if (forcarHomologacao) {
-        // Sobrescreve apenas quando a flag de homologação está marcada.
         atualizarHml.push({ id: existente.id });
         continue;
       }
-      // Sem flag de homologação: preserva, exceto se a tarefa existente está "encerrada"
-      // (provavelmente expirada por 5 meses) e o import traz status em aberto.
-      const expirada =
-        existente.status === "encerrada" &&
-        new Date(existente.created_at).getTime() < limite5Meses;
-      if (expirada && l.status !== "encerrada") {
-        restaurarEncerrada.push({ id: existente.id, status: l.status });
-      } else {
+      const podeAtualizar = atualizarFinais || STATUS_ATUALIZAVEIS.has(existente.status);
+      if (!podeAtualizar) {
         preservadas++;
+        continue;
       }
+      if (existente.status === l.status) {
+        preservadas++;
+        continue;
+      }
+      const arr = atualizarStatus.get(l.status) ?? [];
+      arr.push(existente.id);
+      atualizarStatus.set(l.status, arr);
     }
 
     let loteId: string | null = null;
@@ -218,7 +230,6 @@ export function ImportarTarefasDialog() {
       loteId = lote.id;
     }
 
-    // Inserir novas
     if (novas.length > 0) {
       const payload = novas.map((l) => ({
         titulo: l.titulo,
@@ -240,7 +251,6 @@ export function ImportarTarefasDialog() {
       }
     }
 
-    // Atualizar existentes para Homologação (somente quando flag marcada)
     if (atualizarHml.length > 0 && forcarHomologacao) {
       const ids = atualizarHml.map((a) => a.id);
       const { error } = await supabase
@@ -259,19 +269,28 @@ export function ImportarTarefasDialog() {
       }
     }
 
-    // Restaurar tarefas encerradas (>5 meses) usando o status do import
-    for (const r of restaurarEncerrada) {
-      await supabase
-        .from("todo")
-        .update({ status: r.status as never })
-        .eq("id", r.id);
+    let totalAtualizadas = 0;
+    if (!forcarHomologacao) {
+      for (const [status, ids] of atualizarStatus.entries()) {
+        if (ids.length === 0) continue;
+        const { error } = await supabase
+          .from("todo")
+          .update({ status: status as never })
+          .in("id", ids);
+        if (error) {
+          setImportando(false);
+          toast.error("Erro ao atualizar status", { description: error.message });
+          return;
+        }
+        totalAtualizadas += ids.length;
+      }
     }
 
     setImportando(false);
     const partes: string[] = [];
     if (novas.length) partes.push(`${novas.length} nova(s)`);
     if (atualizarHml.length) partes.push(`${atualizarHml.length} movida(s) p/ HML`);
-    if (restaurarEncerrada.length) partes.push(`${restaurarEncerrada.length} reaberta(s)`);
+    if (totalAtualizadas) partes.push(`${totalAtualizadas} status atualizado(s)`);
     if (preservadas) partes.push(`${preservadas} preservada(s)`);
     toast.success(`Import concluído: ${partes.join(", ") || "nada a fazer"}.`);
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
@@ -324,6 +343,34 @@ export function ImportarTarefasDialog() {
               </p>
             )}
           </div>
+
+          <div className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
+            <p className="font-medium text-foreground">Como o import trata tarefas existentes:</p>
+            <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
+              <li>Tarefas novas (não cadastradas) são sempre incluídas.</li>
+              <li>Tarefas em <span className="font-medium">Aberta</span>, <span className="font-medium">Em desenvolvimento</span> ou <span className="font-medium">Encerrada</span> têm o status atualizado pela planilha.</li>
+              <li>Tarefas em <span className="font-medium">Homologação</span>, <span className="font-medium">Aprovado</span>, <span className="font-medium">Aprovado c/ ressalvas</span>, <span className="font-medium">Reprovado</span> ou <span className="font-medium">Produção</span> são preservadas — exceto se a flag abaixo estiver marcada.</li>
+            </ul>
+          </div>
+
+          {!forcarHomologacao && (
+            <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 p-3">
+              <Checkbox
+                id="atualizar-finais"
+                checked={atualizarFinais}
+                onCheckedChange={(v) => setAtualizarFinais(v === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5">
+                <Label htmlFor="atualizar-finais" className="cursor-pointer text-sm font-medium">
+                  Atualizar status de tarefas em estágios finais
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Força a atualização do status mesmo para tarefas em Homologação, Aprovado, Aprovado c/ ressalvas, Reprovado ou Produção.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3 rounded-md border border-info/30 bg-info/5 p-3">
             <div className="flex items-start gap-2">
