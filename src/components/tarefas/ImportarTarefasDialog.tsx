@@ -74,6 +74,7 @@ export function ImportarTarefasDialog() {
   const [arquivo, setArquivo] = React.useState<string>("");
   const [importando, setImportando] = React.useState(false);
   const [forcarHomologacao, setForcarHomologacao] = React.useState(false);
+  const [atualizarFinais, setAtualizarFinais] = React.useState(false);
   const [nomeLote, setNomeLote] = React.useState("");
   const [descricaoLote, setDescricaoLote] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -83,6 +84,7 @@ export function ImportarTarefasDialog() {
     setErros([]);
     setArquivo("");
     setForcarHomologacao(false);
+    setAtualizarFinais(false);
     setNomeLote("");
     setDescricaoLote("");
     if (inputRef.current) inputRef.current.value = "";
