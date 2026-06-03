@@ -19,7 +19,16 @@ import { qk } from "@/lib/queries/keys";
 import { TarefaKanban } from "@/components/tarefas/TarefaKanban";
 import { TarefaDrawer } from "@/components/tarefas/TarefaDrawer";
 import { TarefaFilters, initialFilters, type TarefaFiltersState } from "@/components/tarefas/TarefaFilters";
-import { normalizeStatus } from "@/components/tarefas/lib/workflow";
+import { normalizeStatus, WORKFLOW, STATUS_LABEL } from "@/components/tarefas/lib/workflow";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTarefasData } from "@/components/tarefas/useTarefasData";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
 import { ImportarTarefasDialog } from "@/components/tarefas/ImportarTarefasDialog";
