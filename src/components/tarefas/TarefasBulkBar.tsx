@@ -1,4 +1,4 @@
-import { Trash2, X, ChevronDown } from "lucide-react";
+import { Trash2, X, ChevronDown, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -15,6 +15,7 @@ interface Props {
   count: number;
   onBulkStatus: (status: string) => void;
   onBulkPriority: (prio: string) => void;
+  onBulkEmTeste: (value: boolean) => void;
   onBulkDelete: () => void;
   onClear: () => void;
 }
