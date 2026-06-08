@@ -1028,7 +1028,7 @@ function Reunioes() {
                 </AccordionItem>
               </Accordion>
             )}
-            <DialogFooter className="gap-2 sm:justify-between">
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
               <Button
                 type="button"
                 variant="secondary"
