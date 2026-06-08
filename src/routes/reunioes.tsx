@@ -874,7 +874,7 @@ function Reunioes() {
               <Label>Título</Label>
               <Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Tipo</Label>
                 <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}>
