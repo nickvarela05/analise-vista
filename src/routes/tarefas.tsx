@@ -4,8 +4,8 @@ import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Loader2, LayoutGrid, List as ListIcon,
-  Activity, AlertTriangle, Clock, FlaskConical, CheckCircle2, Rocket,
-  CheckSquare, ChevronDown,
+  Activity, Archive, FlaskConical, CheckCircle2, Rocket,
+  CheckSquare, ChevronDown, FlaskRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, isWithinInterval, addDays, startOfDay } from "date-fns";
@@ -101,19 +101,14 @@ function Tarefas() {
     }
   }, [tarefas]); // eslint-disable-line
 
-  // KPIs com base no NOVO workflow
+  // KPIs com base no NOVO workflow.
+  // "Ativas" = todas as tarefas que NÃO estão encerradas.
   const counts = React.useMemo(() => {
     const norm = filtered.map((t) => ({ ...t, _s: normalizeStatus(t.status) }));
     return {
-      ativas: norm.filter((t) => !["producao", "reprovado"].includes(t._s)).length,
-      atrasadas: norm.filter(
-        (t) =>
-          t.data_prevista &&
-          isPast(new Date(t.data_prevista)) &&
-          !isToday(new Date(t.data_prevista)) &&
-          !["producao", "aprovado", "reprovado"].includes(t._s),
-      ).length,
-      hoje: norm.filter((t) => t.data_prevista && isToday(new Date(t.data_prevista))).length,
+      ativas: norm.filter((t) => t._s !== "encerrada").length,
+      encerradas: norm.filter((t) => t._s === "encerrada").length,
+      emTeste: norm.filter((t) => t.em_teste).length,
       hml: norm.filter((t) => t._s === "homologacao").length,
       aprovado: norm.filter((t) => t._s === "aprovado" || t._s === "aprovado_ressalvas").length,
       producao: norm.filter((t) => t._s === "producao").length,
@@ -240,9 +235,9 @@ function Tarefas() {
           </div>
         }
         stats={[
-          { icon: Activity,       label: "Ativas",        value: counts.ativas,    tone: "primary",     hint: "Em curso" },
-          { icon: AlertTriangle,  label: "Atrasadas",     value: counts.atrasadas, tone: "destructive", pulse: counts.atrasadas > 0, hint: "Prazo vencido" },
-          { icon: Clock,          label: "Vencem hoje",   value: counts.hoje,      tone: "amber",       hint: "Foco do dia" },
+          { icon: Activity,       label: "Ativas",        value: counts.ativas,    tone: "primary",     hint: "Não encerradas" },
+          { icon: Archive,        label: "Encerradas",    value: counts.encerradas, tone: "destructive", hint: "Sem ação prevista" },
+          { icon: FlaskRound,     label: "Em teste",      value: counts.emTeste,   tone: "amber",       hint: "Validação interna" },
           { icon: FlaskConical,   label: "Homologação",   value: counts.hml,       tone: "sky",         hint: "Em validação" },
           { icon: CheckCircle2,   label: "Aprovadas",     value: counts.aprovado,  tone: "emerald",     hint: "Prontas p/ subir" },
           { icon: Rocket,         label: "Em produção",   value: counts.producao,  tone: "violet",      hint: "Entregues" },

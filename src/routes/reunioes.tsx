@@ -854,7 +854,7 @@ function Reunioes() {
 
       {/* Form criar/editar */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-6">
+        <DialogContent className="w-[95vw] sm:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           <DialogHeader className="sr-only">
             <DialogTitle>{editingId ? "Editar reunião" : "Nova reunião"}</DialogTitle>
           </DialogHeader>
@@ -874,7 +874,7 @@ function Reunioes() {
               <Label>Título</Label>
               <Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Tipo</Label>
                 <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}>
@@ -925,7 +925,7 @@ function Reunioes() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Atribuir a</Label>
                 <AssigneeCombobox
@@ -982,7 +982,7 @@ function Reunioes() {
                   </Badge>
                 )}
               </Label>
-              <Textarea rows={3} value={form.pauta} onChange={(e) => setForm({ ...form, pauta: e.target.value })} />
+              <Textarea rows={6} className="min-h-[140px] resize-y leading-relaxed" value={form.pauta} onChange={(e) => setForm({ ...form, pauta: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
@@ -993,7 +993,7 @@ function Reunioes() {
                   </Badge>
                 )}
               </Label>
-              <Textarea rows={3} value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
+              <Textarea rows={6} className="min-h-[140px] resize-y leading-relaxed" value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
@@ -1005,7 +1005,8 @@ function Reunioes() {
                 )}
               </Label>
               <Textarea
-                rows={3}
+                rows={5}
+                className="min-h-[120px] resize-y leading-relaxed"
                 value={form.proximos_passos}
                 onChange={(e) => setForm({ ...form, proximos_passos: e.target.value })}
               />
@@ -1027,7 +1028,7 @@ function Reunioes() {
                 </AccordionItem>
               </Accordion>
             )}
-            <DialogFooter className="gap-2 sm:justify-between">
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
               <Button
                 type="button"
                 variant="secondary"
