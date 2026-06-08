@@ -854,7 +854,7 @@ function Reunioes() {
 
       {/* Form criar/editar */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-6">
+        <DialogContent className="w-[95vw] sm:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
           <DialogHeader className="sr-only">
             <DialogTitle>{editingId ? "Editar reunião" : "Nova reunião"}</DialogTitle>
           </DialogHeader>
