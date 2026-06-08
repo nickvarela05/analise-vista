@@ -235,9 +235,9 @@ function Tarefas() {
           </div>
         }
         stats={[
-          { icon: Activity,       label: "Ativas",        value: counts.ativas,    tone: "primary",     hint: "Em curso" },
-          { icon: AlertTriangle,  label: "Atrasadas",     value: counts.atrasadas, tone: "destructive", pulse: counts.atrasadas > 0, hint: "Prazo vencido" },
-          { icon: Clock,          label: "Vencem hoje",   value: counts.hoje,      tone: "amber",       hint: "Foco do dia" },
+          { icon: Activity,       label: "Ativas",        value: counts.ativas,    tone: "primary",     hint: "Não encerradas" },
+          { icon: Archive,        label: "Encerradas",    value: counts.encerradas, tone: "destructive", hint: "Sem ação prevista" },
+          { icon: FlaskRound,     label: "Em teste",      value: counts.emTeste,   tone: "amber",       hint: "Validação interna" },
           { icon: FlaskConical,   label: "Homologação",   value: counts.hml,       tone: "sky",         hint: "Em validação" },
           { icon: CheckCircle2,   label: "Aprovadas",     value: counts.aprovado,  tone: "emerald",     hint: "Prontas p/ subir" },
           { icon: Rocket,         label: "Em produção",   value: counts.producao,  tone: "violet",      hint: "Entregues" },
