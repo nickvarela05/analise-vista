@@ -993,7 +993,7 @@ function Reunioes() {
                   </Badge>
                 )}
               </Label>
-              <Textarea rows={3} value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
+              <Textarea rows={6} className="min-h-[140px] resize-y leading-relaxed" value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
