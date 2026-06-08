@@ -152,23 +152,31 @@ export function UploadAudioReuniao({
     toast.info("🎧 Reprocessando áudio...");
   };
 
+  const [removing, setRemoving] = React.useState(false);
   const removerAudio = async () => {
     if (!audioPath) return;
-    if (!confirm("Remover o áudio anexado?")) return;
-    await supabase.storage.from("reuniao-audios").remove([audioPath]);
-    if (reuniaoId) {
-      await supabase
-        .from("reuniao")
-        .update({
-          audio_path: null,
-          audio_size: null,
-          audio_mime: null,
-          transcricao_status: "pendente",
-          transcricao_erro: null,
-        })
-        .eq("id", reuniaoId);
+    setRemoving(true);
+    try {
+      await supabase.storage.from("reuniao-audios").remove([audioPath]);
+      if (reuniaoId) {
+        await supabase
+          .from("reuniao")
+          .update({
+            audio_path: null,
+            audio_size: null,
+            audio_mime: null,
+            transcricao_status: "pendente",
+            transcricao_erro: null,
+          })
+          .eq("id", reuniaoId);
+      }
+      await onUploaded({ audio_path: "", audio_size: 0, audio_mime: "" });
+      toast.success("Áudio removido com sucesso");
+    } catch (e: any) {
+      toast.error("Erro ao remover áudio", { description: e?.message });
+    } finally {
+      setRemoving(false);
     }
-    await onUploaded({ audio_path: "", audio_size: 0, audio_mime: "" });
   };
 
   const isProcessing = status === "processando" || triggering;
