@@ -101,19 +101,14 @@ function Tarefas() {
     }
   }, [tarefas]); // eslint-disable-line
 
-  // KPIs com base no NOVO workflow
+  // KPIs com base no NOVO workflow.
+  // "Ativas" = todas as tarefas que NÃO estão encerradas.
   const counts = React.useMemo(() => {
     const norm = filtered.map((t) => ({ ...t, _s: normalizeStatus(t.status) }));
     return {
-      ativas: norm.filter((t) => !["producao", "reprovado"].includes(t._s)).length,
-      atrasadas: norm.filter(
-        (t) =>
-          t.data_prevista &&
-          isPast(new Date(t.data_prevista)) &&
-          !isToday(new Date(t.data_prevista)) &&
-          !["producao", "aprovado", "reprovado"].includes(t._s),
-      ).length,
-      hoje: norm.filter((t) => t.data_prevista && isToday(new Date(t.data_prevista))).length,
+      ativas: norm.filter((t) => t._s !== "encerrada").length,
+      encerradas: norm.filter((t) => t._s === "encerrada").length,
+      emTeste: norm.filter((t) => t.em_teste).length,
       hml: norm.filter((t) => t._s === "homologacao").length,
       aprovado: norm.filter((t) => t._s === "aprovado" || t._s === "aprovado_ressalvas").length,
       producao: norm.filter((t) => t._s === "producao").length,
