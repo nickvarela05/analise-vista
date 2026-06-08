@@ -1005,7 +1005,8 @@ function Reunioes() {
                 )}
               </Label>
               <Textarea
-                rows={3}
+                rows={5}
+                className="min-h-[120px] resize-y leading-relaxed"
                 value={form.proximos_passos}
                 onChange={(e) => setForm({ ...form, proximos_passos: e.target.value })}
               />
