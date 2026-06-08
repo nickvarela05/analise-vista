@@ -186,50 +186,185 @@ function UnidadesPage() {
     toast.success(`Exportado ${rows.length} unidade(s) em CSV`);
   };
 
-  const exportarXLSX = () => {
-    const wb = XLSX.utils.book_new();
+  const exportarXLSX = async () => {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Sisteplan";
+    wb.created = new Date();
 
-    const rows = filtradas.map((u) => ({
-      Código: u.cod_unidade, Tipo: u.tipo, Unidade: u.nome,
-      Zona: u.zona ?? "", Bairro: u.bairro ?? "", Endereço: u.endereco ?? "",
-    }));
-    const wsList = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, wsList, "Unidades");
+    // Paleta inspirada no modelo (verde #00B050) + tons complementares
+    const COLOR_TITLE_BG = "FF00B050";   // verde título
+    const COLOR_TITLE_FG = "FFFFFFFF";
+    const COLOR_HEADER_BG = "FF064E2E";  // verde escuro p/ cabeçalhos
+    const COLOR_HEADER_FG = "FFFFFFFF";
+    const COLOR_ZEBRA = "FFF1F8F4";      // verde-claro alternado
+    const COLOR_TOTAL_BG = "FFD8F0DF";
 
-    // Resumo
-    const resumo: Array<Record<string, string | number>> = [
-      { Indicador: "Total de escolas (sem ESPECIAL)", Valor: filtradas.filter((u) => !isEspecial(u.tipo)).length },
-      { Indicador: "Departamentos (ESPECIAL)",         Valor: filtradas.filter((u) =>  isEspecial(u.tipo)).length },
-      { Indicador: "Bairros distintos",                Valor: new Set(filtradas.map((u) => u.bairro).filter(Boolean)).size },
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), "Resumo");
+    const border = {
+      top: { style: "thin" as const, color: { argb: "FFB7CEC0" } },
+      left: { style: "thin" as const, color: { argb: "FFB7CEC0" } },
+      bottom: { style: "thin" as const, color: { argb: "FFB7CEC0" } },
+      right: { style: "thin" as const, color: { argb: "FFB7CEC0" } },
+    };
 
-    // Por tipo
+    const stampStr = new Date().toLocaleString("pt-BR");
+
+    const buildSheet = (
+      name: string,
+      title: string,
+      headers: string[],
+      data: (string | number)[][],
+      totalLabel?: string,
+    ) => {
+      const ws = wb.addWorksheet(name, {
+        views: [{ state: "frozen", ySplit: 4 }],
+        properties: { defaultRowHeight: 18 },
+      });
+
+      // Linha 1: faixa título verde
+      ws.mergeCells(1, 1, 1, headers.length);
+      const titleCell = ws.getCell(1, 1);
+      titleCell.value = title;
+      titleCell.font = { name: "Calibri", size: 16, bold: true, color: { argb: COLOR_TITLE_FG } };
+      titleCell.alignment = { vertical: "middle", horizontal: "center" };
+      titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR_TITLE_BG } };
+      ws.getRow(1).height = 34;
+
+      // Linha 2: subtítulo / data
+      ws.mergeCells(2, 1, 2, headers.length);
+      const subCell = ws.getCell(2, 1);
+      subCell.value = `Sisteplan — Rede Municipal de Osasco · Gerado em ${stampStr}`;
+      subCell.font = { name: "Calibri", size: 10, italic: true, color: { argb: "FF555555" } };
+      subCell.alignment = { vertical: "middle", horizontal: "center" };
+      ws.getRow(2).height = 18;
+
+      // Linha 3: vazia (respiro)
+      ws.getRow(3).height = 6;
+
+      // Linha 4: cabeçalho
+      const headerRow = ws.getRow(4);
+      headers.forEach((h, i) => {
+        const c = headerRow.getCell(i + 1);
+        c.value = h;
+        c.font = { name: "Calibri", size: 11, bold: true, color: { argb: COLOR_HEADER_FG } };
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR_HEADER_BG } };
+        c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        c.border = border;
+      });
+      headerRow.height = 26;
+
+      // Linhas de dados
+      data.forEach((row, idx) => {
+        const r = ws.getRow(5 + idx);
+        row.forEach((val, i) => {
+          const c = r.getCell(i + 1);
+          c.value = val;
+          c.font = { name: "Calibri", size: 11, color: { argb: "FF1F2937" } };
+          c.alignment = { vertical: "middle", horizontal: typeof val === "number" ? "right" : "left", wrapText: true };
+          c.border = border;
+          if (idx % 2 === 1) {
+            c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR_ZEBRA } };
+          }
+        });
+        r.height = 20;
+      });
+
+      // Linha de total (opcional)
+      if (totalLabel && data.length > 0 && headers.length >= 2) {
+        const total = data.reduce((acc, row) => {
+          const v = row[row.length - 1];
+          return acc + (typeof v === "number" ? v : 0);
+        }, 0);
+        const tr = ws.getRow(5 + data.length);
+        tr.getCell(1).value = totalLabel;
+        tr.getCell(headers.length).value = total;
+        for (let i = 1; i <= headers.length; i++) {
+          const c = tr.getCell(i);
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR_TOTAL_BG } };
+          c.font = { name: "Calibri", size: 11, bold: true, color: { argb: "FF064E2E" } };
+          c.alignment = { vertical: "middle", horizontal: i === headers.length ? "right" : "left" };
+          c.border = border;
+        }
+        tr.height = 22;
+      }
+
+      // Larguras automáticas (heurística simples)
+      headers.forEach((h, i) => {
+        const col = ws.getColumn(i + 1);
+        const maxLen = Math.max(
+          h.length,
+          ...data.map((r) => String(r[i] ?? "").length),
+        );
+        col.width = Math.min(Math.max(maxLen + 4, 12), 50);
+      });
+
+      // Auto-filter na faixa do cabeçalho
+      ws.autoFilter = {
+        from: { row: 4, column: 1 },
+        to: { row: 4, column: headers.length },
+      };
+    };
+
+    // ── Aba Unidades
+    const unidadesHeaders = ["Código", "Tipo", "Unidade", "Zona", "Bairro", "Endereço"];
+    const unidadesData = filtradas.map((u) => [
+      u.cod_unidade, u.tipo, u.nome, u.zona ?? "", u.bairro ?? "", u.endereco ?? "",
+    ]);
+    buildSheet("Unidades", "Unidades da Rede", unidadesHeaders, unidadesData);
+
+    // ── Resumo
+    buildSheet(
+      "Resumo",
+      "Resumo Executivo",
+      ["Indicador", "Valor"],
+      [
+        ["Total de escolas (sem ESPECIAL)", filtradas.filter((u) => !isEspecial(u.tipo)).length],
+        ["Departamentos (ESPECIAL)", filtradas.filter((u) => isEspecial(u.tipo)).length],
+        ["Bairros distintos", new Set(filtradas.map((u) => u.bairro).filter(Boolean)).size],
+        ["Zonas distintas", new Set(filtradas.map((u) => u.zona).filter(Boolean)).size],
+        ["Total geral de registros", filtradas.length],
+      ],
+    );
+
+    // ── Por Tipo
     const tipoCount: Record<string, number> = {};
     filtradas.forEach((u) => { tipoCount[u.tipo] = (tipoCount[u.tipo] ?? 0) + 1; });
-    const porTipo = Object.entries(tipoCount)
-      .sort((a, b) => b[1] - a[1])
-      .map(([Tipo, Quantidade]) => ({ Tipo, Quantidade }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porTipo), "Por Tipo");
+    buildSheet(
+      "Por Tipo",
+      "Distribuição por Tipo",
+      ["Tipo", "Quantidade"],
+      Object.entries(tipoCount).sort((a, b) => b[1] - a[1]).map(([t, q]) => [t, q]),
+      "Total",
+    );
 
-    // Por zona
+    // ── Por Zona
     const zonaCount: Record<string, number> = {};
     filtradas.forEach((u) => { const k = u.zona ?? "—"; zonaCount[k] = (zonaCount[k] ?? 0) + 1; });
-    const porZona = Object.entries(zonaCount)
-      .sort((a, b) => b[1] - a[1])
-      .map(([Zona, Quantidade]) => ({ Zona, Quantidade }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porZona), "Por Zona");
+    buildSheet(
+      "Por Zona",
+      "Distribuição por Zona",
+      ["Zona", "Quantidade"],
+      Object.entries(zonaCount).sort((a, b) => b[1] - a[1]).map(([z, q]) => [z, q]),
+      "Total",
+    );
 
-    // Por bairro
+    // ── Por Bairro
     const bairroCount: Record<string, number> = {};
     filtradas.forEach((u) => { const k = u.bairro ?? "—"; bairroCount[k] = (bairroCount[k] ?? 0) + 1; });
-    const porBairro = Object.entries(bairroCount)
-      .sort((a, b) => b[1] - a[1])
-      .map(([Bairro, Quantidade]) => ({ Bairro, Quantidade }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(porBairro), "Por Bairro");
+    buildSheet(
+      "Por Bairro",
+      "Distribuição por Bairro",
+      ["Bairro", "Quantidade"],
+      Object.entries(bairroCount).sort((a, b) => b[1] - a[1]).map(([b, q]) => [b, q]),
+      "Total",
+    );
 
-    XLSX.writeFile(wb, `unidades-rede-${stamp()}.xlsx`);
-    toast.success(`Relatório XLSX gerado com ${rows.length} unidade(s)`);
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    triggerDownload(blob, `unidades-rede-${stamp()}.xlsx`);
+    toast.success(`Relatório XLSX gerado com ${filtradas.length} unidade(s)`);
   };
 
   return (
