@@ -4,8 +4,8 @@ import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Loader2, LayoutGrid, List as ListIcon,
-  Activity, AlertTriangle, Clock, FlaskConical, CheckCircle2, Rocket,
-  CheckSquare, ChevronDown,
+  Activity, Archive, FlaskConical, CheckCircle2, Rocket,
+  CheckSquare, ChevronDown, FlaskRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, isWithinInterval, addDays, startOfDay } from "date-fns";
