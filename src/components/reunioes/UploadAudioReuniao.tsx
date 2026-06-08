@@ -243,9 +243,43 @@ export function UploadAudioReuniao({
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium">{audioPath.split("/").pop()}</p>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={removerAudio}>
-              <X className="h-3.5 w-3.5" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={removing || uploading}
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  {removing ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Excluir áudio
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir áudio da reunião?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    O arquivo de áudio será removido permanentemente do armazenamento. A transcrição e os campos
+                    já preenchidos pela IA (resumo, pauta, decisões, próximos passos) permanecem inalterados —
+                    você pode editá-los manualmente. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={removerAudio}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Excluir áudio
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           {audioUrl && <audio controls src={audioUrl} className="w-full" />}
