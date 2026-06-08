@@ -1,9 +1,20 @@
 import * as React from "react";
-import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, X } from "lucide-react";
+import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
@@ -141,23 +152,31 @@ export function UploadAudioReuniao({
     toast.info("🎧 Reprocessando áudio...");
   };
 
+  const [removing, setRemoving] = React.useState(false);
   const removerAudio = async () => {
     if (!audioPath) return;
-    if (!confirm("Remover o áudio anexado?")) return;
-    await supabase.storage.from("reuniao-audios").remove([audioPath]);
-    if (reuniaoId) {
-      await supabase
-        .from("reuniao")
-        .update({
-          audio_path: null,
-          audio_size: null,
-          audio_mime: null,
-          transcricao_status: "pendente",
-          transcricao_erro: null,
-        })
-        .eq("id", reuniaoId);
+    setRemoving(true);
+    try {
+      await supabase.storage.from("reuniao-audios").remove([audioPath]);
+      if (reuniaoId) {
+        await supabase
+          .from("reuniao")
+          .update({
+            audio_path: null,
+            audio_size: null,
+            audio_mime: null,
+            transcricao_status: "pendente",
+            transcricao_erro: null,
+          })
+          .eq("id", reuniaoId);
+      }
+      await onUploaded({ audio_path: "", audio_size: 0, audio_mime: "" });
+      toast.success("Áudio removido com sucesso");
+    } catch (e: any) {
+      toast.error("Erro ao remover áudio", { description: e?.message });
+    } finally {
+      setRemoving(false);
     }
-    await onUploaded({ audio_path: "", audio_size: 0, audio_mime: "" });
   };
 
   const isProcessing = status === "processando" || triggering;
@@ -224,9 +243,43 @@ export function UploadAudioReuniao({
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium">{audioPath.split("/").pop()}</p>
             </div>
-            <Button type="button" variant="ghost" size="sm" onClick={removerAudio}>
-              <X className="h-3.5 w-3.5" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={removing || uploading}
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  {removing ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Excluir áudio
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir áudio da reunião?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    O arquivo de áudio será removido permanentemente do armazenamento. A transcrição e os campos
+                    já preenchidos pela IA (resumo, pauta, decisões, próximos passos) permanecem inalterados —
+                    você pode editá-los manualmente. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={removerAudio}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Excluir áudio
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           {audioUrl && <audio controls src={audioUrl} className="w-full" />}
