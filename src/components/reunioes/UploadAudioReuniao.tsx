@@ -1,9 +1,20 @@
 import * as React from "react";
-import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, X } from "lucide-react";
+import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
