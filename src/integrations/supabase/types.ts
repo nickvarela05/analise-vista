@@ -197,6 +197,69 @@ export type Database = {
           },
         ]
       }
+      chat_rate_limit: {
+        Row: {
+          contagem: number
+          janela_inicio: string
+          telefone: string
+        }
+        Insert: {
+          contagem?: number
+          janela_inicio: string
+          telefone: string
+        }
+        Update: {
+          contagem?: number
+          janela_inicio?: string
+          telefone?: string
+        }
+        Relationships: []
+      }
+      chat_whatsapp_log: {
+        Row: {
+          created_at: string
+          erro: string | null
+          id: string
+          latencia_ms: number | null
+          pergunta: string
+          resposta: string | null
+          status: string
+          telefone: string
+          tokens_input: number | null
+          tokens_output: number | null
+          tools_chamadas: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          erro?: string | null
+          id?: string
+          latencia_ms?: number | null
+          pergunta: string
+          resposta?: string | null
+          status?: string
+          telefone: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          tools_chamadas?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          erro?: string | null
+          id?: string
+          latencia_ms?: number | null
+          pergunta?: string
+          resposta?: string | null
+          status?: string
+          telefone?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          tools_chamadas?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       colaborador: {
         Row: {
           ativo: boolean
@@ -657,6 +720,7 @@ export type Database = {
           id: string
           must_change_password: boolean
           nome: string
+          telefone: string | null
           updated_at: string
           user_id: string
         }
@@ -669,6 +733,7 @@ export type Database = {
           id?: string
           must_change_password?: boolean
           nome: string
+          telefone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -681,6 +746,7 @@ export type Database = {
           id?: string
           must_change_password?: boolean
           nome?: string
+          telefone?: string | null
           updated_at?: string
           user_id?: string
         }
