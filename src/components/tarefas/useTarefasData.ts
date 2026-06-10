@@ -109,7 +109,6 @@ export function useTarefasData() {
     staleTime: 2 * 60_000,
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      // @ts-expect-error RPC criada por migração; tipos ainda não regenerados
       const { data, error } = await supabase.rpc("get_tarefa_counts");
       if (error) throw error;
       const m: CountsMap = {};
