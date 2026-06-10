@@ -425,12 +425,34 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
               selectedIds={tarefa.responsaveis_ids ?? []}
               equipeToda={!!tarefa.equipe_toda}
               onChange={async (n) => {
-                await supabase
+                // Update otimista: aplica no cache antes do round-trip.
+                const key = ["tarefas"] as const;
+                const previous = qc.getQueryData<any[]>(key);
+                if (previous && id) {
+                  qc.setQueryData<any[]>(
+                    key,
+                    previous.map((t) =>
+                      t.id === id
+                        ? { ...t, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda }
+                        : t,
+                    ),
+                  );
+                }
+                const { error } = await supabase
                   .from("todo")
                   .update({ responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })
                   .eq("id", id);
-                await logHistorico("responsaveis", null, n.equipeToda ? "Equipe toda" : `${n.selectedIds.length} pessoa(s)`);
-                invalidate();
+                if (error) {
+                  if (previous) qc.setQueryData(key, previous);
+                  toast.error("Erro ao atribuir", { description: error.message });
+                  return;
+                }
+                // Histórico em fire-and-forget — sem await.
+                logHistorico(
+                  "responsaveis",
+                  null,
+                  n.equipeToda ? "Equipe toda" : `${n.selectedIds.length} pessoa(s)`,
+                );
               }}
             />
           </div>
