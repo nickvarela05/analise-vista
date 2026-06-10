@@ -218,3 +218,40 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
     </Card>
   );
 }
+
+/**
+ * Memoizado: re-renderiza apenas quando muda algum campo realmente visível.
+ * Evita re-render do Kanban inteiro ao trocar de coluna outras tarefas.
+ */
+export const TarefaCard = React.memo(TarefaCardImpl, (prev, next) => {
+  if (prev.selected !== next.selected) return false;
+  if (prev.hasDemanda !== next.hasDemanda) return false;
+  if (prev.onOpen !== next.onOpen || prev.onSelect !== next.onSelect) return false;
+  if (prev.colabs !== next.colabs) return false;
+  if (
+    prev.counts.comentarios !== next.counts.comentarios ||
+    prev.counts.checklistTotal !== next.counts.checklistTotal ||
+    prev.counts.checklistDone !== next.counts.checklistDone ||
+    prev.counts.anexos !== next.counts.anexos
+  )
+    return false;
+  const a = prev.tarefa, b = next.tarefa;
+  if (
+    a.id !== b.id ||
+    a.titulo !== b.titulo ||
+    a.descricao !== b.descricao ||
+    a.status !== b.status ||
+    a.prioridade !== b.prioridade ||
+    a.em_teste !== b.em_teste ||
+    a.equipe_toda !== b.equipe_toda ||
+    a.data_prevista !== b.data_prevista ||
+    a.origem_importacao !== b.origem_importacao ||
+    a.demanda_id !== b.demanda_id
+  )
+    return false;
+  const ra = (a.responsaveis_ids ?? []) as string[];
+  const rb = (b.responsaveis_ids ?? []) as string[];
+  if (ra.length !== rb.length) return false;
+  for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return false;
+  return true;
+});
