@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import type { TarefaRow } from "@/lib/db-types";
@@ -13,9 +13,20 @@ export type ColabMini = { id: string; nome: string; cargo: string | null };
 export type DemandaMini = { id: string; titulo: string };
 export type LoteMini = { id: string; nome: string; tipo: string; total_tarefas: number; created_at: string };
 
+// Colunas usadas pelo Kanban / Lista / filtros. Evita `select('*')` e reduz payload.
+const TAREFA_COLUMNS =
+  "id,titulo,descricao,status,prioridade,em_teste,equipe_toda,data_prevista,concluida_em,demanda_id,origem_importacao,lote_importacao_id,responsavel_id,responsaveis_ids,criado_por,created_at,updated_at";
+
 /**
  * Centraliza as queries da página de Tarefas.
- * Mantém as mesmas queryKeys (`qk.tarefas.*`) para preservar invalidations existentes.
+ *
+ * Otimizações:
+ *  - Não roda mais o UPDATE de auto-encerramento dentro do queryFn (movido para a RPC
+ *    `auto_encerrar_tarefas_antigas`, chamada em background depois do primeiro render).
+ *  - Projeta apenas as colunas usadas pelo card/lista.
+ *  - Exclui tarefas encerradas do fetch principal (filtro de UI carrega sob demanda).
+ *  - `placeholderData: keepPreviousData` evita spinner ao voltar para a rota.
+ *  - Contagens (comentários/checklist/anexos) vêm de uma única RPC agregada.
  */
 export function useTarefasData() {
   const { data: colabs = [] } = useQuery<ColabMini[]>({
@@ -34,7 +45,7 @@ export function useTarefasData() {
 
   const { data: demandas = [] } = useQuery<DemandaMini[]>({
     queryKey: qk.tarefas.demandasMini(),
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("demanda")
@@ -46,7 +57,7 @@ export function useTarefasData() {
 
   const { data: lotes = [] } = useQuery<LoteMini[]>({
     queryKey: ["tarefas", "lotes"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data } = await supabase
         .from("todo_importacao_lote")
@@ -58,32 +69,17 @@ export function useTarefasData() {
 
   const { data: tarefas = [], isLoading } = useQuery<TarefaRow[]>({
     queryKey: qk.tarefas.all(),
-    staleTime: 30_000,
+    staleTime: 2 * 60_000,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      // Auto-encerra tarefas em aberto com mais de 5 meses.
-      const limite = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30 * 5).toISOString();
-      await supabase
-        .from("todo")
-        .update({ status: "encerrada" as never })
-        .lt("created_at", limite)
-        .in("status", [
-          "aberta",
-          "em_andamento",
-          "homologacao",
-          "aprovado",
-          "aprovado_ressalvas",
-          "reprovado",
-          "pendente",
-          "encaminhada",
-        ] as never);
-
       // Paginação manual para superar o limite padrão de 1000 linhas do PostgREST.
       const pageSize = 1000;
       const all: TarefaRow[] = [];
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("todo")
-          .select("*")
+          .select(TAREFA_COLUMNS)
+          .neq("status", "encerrada")
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;
@@ -95,42 +91,45 @@ export function useTarefasData() {
     },
   });
 
-  const { data: countsRaw = { coments: [], checks: [], anexos: [] } } = useQuery({
+  // Auto-encerramento de tarefas com mais de 5 meses: dispara em background,
+  // sem bloquear o render inicial. A RPC só é chamada uma vez por sessão.
+  const autoEncerrouRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoEncerrouRef.current) return;
+    if (isLoading) return;
+    autoEncerrouRef.current = true;
+    // Fire-and-forget; falha silenciosa (não-crítico).
+    setTimeout(() => {
+      supabase.rpc("auto_encerrar_tarefas_antigas").then(() => {});
+    }, 1500);
+  }, [isLoading]);
+
+  const { data: countsMap = {} } = useQuery<CountsMap>({
     queryKey: qk.tarefas.counts(),
-    staleTime: 30_000,
+    staleTime: 2 * 60_000,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const [coments, checks, anexos] = await Promise.all([
-        supabase.from("todo_comentario").select("todo_id"),
-        supabase.from("todo_checklist").select("todo_id, concluido"),
-        supabase.from("todo_anexo").select("todo_id"),
-      ]);
-      return {
-        coments: coments.data ?? [],
-        checks: checks.data ?? [],
-        anexos: anexos.data ?? [],
+      const { data, error } = await supabase.rpc("get_tarefa_counts");
+      if (error) throw error;
+      const m: CountsMap = {};
+      type Row = {
+        todo_id: string;
+        comentarios: number;
+        checklist_total: number;
+        checklist_done: number;
+        anexos: number;
       };
+      for (const r of (data ?? []) as Row[]) {
+        m[r.todo_id] = {
+          comentarios: Number(r.comentarios) || 0,
+          checklistTotal: Number(r.checklist_total) || 0,
+          checklistDone: Number(r.checklist_done) || 0,
+          anexos: Number(r.anexos) || 0,
+        };
+      }
+      return m;
     },
   });
-
-  const countsMap = React.useMemo<CountsMap>(() => {
-    const m: CountsMap = {};
-    const ensure = (id: string) => {
-      m[id] = m[id] ?? { comentarios: 0, checklistTotal: 0, checklistDone: 0, anexos: 0 };
-      return m[id];
-    };
-    countsRaw.coments.forEach((c: { todo_id: string }) => {
-      ensure(c.todo_id).comentarios++;
-    });
-    countsRaw.checks.forEach((c: { todo_id: string; concluido: boolean | null }) => {
-      const e = ensure(c.todo_id);
-      e.checklistTotal++;
-      if (c.concluido) e.checklistDone++;
-    });
-    countsRaw.anexos.forEach((a: { todo_id: string }) => {
-      ensure(a.todo_id).anexos++;
-    });
-    return m;
-  }, [countsRaw]);
 
   return { colabs, demandas, tarefas, lotes, isLoading, countsMap };
 }

@@ -115,7 +115,7 @@ export function TarefaKanban({
                         tarefa={t}
                         colabs={colabs}
                         selected={selectedIds.has(t.id)}
-                        onSelect={(c) => onToggleSelect(t.id, c)}
+                        onSelect={(c: boolean) => onToggleSelect(t.id, c)}
                         onOpen={() => onOpen(t)}
                         counts={countsMap[t.id] ?? { comentarios: 0, checklistTotal: 0, checklistDone: 0, anexos: 0 }}
                         hasDemanda={!!t.demanda_id}
