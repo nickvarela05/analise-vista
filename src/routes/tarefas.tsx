@@ -101,42 +101,74 @@ function Tarefas() {
     }
   }, [tarefas]); // eslint-disable-line
 
-  // KPIs com base no NOVO workflow.
-  // "Ativas" = todas as tarefas que NÃO estão encerradas.
+  // KPIs com base no NOVO workflow. Cálculo em uma única passada (reduce)
+  // para evitar 6 .filter() sobre o array filtrado.
   const counts = React.useMemo(() => {
-    const norm = filtered.map((t) => ({ ...t, _s: normalizeStatus(t.status) }));
-    return {
-      ativas: norm.filter((t) => t._s !== "encerrada").length,
-      encerradas: norm.filter((t) => t._s === "encerrada").length,
-      emTeste: norm.filter((t) => t.em_teste).length,
-      hml: norm.filter((t) => t._s === "homologacao").length,
-      aprovado: norm.filter((t) => t._s === "aprovado" || t._s === "aprovado_ressalvas").length,
-      producao: norm.filter((t) => t._s === "producao").length,
-    };
+    const acc = { ativas: 0, encerradas: 0, emTeste: 0, hml: 0, aprovado: 0, producao: 0 };
+    for (const t of filtered) {
+      const s = normalizeStatus(t.status);
+      if (s === "encerrada") acc.encerradas++; else acc.ativas++;
+      if (t.em_teste) acc.emTeste++;
+      if (s === "homologacao") acc.hml++;
+      if (s === "aprovado" || s === "aprovado_ressalvas") acc.aprovado++;
+      if (s === "producao") acc.producao++;
+    }
+    return acc;
   }, [filtered]);
+
+  /**
+   * Atualização otimista genérica em qk.tarefas.all().
+   * Aplica a mutação no cache imediatamente; em caso de erro do servidor,
+   * faz rollback restaurando o snapshot anterior.
+   */
+  const optimisticUpdate = async (
+    ids: string[],
+    patch: Partial<TarefaRow>,
+    serverCall: () => Promise<{ error: { message: string } | null }>,
+    errorMsg = "Erro ao atualizar",
+  ) => {
+    const key = qk.tarefas.all();
+    const previous = qc.getQueryData<TarefaRow[]>(key);
+    if (previous) {
+      const idSet = new Set(ids);
+      qc.setQueryData<TarefaRow[]>(
+        key,
+        previous.map((t) => (idSet.has(t.id) ? { ...t, ...patch } : t)),
+      );
+    }
+    const { error } = await serverCall();
+    if (error) {
+      if (previous) qc.setQueryData(key, previous); // rollback
+      toast.error(errorMsg, { description: error.message });
+      return false;
+    }
+    return true;
+  };
 
   const onDropStatus = async (id: string, status: string) => {
     const tarefa = tarefas.find((t) => t.id === id);
-    if (!tarefa) return;
-    const updates = {
+    if (!tarefa || tarefa.status === status) return;
+    const patch: Partial<TarefaRow> = {
       status: status as TarefaRow["status"],
       concluida_em: status === "producao" ? new Date().toISOString() : null,
     };
-    const { error } = await supabase.from("todo").update(updates).eq("id", id);
-    if (error) {
-      toast.error("Erro", { description: error.message });
-      return;
-    }
+    const ok = await optimisticUpdate([id], patch, () =>
+      supabase.from("todo").update(patch).eq("id", id),
+    );
+    if (!ok) return;
+    // Histórico em fire-and-forget — não bloqueia a UI.
     if (user) {
-      await supabase.from("todo_historico").insert({
-        todo_id: id,
-        autor_id: user.id,
-        campo: "status",
-        valor_antigo: tarefa.status,
-        valor_novo: status,
-      });
+      supabase
+        .from("todo_historico")
+        .insert({
+          todo_id: id,
+          autor_id: user.id,
+          campo: "status",
+          valor_antigo: tarefa.status,
+          valor_novo: status,
+        })
+        .then(() => {});
     }
-    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
   const toggleSelect = (id: string, checked: boolean) => {
@@ -152,54 +184,58 @@ function Tarefas() {
 
   const bulkUpdateStatus = async (status: string) => {
     const ids = Array.from(selectedIds);
-    const updates = {
+    const patch: Partial<TarefaRow> = {
       status: status as TarefaRow["status"],
       ...(status === "producao" ? { concluida_em: new Date().toISOString() } : {}),
     };
-    const { error } = await supabase.from("todo").update(updates).in("id", ids);
-    if (error) toast.error("Erro", { description: error.message });
-    else {
+    const ok = await optimisticUpdate(ids, patch, () =>
+      supabase.from("todo").update(patch).in("id", ids),
+    );
+    if (ok) {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
   const bulkUpdatePriority = async (prio: string) => {
     const ids = Array.from(selectedIds);
-    const { error } = await supabase
-      .from("todo")
-      .update({ prioridade: prio as never })
-      .in("id", ids);
-    if (error) toast.error("Erro", { description: error.message });
-    else {
+    const patch = { prioridade: prio as TarefaRow["prioridade"] };
+    const ok = await optimisticUpdate(ids, patch, () =>
+      supabase.from("todo").update(patch).in("id", ids),
+    );
+    if (ok) {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
   const bulkUpdateEmTeste = async (value: boolean) => {
     const ids = Array.from(selectedIds);
-    const { error } = await supabase.from("todo").update({ em_teste: value }).in("id", ids);
-    if (error) toast.error("Erro", { description: error.message });
-    else {
+    const ok = await optimisticUpdate(ids, { em_teste: value }, () =>
+      supabase.from("todo").update({ em_teste: value }).in("id", ids),
+    );
+    if (ok) {
       toast.success(`${ids.length} tarefa(s) ${value ? "marcadas" : "desmarcadas"} como em teste`);
       clearSelection();
-      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     }
   };
 
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!confirm(`Excluir ${ids.length} tarefa(s)?`)) return;
+    // Para delete, removemos do cache otimisticamente.
+    const key = qk.tarefas.all();
+    const previous = qc.getQueryData<TarefaRow[]>(key);
+    const idSet = new Set(ids);
+    if (previous) qc.setQueryData<TarefaRow[]>(key, previous.filter((t) => !idSet.has(t.id)));
     const { error } = await supabase.from("todo").delete().in("id", ids);
-    if (error) toast.error("Erro", { description: error.message });
-    else {
-      toast.success(`${ids.length} tarefa(s) removida(s)`);
-      clearSelection();
-      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+    if (error) {
+      if (previous) qc.setQueryData(key, previous);
+      toast.error("Erro", { description: error.message });
+      return;
     }
+    toast.success(`${ids.length} tarefa(s) removida(s)`);
+    clearSelection();
   };
 
   const selectAll = () => setSelectedIds(new Set(filtered.map((t) => t.id)));
