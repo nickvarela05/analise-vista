@@ -1241,6 +1241,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_encerrar_tarefas_antigas: { Args: never; Returns: number }
       enqueue_notificacao: {
         Args: {
           _link?: string
@@ -1254,6 +1255,16 @@ export type Database = {
       }
       executar_busca_natural: { Args: { _sql: string }; Returns: Json }
       gerar_notificacoes_prazo: { Args: never; Returns: undefined }
+      get_tarefa_counts: {
+        Args: never
+        Returns: {
+          anexos: number
+          checklist_done: number
+          checklist_total: number
+          comentarios: number
+          todo_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
