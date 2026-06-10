@@ -124,7 +124,7 @@ function Tarefas() {
   const optimisticUpdate = async (
     ids: string[],
     patch: Partial<TarefaRow>,
-    serverCall: () => PromiseLike<{ error: { message: string } | null }>,
+    serverCall: () => PromiseLike<{ error: { message: string } | null; data?: unknown }>,
     errorMsg = "Erro ao atualizar",
   ) => {
     const key = qk.tarefas.all();
