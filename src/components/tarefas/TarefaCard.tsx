@@ -40,7 +40,7 @@ const PRIO_BADGE: Record<string, string> = {
   baixa: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
 };
 
-export function TarefaCard({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda }: Props) {
+function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda }: Props) {
   const responsaveis = tarefa.equipe_toda
     ? colabs
     : colabs.filter((c) => (tarefa.responsaveis_ids ?? []).includes(c.id));
