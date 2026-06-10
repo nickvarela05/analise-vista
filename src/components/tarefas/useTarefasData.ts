@@ -100,9 +100,7 @@ export function useTarefasData() {
     autoEncerrouRef.current = true;
     // Fire-and-forget; falha silenciosa (não-crítico).
     setTimeout(() => {
-      (supabase.rpc as (name: string) => Promise<unknown>)(
-        "auto_encerrar_tarefas_antigas",
-      ).then(() => {});
+      supabase.rpc("auto_encerrar_tarefas_antigas").then(() => {});
     }, 1500);
   }, [isLoading]);
 
