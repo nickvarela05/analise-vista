@@ -1272,6 +1272,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      limpar_atribuicoes_finalizadas: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "gestor" | "analista"
