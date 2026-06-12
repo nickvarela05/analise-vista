@@ -232,7 +232,7 @@ type Solic = {
 
 const isPend = (s: string | null) => (s ?? "").toLowerCase() === "pendente";
 const isFeito = (s: string | null) => (s ?? "").toLowerCase() === "feito";
-const isEnv = (s: string | null) => (s ?? "").toLowerCase() === "enviado";
+const isAtivo = (s: string | null) => isPend(s) || isFeito(s);
 
 /** #10 Funil Pendente → Feito (apenas relatórios ativos) */
 export function computeFunilRelatorios(rows: Solic[]) {
