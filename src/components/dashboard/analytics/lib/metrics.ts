@@ -232,23 +232,22 @@ type Solic = {
 
 const isPend = (s: string | null) => (s ?? "").toLowerCase() === "pendente";
 const isFeito = (s: string | null) => (s ?? "").toLowerCase() === "feito";
-const isEnv = (s: string | null) => (s ?? "").toLowerCase() === "enviado";
+const isAtivo = (s: string | null) => isPend(s) || isFeito(s);
 
-/** #10 Funil Pendente → Feito → Enviado */
+/** #10 Funil Pendente → Feito (apenas relatórios ativos) */
 export function computeFunilRelatorios(rows: Solic[]) {
-  let p = 0, f = 0, e = 0;
+  let p = 0, f = 0;
   for (const r of rows) {
     if (isPend(r.status)) p++;
     else if (isFeito(r.status)) f++;
-    else if (isEnv(r.status)) e++;
   }
-  const tot = p + f + e || 1;
+  const tot = p + f || 1;
   return [
     { etapa: "Pendente", total: p, pct: Math.round((p / tot) * 100) },
     { etapa: "Feito", total: f, pct: Math.round((f / tot) * 100) },
-    { etapa: "Enviado", total: e, pct: Math.round((e / tot) * 100) },
   ];
 }
+
 
 /** #11 SLA por urgência: idade média (dias) das pendentes por urgência + total */
 export function computeSlaUrgencia(rows: Solic[], ref = new Date()) {
@@ -279,6 +278,8 @@ export function computeTopSolicitantes(rows: Solic[], days = 90, top = 8, ref = 
   for (const r of rows) {
     if (!r.criado_em) continue;
     if (new Date(r.criado_em) < limit) continue;
+    // Apenas relatórios ativos (Pendente ou Feito)
+    if (!isAtivo(r.status)) continue;
     // Considerar apenas solicitações de relatório (ignorar notificações e outras categorias)
     const cat = (r.categoria ?? "").toLowerCase();
     if (!cat.includes("solicit")) continue;
@@ -286,6 +287,7 @@ export function computeTopSolicitantes(rows: Solic[], days = 90, top = 8, ref = 
     if (!nome) continue;
     map.set(nome, (map.get(nome) ?? 0) + 1);
   }
+
   return Array.from(map.entries())
     .map(([nome, total]) => ({ nome, total }))
     .sort((a, b) => b.total - a.total)

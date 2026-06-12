@@ -452,14 +452,15 @@ function MiniDonut({ title, data }: { title: string; data: { name: string; value
  * ============================================================ */
 export function FunilRelatoriosCard({ solicitacoes }: { solicitacoes: Solic[] }) {
   const data = React.useMemo(() => computeFunilRelatorios(solicitacoes), [solicitacoes]);
-  const tones = ["var(--warning)", "var(--info)", "var(--success)"];
-  const labels = ["Recebido pela equipe", "Em produção", "Entregue ao cliente"];
+  const tones = ["var(--warning)", "var(--success)"];
+  const labels = ["Recebido pela equipe", "Pronto / em produção"];
   const total = data.reduce((s, x) => s + x.total, 0);
   return (
     <Panel
       title="Andamento dos relatórios"
-      hint="Acompanhamento do ciclo das solicitações de relatórios: pendentes (a fazer) → feitos (prontos) → enviados (entregues)."
+      hint="Relatórios ativos: pendentes (a fazer) e feitos (prontos). Enviados não entram na contagem."
     >
+
       {total === 0 ? (
         <Empty msg="Nenhuma solicitação registrada." />
       ) : (
