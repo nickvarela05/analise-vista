@@ -278,6 +278,8 @@ export function computeTopSolicitantes(rows: Solic[], days = 90, top = 8, ref = 
   for (const r of rows) {
     if (!r.criado_em) continue;
     if (new Date(r.criado_em) < limit) continue;
+    // Apenas relatórios ativos (Pendente ou Feito)
+    if (!isAtivo(r.status)) continue;
     // Considerar apenas solicitações de relatório (ignorar notificações e outras categorias)
     const cat = (r.categoria ?? "").toLowerCase();
     if (!cat.includes("solicit")) continue;
@@ -285,6 +287,7 @@ export function computeTopSolicitantes(rows: Solic[], days = 90, top = 8, ref = 
     if (!nome) continue;
     map.set(nome, (map.get(nome) ?? 0) + 1);
   }
+
   return Array.from(map.entries())
     .map(([nome, total]) => ({ nome, total }))
     .sort((a, b) => b.total - a.total)
