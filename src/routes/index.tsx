@@ -37,14 +37,10 @@ import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import {
-  VelocitySemanalCard,
-  ThroughputCard,
-  AgingBacklogCard,
-  TaxaReprovacaoCard,
-  CategoriaOrigemCard,
   FunilRelatoriosCard,
   TopSolicitantesCard,
 } from "@/components/dashboard/analytics/AnalyticsCards";
+
 
 export const Route = createFileRoute("/")({
   errorComponent: RouteErrorBoundary,
