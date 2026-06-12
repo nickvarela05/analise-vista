@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     const sql = await gerarSQL(pergunta, user.id);
     const validacao = validarSQL(sql);
     if (!validacao.ok) {
-      return new Response(JSON.stringify({ error: validacao.erro, sql_gerado: sql }), {
+      return new Response(JSON.stringify({ error: validacao.erro }), {
         status: 400, headers: { ...cors, "Content-Type": "application/json" },
       });
     }
@@ -122,10 +122,11 @@ Deno.serve(async (req) => {
     // executa via RPC seguro: vamos usar uma RPC dedicada que faz EXECUTE com SET ROLE authenticated
     const { data, error } = await userClient.rpc("executar_busca_natural", { _sql: sql });
     if (error) {
-      return new Response(JSON.stringify({ error: error.message, sql_gerado: sql }), {
+      return new Response(JSON.stringify({ error: "Falha ao executar consulta" }), {
         status: 400, headers: { ...cors, "Content-Type": "application/json" },
       });
     }
+
 
     return new Response(JSON.stringify({ pergunta, sql_gerado: sql, resultados: data }), {
       headers: { ...cors, "Content-Type": "application/json" },
