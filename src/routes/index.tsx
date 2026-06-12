@@ -11,9 +11,8 @@ import {
   
   Inbox,
   Users,
-  Gauge,
   // Activity removido (seção "Acompanhamento das tarefas" foi mesclada)
-  ShieldCheck,
+
   CalendarClock,
   UserCircle2,
 } from "lucide-react";
