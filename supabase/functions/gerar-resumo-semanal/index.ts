@@ -68,11 +68,23 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   return { texto, insights };
 }
 
+function isAuthorized(req: Request): boolean {
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  return token.length > 0 && token === SERVICE_KEY;
+}
+
 Deno.serve(async (req) => {
   const cors = corsFor(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors });
   }
+  if (!isAuthorized(req)) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403, headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
   const hoje = new Date();
   const semanaInicio = startOfWeek(new Date(hoje.getTime() - 7 * 86400000));
   const semanaFim = new Date(semanaInicio.getTime() + 6 * 86400000);
