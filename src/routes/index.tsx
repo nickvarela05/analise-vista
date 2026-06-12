@@ -199,14 +199,31 @@ function Dashboard() {
   );
 
   const atribuicoes = React.useMemo(
-    () =>
-      colaboradores
+    () => {
+      const tarefaAtiva = (t: { status: string | null; data_prevista?: string | null }) =>
+        !["encerrada", "concluida", "producao"].includes((t.status ?? "").toLowerCase()) &&
+        !(t.data_prevista && new Date(t.data_prevista) < new Date());
+      const demandaAtiva = (d: { status: string | null; prazo?: string | null }) =>
+        !["concluida", "cancelada"].includes((d.status ?? "").toLowerCase()) &&
+        !(d.prazo && new Date(d.prazo) < new Date());
+      const reuniaoAtiva = (r: { status?: string | null; data_reuniao?: string | null }) =>
+        !["realizada", "cancelada"].includes((r.status ?? "").toLowerCase()) &&
+        !(r.data_reuniao && new Date(r.data_reuniao) < new Date());
+      const chamadoAtivo = (c: { status: string | null }) =>
+        ["pendente", "feito"].includes((c.status ?? "").toLowerCase());
+
+      const tarefasAtivas = tarefas.filter(tarefaAtiva);
+      const demandasAtivas = demandas.filter(demandaAtiva);
+      const reunioesAtivas = reunioes.filter(reuniaoAtiva);
+      const chamadosAtivos = chamados.filter(chamadoAtivo);
+
+      return colaboradores
         .filter((c) => cargoElegivel(c.cargo))
         .map((c) => {
-          const tDoColab = contarAtribuicoes(tarefas, c.id);
-          const dDoColab = contarAtribuicoes(demandas, c.id);
-          const rDoColab = contarAtribuicoes(reunioes, c.id);
-          const relDoColab = contarAtribuicoes(chamados, c.id);
+          const tDoColab = contarAtribuicoes(tarefasAtivas, c.id);
+          const dDoColab = contarAtribuicoes(demandasAtivas, c.id);
+          const rDoColab = contarAtribuicoes(reunioesAtivas, c.id);
+          const relDoColab = contarAtribuicoes(chamadosAtivos, c.id);
           return {
             nome: c.nome.split(" ")[0],
             Tarefas: tDoColab,
@@ -215,9 +232,11 @@ function Dashboard() {
             Relatórios: relDoColab,
             Total: tDoColab + dDoColab + rDoColab + relDoColab,
           };
-        }),
+        });
+    },
     [colaboradores, tarefas, demandas, reunioes, chamados],
   );
+
 
   const atividades = React.useMemo<Atividade[]>(() => {
     const list: Atividade[] = [];
