@@ -408,30 +408,8 @@ function Dashboard() {
         <StatusTarefasPie data={pieTarefas} />
       </div>
 
-      {/* === PRODUTIVIDADE & BACKLOG === */}
-      <SectionHeader
-        title="Produtividade e backlog"
-        description="Quanto a equipe entrega e como está o acúmulo de tarefas."
-        icon={Gauge}
-        tone="emerald"
-      />
-      <div className="grid gap-4 lg:grid-cols-3">
-        <VelocitySemanalCard tarefas={tarefas} />
-        <ThroughputCard tarefas={tarefas} colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))} />
-        <AgingBacklogCard tarefas={tarefas} />
-      </div>
 
-      {/* === QUALIDADE & FLUXO === */}
-      <SectionHeader
-        title="Qualidade e fluxo"
-        description="Onde o processo trava ou perde qualidade."
-        icon={ShieldCheck}
-        tone="indigo"
-      />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <TaxaReprovacaoCard tarefas={tarefas} />
-        <CategoriaOrigemCard demandas={demandas} />
-      </div>
+
 
 
       {/* === AGENDA & PESSOAS === */}
