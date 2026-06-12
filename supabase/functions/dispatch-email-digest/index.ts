@@ -54,11 +54,24 @@ async function sendViaN8n(payload: { to: string; subject: string; html: string; 
   return { ok: res.ok, status: res.status, body: text.slice(0, 500) };
 }
 
+function isAuthorized(req: Request): boolean {
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  // só aceita chamadas com a service-role key (uso interno via cron / admin)
+  return token.length > 0 && token === SERVICE_KEY;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
+  if (!isAuthorized(req)) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403, headers: { "Content-Type": "application/json" },
+    });
+  }
 
   let mode = "imediato";
   try { const b = await req.json(); mode = b?.mode ?? "imediato"; } catch { /* noop */ }
+
 
   // Modo digest: consolida notificações não-enviadas das últimas 24h em 1 e-mail por user
   if (mode === "digest") {
