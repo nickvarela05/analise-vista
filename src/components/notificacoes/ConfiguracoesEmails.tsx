@@ -173,10 +173,19 @@ export function ConfiguracoesEmails() {
             {reprocessando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Reprocessar falhados
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={dispararResumoDiario}
+            disabled={disparandoResumo}
+            className="gap-2"
+          >
+            {disparandoResumo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Disparar resumo diário agora
+          </Button>
           <Button size="sm" variant="ghost" onClick={carregar} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
-        </div>
 
         {/* Log table */}
         <div className="overflow-hidden rounded-xl border">
