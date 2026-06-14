@@ -24,6 +24,7 @@ export function ConfiguracoesEmails() {
   const [stats, setStats] = React.useState({ sent7d: 0, pending: 0, failed: 0 });
   const [testando, setTestando] = React.useState(false);
   const [reprocessando, setReprocessando] = React.useState(false);
+  const [disparandoResumo, setDisparandoResumo] = React.useState(false);
 
   async function carregar() {
     setLoading(true);
