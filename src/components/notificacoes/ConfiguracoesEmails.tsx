@@ -186,6 +186,9 @@ export function ConfiguracoesEmails() {
           <Button size="sm" variant="ghost" onClick={carregar} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
+        </div>
+
+
 
         {/* Log table */}
         <div className="overflow-hidden rounded-xl border">
