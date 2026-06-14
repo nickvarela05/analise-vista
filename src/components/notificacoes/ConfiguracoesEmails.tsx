@@ -99,6 +99,20 @@ export function ConfiguracoesEmails() {
     }
   }
 
+  async function dispararResumoDiario() {
+    setDisparandoResumo(true);
+    try {
+      const { error } = await supabase.functions.invoke("dispatch-email-digest", { body: { mode: "resumo_diario" } });
+      if (error) throw error;
+      toast.success("Resumo diário enfileirado para todos os usuários elegíveis");
+      setTimeout(carregar, 2500);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally {
+      setDisparandoResumo(false);
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       {/* Header */}
