@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
     }
     console.log(`[resumo_diario] enfileirados: ${resumoEnqueued}`);
   }
-  try { const b = await req.json(); mode = b?.mode ?? "imediato"; } catch { /* noop */ }
+  
 
 
   // Modo digest: consolida notificações não-enviadas das últimas 24h em 1 e-mail por user
