@@ -1310,6 +1310,7 @@ export type Database = {
         | "aviso_critico"
         | "sistema"
         | "resumo_semanal"
+        | "relatorio_novo"
       reuniao_status: "agendada" | "realizada" | "cancelada"
       reuniao_tipo:
         | "interna"
@@ -1500,6 +1501,7 @@ export const Constants = {
         "aviso_critico",
         "sistema",
         "resumo_semanal",
+        "relatorio_novo",
       ],
       reuniao_status: ["agendada", "realizada", "cancelada"],
       reuniao_tipo: [

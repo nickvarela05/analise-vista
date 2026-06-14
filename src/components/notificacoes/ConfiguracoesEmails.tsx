@@ -24,6 +24,7 @@ export function ConfiguracoesEmails() {
   const [stats, setStats] = React.useState({ sent7d: 0, pending: 0, failed: 0 });
   const [testando, setTestando] = React.useState(false);
   const [reprocessando, setReprocessando] = React.useState(false);
+  const [disparandoResumo, setDisparandoResumo] = React.useState(false);
 
   async function carregar() {
     setLoading(true);
@@ -98,6 +99,20 @@ export function ConfiguracoesEmails() {
     }
   }
 
+  async function dispararResumoDiario() {
+    setDisparandoResumo(true);
+    try {
+      const { error } = await supabase.functions.invoke("dispatch-email-digest", { body: { mode: "resumo_diario" } });
+      if (error) throw error;
+      toast.success("Resumo diário enfileirado para todos os usuários elegíveis");
+      setTimeout(carregar, 2500);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally {
+      setDisparandoResumo(false);
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       {/* Header */}
@@ -158,10 +173,22 @@ export function ConfiguracoesEmails() {
             {reprocessando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             Reprocessar falhados
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={dispararResumoDiario}
+            disabled={disparandoResumo}
+            className="gap-2"
+          >
+            {disparandoResumo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Disparar resumo diário agora
+          </Button>
           <Button size="sm" variant="ghost" onClick={carregar} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
         </div>
+
+
 
         {/* Log table */}
         <div className="overflow-hidden rounded-xl border">
