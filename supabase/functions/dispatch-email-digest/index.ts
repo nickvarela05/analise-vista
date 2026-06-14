@@ -70,6 +70,131 @@ Deno.serve(async (req) => {
   }
 
   let mode = "imediato";
+  try { const b = await req.clone().json(); mode = b?.mode ?? mode; } catch { /* noop */ }
+
+  // ============================================================
+  // Modo resumo_diario: 1 e-mail por usuário com agenda do dia
+  // ============================================================
+  if (mode === "resumo_diario") {
+    const now = new Date();
+    const hoje = now.toISOString().slice(0, 10);
+    const amanha = new Date(now.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const em3dias = new Date(now.getTime() + 3 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+    const ontemISO = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+    const inicioDia = `${hoje}T00:00:00Z`;
+    const fimDia = `${hoje}T23:59:59Z`;
+
+    const { data: users } = await admin.from("profiles").select("user_id, email, nome");
+    let resumoEnqueued = 0;
+
+    for (const u of users ?? []) {
+      if (!u.email) continue;
+
+      // pref e-mail desativada para "sistema"? pula
+      const { data: pref } = await admin
+        .from("notificacao_preferencia")
+        .select("ativo")
+        .eq("user_id", u.user_id)
+        .eq("canal", "email")
+        .eq("evento", "sistema")
+        .maybeSingle();
+      if (pref?.ativo === false) continue;
+
+      // Demandas do dia
+      const { data: demandas } = await admin
+        .from("demanda")
+        .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
+        .eq("prazo", hoje)
+        .not("status", "in", "(concluida,cancelada)");
+      const minhasDemandas = (demandas ?? []).filter((d) =>
+        d.responsavel_id === u.user_id || (d.responsaveis_ids ?? []).includes(u.user_id)
+      );
+
+      // Reuniões do dia
+      const { data: reunioes } = await admin
+        .from("reuniao")
+        .select("id, titulo, data_reuniao, status, responsavel_id, responsaveis_ids, equipe_toda")
+        .gte("data_reuniao", inicioDia)
+        .lte("data_reuniao", fimDia)
+        .not("status", "in", "(realizada,cancelada)");
+      const minhasReunioes = (reunioes ?? []).filter((r) =>
+        r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true
+      );
+
+      // Tarefas em alerta: em_teste atrasada OU prazo até hoje+3
+      const { data: tarefas } = await admin
+        .from("todo")
+        .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
+        .not("status", "in", "(encerrada,concluida,producao,cancelada)")
+        .not("data_prevista", "is", null)
+        .lte("data_prevista", em3dias);
+      const minhasTarefas = (tarefas ?? []).filter((t) => {
+        const meu = t.responsavel_id === u.user_id || (t.responsaveis_ids ?? []).includes(u.user_id);
+        if (!meu) return false;
+        const emTesteAtrasada = t.em_teste === true && t.data_prevista < hoje;
+        const pertoPrazo = t.data_prevista <= em3dias;
+        return emTesteAtrasada || pertoPrazo;
+      });
+
+      // Relatórios criados nas últimas 24h
+      const { data: relatorios } = await admin
+        .from("chamado_externo")
+        .select("id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at")
+        .gte("created_at", ontemISO)
+        .neq("status", "finalizado");
+      const meusRelatorios = (relatorios ?? []).filter((r) =>
+        r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true
+      );
+
+      const total = minhasDemandas.length + minhasReunioes.length + minhasTarefas.length + meusRelatorios.length;
+      if (total === 0) continue;
+
+      const sec = (titulo: string, icone: string, items: string) =>
+        items ? `<h3 style="margin:18px 0 8px;color:#1f2937">${icone} ${titulo}</h3><ul style="list-style:none;padding:0;margin:0">${items}</ul>` : "";
+
+      const liDemanda = minhasDemandas.map((d) =>
+        `<li style="padding:10px;border-left:3px solid #f59e0b;background:#fffbeb;margin-bottom:8px"><b>${escapeHtml(d.titulo)}</b><div style="color:#666;font-size:13px">Prioridade: ${d.prioridade} · Status: ${d.status}</div></li>`
+      ).join("");
+      const liReuniao = minhasReunioes.map((r) =>
+        `<li style="padding:10px;border-left:3px solid #6366f1;background:#eef2ff;margin-bottom:8px"><b>${escapeHtml(r.titulo)}</b><div style="color:#666;font-size:13px">${new Date(r.data_reuniao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></li>`
+      ).join("");
+      const liTarefa = minhasTarefas.map((t) => {
+        const atrasada = t.em_teste && t.data_prevista < hoje;
+        const cor = atrasada ? "#ef4444" : "#10b981";
+        const bg = atrasada ? "#fef2f2" : "#ecfdf5";
+        const tag = atrasada ? " · ⚠️ Em teste atrasada" : "";
+        return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(t.titulo)}</b><div style="color:#666;font-size:13px">Prazo: ${t.data_prevista}${tag}</div></li>`;
+      }).join("");
+      const liRel = meusRelatorios.map((r) =>
+        `<li style="padding:10px;border-left:3px solid #0ea5e9;background:#f0f9ff;margin-bottom:8px"><b>${escapeHtml(r.codigo)} — ${escapeHtml(r.titulo ?? "")}</b><div style="color:#666;font-size:13px">${r.cliente ? "Cliente: " + escapeHtml(r.cliente) + " · " : ""}Prioridade: ${r.prioridade}${r.prazo ? " · Prazo: " + r.prazo : ""}</div></li>`
+      ).join("");
+
+      const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111">
+        <h2 style="color:#1f2937;margin-bottom:4px">☀️ Bom dia, ${escapeHtml(u.nome ?? "")}!</h2>
+        <p style="color:#555;margin-top:0">Resumo do seu dia — ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</p>
+        <p style="color:#374151"><b>${total}</b> item(ns) requerem sua atenção hoje:</p>
+        ${sec(`Demandas do dia (${minhasDemandas.length})`, "📌", liDemanda)}
+        ${sec(`Reuniões do dia (${minhasReunioes.length})`, "🗓️", liReuniao)}
+        ${sec(`Tarefas em alerta (${minhasTarefas.length})`, "✅", liTarefa)}
+        ${sec(`Novos relatórios (${meusRelatorios.length})`, "📄", liRel)}
+        <p style="color:#888;font-size:12px;margin-top:24px">Acesse o sistema para mais detalhes.</p>
+      </div>`;
+
+      const text = `Resumo do dia — ${total} item(ns).\n` +
+        `Demandas: ${minhasDemandas.length} · Reuniões: ${minhasReunioes.length} · Tarefas em alerta: ${minhasTarefas.length} · Relatórios: ${meusRelatorios.length}`;
+
+      await admin.from("email_send_log").insert({
+        user_id: u.user_id,
+        recipient_email: u.email,
+        subject: `☀️ Resumo do dia — ${new Date().toLocaleDateString("pt-BR")}`,
+        body_html: html,
+        body_text: text,
+        status: "pending",
+      });
+      resumoEnqueued++;
+    }
+    console.log(`[resumo_diario] enfileirados: ${resumoEnqueued}`);
+  }
   try { const b = await req.json(); mode = b?.mode ?? "imediato"; } catch { /* noop */ }
 
 
