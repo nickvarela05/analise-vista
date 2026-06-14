@@ -54,12 +54,16 @@ async function sendViaN8n(payload: { to: string; subject: string; html: string; 
   return { ok: res.ok, status: res.status, body: text.slice(0, 500) };
 }
 
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
 function isAuthorized(req: Request): boolean {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  // só aceita chamadas com a service-role key (uso interno via cron / admin)
-  return token.length > 0 && token === SERVICE_KEY;
+  // aceita service-role (admin/cron) ou anon key (chamadas autenticadas do frontend / cron interno)
+  if (token.length === 0) return false;
+  return token === SERVICE_KEY || (ANON_KEY.length > 0 && token === ANON_KEY);
 }
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
