@@ -720,6 +720,7 @@ export type Database = {
           id: string
           must_change_password: boolean
           nome: string
+          recebe_resumo_diario: boolean
           telefone: string | null
           updated_at: string
           user_id: string
@@ -733,6 +734,7 @@ export type Database = {
           id?: string
           must_change_password?: boolean
           nome: string
+          recebe_resumo_diario?: boolean
           telefone?: string | null
           updated_at?: string
           user_id: string
@@ -746,6 +748,7 @@ export type Database = {
           id?: string
           must_change_password?: boolean
           nome?: string
+          recebe_resumo_diario?: boolean
           telefone?: string | null
           updated_at?: string
           user_id?: string

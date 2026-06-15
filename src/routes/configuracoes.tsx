@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { PreferenciasNotificacao } from "@/components/notificacoes/PreferenciasNotificacao";
 import { ConfiguracoesEmails } from "@/components/notificacoes/ConfiguracoesEmails";
+import { DestinatariosResumoDiario } from "@/components/notificacoes/DestinatariosResumoDiario";
 import { ConfiguracoesIA } from "@/components/notificacoes/ConfiguracoesIA";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHero } from "@/components/shared/PageHero";
@@ -194,8 +195,9 @@ function Configuracoes() {
           <PreferenciasNotificacao />
         </TabsContent>
 
-        <TabsContent value="emails">
+        <TabsContent value="emails" className="space-y-4">
           <ConfiguracoesEmails />
+          <DestinatariosResumoDiario />
         </TabsContent>
 
         <TabsContent value="ia">
