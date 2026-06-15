@@ -88,11 +88,14 @@ Deno.serve(async (req) => {
     const inicioDia = `${hoje}T00:00:00Z`;
     const fimDia = `${hoje}T23:59:59Z`;
 
-    const { data: users } = await admin.from("profiles").select("user_id, email, nome");
+    const { data: users } = await admin
+      .from("profiles")
+      .select("user_id, email, nome, recebe_resumo_diario");
     let resumoEnqueued = 0;
 
     for (const u of users ?? []) {
       if (!u.email) continue;
+      if (u.recebe_resumo_diario === false) continue;
 
       // pref e-mail desativada para "sistema"? pula
       const { data: pref } = await admin
