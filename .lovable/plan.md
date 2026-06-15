@@ -1,63 +1,72 @@
-## Objetivo
+## 1. Avaliação do fluxo n8n
 
-Adicionar dois novos fluxos de e-mail reutilizando a infra existente (`email_send_log` + função `dispatch-email-digest` + webhook N8N):
+O fluxo está **funcionalmente correto**:
 
-1. **Resumo diário** enviado às **10h** para cada colaborador.
-2. **Alerta imediato** quando um relatório (chamado externo) é criado.
+```text
+Webhook (POST /email-digest, rawBody) → Validar HMAC (timingSafeEqual)
+   └─ válido → Send Email (SMTP) → Responder 200
+   └─ inválido → Responder 401
+```
 
-## 1. Resumo diário (10h)
+Bate exatamente com o que a Edge Function `dispatch-email-digest` envia:
+- POST JSON `{ to, subject, html, text }`
+- header `X-Signature` = HMAC-SHA256(body, `N8N_EMAIL_HMAC_SECRET`)
 
-Conteúdo por usuário (apenas itens onde ele é responsável):
+Pontos a corrigir/observar (não bloqueiam o funcionamento, mas vale ajustar no n8n):
 
-- **Demandas do dia** — `prazo = hoje` e status ativo
-- **Reuniões do dia** — `data_reuniao` entre hoje 00h e 23h59 e status ativo
-- **Tarefas em alerta** — qualquer uma destas:
-  - `em_teste = true` **e** `data_prevista < hoje` (em teste atrasada)
-  - `data_prevista` entre hoje e hoje+3 dias (perto do prazo) e status ativo
-- **Relatórios solicitados nas últimas 24h** — chamados externos com `criado_em >= ontem` e status `pendente`/`enviado`
+- **Segredo em código aberto.** O `SECRET` está hard-coded no nó "Validar HMAC". Mover para **Credentials → Header Auth / Env** do n8n e ler via `process.env.SISTEPLAN_HMAC_SECRET`. Se esse JSON vazar (export/print), o segredo vaza junto.
+- **Sem tratamento de erro do SMTP.** Hoje, se o SMTP falhar, o n8n responde com erro genérico e o `email_send_log` fica preso em `pending`/`failed` sem detalhe. Sugerido: adicionar branch `On Error` no nó SMTP → "Responder 500" com a mensagem do erro, para o backend marcar `failed` com `last_error`.
+- **Sem `text` fallback.** O nó SMTP só usa `html`. Bom incluir `text: $json.text` em Options → Text para clientes que bloqueiam HTML.
+- **Idempotência.** O fluxo não deduplica entregas. Se o backend reenfileirar (ex: cron retry), pode mandar 2x. Posso passar a incluir um `Message-Id` único no payload e usar nas headers do SMTP.
 
-E-mail é enviado **apenas se houver pelo menos um item** (sem spam de e-mail vazio).
+Nenhuma alteração no projeto Lovable é necessária para o fluxo — ele já funciona como está. Os ajustes acima são feitos dentro do próprio n8n.
 
-### Implementação
+## 2. Gestão de destinatários do resumo diário
 
-- Novo modo `mode: "resumo_diario"` em `supabase/functions/dispatch-email-digest/index.ts`:
-  - Itera `profiles` com e-mail válido
-  - Para cada um, consulta as 4 listas acima filtrando por `responsavel_id` ou `auth.uid() = ANY(responsaveis_ids)` (ou `equipe_toda` quando aplicável)
-  - Monta HTML em 4 seções com contadores, links diretos (`/tarefas?id=...`, `/demandas?id=...`, `/reunioes`, `/atividades`)
-  - Insere linha em `email_send_log` com `status='pending'` e envia na mesma execução
-- Cron job (via `supabase--insert` em `cron.job`): `0 13 * * *` UTC = **10h BRT**, chama a função com `Authorization: Bearer <service_role>` e `body: {mode:"resumo_diario"}`
+Hoje o resumo diário é enviado para **todos** os perfis com e-mail, salvo se o usuário tenha desativado a preferência `sistema/email`. Não há painel pra gestor controlar quem recebe.
 
-## 2. Alerta imediato de novo relatório
+### O que adicionar
 
-Quando um `chamado_externo` é inserido:
+**a) Coluna nova `recebe_resumo_diario` em `profiles`** (default `true`).
+- Gestor pode ler/atualizar essa coluna em qualquer perfil.
+- Usuário comum continua só com acesso ao próprio perfil.
 
-- Destinatários: `responsaveis_ids` + `responsavel_id`, OU **todos os colaboradores ativos** se `equipe_toda = true`
-- Enfileira notificação in-app (tipo novo `relatorio_novo`) e e-mail imediato (subject `[Novo relatório] <titulo>`)
+**b) Filtro novo no `dispatch-email-digest` (modo `resumo_diario`)**:
+- `from('profiles').select('user_id, email, nome, recebe_resumo_diario')`
+- pula quando `recebe_resumo_diario === false`.
+- A preferência individual em `notificacao_preferencia` (sistema/email) continua sendo respeitada como override do próprio usuário.
 
-### Implementação
+**c) Card novo em "Configurações → E-mails"** (somente gestor), abaixo do card "Envio de e-mails (N8N)":
 
-- Migração SQL:
-  - Novo valor no enum `notificacao_tipo`: `'relatorio_novo'`
-  - Função `notify_chamado_externo_criado()` (SECURITY DEFINER) acionada por trigger `AFTER INSERT` em `public.chamado_externo`
-  - Resolve destinatários conforme regra acima e chama `public.enqueue_notificacao(...)` para cada um
-  - Estende `public.enqueue_email_imediato` para reconhecer `'relatorio_novo'` como crítico (envio imediato), OU insere diretamente em `email_send_log`
-- O cron já existente de modo `imediato` (a cada 5min) garante despacho rápido; nada a fazer aí
+```text
+Destinatários do resumo diário
+┌─────────────────────────────────────────────────────────┐
+│  Buscar usuário…           [ Ativar todos ] [ Desativ. ]│
+├─────────────────────────────────────────────────────────┤
+│ ✓  Joana Silva     joana@…       [toggle ON ]           │
+│ ✓  Pedro Souza     pedro@…       [toggle ON ]           │
+│ ✗  Marcos Lima     marcos@…      [toggle OFF]           │
+└─────────────────────────────────────────────────────────┘
+N usuários · M recebem · K não recebem
+```
 
-## 3. Reforço no resumo (já coberto)
+- Lista paginada/scroll com busca por nome/e-mail.
+- Toggle individual chama update em `profiles.recebe_resumo_diario`.
+- Botões "Ativar todos" / "Desativar todos" (ação em lote).
+- Linha desabilitada (cinza) para perfis sem e-mail (não pode receber de qualquer forma).
 
-A seção "Relatórios solicitados nas últimas 24h" do resumo diário já cumpre o reforço pedido.
+### Arquivos afetados
 
-## 4. WhatsApp (futuro)
+- **Migration**:
+  - `ALTER TABLE public.profiles ADD COLUMN recebe_resumo_diario boolean NOT NULL DEFAULT true`
+  - Política nova de UPDATE em `profiles` permitindo `has_role(auth.uid(),'gestor')` alterar essa coluna em qualquer linha (ou ampliar política existente, dependendo do que já está em `profiles`).
+- **Edge function** `supabase/functions/dispatch-email-digest/index.ts`: filtrar `recebe_resumo_diario` no modo `resumo_diario`.
+- **Frontend**:
+  - Novo componente `src/components/notificacoes/DestinatariosResumoDiario.tsx`.
+  - Render dentro de `ConfiguracoesEmails.tsx` (somente quando `role === 'gestor'`).
+  - Queries via `@tanstack/react-query` + `supabase` direto (não precisa server fn — RLS gestor já protege).
 
-Fora do escopo agora. Quando entrar, o caminho será: adicionar canal `whatsapp` em `notificacao_preferencia`, criar tabela/fila análoga a `email_send_log` e dispatcher próprio chamando o webhook N8N do WhatsApp. Apenas registro do plano — sem código nesta entrega.
+### Fora de escopo
 
-## Arquivos / mudanças
-
-- `supabase/functions/dispatch-email-digest/index.ts` — novo modo `resumo_diario` + helper de query por usuário
-- Migração: enum `relatorio_novo`, trigger `chamado_externo_after_insert_notify`, função `notify_chamado_externo_criado`
-- Cron: agendar `resumo-diario-10h` (`0 13 * * *` UTC)
-
-## Validação
-
-- Disparar manualmente `dispatch-email-digest` com `mode:"resumo_diario"` via console gestor (botão de teste) e conferir `email_send_log`
-- Criar um chamado externo de teste e conferir nova linha pendente em `email_send_log` + notificação in-app
+- Notificações WhatsApp (já marcadas como próximo passo).
+- Mudanças no próprio fluxo n8n — fica como recomendação acima.
