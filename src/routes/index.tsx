@@ -408,7 +408,7 @@ function Dashboard() {
         tone="amber"
       />
       <div className="grid gap-4 lg:grid-cols-2">
-        <FunilRelatoriosCard solicitacoes={solicitacoes} />
+        <FunilRelatoriosCard solicitacoes={solicitacoes} inativosIds={inativosIds} />
         <TopSolicitantesCard solicitacoes={solicitacoes} />
       </div>
 
