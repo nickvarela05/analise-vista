@@ -194,8 +194,9 @@ function Configuracoes() {
           <PreferenciasNotificacao />
         </TabsContent>
 
-        <TabsContent value="emails">
+        <TabsContent value="emails" className="space-y-4">
           <ConfiguracoesEmails />
+          <DestinatariosResumoDiario />
         </TabsContent>
 
         <TabsContent value="ia">
