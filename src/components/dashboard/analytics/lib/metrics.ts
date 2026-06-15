@@ -222,29 +222,42 @@ export function computeCategoriaOrigem(demandas: DemandaRow[]) {
 }
 
 type Solic = {
+  id?: string;
   status: string | null;
   urgencia: string | null;
   criado_em: string | null;
   prazo: string | null;
   solicitante_nome: string | null;
+  solicitante_email?: string | null;
   categoria: string | null;
 };
 
 const isPend = (s: string | null) => (s ?? "").toLowerCase() === "pendente";
 const isFeito = (s: string | null) => (s ?? "").toLowerCase() === "feito";
+const isEnviado = (s: string | null) => (s ?? "").toLowerCase() === "enviado";
 const isAtivo = (s: string | null) => isPend(s) || isFeito(s);
 
-/** #10 Funil Pendente → Feito (apenas relatórios ativos) */
-export function computeFunilRelatorios(rows: Solic[]) {
-  let p = 0, f = 0;
+const isGoogleSolicitante = (r: Solic) => {
+  const nome = (r.solicitante_nome ?? "").toLowerCase();
+  const email = (r.solicitante_email ?? "").toLowerCase();
+  return nome === "google" || nome.includes("google") || /@(.*\.)?google\.com$/.test(email);
+};
+
+/** #10 Funil: Pendente / Feito (apenas ATIVOS) + Enviados */
+export function computeFunilRelatorios(rows: Solic[], inativosIds: Set<string> = new Set()) {
+  let p = 0, f = 0, e = 0;
   for (const r of rows) {
+    if (isEnviado(r.status)) { e++; continue; }
+    const inativoManual = r.id ? inativosIds.has(r.id) : false;
+    if (inativoManual || isGoogleSolicitante(r)) continue;
     if (isPend(r.status)) p++;
     else if (isFeito(r.status)) f++;
   }
-  const tot = p + f || 1;
+  const tot = p + f + e || 1;
   return [
     { etapa: "Pendente", total: p, pct: Math.round((p / tot) * 100) },
     { etapa: "Feito", total: f, pct: Math.round((f / tot) * 100) },
+    { etapa: "Enviado", total: e, pct: Math.round((e / tot) * 100) },
   ];
 }
 
