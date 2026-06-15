@@ -90,7 +90,7 @@ function Dashboard() {
         .from("relatorio_inativo")
         .select("solicitacao_id");
       if (error) throw error;
-      return (data ?? []).map((r) => r.solicitacao_id);
+      return (data ?? []).map((r: { solicitacao_id: string }) => r.solicitacao_id);
     },
   });
   const inativosIds = React.useMemo(
