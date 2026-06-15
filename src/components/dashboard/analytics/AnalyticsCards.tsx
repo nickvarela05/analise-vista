@@ -450,15 +450,24 @@ function MiniDonut({ title, data }: { title: string; data: { name: string; value
 /* ============================================================
  * #10 Funil de relatórios
  * ============================================================ */
-export function FunilRelatoriosCard({ solicitacoes }: { solicitacoes: Solic[] }) {
-  const data = React.useMemo(() => computeFunilRelatorios(solicitacoes), [solicitacoes]);
-  const tones = ["var(--warning)", "var(--success)"];
-  const labels = ["Recebido pela equipe", "Pronto / em produção"];
+export function FunilRelatoriosCard({
+  solicitacoes,
+  inativosIds,
+}: {
+  solicitacoes: Solic[];
+  inativosIds?: Set<string>;
+}) {
+  const data = React.useMemo(
+    () => computeFunilRelatorios(solicitacoes, inativosIds),
+    [solicitacoes, inativosIds],
+  );
+  const tones = ["var(--warning)", "var(--success)", "var(--primary)"];
+  const labels = ["Recebido pela equipe", "Pronto / em produção", "Entregue ao solicitante"];
   const total = data.reduce((s, x) => s + x.total, 0);
   return (
     <Panel
       title="Andamento dos relatórios"
-      hint="Relatórios ativos: pendentes (a fazer) e feitos (prontos). Enviados não entram na contagem."
+      hint="Pendente e Feito contam apenas relatórios ATIVOS (inativados manualmente ou de solicitante Google ficam de fora). Enviados são exibidos à parte."
     >
 
       {total === 0 ? (
