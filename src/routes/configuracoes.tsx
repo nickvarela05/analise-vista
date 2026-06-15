@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { PreferenciasNotificacao } from "@/components/notificacoes/PreferenciasNotificacao";
 import { ConfiguracoesEmails } from "@/components/notificacoes/ConfiguracoesEmails";
+import { DestinatariosResumoDiario } from "@/components/notificacoes/DestinatariosResumoDiario";
 import { ConfiguracoesIA } from "@/components/notificacoes/ConfiguracoesIA";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHero } from "@/components/shared/PageHero";
