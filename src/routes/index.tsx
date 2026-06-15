@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { qk } from "@/lib/queries/keys";
 
 import { MinhasAtribuicoesPainel } from "@/components/dashboard/MinhasAtribuicoesPainel";
 import { MinhasAtribuicoesDialog } from "@/components/dashboard/MinhasAtribuicoesDialog";
@@ -77,6 +80,24 @@ function Dashboard() {
     solicitacoes,
     loading,
   } = useDashboardData(user?.id);
+
+  // IDs de relatórios inativados manualmente (vindos de relatorio_inativo)
+  const inativosQuery = useQuery({
+    queryKey: qk.relatorios.inativos(),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relatorio_inativo")
+        .select("solicitacao_id");
+      if (error) throw error;
+      return (data ?? []).map((r: { solicitacao_id: string }) => r.solicitacao_id);
+    },
+  });
+  const inativosIds = React.useMemo(
+    () => new Set(inativosQuery.data ?? []),
+    [inativosQuery.data],
+  );
+
 
   const meuColabId = meuProfile?.colaborador_id ?? null;
 
@@ -387,7 +408,7 @@ function Dashboard() {
         tone="amber"
       />
       <div className="grid gap-4 lg:grid-cols-2">
-        <FunilRelatoriosCard solicitacoes={solicitacoes} />
+        <FunilRelatoriosCard solicitacoes={solicitacoes} inativosIds={inativosIds} />
         <TopSolicitantesCard solicitacoes={solicitacoes} />
       </div>
 
