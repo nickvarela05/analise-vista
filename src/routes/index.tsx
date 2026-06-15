@@ -78,6 +78,24 @@ function Dashboard() {
     loading,
   } = useDashboardData(user?.id);
 
+  // IDs de relatórios inativados manualmente (vindos de relatorio_inativo)
+  const inativosQuery = useQuery({
+    queryKey: qk.relatorios.inativos(),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("relatorio_inativo")
+        .select("solicitacao_id");
+      if (error) throw error;
+      return (data ?? []).map((r) => r.solicitacao_id);
+    },
+  });
+  const inativosIds = React.useMemo(
+    () => new Set(inativosQuery.data ?? []),
+    [inativosQuery.data],
+  );
+
+
   const meuColabId = meuProfile?.colaborador_id ?? null;
 
   const colabById = React.useMemo(() => {
