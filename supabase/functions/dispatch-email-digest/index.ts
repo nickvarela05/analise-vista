@@ -19,16 +19,24 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
     ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
-function buildDigestHtml(rows: Array<{ titulo: string; mensagem: string | null; tipo: string; created_at: string; link: string | null }>) {
-  const items = rows.map((r) => `
+function buildDigestHtml(
+  rows: Array<{ titulo: string; mensagem: string | null; tipo: string; created_at: string; link: string | null }>,
+) {
+  const items = rows
+    .map(
+      (r) => `
     <li style="margin-bottom:12px;padding:12px;border-left:3px solid #4f46e5;background:#f9fafb">
       <strong style="color:#111">${escapeHtml(r.titulo)}</strong>
       <div style="color:#555;font-size:14px;margin-top:4px">${escapeHtml(r.mensagem ?? "")}</div>
       <div style="color:#888;font-size:12px;margin-top:4px">${new Date(r.created_at).toLocaleString("pt-BR")}</div>
-    </li>`).join("");
+    </li>`,
+    )
+    .join("");
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
     <h2 style="color:#1f2937">📋 Resumo de notificações</h2>
     <p style="color:#555">Você tem ${rows.length} notificações desde ontem:</p>
@@ -38,16 +46,20 @@ function buildDigestHtml(rows: Array<{ titulo: string; mensagem: string | null; 
 }
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-async function sendViaN8n(payload: { to: string; subject: string; html: string; text: string }): Promise<{ ok: boolean; status: number; body: string }> {
+async function sendViaN8n(payload: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<{ ok: boolean; status: number; body: string }> {
   if (!N8N_URL) return { ok: false, status: 0, body: "N8N_EMAIL_WEBHOOK_URL não configurado" };
   const body = JSON.stringify(payload);
-  const sig = N8N_SECRET ? await hmacSha256Hex(N8N_SECRET, body) : "";
   const res = await fetch(N8N_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Signature": sig },
+    headers: { "Content-Type": "application/json", "x-webhook-secret": N8N_SECRET },
     body,
   });
   const text = await res.text().catch(() => "");
@@ -57,18 +69,22 @@ async function sendViaN8n(payload: { to: string; subject: string; html: string; 
   try {
     const json = JSON.parse(text);
     confirmed = json?.success === true || json?.ok === true;
-  } catch { /* body não-JSON */ }
+  } catch {
+    /* body não-JSON */
+  }
   return {
     ok: res.ok && confirmed,
     status: res.status,
-    body: confirmed ? text.slice(0, 500) : (text.slice(0, 400) || "N8N respondeu 200 sem flag de sucesso"),
+    body: confirmed ? text.slice(0, 500) : text.slice(0, 400) || "N8N respondeu 200 sem flag de sucesso",
   };
 }
 
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 const PUBLISHABLE_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
 const PUBLISHABLE_KEYS = (Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") ?? "")
-  .split(",").map((s) => s.trim()).filter(Boolean);
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 function isAuthorized(req: Request): boolean {
   const auth = req.headers.get("Authorization") ?? "";
@@ -87,21 +103,28 @@ function isAuthorized(req: Request): boolean {
         return true;
       }
     }
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
   return false;
 }
-
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
   if (!isAuthorized(req)) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403, headers: { "Content-Type": "application/json" },
+      status: 403,
+      headers: { "Content-Type": "application/json" },
     });
   }
 
   let mode = "imediato";
-  try { const b = await req.clone().json(); mode = b?.mode ?? mode; } catch { /* noop */ }
+  try {
+    const b = await req.clone().json();
+    mode = b?.mode ?? mode;
+  } catch {
+    /* noop */
+  }
 
   // ============================================================
   // Modo resumo_diario: 1 e-mail por usuário com agenda do dia
@@ -115,9 +138,7 @@ Deno.serve(async (req) => {
     const inicioDia = `${hoje}T00:00:00Z`;
     const fimDia = `${hoje}T23:59:59Z`;
 
-    const { data: users } = await admin
-      .from("profiles")
-      .select("user_id, email, nome, recebe_resumo_diario");
+    const { data: users } = await admin.from("profiles").select("user_id, email, nome, recebe_resumo_diario");
     let resumoEnqueued = 0;
 
     for (const u of users ?? []) {
@@ -140,8 +161,8 @@ Deno.serve(async (req) => {
         .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
         .eq("prazo", hoje)
         .not("status", "in", "(concluida,cancelada)");
-      const minhasDemandas = (demandas ?? []).filter((d) =>
-        d.responsavel_id === u.user_id || (d.responsaveis_ids ?? []).includes(u.user_id)
+      const minhasDemandas = (demandas ?? []).filter(
+        (d) => d.responsavel_id === u.user_id || (d.responsaveis_ids ?? []).includes(u.user_id),
       );
 
       // Reuniões do dia
@@ -151,8 +172,9 @@ Deno.serve(async (req) => {
         .gte("data_reuniao", inicioDia)
         .lte("data_reuniao", fimDia)
         .not("status", "in", "(realizada,cancelada)");
-      const minhasReunioes = (reunioes ?? []).filter((r) =>
-        r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true
+      const minhasReunioes = (reunioes ?? []).filter(
+        (r) =>
+          r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true,
       );
 
       // Tarefas em alerta: em_teste atrasada OU prazo até hoje+3
@@ -173,35 +195,51 @@ Deno.serve(async (req) => {
       // Relatórios criados nas últimas 24h
       const { data: relatorios } = await admin
         .from("chamado_externo")
-        .select("id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at")
+        .select(
+          "id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at",
+        )
         .gte("created_at", ontemISO)
         .neq("status", "finalizado");
-      const meusRelatorios = (relatorios ?? []).filter((r) =>
-        r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true
+      const meusRelatorios = (relatorios ?? []).filter(
+        (r) =>
+          r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true,
       );
 
       const total = minhasDemandas.length + minhasReunioes.length + minhasTarefas.length + meusRelatorios.length;
       if (total === 0) continue;
 
       const sec = (titulo: string, icone: string, items: string) =>
-        items ? `<h3 style="margin:18px 0 8px;color:#1f2937">${icone} ${titulo}</h3><ul style="list-style:none;padding:0;margin:0">${items}</ul>` : "";
+        items
+          ? `<h3 style="margin:18px 0 8px;color:#1f2937">${icone} ${titulo}</h3><ul style="list-style:none;padding:0;margin:0">${items}</ul>`
+          : "";
 
-      const liDemanda = minhasDemandas.map((d) =>
-        `<li style="padding:10px;border-left:3px solid #f59e0b;background:#fffbeb;margin-bottom:8px"><b>${escapeHtml(d.titulo)}</b><div style="color:#666;font-size:13px">Prioridade: ${d.prioridade} · Status: ${d.status}</div></li>`
-      ).join("");
-      const liReuniao = minhasReunioes.map((r) =>
-        `<li style="padding:10px;border-left:3px solid #6366f1;background:#eef2ff;margin-bottom:8px"><b>${escapeHtml(r.titulo)}</b><div style="color:#666;font-size:13px">${new Date(r.data_reuniao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></li>`
-      ).join("");
-      const liTarefa = minhasTarefas.map((t) => {
-        const atrasada = t.em_teste && t.data_prevista < hoje;
-        const cor = atrasada ? "#ef4444" : "#10b981";
-        const bg = atrasada ? "#fef2f2" : "#ecfdf5";
-        const tag = atrasada ? " · ⚠️ Em teste atrasada" : "";
-        return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(t.titulo)}</b><div style="color:#666;font-size:13px">Prazo: ${t.data_prevista}${tag}</div></li>`;
-      }).join("");
-      const liRel = meusRelatorios.map((r) =>
-        `<li style="padding:10px;border-left:3px solid #0ea5e9;background:#f0f9ff;margin-bottom:8px"><b>${escapeHtml(r.codigo)} — ${escapeHtml(r.titulo ?? "")}</b><div style="color:#666;font-size:13px">${r.cliente ? "Cliente: " + escapeHtml(r.cliente) + " · " : ""}Prioridade: ${r.prioridade}${r.prazo ? " · Prazo: " + r.prazo : ""}</div></li>`
-      ).join("");
+      const liDemanda = minhasDemandas
+        .map(
+          (d) =>
+            `<li style="padding:10px;border-left:3px solid #f59e0b;background:#fffbeb;margin-bottom:8px"><b>${escapeHtml(d.titulo)}</b><div style="color:#666;font-size:13px">Prioridade: ${d.prioridade} · Status: ${d.status}</div></li>`,
+        )
+        .join("");
+      const liReuniao = minhasReunioes
+        .map(
+          (r) =>
+            `<li style="padding:10px;border-left:3px solid #6366f1;background:#eef2ff;margin-bottom:8px"><b>${escapeHtml(r.titulo)}</b><div style="color:#666;font-size:13px">${new Date(r.data_reuniao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></li>`,
+        )
+        .join("");
+      const liTarefa = minhasTarefas
+        .map((t) => {
+          const atrasada = t.em_teste && t.data_prevista < hoje;
+          const cor = atrasada ? "#ef4444" : "#10b981";
+          const bg = atrasada ? "#fef2f2" : "#ecfdf5";
+          const tag = atrasada ? " · ⚠️ Em teste atrasada" : "";
+          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(t.titulo)}</b><div style="color:#666;font-size:13px">Prazo: ${t.data_prevista}${tag}</div></li>`;
+        })
+        .join("");
+      const liRel = meusRelatorios
+        .map(
+          (r) =>
+            `<li style="padding:10px;border-left:3px solid #0ea5e9;background:#f0f9ff;margin-bottom:8px"><b>${escapeHtml(r.codigo)} — ${escapeHtml(r.titulo ?? "")}</b><div style="color:#666;font-size:13px">${r.cliente ? "Cliente: " + escapeHtml(r.cliente) + " · " : ""}Prioridade: ${r.prioridade}${r.prazo ? " · Prazo: " + r.prazo : ""}</div></li>`,
+        )
+        .join("");
 
       const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111">
         <h2 style="color:#1f2937;margin-bottom:4px">☀️ Bom dia, ${escapeHtml(u.nome ?? "")}!</h2>
@@ -214,7 +252,8 @@ Deno.serve(async (req) => {
         <p style="color:#888;font-size:12px;margin-top:24px">Acesse o sistema para mais detalhes.</p>
       </div>`;
 
-      const text = `Resumo do dia — ${total} item(ns).\n` +
+      const text =
+        `Resumo do dia — ${total} item(ns).\n` +
         `Demandas: ${minhasDemandas.length} · Reuniões: ${minhasReunioes.length} · Tarefas em alerta: ${minhasTarefas.length} · Relatórios: ${meusRelatorios.length}`;
 
       await admin.from("email_send_log").insert({
@@ -229,15 +268,11 @@ Deno.serve(async (req) => {
     }
     console.log(`[resumo_diario] enfileirados: ${resumoEnqueued}`);
   }
-  
-
 
   // Modo digest: consolida notificações não-enviadas das últimas 24h em 1 e-mail por user
   if (mode === "digest") {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data: users } = await admin
-      .from("profiles")
-      .select("user_id, email, nome");
+    const { data: users } = await admin.from("profiles").select("user_id, email, nome");
 
     let enqueued = 0;
     for (const u of users ?? []) {
@@ -283,7 +318,9 @@ Deno.serve(async (req) => {
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
         recipient_email: u.email,
-        subject, body_html: html, body_text: text,
+        subject,
+        body_html: html,
+        body_text: text,
         notificacao_ids: novos.map((n) => n.id),
         status: "pending",
       });
@@ -303,7 +340,9 @@ Deno.serve(async (req) => {
     .order("created_at", { ascending: true })
     .limit(50);
 
-  let sent = 0, failed = 0, skipped = 0;
+  let sent = 0,
+    failed = 0,
+    skipped = 0;
   for (const e of pendentes ?? []) {
     if (!N8N_URL) {
       // sem webhook configurado: marca como skipped (continua na fila)
@@ -317,21 +356,27 @@ Deno.serve(async (req) => {
       text: e.body_text ?? "",
     });
     if (result.ok) {
-      await admin.from("email_send_log").update({
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        attempts: (e.attempts ?? 0) + 1,
-        webhook_response: { status: result.status, body: result.body },
-      }).eq("id", e.id);
+      await admin
+        .from("email_send_log")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          attempts: (e.attempts ?? 0) + 1,
+          webhook_response: { status: result.status, body: result.body },
+        })
+        .eq("id", e.id);
       sent++;
     } else {
       const newAttempts = (e.attempts ?? 0) + 1;
-      await admin.from("email_send_log").update({
-        status: newAttempts >= 5 ? "failed" : "pending",
-        attempts: newAttempts,
-        last_error: `HTTP ${result.status}: ${result.body}`,
-        webhook_response: { status: result.status, body: result.body },
-      }).eq("id", e.id);
+      await admin
+        .from("email_send_log")
+        .update({
+          status: newAttempts >= 5 ? "failed" : "pending",
+          attempts: newAttempts,
+          last_error: `HTTP ${result.status}: ${result.body}`,
+          webhook_response: { status: result.status, body: result.body },
+        })
+        .eq("id", e.id);
       failed++;
     }
   }
