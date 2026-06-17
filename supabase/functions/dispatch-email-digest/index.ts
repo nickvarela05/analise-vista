@@ -59,7 +59,7 @@ async function sendViaN8n(payload: {
   const body = JSON.stringify(payload);
   const res = await fetch(N8N_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-webhook-secret": N8N_SECRET },
+    headers: { "Content-Type": "application/json", "x-webhook-secret": N8N_EMAIL_HMAC_SECRET },
     body,
   });
   const text = await res.text().catch(() => "");
