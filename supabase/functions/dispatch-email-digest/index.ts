@@ -59,12 +59,13 @@ async function sendViaN8n(payload: {
   const body = JSON.stringify(payload);
   const res = await fetch(N8N_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-webhook-secret": N8N_EMAIL_HMAC_SECRET },
+    headers: {
+      "Content-Type": "application/json",
+      "x-webhook-secret": N8N_SECRET, // ← era "x-signature" com hash HMAC
+    },
     body,
   });
   const text = await res.text().catch(() => "");
-  // Só consideramos sucesso se o N8N confirmar explicitamente { success: true } ou { ok: true }.
-  // Um HTTP 200 com body vazio normalmente significa que o workflow respondeu antes do SMTP rodar.
   let confirmed = false;
   try {
     const json = JSON.parse(text);
