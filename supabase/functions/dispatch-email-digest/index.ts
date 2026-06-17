@@ -1,4 +1,4 @@
-// Processa fila de e-mails pendentes e envia via webhook N8N (com HMAC).
+// Processa fila de e-mails pendentes e envia via webhook N8N (secret direto, sem HMAC).
 // Modo "imediato" (cada 5min): envia tudo que está pending agora.
 // Modo "digest" (8h diário): consolida notificações não enviadas das últimas 24h em 1 e-mail por usuário.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -9,20 +9,6 @@ const N8N_URL = Deno.env.get("N8N_EMAIL_WEBHOOK_URL") ?? "";
 const N8N_SECRET = Deno.env.get("N8N_EMAIL_HMAC_SECRET") ?? "";
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-
-async function hmacSha256Hex(secret: string, data: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 function buildDigestHtml(
   rows: Array<{ titulo: string; mensagem: string | null; tipo: string; created_at: string; link: string | null }>,
@@ -61,7 +47,7 @@ async function sendViaN8n(payload: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-webhook-secret": N8N_SECRET, // ← era "x-signature" com hash HMAC
+      "x-webhook-secret": N8N_SECRET, // secret puro, sem HMAC
     },
     body,
   });
@@ -95,7 +81,6 @@ function isAuthorized(req: Request): boolean {
   if (ANON_KEY && token === ANON_KEY) return true;
   if (PUBLISHABLE_KEY && token === PUBLISHABLE_KEY) return true;
   if (PUBLISHABLE_KEYS.includes(token)) return true;
-  // fallback: aceita qualquer JWT assinado pela mesma issuer do projeto (cron interno)
   try {
     const [, payloadB64] = token.split(".");
     if (payloadB64) {
@@ -128,12 +113,11 @@ Deno.serve(async (req) => {
   }
 
   // ============================================================
-  // Modo resumo_diario: 1 e-mail por usuário com agenda do dia
+  // Modo resumo_diario
   // ============================================================
   if (mode === "resumo_diario") {
     const now = new Date();
     const hoje = now.toISOString().slice(0, 10);
-    const amanha = new Date(now.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
     const em3dias = new Date(now.getTime() + 3 * 24 * 3600 * 1000).toISOString().slice(0, 10);
     const ontemISO = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
     const inicioDia = `${hoje}T00:00:00Z`;
@@ -146,7 +130,6 @@ Deno.serve(async (req) => {
       if (!u.email) continue;
       if (u.recebe_resumo_diario === false) continue;
 
-      // pref e-mail desativada para "sistema"? pula
       const { data: pref } = await admin
         .from("notificacao_preferencia")
         .select("ativo")
@@ -156,7 +139,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (pref?.ativo === false) continue;
 
-      // Demandas do dia
       const { data: demandas } = await admin
         .from("demanda")
         .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
@@ -166,7 +148,6 @@ Deno.serve(async (req) => {
         (d) => d.responsavel_id === u.user_id || (d.responsaveis_ids ?? []).includes(u.user_id),
       );
 
-      // Reuniões do dia
       const { data: reunioes } = await admin
         .from("reuniao")
         .select("id, titulo, data_reuniao, status, responsavel_id, responsaveis_ids, equipe_toda")
@@ -178,7 +159,6 @@ Deno.serve(async (req) => {
           r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true,
       );
 
-      // Tarefas em alerta: em_teste atrasada OU prazo até hoje+3
       const { data: tarefas } = await admin
         .from("todo")
         .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
@@ -193,7 +173,6 @@ Deno.serve(async (req) => {
         return emTesteAtrasada || pertoPrazo;
       });
 
-      // Relatórios criados nas últimas 24h
       const { data: relatorios } = await admin
         .from("chamado_externo")
         .select(
@@ -270,7 +249,9 @@ Deno.serve(async (req) => {
     console.log(`[resumo_diario] enfileirados: ${resumoEnqueued}`);
   }
 
-  // Modo digest: consolida notificações não-enviadas das últimas 24h em 1 e-mail por user
+  // ============================================================
+  // Modo digest
+  // ============================================================
   if (mode === "digest") {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: users } = await admin.from("profiles").select("user_id, email, nome");
@@ -279,7 +260,6 @@ Deno.serve(async (req) => {
     for (const u of users ?? []) {
       if (!u.email) continue;
 
-      // pega notificações do user nas últimas 24h que NÃO estão em algum email_send_log já enviado/pendente
       const { data: notifs } = await admin
         .from("notificacao")
         .select("id, tipo, titulo, mensagem, link, created_at")
@@ -289,7 +269,6 @@ Deno.serve(async (req) => {
 
       if (!notifs || notifs.length === 0) continue;
 
-      // checa preferência de e-mail: se desativou TODOS os tipos, pula
       const { data: prefs } = await admin
         .from("notificacao_preferencia")
         .select("evento, ativo")
@@ -300,8 +279,6 @@ Deno.serve(async (req) => {
       const filtradas = notifs.filter((n) => !desativados.has(n.tipo));
       if (filtradas.length === 0) continue;
 
-      // ignora as que já foram enviadas individualmente (imediato)
-      const ids = filtradas.map((n) => n.id);
       const { data: jaEnviados } = await admin
         .from("email_send_log")
         .select("notificacao_ids")
@@ -327,11 +304,12 @@ Deno.serve(async (req) => {
       });
       enqueued++;
     }
-    // continua e processa os pendings abaixo
     console.log(`[digest] enfileirados: ${enqueued}`);
   }
 
-  // Processa pendentes (independente do modo)
+  // ============================================================
+  // Processa pendentes (todos os modos)
+  // ============================================================
   const { data: pendentes } = await admin
     .from("email_send_log")
     .select("*")
@@ -346,7 +324,6 @@ Deno.serve(async (req) => {
     skipped = 0;
   for (const e of pendentes ?? []) {
     if (!N8N_URL) {
-      // sem webhook configurado: marca como skipped (continua na fila)
       skipped++;
       continue;
     }
