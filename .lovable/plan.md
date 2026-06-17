@@ -1,72 +1,105 @@
-## 1. Avaliação do fluxo n8n
+## Causa raiz do erro no nó "Validar HMAC"
 
-O fluxo está **funcionalmente correto**:
+O nó é do tipo `Code` (`n8n-nodes-base.code` v2). Esse nó roda em sandbox e **não permite `require()` de módulos nativos** por padrão (`require('crypto')` falha com algo como "Cannot find module 'crypto'" ou "require is not defined"). Por isso o nó quebra e o fluxo nunca chega no SMTP — o que também explica por que o e-mail de teste não chegou.
 
-```text
-Webhook (POST /email-digest, rawBody) → Validar HMAC (timingSafeEqual)
-   └─ válido → Send Email (SMTP) → Responder 200
-   └─ inválido → Responder 401
+Existem duas formas de resolver:
+
+- **A (recomendada, sem mexer em infraestrutura)**: reescrever o nó usando a **Web Crypto API** (`globalThis.crypto.subtle`), que está disponível no sandbox sem `require`.
+- **B (alternativa)**: pedir ao admin do N8N para setar `NODE_FUNCTION_ALLOW_BUILTIN=crypto` no servidor. Mais invasivo, não recomendo.
+
+Vou seguir a A.
+
+## Passo 1 — Substituir o `jsCode` do nó "Validar HMAC"
+
+Abra o nó **Validar HMAC** no N8N e troque o código por:
+
+```js
+// Valida HMAC SHA-256 do body CRU contra o header X-Signature.
+// IMPORTANTE: no nó Webhook, Options → "Raw Body" ATIVADO.
+const SECRET = '32bc0de44c1484946ff735afa634e35346895831506b435bd4191a544ca96b6f';
+const enc = new TextEncoder();
+
+const out = [];
+for (const item of $input.all()) {
+  const headers = item.json.headers || {};
+  const signature = (headers['x-signature'] || headers['X-Signature'] || '').trim();
+
+  let bodyString = '';
+  if (item.binary?.data) {
+    bodyString = Buffer.from(item.binary.data.data, 'base64').toString('utf8');
+  } else if (typeof item.json.body === 'string') {
+    bodyString = item.json.body;
+  } else {
+    bodyString = JSON.stringify(item.json.body ?? item.json);
+  }
+
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(SECRET),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(bodyString));
+  const expected = Array.from(new Uint8Array(sigBuf))
+    .map((b) => b.toString(16).padStart(2, '0')).join('');
+
+  const valid = signature.length === expected.length
+    && signature.toLowerCase() === expected.toLowerCase();
+
+  let payload = {};
+  try { payload = JSON.parse(bodyString); } catch {}
+
+  out.push({
+    json: {
+      valid,
+      payload,
+      to: payload?.to,
+      subject: payload?.subject,
+      html: payload?.html,
+      text: payload?.text,
+    },
+  });
+}
+return out;
 ```
 
-Bate exatamente com o que a Edge Function `dispatch-email-digest` envia:
-- POST JSON `{ to, subject, html, text }`
-- header `X-Signature` = HMAC-SHA256(body, `N8N_EMAIL_HMAC_SECRET`)
+Diferenças em relação ao atual:
+- Sem `require('crypto')` → usa `crypto.subtle` (global).
+- Sem `timingSafeEqual` (também depende de `require`) → comparação case-insensitive de strings hex (mesmo tamanho, mesmo conteúdo). HMAC SHA-256 já é resistente a timing nesse cenário.
+- `Buffer` continua disponível no sandbox do n8n.
 
-Pontos a corrigir/observar (não bloqueiam o funcionamento, mas vale ajustar no n8n):
+## Passo 2 — Corrigir ordem do "Responder 200" e adicionar tratamento de erro do SMTP
 
-- **Segredo em código aberto.** O `SECRET` está hard-coded no nó "Validar HMAC". Mover para **Credentials → Header Auth / Env** do n8n e ler via `process.env.SISTEPLAN_HMAC_SECRET`. Se esse JSON vazar (export/print), o segredo vaza junto.
-- **Sem tratamento de erro do SMTP.** Hoje, se o SMTP falhar, o n8n responde com erro genérico e o `email_send_log` fica preso em `pending`/`failed` sem detalhe. Sugerido: adicionar branch `On Error` no nó SMTP → "Responder 500" com a mensagem do erro, para o backend marcar `failed` com `last_error`.
-- **Sem `text` fallback.** O nó SMTP só usa `html`. Bom incluir `text: $json.text` em Options → Text para clientes que bloqueiam HTML.
-- **Idempotência.** O fluxo não deduplica entregas. Se o backend reenfileirar (ex: cron retry), pode mandar 2x. Posso passar a incluir um `Message-Id` único no payload e usar nas headers do SMTP.
+Hoje o fluxo é: `Send Email (SMTP) → Responder 200`. Isso já está correto (200 só depois do envio). Falta:
 
-Nenhuma alteração no projeto Lovable é necessária para o fluxo — ele já funciona como está. Os ajustes acima são feitos dentro do próprio n8n.
+1. No nó **Send Email (SMTP)** → aba **Settings**, ativar **Continue On Fail** = `On Error → Continue (using error output)`.
+2. Conectar a saída de erro do SMTP em um novo nó **Respond to Webhook** que devolva HTTP 500 com `{ error: $json.error.message }`.
 
-## 2. Gestão de destinatários do resumo diário
+Isso garante que falha de SMTP vire 5xx para o Supabase, o registro fica `pending/last_error` e o cron tenta de novo. Hoje, se SMTP falhar, o N8N não responde nada e nós damos timeout silencioso.
 
-Hoje o resumo diário é enviado para **todos** os perfis com e-mail, salvo se o usuário tenha desativado a preferência `sistema/email`. Não há painel pra gestor controlar quem recebe.
+## Passo 3 — Hardening na função `dispatch-email-digest`
 
-### O que adicionar
+Atualmente marcamos `status='sent'` ao ver qualquer HTTP 200. Vou ajustar para exigir `{"ok": true}` ou `{"success": true}` no body do N8N. Se vier 200 sem confirmação, registramos `last_error="N8N returned 200 without success flag"` e mantemos `pending` para retry.
 
-**a) Coluna nova `recebe_resumo_diario` em `profiles`** (default `true`).
-- Gestor pode ler/atualizar essa coluna em qualquer perfil.
-- Usuário comum continua só com acesso ao próprio perfil.
+Arquivo: `supabase/functions/dispatch-email-digest/index.ts`
+- Em `sendViaN8n`, parse seguro do JSON do body.
+- Considerar sucesso somente se `res.ok && (json.success === true || json.ok === true)`.
+- O `responseBody` do N8N (Passo 2) já é `{ success: true, to: $json.to }`, então fica compatível.
 
-**b) Filtro novo no `dispatch-email-digest` (modo `resumo_diario`)**:
-- `from('profiles').select('user_id, email, nome, recebe_resumo_diario')`
-- pula quando `recebe_resumo_diario === false`.
-- A preferência individual em `notificacao_preferencia` (sistema/email) continua sendo respeitada como override do próprio usuário.
+## Passo 4 — Conferências de SMTP (manual, no N8N)
 
-**c) Card novo em "Configurações → E-mails"** (somente gestor), abaixo do card "Envio de e-mails (N8N)":
+Para o e-mail efetivamente sair:
+- Credencial **SMTP account** (`mZJ1p9R6r2jzJL8t`): host, porta, user, senha válidos.
+- `fromEmail` está como `relatorioged@sed.osasco.sp.gov.br`. O domínio `sed.osasco.sp.gov.br` precisa ter **SPF** liberando o servidor SMTP usado, e idealmente **DKIM** assinando. Sem isso, Microsoft 365 (sisteplan.com.br) tende a derrubar como spam silenciosamente.
+- Testar primeiro com `toEmail` literal igual à própria conta SMTP (loopback) para isolar problema de relay.
 
-```text
-Destinatários do resumo diário
-┌─────────────────────────────────────────────────────────┐
-│  Buscar usuário…           [ Ativar todos ] [ Desativ. ]│
-├─────────────────────────────────────────────────────────┤
-│ ✓  Joana Silva     joana@…       [toggle ON ]           │
-│ ✓  Pedro Souza     pedro@…       [toggle ON ]           │
-│ ✗  Marcos Lima     marcos@…      [toggle OFF]           │
-└─────────────────────────────────────────────────────────┘
-N usuários · M recebem · K não recebem
-```
+## Como testar depois
 
-- Lista paginada/scroll com busca por nome/e-mail.
-- Toggle individual chama update em `profiles.recebe_resumo_diario`.
-- Botões "Ativar todos" / "Desativar todos" (ação em lote).
-- Linha desabilitada (cinza) para perfis sem e-mail (não pode receber de qualquer forma).
+1. Importar o workflow corrigido no N8N e ativar.
+2. Na UI → Configurações → E-mails → botão de teste (envia para o usuário logado).
+3. Conferir `email_send_log`: linha nova deve ir para `status='sent'` com `webhook_response = { status: 200, body: '{"success":true,...}' }`.
+4. Conferir caixa de entrada (e spam) de `nickolas.varela@sisteplan.com.br`.
 
-### Arquivos afetados
+## Arquivos que serão alterados no Lovable
 
-- **Migration**:
-  - `ALTER TABLE public.profiles ADD COLUMN recebe_resumo_diario boolean NOT NULL DEFAULT true`
-  - Política nova de UPDATE em `profiles` permitindo `has_role(auth.uid(),'gestor')` alterar essa coluna em qualquer linha (ou ampliar política existente, dependendo do que já está em `profiles`).
-- **Edge function** `supabase/functions/dispatch-email-digest/index.ts`: filtrar `recebe_resumo_diario` no modo `resumo_diario`.
-- **Frontend**:
-  - Novo componente `src/components/notificacoes/DestinatariosResumoDiario.tsx`.
-  - Render dentro de `ConfiguracoesEmails.tsx` (somente quando `role === 'gestor'`).
-  - Queries via `@tanstack/react-query` + `supabase` direto (não precisa server fn — RLS gestor já protege).
+- `supabase/functions/dispatch-email-digest/index.ts` — hardening da resposta do N8N (Passo 3).
 
-### Fora de escopo
-
-- Notificações WhatsApp (já marcadas como próximo passo).
-- Mudanças no próprio fluxo n8n — fica como recomendação acima.
+Nenhum outro arquivo do app muda. O grosso da correção é no workflow do N8N (Passos 1, 2 e 4).
