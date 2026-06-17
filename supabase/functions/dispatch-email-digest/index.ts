@@ -1,6 +1,3 @@
-// Processa fila de e-mails pendentes e envia via webhook N8N (secret direto, sem HMAC).
-// Modo "imediato" (cada 5min): envia tudo que está pending agora.
-// Modo "digest" (8h diário): consolida notificações não enviadas das últimas 24h em 1 e-mail por usuário.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
