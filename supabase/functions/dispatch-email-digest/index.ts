@@ -51,7 +51,18 @@ async function sendViaN8n(payload: { to: string; subject: string; html: string; 
     body,
   });
   const text = await res.text().catch(() => "");
-  return { ok: res.ok, status: res.status, body: text.slice(0, 500) };
+  // Só consideramos sucesso se o N8N confirmar explicitamente { success: true } ou { ok: true }.
+  // Um HTTP 200 com body vazio normalmente significa que o workflow respondeu antes do SMTP rodar.
+  let confirmed = false;
+  try {
+    const json = JSON.parse(text);
+    confirmed = json?.success === true || json?.ok === true;
+  } catch { /* body não-JSON */ }
+  return {
+    ok: res.ok && confirmed,
+    status: res.status,
+    body: confirmed ? text.slice(0, 500) : (text.slice(0, 400) || "N8N respondeu 200 sem flag de sucesso"),
+  };
 }
 
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
