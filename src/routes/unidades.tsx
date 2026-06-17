@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { buildBairroCanonMap } from "@/lib/bairros";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/unidades")({
