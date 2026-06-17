@@ -44,7 +44,7 @@ async function sendViaN8n(payload: {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-webhook-secret": N8N_SECRET, // secret puro, sem HMAC
+      "x-webhook-secret": N8N_SECRET, // secret puro
     },
     body,
   });
