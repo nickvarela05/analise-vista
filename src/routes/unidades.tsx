@@ -108,7 +108,14 @@ function UnidadesPage() {
       if (error) {
         toast.error("Falha ao carregar unidades", { description: error.message });
       } else {
-        setUnidades((data ?? []) as unknown as Unidade[]);
+        const raw = (data ?? []) as unknown as Unidade[];
+        // Unifica bairros com grafias diferentes (ex.: "ANHANGUERA" vs "ANHANGUERRA").
+        const canonMap = buildBairroCanonMap(raw.map((u) => u.bairro));
+        const unified = raw.map((u) => ({
+          ...u,
+          bairro: u.bairro ? canonMap.get(u.bairro.trim()) ?? u.bairro : u.bairro,
+        }));
+        setUnidades(unified);
       }
       setLoading(false);
     })();
