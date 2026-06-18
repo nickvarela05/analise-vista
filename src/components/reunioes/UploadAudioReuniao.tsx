@@ -258,7 +258,7 @@ export function UploadAudioReuniao({
       </div>
 
       {/* Sem áudio: drop zone */}
-      {!audioPath && !uploading && (
+      {!audioPath && !uploading && !compressing && (
         <div
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => {
@@ -281,7 +281,26 @@ export function UploadAudioReuniao({
           <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">Clique ou arraste um arquivo</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            MP3, M4A, WAV, WebM ou OGG · até 100 MB
+            MP3, M4A, WAV, WebM, OGG ou MP4 · até 1 GB (otimização automática)
+          </p>
+        </div>
+      )}
+
+      {/* Compressão em progresso */}
+      {compressing && (
+        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 animate-pulse text-primary" />
+              🎛️ Otimizando áudio para transcrição… {compressPct}%
+            </span>
+            <Button type="button" variant="ghost" size="sm" onClick={cancelCompression}>
+              <X className="mr-1 h-3.5 w-3.5" /> Cancelar
+            </Button>
+          </div>
+          <Progress value={compressPct} />
+          <p className="text-xs text-muted-foreground">
+            Removendo vídeo (se houver) e reencodando para Opus 24 kbps mono — pode levar alguns minutos para arquivos longos.
           </p>
         </div>
       )}
@@ -294,6 +313,11 @@ export function UploadAudioReuniao({
             <span>📤 Enviando áudio...</span>
           </div>
           <Progress value={uploadPct} />
+          {compressInfo && (
+            <p className="text-xs text-muted-foreground">
+              Otimizado: {formatBytes(compressInfo.original)} → {formatBytes(compressInfo.compressed)}
+            </p>
+          )}
         </div>
       )}
 
