@@ -1,105 +1,55 @@
-## Causa raiz do erro no nó "Validar HMAC"
+# Compressor automático de áudio no upload de reunião
 
-O nó é do tipo `Code` (`n8n-nodes-base.code` v2). Esse nó roda em sandbox e **não permite `require()` de módulos nativos** por padrão (`require('crypto')` falha com algo como "Cannot find module 'crypto'" ou "require is not defined"). Por isso o nó quebra e o fluxo nunca chega no SMTP — o que também explica por que o e-mail de teste não chegou.
+## Resposta curta
+Sim, dá pra fazer — e o melhor lugar é **no navegador, antes do upload**, usando `ffmpeg.wasm`. Assim o arquivo já sobe pequeno (economiza banda do usuário, storage do Lovable Cloud e fica dentro do limite da API de transcrição), sem precisar de servidor de processamento.
 
-Existem duas formas de resolver:
+## Por que no navegador (e não no servidor)
+- O runtime serverless onde rodam as edge functions **não suporta ffmpeg nativo** nem `sharp`/binários — não dá pra comprimir lá depois do upload.
+- Fazer o upload de 500MB só pra rejeitar/comprimir desperdiça banda do usuário (muitas vezes em rede da prefeitura).
+- `ffmpeg.wasm` roda 100% client-side, sem custo de infra.
 
-- **A (recomendada, sem mexer em infraestrutura)**: reescrever o nó usando a **Web Crypto API** (`globalThis.crypto.subtle`), que está disponível no sandbox sem `require`.
-- **B (alternativa)**: pedir ao admin do N8N para setar `NODE_FUNCTION_ALLOW_BUILTIN=crypto` no servidor. Mais invasivo, não recomendo.
+## O que vai ser feito
 
-Vou seguir a A.
+### 1. Detecção e compressão automática
+Quando o usuário seleciona um arquivo em `UploadAudioReuniao.tsx`:
 
-## Passo 1 — Substituir o `jsCode` do nó "Validar HMAC"
+- **Se for áudio puro pequeno (< 20 MB)** → sobe direto, sem mexer (não vale o custo de processar).
+- **Se for MP4/vídeo OU áudio > 20 MB** → comprime automaticamente antes do upload:
+  - Extrai apenas a faixa de áudio (descarta vídeo se for MP4)
+  - Reencoda para **Opus 24 kbps mono 16 kHz** em container `.ogg`
+  - Resultado típico: 1h de reunião ≈ 10–12 MB (vs. 500MB+ de vídeo MP4)
+  - 16 kHz mono é o formato ideal pra voz e o que a maioria dos modelos de STT (Whisper, Gemini, etc.) usa internamente — não há perda de qualidade de transcrição.
 
-Abra o nó **Validar HMAC** no N8N e troque o código por:
+### 2. UI durante a compressão
+Novo estado entre "selecionar" e "enviando":
+- Barra de progresso "🎛️ Otimizando áudio… (X%)" usando os callbacks de progresso do ffmpeg.
+- Mostra o tamanho original → tamanho final ("482 MB → 11 MB") quando termina.
+- Botão "Cancelar" interrompe a operação.
 
-```js
-// Valida HMAC SHA-256 do body CRU contra o header X-Signature.
-// IMPORTANTE: no nó Webhook, Options → "Raw Body" ATIVADO.
-const SECRET = '32bc0de44c1484946ff735afa634e35346895831506b435bd4191a544ca96b6f';
-const enc = new TextEncoder();
+### 3. Fallback seguro
+Se `ffmpeg.wasm` falhar (navegador antigo sem SharedArrayBuffer, memória insuficiente, etc.):
+- Mostra aviso amigável e tenta subir o arquivo original.
+- Se ultrapassar o limite (eleva o teto atual de 100 MB para o que a API de transcrição aceitar), aí sim bloqueia com mensagem clara.
 
-const out = [];
-for (const item of $input.all()) {
-  const headers = item.json.headers || {};
-  const signature = (headers['x-signature'] || headers['X-Signature'] || '').trim();
+### 4. Aumentar o `MAX_BYTES`
+O limite atual é 100 MB. Como qualquer arquivo grande agora será comprimido antes, posso elevar o teto de **entrada** para 1 GB (ou o que você preferir) — o que chega no storage continua pequeno.
 
-  let bodyString = '';
-  if (item.binary?.data) {
-    bodyString = Buffer.from(item.binary.data.data, 'base64').toString('utf8');
-  } else if (typeof item.json.body === 'string') {
-    bodyString = item.json.body;
-  } else {
-    bodyString = JSON.stringify(item.json.body ?? item.json);
-  }
+## Detalhes técnicos
 
-  const key = await crypto.subtle.importKey(
-    'raw', enc.encode(SECRET),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(bodyString));
-  const expected = Array.from(new Uint8Array(sigBuf))
-    .map((b) => b.toString(16).padStart(2, '0')).join('');
+- Pacote: `@ffmpeg/ffmpeg` + `@ffmpeg/util` (build oficial, ~25 MB de wasm, carregado **sob demanda** via `import()` dinâmico — não pesa no bundle inicial).
+- Requer headers COOP/COEP pra habilitar `SharedArrayBuffer`. Em dev (Vite) e em produção (Cloudflare Worker do Lovable), adicionar:
+  - `Cross-Origin-Opener-Policy: same-origin`
+  - `Cross-Origin-Embedder-Policy: require-corp`
+  - Isso pode quebrar `<iframe>`/imagens externas sem CORP. Verifico se há algum recurso externo no app antes de aplicar; se houver, uso a versão `mt` (single-thread) do ffmpeg.wasm, que não exige esses headers (compressão fica ~2x mais lenta mas funciona).
+- Comando ffmpeg equivalente: `ffmpeg -i input.mp4 -vn -ac 1 -ar 16000 -c:a libopus -b:a 24k output.ogg`
+- Arquivos afetados:
+  - `src/components/reunioes/UploadAudioReuniao.tsx` — fluxo de compressão, novos estados de UI, mudança de `MAX_BYTES`.
+  - `src/lib/audio-compress.ts` (novo) — wrapper isolado do ffmpeg.wasm com `import()` dinâmico e callback de progresso.
+  - `vite.config.ts` — headers COOP/COEP no dev server (se formos pela versão multi-thread).
+  - `package.json` — adicionar `@ffmpeg/ffmpeg` e `@ffmpeg/util`.
 
-  const valid = signature.length === expected.length
-    && signature.toLowerCase() === expected.toLowerCase();
+## O que confirmar com você antes de implementar
 
-  let payload = {};
-  try { payload = JSON.parse(bodyString); } catch {}
-
-  out.push({
-    json: {
-      valid,
-      payload,
-      to: payload?.to,
-      subject: payload?.subject,
-      html: payload?.html,
-      text: payload?.text,
-    },
-  });
-}
-return out;
-```
-
-Diferenças em relação ao atual:
-- Sem `require('crypto')` → usa `crypto.subtle` (global).
-- Sem `timingSafeEqual` (também depende de `require`) → comparação case-insensitive de strings hex (mesmo tamanho, mesmo conteúdo). HMAC SHA-256 já é resistente a timing nesse cenário.
-- `Buffer` continua disponível no sandbox do n8n.
-
-## Passo 2 — Corrigir ordem do "Responder 200" e adicionar tratamento de erro do SMTP
-
-Hoje o fluxo é: `Send Email (SMTP) → Responder 200`. Isso já está correto (200 só depois do envio). Falta:
-
-1. No nó **Send Email (SMTP)** → aba **Settings**, ativar **Continue On Fail** = `On Error → Continue (using error output)`.
-2. Conectar a saída de erro do SMTP em um novo nó **Respond to Webhook** que devolva HTTP 500 com `{ error: $json.error.message }`.
-
-Isso garante que falha de SMTP vire 5xx para o Supabase, o registro fica `pending/last_error` e o cron tenta de novo. Hoje, se SMTP falhar, o N8N não responde nada e nós damos timeout silencioso.
-
-## Passo 3 — Hardening na função `dispatch-email-digest`
-
-Atualmente marcamos `status='sent'` ao ver qualquer HTTP 200. Vou ajustar para exigir `{"ok": true}` ou `{"success": true}` no body do N8N. Se vier 200 sem confirmação, registramos `last_error="N8N returned 200 without success flag"` e mantemos `pending` para retry.
-
-Arquivo: `supabase/functions/dispatch-email-digest/index.ts`
-- Em `sendViaN8n`, parse seguro do JSON do body.
-- Considerar sucesso somente se `res.ok && (json.success === true || json.ok === true)`.
-- O `responseBody` do N8N (Passo 2) já é `{ success: true, to: $json.to }`, então fica compatível.
-
-## Passo 4 — Conferências de SMTP (manual, no N8N)
-
-Para o e-mail efetivamente sair:
-- Credencial **SMTP account** (`mZJ1p9R6r2jzJL8t`): host, porta, user, senha válidos.
-- `fromEmail` está como `relatorioged@sed.osasco.sp.gov.br`. O domínio `sed.osasco.sp.gov.br` precisa ter **SPF** liberando o servidor SMTP usado, e idealmente **DKIM** assinando. Sem isso, Microsoft 365 (sisteplan.com.br) tende a derrubar como spam silenciosamente.
-- Testar primeiro com `toEmail` literal igual à própria conta SMTP (loopback) para isolar problema de relay.
-
-## Como testar depois
-
-1. Importar o workflow corrigido no N8N e ativar.
-2. Na UI → Configurações → E-mails → botão de teste (envia para o usuário logado).
-3. Conferir `email_send_log`: linha nova deve ir para `status='sent'` com `webhook_response = { status: 200, body: '{"success":true,...}' }`.
-4. Conferir caixa de entrada (e spam) de `nickolas.varela@sisteplan.com.br`.
-
-## Arquivos que serão alterados no Lovable
-
-- `supabase/functions/dispatch-email-digest/index.ts` — hardening da resposta do N8N (Passo 3).
-
-Nenhum outro arquivo do app muda. O grosso da correção é no workflow do N8N (Passos 1, 2 e 4).
+1. **Qual a API de transcrição em uso hoje** (edge function `transcrever-reuniao`)? Saber o limite real (ex.: Whisper = 25 MB, Gemini = 20 MB inline / 2 GB via Files API) define o bitrate-alvo da compressão.
+2. **OK em aumentar `MAX_BYTES` de 100 MB para ~1 GB de entrada?** O que sobe pro storage continua pequeno (10–15 MB).
+3. **Comprimir SEMPRE ou só quando passar de um limiar** (ex.: > 20 MB)? Comprimir sempre garante uniformidade; só acima do limiar é mais rápido pra quem já manda MP3 pequeno.
