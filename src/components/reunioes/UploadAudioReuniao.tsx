@@ -103,25 +103,82 @@ export function UploadAudioReuniao({
     }
   };
 
-  const handleFile = async (file: File) => {
-    const isAudioMime = file.type.startsWith("audio/");
-    const isMp4Container = file.type === "video/mp4" || /\.mp4$/i.test(file.name);
-    const hasAudioExt = AUDIO_EXTENSIONS.test(file.name);
+  const cancelCompression = () => {
+    compressAbortRef.current?.abort();
+  };
+
+  const handleFile = async (rawFile: File) => {
+    const isAudioMime = rawFile.type.startsWith("audio/");
+    const isMp4Container = rawFile.type === "video/mp4" || /\.(mp4|mov|mkv|avi)$/i.test(rawFile.name);
+    const hasAudioExt = AUDIO_EXTENSIONS.test(rawFile.name);
     if (!isAudioMime && !isMp4Container && !hasAudioExt) {
       toast.error("Arquivo não é um áudio válido", {
         description: "Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
       });
       return;
     }
-    if (file.size > MAX_BYTES) {
-      toast.error("Áudio acima de 100MB", { description: "Comprima ou divida o arquivo." });
+    if (rawFile.size > MAX_BYTES) {
+      toast.error("Arquivo acima de 1 GB", { description: "Reduza ou divida o arquivo." });
+      return;
+    }
+
+    let file = rawFile;
+    setCompressInfo(null);
+
+    // === Compressão automática (MP4/vídeo ou áudio > 20 MB) ===
+    if (shouldCompress(rawFile)) {
+      setCompressing(true);
+      setCompressPct(0);
+      const ctrl = new AbortController();
+      compressAbortRef.current = ctrl;
+      try {
+        const result = await compressAudio(rawFile, {
+          signal: ctrl.signal,
+          onProgress: (p) => setCompressPct(p),
+        });
+        file = result.file;
+        setCompressInfo({ original: result.originalSize, compressed: result.compressedSize });
+        toast.success("🎛️ Áudio otimizado", {
+          description: `${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)}`,
+        });
+      } catch (e: any) {
+        setCompressing(false);
+        compressAbortRef.current = null;
+        if (ctrl.signal.aborted) {
+          toast.info("Compressão cancelada");
+          return;
+        }
+        if (rawFile.size <= MAX_UPLOAD_BYTES) {
+          toast.warning("Não foi possível otimizar o áudio", {
+            description: "Enviando o arquivo original.",
+          });
+          file = rawFile;
+        } else {
+          toast.error("Falha ao comprimir o áudio", {
+            description:
+              e?.message ||
+              `O arquivo (${formatBytes(rawFile.size)}) excede o limite de ${formatBytes(MAX_UPLOAD_BYTES)} da API de transcrição.`,
+          });
+          return;
+        }
+      } finally {
+        setCompressing(false);
+        compressAbortRef.current = null;
+      }
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(`Áudio acima de ${formatBytes(MAX_UPLOAD_BYTES)}`, {
+        description: "Mesmo após otimização o arquivo é grande demais para a API de transcrição.",
+      });
       return;
     }
 
     setUploading(true);
     setUploadPct(15);
 
-    const path = `${userId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${userId}/${Date.now()}-${safeName}`;
     const normalizedType =
       file.type && file.type !== "video/mp4" ? file.type : "audio/mp4";
     const { error } = await supabase.storage.from("reuniao-audios").upload(path, file, {
@@ -139,7 +196,6 @@ export function UploadAudioReuniao({
     await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: normalizedType });
     setUploading(false);
 
-    // Se já existe reunião salva, dispara processamento
     if (reuniaoId) {
       await triggerProcessing(reuniaoId, path);
       toast.info("🎧 Transcrevendo áudio...", {
