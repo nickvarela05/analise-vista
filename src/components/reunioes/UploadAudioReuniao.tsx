@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2 } from "lucide-react";
+import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { compressAudio, shouldCompress, formatBytes } from "@/lib/audio-compress";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
@@ -36,7 +37,8 @@ interface Props {
 
 const ACCEPT =
   "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
-const MAX_BYTES = 100 * 1024 * 1024;
+const MAX_BYTES = 1024 * 1024 * 1024; // 1 GB de entrada (será comprimido antes do upload)
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // limite do Groq Whisper
 const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
@@ -52,6 +54,10 @@ export function UploadAudioReuniao({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
   const [uploadPct, setUploadPct] = React.useState(0);
+  const [compressing, setCompressing] = React.useState(false);
+  const [compressPct, setCompressPct] = React.useState(0);
+  const [compressInfo, setCompressInfo] = React.useState<{ original: number; compressed: number } | null>(null);
+  const compressAbortRef = React.useRef<AbortController | null>(null);
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [dragOver, setDragOver] = React.useState(false);
   const [triggering, setTriggering] = React.useState(false);
@@ -97,25 +103,82 @@ export function UploadAudioReuniao({
     }
   };
 
-  const handleFile = async (file: File) => {
-    const isAudioMime = file.type.startsWith("audio/");
-    const isMp4Container = file.type === "video/mp4" || /\.mp4$/i.test(file.name);
-    const hasAudioExt = AUDIO_EXTENSIONS.test(file.name);
+  const cancelCompression = () => {
+    compressAbortRef.current?.abort();
+  };
+
+  const handleFile = async (rawFile: File) => {
+    const isAudioMime = rawFile.type.startsWith("audio/");
+    const isMp4Container = rawFile.type === "video/mp4" || /\.(mp4|mov|mkv|avi)$/i.test(rawFile.name);
+    const hasAudioExt = AUDIO_EXTENSIONS.test(rawFile.name);
     if (!isAudioMime && !isMp4Container && !hasAudioExt) {
       toast.error("Arquivo não é um áudio válido", {
         description: "Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
       });
       return;
     }
-    if (file.size > MAX_BYTES) {
-      toast.error("Áudio acima de 100MB", { description: "Comprima ou divida o arquivo." });
+    if (rawFile.size > MAX_BYTES) {
+      toast.error("Arquivo acima de 1 GB", { description: "Reduza ou divida o arquivo." });
+      return;
+    }
+
+    let file = rawFile;
+    setCompressInfo(null);
+
+    // === Compressão automática (MP4/vídeo ou áudio > 20 MB) ===
+    if (shouldCompress(rawFile)) {
+      setCompressing(true);
+      setCompressPct(0);
+      const ctrl = new AbortController();
+      compressAbortRef.current = ctrl;
+      try {
+        const result = await compressAudio(rawFile, {
+          signal: ctrl.signal,
+          onProgress: (p) => setCompressPct(p),
+        });
+        file = result.file;
+        setCompressInfo({ original: result.originalSize, compressed: result.compressedSize });
+        toast.success("🎛️ Áudio otimizado", {
+          description: `${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)}`,
+        });
+      } catch (e: any) {
+        setCompressing(false);
+        compressAbortRef.current = null;
+        if (ctrl.signal.aborted) {
+          toast.info("Compressão cancelada");
+          return;
+        }
+        if (rawFile.size <= MAX_UPLOAD_BYTES) {
+          toast.warning("Não foi possível otimizar o áudio", {
+            description: "Enviando o arquivo original.",
+          });
+          file = rawFile;
+        } else {
+          toast.error("Falha ao comprimir o áudio", {
+            description:
+              e?.message ||
+              `O arquivo (${formatBytes(rawFile.size)}) excede o limite de ${formatBytes(MAX_UPLOAD_BYTES)} da API de transcrição.`,
+          });
+          return;
+        }
+      } finally {
+        setCompressing(false);
+        compressAbortRef.current = null;
+      }
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error(`Áudio acima de ${formatBytes(MAX_UPLOAD_BYTES)}`, {
+        description: "Mesmo após otimização o arquivo é grande demais para a API de transcrição.",
+      });
       return;
     }
 
     setUploading(true);
     setUploadPct(15);
 
-    const path = `${userId}/${Date.now()}-${file.name.replace(/[^\w.\-]+/g, "_")}`;
+    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${userId}/${Date.now()}-${safeName}`;
     const normalizedType =
       file.type && file.type !== "video/mp4" ? file.type : "audio/mp4";
     const { error } = await supabase.storage.from("reuniao-audios").upload(path, file, {
@@ -133,7 +196,6 @@ export function UploadAudioReuniao({
     await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: normalizedType });
     setUploading(false);
 
-    // Se já existe reunião salva, dispara processamento
     if (reuniaoId) {
       await triggerProcessing(reuniaoId, path);
       toast.info("🎧 Transcrevendo áudio...", {
@@ -196,7 +258,7 @@ export function UploadAudioReuniao({
       </div>
 
       {/* Sem áudio: drop zone */}
-      {!audioPath && !uploading && (
+      {!audioPath && !uploading && !compressing && (
         <div
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => {
@@ -219,7 +281,26 @@ export function UploadAudioReuniao({
           <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">Clique ou arraste um arquivo</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            MP3, M4A, WAV, WebM ou OGG · até 100 MB
+            MP3, M4A, WAV, WebM, OGG ou MP4 · até 1 GB (otimização automática)
+          </p>
+        </div>
+      )}
+
+      {/* Compressão em progresso */}
+      {compressing && (
+        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 animate-pulse text-primary" />
+              🎛️ Otimizando áudio para transcrição… {compressPct}%
+            </span>
+            <Button type="button" variant="ghost" size="sm" onClick={cancelCompression}>
+              <X className="mr-1 h-3.5 w-3.5" /> Cancelar
+            </Button>
+          </div>
+          <Progress value={compressPct} />
+          <p className="text-xs text-muted-foreground">
+            Removendo vídeo (se houver) e reencodando para Opus 24 kbps mono — pode levar alguns minutos para arquivos longos.
           </p>
         </div>
       )}
@@ -232,6 +313,11 @@ export function UploadAudioReuniao({
             <span>📤 Enviando áudio...</span>
           </div>
           <Progress value={uploadPct} />
+          {compressInfo && (
+            <p className="text-xs text-muted-foreground">
+              Otimizado: {formatBytes(compressInfo.original)} → {formatBytes(compressInfo.compressed)}
+            </p>
+          )}
         </div>
       )}
 
