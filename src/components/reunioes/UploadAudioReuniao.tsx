@@ -54,6 +54,10 @@ export function UploadAudioReuniao({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
   const [uploadPct, setUploadPct] = React.useState(0);
+  const [compressing, setCompressing] = React.useState(false);
+  const [compressPct, setCompressPct] = React.useState(0);
+  const [compressInfo, setCompressInfo] = React.useState<{ original: number; compressed: number } | null>(null);
+  const compressAbortRef = React.useRef<AbortController | null>(null);
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [dragOver, setDragOver] = React.useState(false);
   const [triggering, setTriggering] = React.useState(false);
