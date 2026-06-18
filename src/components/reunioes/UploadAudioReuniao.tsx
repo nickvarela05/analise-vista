@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2 } from "lucide-react";
+import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { compressAudio, shouldCompress, formatBytes } from "@/lib/audio-compress";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
