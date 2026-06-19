@@ -319,40 +319,49 @@ Deno.serve(async (req) => {
   let sent = 0,
     failed = 0,
     skipped = 0;
-  for (const e of pendentes ?? []) {
-    if (!N8N_URL) {
-      skipped++;
-      continue;
-    }
-    const result = await sendViaN8n({
-      to: e.recipient_email,
-      subject: e.subject,
-      html: e.body_html ?? `<pre>${escapeHtml(e.body_text ?? "")}</pre>`,
-      text: e.body_text ?? "",
-    });
-    if (result.ok) {
-      await admin
-        .from("email_send_log")
-        .update({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          attempts: (e.attempts ?? 0) + 1,
-          webhook_response: { status: result.status, body: result.body },
-        })
-        .eq("id", e.id);
-      sent++;
-    } else {
-      const newAttempts = (e.attempts ?? 0) + 1;
-      await admin
-        .from("email_send_log")
-        .update({
-          status: newAttempts >= 5 ? "failed" : "pending",
-          attempts: newAttempts,
-          last_error: `HTTP ${result.status}: ${result.body}`,
-          webhook_response: { status: result.status, body: result.body },
-        })
-        .eq("id", e.id);
-      failed++;
+
+  const pend = pendentes ?? [];
+  if (!N8N_URL) {
+    skipped = pend.length;
+  } else {
+    const CONCURRENCY = 10;
+    for (let i = 0; i < pend.length; i += CONCURRENCY) {
+      const batch = pend.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (e) => {
+          const result = await sendViaN8n({
+            to: e.recipient_email,
+            subject: e.subject,
+            html: e.body_html ?? `<pre>${escapeHtml(e.body_text ?? "")}</pre>`,
+            text: e.body_text ?? "",
+          });
+          const newAttempts = (e.attempts ?? 0) + 1;
+          if (result.ok) {
+            await admin
+              .from("email_send_log")
+              .update({
+                status: "sent",
+                sent_at: new Date().toISOString(),
+                attempts: newAttempts,
+                webhook_response: { status: result.status, body: result.body },
+              })
+              .eq("id", e.id);
+            return "sent" as const;
+          }
+          await admin
+            .from("email_send_log")
+            .update({
+              status: newAttempts >= 5 ? "failed" : "pending",
+              attempts: newAttempts,
+              last_error: `HTTP ${result.status}: ${result.body}`,
+              webhook_response: { status: result.status, body: result.body },
+            })
+            .eq("id", e.id);
+          return "failed" as const;
+        }),
+      );
+      sent += results.filter((r) => r === "sent").length;
+      failed += results.filter((r) => r === "failed").length;
     }
   }
 
