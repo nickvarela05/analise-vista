@@ -115,6 +115,24 @@ export function ConfiguracoesEmails() {
     }
   }
 
+  async function limparDisparos() {
+    if (!confirm("Apagar TODOS os registros de disparo de e-mail? Esta ação não pode ser desfeita.")) return;
+    setLimpando(true);
+    try {
+      const { error } = await supabase
+        .from("email_send_log")
+        .delete()
+        .not("id", "is", null);
+      if (error) throw error;
+      toast.success("Histórico de disparos limpo");
+      await carregar();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally {
+      setLimpando(false);
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       {/* Header */}
