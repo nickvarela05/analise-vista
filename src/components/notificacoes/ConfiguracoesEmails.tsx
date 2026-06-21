@@ -11,6 +11,7 @@ import {
   Clock,
   Mail,
   Inbox,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -25,6 +26,7 @@ export function ConfiguracoesEmails() {
   const [testando, setTestando] = React.useState(false);
   const [reprocessando, setReprocessando] = React.useState(false);
   const [disparandoResumo, setDisparandoResumo] = React.useState(false);
+  const [limpando, setLimpando] = React.useState(false);
 
   async function carregar() {
     setLoading(true);
@@ -113,6 +115,24 @@ export function ConfiguracoesEmails() {
     }
   }
 
+  async function limparDisparos() {
+    if (!confirm("Apagar TODOS os registros de disparo de e-mail? Esta ação não pode ser desfeita.")) return;
+    setLimpando(true);
+    try {
+      const { error } = await supabase
+        .from("email_send_log")
+        .delete()
+        .not("id", "is", null);
+      if (error) throw error;
+      toast.success("Histórico de disparos limpo");
+      await carregar();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha");
+    } finally {
+      setLimpando(false);
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       {/* Header */}
@@ -185,6 +205,16 @@ export function ConfiguracoesEmails() {
           </Button>
           <Button size="sm" variant="ghost" onClick={carregar} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={limparDisparos}
+            disabled={limpando || logs.length === 0}
+            className="gap-2 text-destructive hover:text-destructive"
+          >
+            {limpando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Limpar disparos
           </Button>
         </div>
 
