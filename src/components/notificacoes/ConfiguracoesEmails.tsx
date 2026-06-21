@@ -206,6 +206,16 @@ export function ConfiguracoesEmails() {
           <Button size="sm" variant="ghost" onClick={carregar} className="gap-2">
             <RefreshCw className="h-4 w-4" /> Atualizar
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={limparDisparos}
+            disabled={limpando || logs.length === 0}
+            className="gap-2 text-destructive hover:text-destructive"
+          >
+            {limpando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Limpar disparos
+          </Button>
         </div>
 
 
