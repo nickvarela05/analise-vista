@@ -1,0 +1,1 @@
+CREATE POLICY "Gestor apaga email_send_log" ON public.email_send_log FOR DELETE USING (has_role(auth.uid(), 'gestor'::app_role));
