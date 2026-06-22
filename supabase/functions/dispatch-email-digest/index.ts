@@ -83,7 +83,10 @@ function isAuthorized(req: Request): boolean {
     const [, payloadB64] = token.split(".");
     if (payloadB64) {
       const json = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
-      if (json?.iss === "supabase" && (json?.role === "anon" || json?.role === "service_role" || json?.role === "authenticated")) {
+      const iss = typeof json?.iss === "string" ? json.iss : "";
+      const role = json?.role;
+      if ((iss === "supabase" || iss.includes("supabase")) &&
+          (role === "anon" || role === "service_role" || role === "authenticated")) {
         return true;
       }
       // Supabase publishable/secret novo formato (sb_publishable_..., sb_secret_...)
