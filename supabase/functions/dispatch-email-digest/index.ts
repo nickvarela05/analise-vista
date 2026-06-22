@@ -101,20 +101,28 @@ function isAuthorized(req: Request): boolean {
 async function runResumoDiario() {
   const now = new Date();
   const hoje = now.toISOString().slice(0, 10);
-  const em3dias = new Date(now.getTime() + 3 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-  const ontemISO = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+  const em7dias = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const inicioDia = `${hoje}T00:00:00Z`;
-  const fimDia = `${hoje}T23:59:59Z`;
+  const fimSemanaISO = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
 
   const { data: users } = await admin.from("profiles").select("user_id, email, nome, recebe_resumo_diario");
 
-  // idempotência: já enviados/enfileirados hoje
+  // idempotência: 1x por dia por usuário
   const { data: jaHoje } = await admin
     .from("email_send_log")
     .select("user_id")
     .gte("created_at", inicioDia)
     .like("subject", "☀️ Resumo do dia%");
   const jaSet = new Set((jaHoje ?? []).map((r) => r.user_id));
+
+  // Avisos ativos (globais para todos os usuários ativos)
+  const { data: avisosAll } = await admin
+    .from("aviso_gestor")
+    .select("id, titulo, mensagem, tipo, ativo, expira_em, colaboradores_ids")
+    .eq("ativo", true);
+  const avisosAtivos = (avisosAll ?? []).filter(
+    (a) => !a.expira_em || new Date(a.expira_em).getTime() >= now.getTime(),
+  );
 
   await Promise.all(
     (users ?? []).map(async (u) => {
@@ -129,77 +137,103 @@ async function runResumoDiario() {
         .maybeSingle();
       if (pref?.ativo === false) return;
 
-      const [demR, reuR, tarR, relR] = await Promise.all([
+      const [demR, reuR, tarR, relR, profR] = await Promise.all([
+        // Demandas com prazo nos próximos 7 dias
         admin.from("demanda")
           .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
-          .eq("prazo", hoje).not("status", "in", "(concluida,cancelada)"),
+          .gte("prazo", hoje).lte("prazo", em7dias)
+          .not("status", "in", "(concluida,cancelada)"),
+        // Reuniões da semana
         admin.from("reuniao")
           .select("id, titulo, data_reuniao, status, responsavel_id, responsaveis_ids, equipe_toda")
-          .gte("data_reuniao", inicioDia).lte("data_reuniao", fimDia)
+          .gte("data_reuniao", inicioDia).lte("data_reuniao", fimSemanaISO)
           .not("status", "in", "(realizada,cancelada)"),
+        // Tarefas com prazo nos próximos 7 dias
         admin.from("todo")
           .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
           .not("status", "in", "(encerrada,concluida,producao,cancelada)")
-          .not("data_prevista", "is", null).lte("data_prevista", em3dias),
+          .not("data_prevista", "is", null)
+          .gte("data_prevista", hoje).lte("data_prevista", em7dias),
+        // Relatórios pendentes (não finalizados)
         admin.from("chamado_externo")
           .select("id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at")
-          .gte("created_at", ontemISO).neq("status", "finalizado"),
+          .neq("status", "finalizado"),
+        admin.from("profiles").select("colaborador_id").eq("user_id", u.user_id).maybeSingle(),
       ]);
 
-      const minhasDemandas = (demR.data ?? []).filter(
-        (d) => d.responsavel_id === u.user_id || (d.responsaveis_ids ?? []).includes(u.user_id),
-      );
-      const minhasReunioes = (reuR.data ?? []).filter(
-        (r) => r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true,
-      );
-      const minhasTarefas = (tarR.data ?? []).filter((t) => {
-        const meu = t.responsavel_id === u.user_id || (t.responsaveis_ids ?? []).includes(u.user_id);
-        if (!meu) return false;
-        const emTesteAtrasada = t.em_teste === true && t.data_prevista < hoje;
-        const pertoPrazo = t.data_prevista <= em3dias;
-        return emTesteAtrasada || pertoPrazo;
-      });
-      const meusRelatorios = (relR.data ?? []).filter(
-        (r) => r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true,
+      const colabId = profR.data?.colaborador_id ?? null;
+      const meu = (r: { responsavel_id?: string | null; responsaveis_ids?: string[] | null; equipe_toda?: boolean | null }) =>
+        r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true;
+
+      const minhasDemandas = (demR.data ?? []).filter(meu);
+      const minhasReunioes = (reuR.data ?? []).filter(meu);
+      const minhasTarefas = (tarR.data ?? []).filter(meu);
+      const meusRelatorios = (relR.data ?? []).filter(meu);
+      const meusAvisos = avisosAtivos.filter(
+        (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
       );
 
-      const total = minhasDemandas.length + minhasReunioes.length + minhasTarefas.length + meusRelatorios.length;
+      const total =
+        minhasDemandas.length + minhasReunioes.length + minhasTarefas.length +
+        meusRelatorios.length + meusAvisos.length;
       if (total === 0) return;
 
+      const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
       const sec = (titulo: string, icone: string, items: string) =>
         items
           ? `<h3 style="margin:18px 0 8px;color:#1f2937">${icone} ${titulo}</h3><ul style="list-style:none;padding:0;margin:0">${items}</ul>`
           : "";
+      const badgeHoje = `<span style="background:#dc2626;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px">HOJE</span>`;
 
-      const liDemanda = minhasDemandas.map((d) =>
-        `<li style="padding:10px;border-left:3px solid #f59e0b;background:#fffbeb;margin-bottom:8px"><b>${escapeHtml(d.titulo)}</b><div style="color:#666;font-size:13px">Prioridade: ${d.prioridade} · Status: ${d.status}</div></li>`,
-      ).join("");
-      const liReuniao = minhasReunioes.map((r) =>
-        `<li style="padding:10px;border-left:3px solid #6366f1;background:#eef2ff;margin-bottom:8px"><b>${escapeHtml(r.titulo)}</b><div style="color:#666;font-size:13px">${new Date(r.data_reuniao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></li>`,
-      ).join("");
-      const liTarefa = minhasTarefas.map((t) => {
-        const atrasada = t.em_teste && t.data_prevista < hoje;
-        const cor = atrasada ? "#ef4444" : "#10b981";
-        const bg = atrasada ? "#fef2f2" : "#ecfdf5";
-        const tag = atrasada ? " · ⚠️ Em teste atrasada" : "";
-        return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(t.titulo)}</b><div style="color:#666;font-size:13px">Prazo: ${t.data_prevista}${tag}</div></li>`;
-      }).join("");
+      const liDemanda = minhasDemandas
+        .sort((a, b) => (a.prazo ?? "").localeCompare(b.prazo ?? ""))
+        .map((d) => {
+          const hj = isHoje(d.prazo);
+          const cor = hj ? "#dc2626" : "#f59e0b";
+          const bg = hj ? "#fef2f2" : "#fffbeb";
+          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(d.titulo)}</b>${hj ? badgeHoje : ""}<div style="color:#666;font-size:13px">Prazo: ${d.prazo} · Prioridade: ${d.prioridade}</div></li>`;
+        }).join("");
+
+      const liReuniao = minhasReunioes
+        .sort((a, b) => a.data_reuniao.localeCompare(b.data_reuniao))
+        .map((r) => {
+          const hj = isHoje(r.data_reuniao);
+          const cor = hj ? "#dc2626" : "#6366f1";
+          const bg = hj ? "#fef2f2" : "#eef2ff";
+          const dt = new Date(r.data_reuniao);
+          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(r.titulo)}</b>${hj ? badgeHoje : ""}<div style="color:#666;font-size:13px">${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></li>`;
+        }).join("");
+
+      const liTarefa = minhasTarefas
+        .sort((a, b) => (a.data_prevista ?? "").localeCompare(b.data_prevista ?? ""))
+        .map((t) => {
+          const hj = isHoje(t.data_prevista);
+          const cor = hj ? "#dc2626" : "#10b981";
+          const bg = hj ? "#fef2f2" : "#ecfdf5";
+          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(t.titulo)}</b>${hj ? badgeHoje : ""}<div style="color:#666;font-size:13px">Prazo: ${t.data_prevista}</div></li>`;
+        }).join("");
+
       const liRel = meusRelatorios.map((r) =>
-        `<li style="padding:10px;border-left:3px solid #0ea5e9;background:#f0f9ff;margin-bottom:8px"><b>${escapeHtml(r.codigo)} — ${escapeHtml(r.titulo ?? "")}</b><div style="color:#666;font-size:13px">${r.cliente ? "Cliente: " + escapeHtml(r.cliente) + " · " : ""}Prioridade: ${r.prioridade}${r.prazo ? " · Prazo: " + r.prazo : ""}</div></li>`,
+        `<li style="padding:10px;border-left:3px solid #0ea5e9;background:#f0f9ff;margin-bottom:8px"><b>${escapeHtml(r.codigo)} — ${escapeHtml(r.titulo ?? "")}</b><div style="color:#666;font-size:13px">${r.cliente ? "Cliente: " + escapeHtml(r.cliente) + " · " : ""}Status: ${r.status}${r.prazo ? " · Prazo: " + r.prazo : ""}</div></li>`,
+      ).join("");
+
+      const liAviso = meusAvisos.map((a) =>
+        `<li style="padding:10px;border-left:3px solid #a855f7;background:#faf5ff;margin-bottom:8px"><b>[${String(a.tipo).toUpperCase()}] ${escapeHtml(a.titulo)}</b><div style="color:#666;font-size:13px">${escapeHtml(a.mensagem ?? "")}</div></li>`,
       ).join("");
 
       const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111">
         <h2 style="color:#1f2937;margin-bottom:4px">☀️ Bom dia, ${escapeHtml(u.nome ?? "")}!</h2>
-        <p style="color:#555;margin-top:0">Resumo do seu dia — ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}</p>
-        <p style="color:#374151"><b>${total}</b> item(ns) requerem sua atenção hoje:</p>
-        ${sec(`Demandas do dia (${minhasDemandas.length})`, "📌", liDemanda)}
-        ${sec(`Reuniões do dia (${minhasReunioes.length})`, "🗓️", liReuniao)}
-        ${sec(`Tarefas em alerta (${minhasTarefas.length})`, "✅", liTarefa)}
-        ${sec(`Novos relatórios (${meusRelatorios.length})`, "📄", liRel)}
+        <p style="color:#555;margin-top:0">Resumo semanal — destaque para hoje (${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })})</p>
+        <p style="color:#374151"><b>${total}</b> item(ns) requerem sua atenção esta semana:</p>
+        ${sec(`Avisos ativos (${meusAvisos.length})`, "📣", liAviso)}
+        ${sec(`Relatórios pendentes (${meusRelatorios.length})`, "📄", liRel)}
+        ${sec(`Demandas da semana (${minhasDemandas.length})`, "📌", liDemanda)}
+        ${sec(`Tarefas da semana (${minhasTarefas.length})`, "✅", liTarefa)}
+        ${sec(`Reuniões da semana (${minhasReunioes.length})`, "🗓️", liReuniao)}
         <p style="color:#888;font-size:12px;margin-top:24px">Acesse o sistema para mais detalhes.</p>
       </div>`;
 
-      const text = `Resumo do dia — ${total} item(ns).\nDemandas: ${minhasDemandas.length} · Reuniões: ${minhasReunioes.length} · Tarefas em alerta: ${minhasTarefas.length} · Relatórios: ${meusRelatorios.length}`;
+      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Relatórios: ${meusRelatorios.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
 
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
