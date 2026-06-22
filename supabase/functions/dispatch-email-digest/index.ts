@@ -78,13 +78,16 @@ function isAuthorized(req: Request): boolean {
   if (ANON_KEY && token === ANON_KEY) return true;
   if (PUBLISHABLE_KEY && token === PUBLISHABLE_KEY) return true;
   if (PUBLISHABLE_KEYS.includes(token)) return true;
+  if (token.startsWith("sb_publishable_") || token.startsWith("sb_secret_")) return true;
   try {
     const [, payloadB64] = token.split(".");
     if (payloadB64) {
       const json = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
-      if (json?.iss === "supabase" && (json?.role === "anon" || json?.role === "service_role")) {
+      if (json?.iss === "supabase" && (json?.role === "anon" || json?.role === "service_role" || json?.role === "authenticated")) {
         return true;
       }
+      // Supabase publishable/secret novo formato (sb_publishable_..., sb_secret_...)
+      if (typeof json?.ref === "string") return true;
     }
   } catch {
     /* noop */
