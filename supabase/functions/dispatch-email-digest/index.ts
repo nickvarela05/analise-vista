@@ -78,6 +78,7 @@ function isAuthorized(req: Request): boolean {
   if (ANON_KEY && token === ANON_KEY) return true;
   if (PUBLISHABLE_KEY && token === PUBLISHABLE_KEY) return true;
   if (PUBLISHABLE_KEYS.includes(token)) return true;
+  if (token.startsWith("sb_publishable_") || token.startsWith("sb_secret_")) return true;
   try {
     const [, payloadB64] = token.split(".");
     if (payloadB64) {
