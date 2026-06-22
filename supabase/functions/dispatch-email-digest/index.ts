@@ -243,12 +243,19 @@ async function processarPendentes() {
 // deno-lint-ignore no-explicit-any
 const EdgeRuntime: any = (globalThis as any).EdgeRuntime;
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Max-Age": "86400",
+};
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204 });
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (!isAuthorized(req)) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...CORS },
     });
   }
 
@@ -271,7 +278,7 @@ Deno.serve(async (req) => {
   else work.catch((e) => console.error("[bg]", e));
 
   return new Response(JSON.stringify({ mode, queued: true }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...CORS },
   });
 });
 
