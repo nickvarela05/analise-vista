@@ -28,26 +28,9 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -84,8 +67,7 @@ function fmtPrazo(s: string | null) {
 
 function urgenciaVariant(u: string | null) {
   const v = (u ?? "").toLowerCase();
-  if (v === "crítica" || v === "critica")
-    return "bg-destructive/15 text-destructive border-destructive/30";
+  if (v === "crítica" || v === "critica") return "bg-destructive/15 text-destructive border-destructive/30";
   if (v === "alta") return "bg-warning/20 text-warning border-warning/30";
   if (v === "média" || v === "media") return "bg-primary/10 text-primary border-primary/20";
   return "bg-muted text-muted-foreground";
@@ -119,19 +101,12 @@ function statusVariant(s: string | null) {
   const v = (s ?? "").toLowerCase();
   if (v === "enviado" || v === "finalizado" || v === "concluído" || v === "concluido")
     return "bg-success/15 text-success border-success/30";
-  if (v === "feito" || v === "encaminhado" || v === "em andamento")
-    return "bg-info/15 text-info border-info/30";
+  if (v === "feito" || v === "encaminhado" || v === "em andamento") return "bg-info/15 text-info border-info/30";
   if (v === "pendente") return "bg-warning/20 text-warning border-warning/40";
   return "bg-muted text-muted-foreground";
 }
 
-const CATEGORIAS_SUGERIDAS = [
-  "Solicitação de Relatório",
-  "Notificação",
-  "Resposta",
-  "Informativo",
-  "Outros",
-] as const;
+const CATEGORIAS_SUGERIDAS = ["Solicitação de Relatório", "Notificação", "Resposta", "Informativo", "Outros"] as const;
 
 type RowExt = SolicitacaoRelatorio & { _inativo: boolean };
 
@@ -152,9 +127,7 @@ function Relatorios() {
   const { data: inativos = [] } = useQuery({
     queryKey: qk.relatorios.inativos(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("relatorio_inativo")
-        .select("solicitacao_id");
+      const { data, error } = await supabase.from("relatorio_inativo").select("solicitacao_id");
       if (error) throw error;
       return (data ?? []).map((r) => r.solicitacao_id);
     },
@@ -165,11 +138,7 @@ function Relatorios() {
   const { data: colaboradores = [] } = useQuery({
     queryKey: qk.relatorios.colaboradores(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("colaborador")
-        .select("id, nome")
-        .eq("ativo", true)
-        .order("nome");
+      const { data, error } = await supabase.from("colaborador").select("id, nome").eq("ativo", true).order("nome");
       if (error) throw error;
       return data ?? [];
     },
@@ -237,17 +206,11 @@ function Relatorios() {
         // Solicitantes "Google" (nome ou e-mail) são inativados automaticamente.
         const nome = (r.solicitante_nome ?? "").toLowerCase();
         const email = (r.solicitante_email ?? "").toLowerCase();
-        const isGoogle =
-          nome === "google" ||
-          nome.includes("google") ||
-          /@(.*\.)?google\.com$/.test(email);
+        const isGoogle = nome === "google" || nome.includes("google") || /@(.*\.)?google\.com$/.test(email);
         return {
           ...r,
           // "Enviado" e solicitantes Google são considerados inativos automaticamente.
-          _inativo:
-            inativosSet.has(r.id) ||
-            (r.status ?? "").toLowerCase() === "enviado" ||
-            isGoogle,
+          _inativo: inativosSet.has(r.id) || (r.status ?? "").toLowerCase() === "enviado" || isGoogle,
         };
       }),
     [data, inativosSet],
@@ -319,11 +282,7 @@ function Relatorios() {
         actions={
           <>
             <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
-              <Switch
-                id="mostrar-inativos"
-                checked={mostrarInativos}
-                onCheckedChange={setMostrarInativos}
-              />
+              <Switch id="mostrar-inativos" checked={mostrarInativos} onCheckedChange={setMostrarInativos} />
               <Label htmlFor="mostrar-inativos" className="cursor-pointer text-xs">
                 Mostrar inativas
               </Label>
@@ -339,10 +298,7 @@ function Relatorios() {
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               Atualizar
             </Button>
-            <NovoRelatorioDialog
-              categoriasExistentes={categorias.map((c) => c.nome)}
-              colaboradores={colaboradores}
-            />
+            <NovoRelatorioDialog categoriasExistentes={categorias.map((c) => c.nome)} colaboradores={colaboradores} />
           </>
         }
       />
@@ -373,10 +329,7 @@ function Relatorios() {
             >
               {isSolic ? (
                 <div className="space-y-2">
-                  <div
-                    className="truncate text-xs font-medium text-muted-foreground"
-                    title={c.nome}
-                  >
+                  <div className="truncate text-xs font-medium text-muted-foreground" title={c.nome}>
                     {c.nome}
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -385,15 +338,11 @@ function Relatorios() {
                       <div className="mt-1 text-[11px] text-muted-foreground">Solicitações</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-semibold leading-none text-success">
-                        {c.enviados}
-                      </div>
+                      <div className="text-2xl font-semibold leading-none text-success">{c.enviados}</div>
                       <div className="mt-1 text-[11px] text-muted-foreground">Enviados</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-semibold leading-none text-destructive">
-                        {c.atrasados}
-                      </div>
+                      <div className="text-2xl font-semibold leading-none text-destructive">{c.atrasados}</div>
                       <div className="mt-1 text-[11px] text-muted-foreground">Atrasados</div>
                     </div>
                   </div>
@@ -445,8 +394,7 @@ function Relatorios() {
       ) : error || (data && !data.ok) ? (
         <Card>
           <div className="p-6 text-sm text-destructive">
-            Erro ao carregar:{" "}
-            {(error as Error)?.message ?? (data && !data.ok ? data.error : "desconhecido")}
+            Erro ao carregar: {(error as Error)?.message ?? (data && !data.ok ? data.error : "desconhecido")}
           </div>
         </Card>
       ) : filtered.length === 0 ? (
@@ -469,13 +417,9 @@ function Relatorios() {
               colaboradores={colaboradores}
               categoriasDisponiveis={categoriasDisponiveis}
               expanded={expanded}
-              onToggleExpand={(id) =>
-                setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
-              }
+              onToggleExpand={(id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))}
               onUpdate={(vars) => updateMut.mutate(vars)}
-              onToggleAtivo={(id, ativarNovamente) =>
-                toggleAtivoMut.mutate({ solicitacaoId: id, ativarNovamente })
-              }
+              onToggleAtivo={(id, ativarNovamente) => toggleAtivoMut.mutate({ solicitacaoId: id, ativarNovamente })}
             />
           ))}
         </div>
@@ -526,14 +470,8 @@ function CategoriaSecao({
 
   const itemsSorted = React.useMemo(() => sortByPrio(items), [items, sortByPrio]);
 
-  const novas = React.useMemo(
-    () => itemsSorted.filter((r) => !(r.responsavel ?? "").trim()),
-    [itemsSorted],
-  );
-  const atribuidas = React.useMemo(
-    () => itemsSorted.filter((r) => !!(r.responsavel ?? "").trim()),
-    [itemsSorted],
-  );
+  const novas = React.useMemo(() => itemsSorted.filter((r) => !(r.responsavel ?? "").trim()), [itemsSorted]);
+  const atribuidas = React.useMemo(() => itemsSorted.filter((r) => !!(r.responsavel ?? "").trim()), [itemsSorted]);
 
   return (
     <section>
@@ -586,9 +524,7 @@ function SubGrupo({
   children: React.ReactNode;
 }) {
   const toneCls =
-    tone === "warning"
-      ? "bg-warning/10 text-warning border-warning/30"
-      : "bg-info/10 text-info border-info/30";
+    tone === "warning" ? "bg-warning/10 text-warning border-warning/30" : "bg-info/10 text-info border-info/30";
   return (
     <div>
       <div className="mb-2 flex items-center gap-2 px-1">
@@ -603,9 +539,7 @@ function SubGrupo({
 }
 
 function EmptyMini({ text }: { text: string }) {
-  return (
-    <Card className="p-4 text-center text-xs text-muted-foreground">{text}</Card>
-  );
+  return <Card className="p-4 text-center text-xs text-muted-foreground">{text}</Card>;
 }
 
 function RelatorioTable({
@@ -642,9 +576,7 @@ function RelatorioTable({
             const opcoesCat = Array.from(new Set([catAtual, ...categoriasDisponiveis]));
             return (
               <React.Fragment key={r.id}>
-                <TableRow
-                  className={cn("transition-opacity", r._inativo && "opacity-50 bg-muted/30")}
-                >
+                <TableRow className={cn("transition-opacity", r._inativo && "opacity-50 bg-muted/30")}>
                   <TableCell className="p-1">
                     <Button
                       variant="ghost"
@@ -653,11 +585,7 @@ function RelatorioTable({
                       onClick={() => onToggleExpand(r.id)}
                       aria-label={isOpen ? "Fechar detalhes" : "Abrir detalhes"}
                     >
-                      {isOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
+                      {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -678,14 +606,10 @@ function RelatorioTable({
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {r.tipo_base ?? "—"}
-                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{r.tipo_base ?? "—"}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-0.5">
-                      <span
-                        className={cn("text-sm font-medium", r._inativo && "line-through")}
-                      >
+                      <span className={cn("text-sm font-medium", r._inativo && "line-through")}>
                         {r.solicitante_nome ?? "—"}
                       </span>
                       {r.solicitante_email && (
@@ -700,18 +624,12 @@ function RelatorioTable({
                     </div>
                   </TableCell>
                   <TableCell className="max-w-md">
-                    <p
-                      className={cn("line-clamp-2 text-sm", r._inativo && "line-through")}
-                      title={r.descricao ?? ""}
-                    >
+                    <p className={cn("line-clamp-2 text-sm", r._inativo && "line-through")} title={r.descricao ?? ""}>
                       {r.descricao ?? "—"}
                     </p>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`capitalize ${urgenciaVariant(r.urgencia)}`}
-                    >
+                    <Badge variant="outline" className={`capitalize ${urgenciaVariant(r.urgencia)}`}>
                       {r.urgencia ?? "—"}
                     </Badge>
                   </TableCell>
@@ -746,9 +664,7 @@ function RelatorioTable({
                           ? (r.status as string)
                           : "Pendente"
                       }
-                      onValueChange={(v) =>
-                        onUpdate({ id: r.id, status: v as StatusSolicitacao })
-                      }
+                      onValueChange={(v) => onUpdate({ id: r.id, status: v as StatusSolicitacao })}
                     >
                       <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
                         <SelectValue />
@@ -762,9 +678,7 @@ function RelatorioTable({
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {fmtPrazo(r.prazo)}
-                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{fmtPrazo(r.prazo)}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
@@ -814,8 +728,25 @@ function DetalhesEmail({ row }: { row: RowExt }) {
               <Mail className="h-3.5 w-3.5" />
               Conteúdo do e-mail
             </h4>
-            <div className="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm leading-relaxed text-foreground">
-              {row.detalhes_email || row.descricao || "Sem conteúdo disponível."}
+            <div className="relative">
+              <div
+                className={cn(
+                  "whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm leading-relaxed text-foreground overflow-hidden transition-all duration-300",
+                  emailExpandido ? "max-h-none" : "max-h-24",
+                )}
+              >
+                {row.detalhes_email || row.descricao || "Sem conteúdo disponível."}
+              </div>
+              {!emailExpandido && (
+                <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent rounded-b-md" />
+              )}
+              <button
+                type="button"
+                onClick={() => setEmailExpandido((v) => !v)}
+                className="mt-1 text-xs font-medium text-primary hover:underline"
+              >
+                {emailExpandido ? "Ver menos ▲" : "Ver mais ▼"}
+              </button>
             </div>
           </div>
           {row.justificativa_urgencia && (
@@ -836,10 +767,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
           </DetalheLinha>
           <DetalheLinha icon={<Mail className="h-3.5 w-3.5" />} label="E-mail">
             {row.solicitante_email ? (
-              <a
-                href={`mailto:${row.solicitante_email}`}
-                className="text-primary hover:underline"
-              >
+              <a href={`mailto:${row.solicitante_email}`} className="text-primary hover:underline">
                 {row.solicitante_email}
               </a>
             ) : (
@@ -851,9 +779,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
           </DetalheLinha>
           <DetalheLinha label="Categoria">{row.categoria ?? "—"}</DetalheLinha>
           <DetalheLinha label="Tipo base">{row.tipo_base ?? "—"}</DetalheLinha>
-          <DetalheLinha label="Prazo">
-            {fmtPrazo(row.prazo)}
-          </DetalheLinha>
+          <DetalheLinha label="Prazo">{fmtPrazo(row.prazo)}</DetalheLinha>
           <DetalheLinha label="Recebido em">
             {row.criado_em ? format(new Date(row.criado_em), "dd/MM/yyyy HH:mm") : "—"}
           </DetalheLinha>
@@ -863,15 +789,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
   );
 }
 
-function DetalheLinha({
-  icon,
-  label,
-  children,
-}: {
-  icon?: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
+function DetalheLinha({ icon, label, children }: { icon?: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-border/50 pb-1.5 last:border-0">
       <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
