@@ -532,21 +532,23 @@ export function SlaUrgenciaCard({ solicitacoes }: { solicitacoes: Solic[] }) {
  * #12 Top solicitantes
  * ============================================================ */
 export function TopSolicitantesCard({ solicitacoes }: { solicitacoes: Solic[] }) {
-  const data = React.useMemo(() => computeTopSolicitantes(solicitacoes, 90, 8), [solicitacoes]);
+  const data = React.useMemo(() => computeTopSolicitantes(solicitacoes, 90), [solicitacoes]);
+  // Altura dinâmica para acomodar todos os solicitantes (mín. 192px, ~26px por linha)
+  const chartHeight = Math.max(192, data.length * 26 + 24);
   return (
     <Panel
       title="Quem mais pede relatórios (90 dias)"
-      hint="Pessoas que mais pediram relatórios nos últimos 90 dias. Útil para identificar clientes recorrentes e priorizar relacionamento."
+      hint="Histórico completo: todas as pessoas que solicitaram relatórios nos últimos 90 dias, ordenadas pela quantidade de solicitações."
     >
-      <div className="h-48">
+      <div className="max-h-[420px] overflow-y-auto pr-1" style={{ minHeight: 192 }}>
         {data.length === 0 ? (
-          <Empty msg="Sem solicitações no período." />
+          <div className="h-48"><Empty msg="Sem solicitações no período." /></div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
               <XAxis type="number" allowDecimals={false} fontSize={10} stroke="var(--muted-foreground)" />
-              <YAxis type="category" dataKey="nome" width={110} fontSize={10} stroke="var(--muted-foreground)" />
+              <YAxis type="category" dataKey="nome" width={130} fontSize={10} stroke="var(--muted-foreground)" interval={0} />
               <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabel} itemStyle={tooltipItem} />
               <Bar dataKey="total" name="Solicitações" fill="var(--chart-2)" radius={[0, 6, 6, 0]} maxBarSize={18} />
             </BarChart>
