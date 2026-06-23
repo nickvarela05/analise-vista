@@ -179,58 +179,121 @@ async function runResumoDiario() {
       if (total === 0) return;
 
       const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
-      const sec = (titulo: string, icone: string, items: string) =>
-        items
-          ? `<h3 style="margin:18px 0 8px;color:#1f2937">${icone} ${titulo}</h3><ul style="list-style:none;padding:0;margin:0">${items}</ul>`
-          : "";
-      const badgeHoje = `<span style="background:#dc2626;color:#fff;font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px">HOJE</span>`;
+      const fmtData = (d: string) => {
+        const dt = new Date(d.length <= 10 ? `${d}T00:00:00` : d);
+        return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+      };
+      const fmtHora = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const diasAte = (d: string | null | undefined) => {
+        if (!d) return null;
+        const dt = new Date(d.length <= 10 ? `${d}T00:00:00` : d);
+        const ms = dt.getTime() - new Date(`${hoje}T00:00:00`).getTime();
+        return Math.round(ms / 86400000);
+      };
+      const prazoBadge = (d: string | null | undefined) => {
+        const n = diasAte(d);
+        if (n === null) return "";
+        if (n <= 0) return `<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">HOJE</span>`;
+        if (n === 1) return `<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">AMANHÃ</span>`;
+        return `<span style="background:#e5e7eb;color:#374151;font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px">em ${n}d</span>`;
+      };
 
-      const liDemanda = minhasDemandas
-        .sort((a, b) => (a.prazo ?? "").localeCompare(b.prazo ?? ""))
-        .map((d) => {
-          const hj = isHoje(d.prazo);
-          const cor = hj ? "#dc2626" : "#f59e0b";
-          const bg = hj ? "#fef2f2" : "#fffbeb";
-          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(d.titulo)}</b>${hj ? badgeHoje : ""}<div style="color:#666;font-size:13px">Prazo: ${d.prazo} · Prioridade: ${d.prioridade}</div></li>`;
-        }).join("");
+      type Item = { prazo?: string | null; data_prevista?: string | null; data_reuniao?: string | null };
+      const partition = <T extends Item>(arr: T[], key: "prazo" | "data_prevista" | "data_reuniao") => {
+        const hojeArr: T[] = [], semanaArr: T[] = [];
+        for (const it of arr) {
+          if (isHoje(it[key] as string | null | undefined)) hojeArr.push(it);
+          else semanaArr.push(it);
+        }
+        return { hojeArr, semanaArr };
+      };
 
-      const liReuniao = minhasReunioes
-        .sort((a, b) => a.data_reuniao.localeCompare(b.data_reuniao))
-        .map((r) => {
-          const hj = isHoje(r.data_reuniao);
-          const cor = hj ? "#dc2626" : "#6366f1";
-          const bg = hj ? "#fef2f2" : "#eef2ff";
-          const dt = new Date(r.data_reuniao);
-          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(r.titulo)}</b>${hj ? badgeHoje : ""}<div style="color:#666;font-size:13px">${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div></li>`;
-        }).join("");
+      const demP = partition(minhasDemandas, "prazo");
+      const tarP = partition(minhasTarefas, "data_prevista");
+      const reuP = partition(minhasReunioes, "data_reuniao");
+      const totalHoje = demP.hojeArr.length + tarP.hojeArr.length + reuP.hojeArr.length;
 
-      const liTarefa = minhasTarefas
-        .sort((a, b) => (a.data_prevista ?? "").localeCompare(b.data_prevista ?? ""))
-        .map((t) => {
-          const hj = isHoje(t.data_prevista);
-          const cor = hj ? "#dc2626" : "#10b981";
-          const bg = hj ? "#fef2f2" : "#ecfdf5";
-          return `<li style="padding:10px;border-left:3px solid ${cor};background:${bg};margin-bottom:8px"><b>${escapeHtml(t.titulo)}</b>${hj ? badgeHoje : ""}<div style="color:#666;font-size:13px">Prazo: ${t.data_prevista}</div></li>`;
-        }).join("");
+      const card = (accent: string, body: string) =>
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 10px;border-collapse:separate;background:#ffffff;border:1px solid #e5e7eb;border-left:4px solid ${accent};border-radius:8px"><tr><td style="padding:12px 14px">${body}</td></tr></table>`;
 
-      const liRel = meusRelatorios.map((r) =>
-        `<li style="padding:10px;border-left:3px solid #0ea5e9;background:#f0f9ff;margin-bottom:8px"><b>${escapeHtml(r.codigo)} — ${escapeHtml(r.titulo ?? "")}</b><div style="color:#666;font-size:13px">${r.cliente ? "Cliente: " + escapeHtml(r.cliente) + " · " : ""}Status: ${r.status}${r.prazo ? " · Prazo: " + r.prazo : ""}</div></li>`,
-      ).join("");
+      const headRow = (titulo: string, badge: string) =>
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="color:#111827;font-size:14px;font-weight:600">${titulo}</td><td align="right">${badge}</td></tr></table>`;
 
-      const liAviso = meusAvisos.map((a) =>
-        `<li style="padding:10px;border-left:3px solid #a855f7;background:#faf5ff;margin-bottom:8px"><b>[${String(a.tipo).toUpperCase()}] ${escapeHtml(a.titulo)}</b><div style="color:#666;font-size:13px">${escapeHtml(a.mensagem ?? "")}</div></li>`,
-      ).join("");
+      const renderDemanda = (d: typeof minhasDemandas[number]) => card("#f59e0b",
+        `${headRow(escapeHtml(d.titulo), prazoBadge(d.prazo))}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${d.prazo ? fmtData(d.prazo) : "sem prazo"} &nbsp;·&nbsp; 🎯 ${escapeHtml(String(d.prioridade ?? "—"))}</div>`);
 
-      const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111">
-        <h2 style="color:#1f2937;margin-bottom:4px">☀️ Bom dia, ${escapeHtml(u.nome ?? "")}!</h2>
-        <p style="color:#555;margin-top:0">Resumo semanal — destaque para hoje (${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })})</p>
-        <p style="color:#374151"><b>${total}</b> item(ns) requerem sua atenção esta semana:</p>
-        ${sec(`Avisos ativos (${meusAvisos.length})`, "📣", liAviso)}
-        ${sec(`Relatórios pendentes (${meusRelatorios.length})`, "📄", liRel)}
-        ${sec(`Demandas da semana (${minhasDemandas.length})`, "📌", liDemanda)}
-        ${sec(`Tarefas da semana (${minhasTarefas.length})`, "✅", liTarefa)}
-        ${sec(`Reuniões da semana (${minhasReunioes.length})`, "🗓️", liReuniao)}
-        <p style="color:#888;font-size:12px;margin-top:24px">Acesse o sistema para mais detalhes.</p>
+      const renderTarefa = (t: typeof minhasTarefas[number]) => card("#10b981",
+        `${headRow(escapeHtml(t.titulo), prazoBadge(t.data_prevista))}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${t.data_prevista ? fmtData(t.data_prevista) : "sem prazo"}</div>`);
+
+      const renderReuniao = (r: typeof minhasReunioes[number]) => card("#6366f1",
+        `${headRow(escapeHtml(r.titulo), prazoBadge(r.data_reuniao))}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">🗓️ ${fmtData(r.data_reuniao)} às ${fmtHora(r.data_reuniao)}</div>`);
+
+      const renderRelatorio = (r: typeof meusRelatorios[number]) => card("#0ea5e9",
+        `${headRow(escapeHtml(r.codigo) + " — " + escapeHtml(r.titulo ?? ""), r.prazo ? prazoBadge(r.prazo) : "")}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">${r.cliente ? "🏢 " + escapeHtml(r.cliente) + " &nbsp;·&nbsp; " : ""}Status: <b style="color:#0369a1">${escapeHtml(r.status)}</b></div>`);
+
+      const renderAviso = (a: typeof meusAvisos[number]) => card("#a855f7",
+        `<div><span style="background:#a855f7;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">${escapeHtml(String(a.tipo).toUpperCase())}</span>
+         <strong style="color:#111827;font-size:14px;margin-left:8px">${escapeHtml(a.titulo)}</strong></div>
+         ${a.mensagem ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;line-height:1.5">${escapeHtml(a.mensagem)}</div>` : ""}`);
+
+      const bloco = (titulo: string, icone: string, count: number, items: string) =>
+        count === 0 ? "" : `
+        <div style="margin:26px 0 10px">
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+            <td style="color:#111827;font-size:15px;font-weight:700;letter-spacing:-.2px">${icone} ${titulo}</td>
+            <td style="padding-left:8px"><span style="background:#f3f4f6;color:#374151;font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px">${count}</span></td>
+          </tr></table>
+          <div style="margin-top:10px">${items}</div>
+        </div>`;
+
+      const sectionHoje = totalHoje > 0 ? `
+        <div style="margin:20px 0 8px;padding:18px;background:linear-gradient(135deg,#fef2f2 0%,#fff7ed 100%);border:1px solid #fecaca;border-radius:12px">
+          <div style="font-size:11px;font-weight:700;color:#dc2626;letter-spacing:1.5px">🔥 FOCO DE HOJE</div>
+          <div style="font-size:18px;font-weight:700;color:#7f1d1d;margin-top:4px">${totalHoje} ${totalHoje === 1 ? "item precisa" : "itens precisam"} da sua atenção</div>
+          <div style="margin-top:14px">
+            ${reuP.hojeArr.sort((a, b) => a.data_reuniao.localeCompare(b.data_reuniao)).map(renderReuniao).join("")}
+            ${demP.hojeArr.map(renderDemanda).join("")}
+            ${tarP.hojeArr.map(renderTarefa).join("")}
+          </div>
+        </div>` : `
+        <div style="margin:20px 0 8px;padding:20px;background:linear-gradient(135deg,#ecfdf5 0%,#f0fdfa 100%);border:1px solid #a7f3d0;border-radius:12px;text-align:center">
+          <div style="font-size:28px">✨</div>
+          <div style="font-size:14px;font-weight:600;color:#065f46;margin-top:6px">Nenhum compromisso urgente para hoje</div>
+          <div style="font-size:12px;color:#047857;margin-top:2px">Aproveite para adiantar as atividades da semana 👇</div>
+        </div>`;
+
+      const semanaItems =
+        reuP.semanaArr.sort((a, b) => a.data_reuniao.localeCompare(b.data_reuniao)).map(renderReuniao).join("") +
+        demP.semanaArr.sort((a, b) => (a.prazo ?? "").localeCompare(b.prazo ?? "")).map(renderDemanda).join("") +
+        tarP.semanaArr.sort((a, b) => (a.data_prevista ?? "").localeCompare(b.data_prevista ?? "")).map(renderTarefa).join("");
+      const semanaCount = reuP.semanaArr.length + demP.semanaArr.length + tarP.semanaArr.length;
+
+      const dataExtenso = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+      const dataCap = dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1);
+      const primeiroNome = (u.nome ?? "").split(" ")[0] || "";
+
+      const html = `<div style="background:#f3f4f6;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.06)">
+          <tr><td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:28px 28px 24px;color:#ffffff">
+            <div style="font-size:11px;font-weight:600;letter-spacing:2px;opacity:.85">${dataCap.toUpperCase()}</div>
+            <h1 style="margin:6px 0 4px;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#ffffff">☀️ Bom dia, ${escapeHtml(primeiroNome)}!</h1>
+            <p style="margin:0;font-size:14px;opacity:.92">Seu resumo da semana — ${total} ${total === 1 ? "item" : "itens"} no radar</p>
+          </td></tr>
+          <tr><td style="padding:8px 24px 28px">
+            ${sectionHoje}
+            ${bloco("Avisos da gestão", "📣", meusAvisos.length, meusAvisos.map(renderAviso).join(""))}
+            ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
+            ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
+            <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
+              <a href="https://analise-vista.lovable.app" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px">Abrir painel completo →</a>
+              <p style="color:#9ca3af;font-size:12px;margin:16px 0 0">Você recebe este resumo porque a opção está ativa. Ajuste em <i>Configurações → Notificações</i>.</p>
+            </div>
+          </td></tr>
+        </table>
       </div>`;
 
       const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Relatórios: ${meusRelatorios.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
