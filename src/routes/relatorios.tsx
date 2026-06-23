@@ -719,6 +719,8 @@ function RelatorioTable({
 }
 
 function DetalhesEmail({ row }: { row: RowExt }) {
+  const [emailExpandido, setEmailExpandido] = React.useState(false);
+
   return (
     <div className="border-t border-dashed border-border bg-muted/30 px-6 py-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
