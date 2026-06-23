@@ -162,8 +162,13 @@ async function runResumoDiario() {
       ]);
 
       const colabId = profR.data?.colaborador_id ?? null;
+      // responsavel_id / responsaveis_ids armazenam COLABORADOR_ID (não user_id)
       const meu = (r: { responsavel_id?: string | null; responsaveis_ids?: string[] | null; equipe_toda?: boolean | null }) =>
-        r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id) || r.equipe_toda === true;
+        r.equipe_toda === true ||
+        (!!colabId && (r.responsavel_id === colabId || (r.responsaveis_ids ?? []).includes(colabId)));
+      // chamado_externo (relatórios) usa user_id nos campos de responsável
+      const meuChamado = (r: { responsavel_id?: string | null; responsaveis_ids?: string[] | null; equipe_toda?: boolean | null }) =>
+        r.equipe_toda === true || r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id);
 
       const minhasDemandas = (demR.data ?? []).filter(meu);
       const minhasReunioes = (reuR.data ?? []).filter(meu);
