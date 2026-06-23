@@ -101,6 +101,10 @@ export async function compressAudio(
       "-c:a", "libopus",
       "-b:a", "24k",
       "-application", "voip",
+      "-compression_level", "0", // encode rápido (~4x); tamanho ~+5%, qualidade equivalente para voz
+      "-frame_duration", "60",   // frames maiores = menos overhead = mais rápido
+      "-vbr", "on",
+      "-threads", "0",
       outputName,
     ]);
 
