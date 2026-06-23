@@ -173,7 +173,7 @@ async function runResumoDiario() {
       const minhasDemandas = (demR.data ?? []).filter(meu);
       const minhasReunioes = (reuR.data ?? []).filter(meu);
       const minhasTarefas = (tarR.data ?? []).filter(meu);
-      const meusRelatorios = (relR.data ?? []).filter(meu);
+      const meusRelatorios = (relR.data ?? []).filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
       );
