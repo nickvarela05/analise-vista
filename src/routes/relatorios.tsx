@@ -805,6 +805,8 @@ function RelatorioTable({
 }
 
 function DetalhesEmail({ row }: { row: RowExt }) {
+  const [verMais, setVerMais] = React.useState(false);
+  const conteudo = row.detalhes_email || row.descricao || "Sem conteúdo disponível.";
   return (
     <div className="border-t border-dashed border-border bg-muted/30 px-6 py-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -814,9 +816,22 @@ function DetalhesEmail({ row }: { row: RowExt }) {
               <Mail className="h-3.5 w-3.5" />
               Conteúdo do e-mail
             </h4>
-            <div className="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm leading-relaxed text-foreground">
-              {row.detalhes_email || row.descricao || "Sem conteúdo disponível."}
+            <div
+              className={cn(
+                "whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm leading-relaxed text-foreground transition-all",
+                !verMais && "line-clamp-5",
+              )}
+            >
+              {conteudo}
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-1 h-auto px-0 text-xs font-medium text-primary hover:text-primary/80"
+              onClick={() => setVerMais((v) => !v)}
+            >
+              {verMais ? "Ver menos" : "Ver mais"}
+            </Button>
           </div>
           {row.justificativa_urgencia && (
             <div>
