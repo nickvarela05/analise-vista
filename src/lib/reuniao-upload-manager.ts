@@ -122,15 +122,32 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
       let finalFile = file;
 
       if (shouldCompress(file)) {
-        const result = await compressAudio(file, {
-          signal: abort.signal,
-          onProgress: (p) =>
-            useUploadStore.getState().upsert(reuniaoId, { phase: "compressing", progress: p }),
-        });
-        finalFile = result.file;
-        useUploadStore
-          .getState()
-          .upsert(reuniaoId, { compressedSize: result.compressedSize, progress: 100 });
+        try {
+          const result = await compressAudio(file, {
+            signal: abort.signal,
+            onProgress: (p) =>
+              useUploadStore.getState().upsert(reuniaoId, { phase: "compressing", progress: p }),
+          });
+          finalFile = result.file;
+          useUploadStore
+            .getState()
+            .upsert(reuniaoId, { compressedSize: result.compressedSize, progress: 100 });
+        } catch (compErr: any) {
+          if (abort.signal.aborted) throw compErr;
+          // Fallback: se compressão falhou (ex.: ffmpeg-core CDN bloqueado) mas
+          // o arquivo original já cabe no limite, sobe direto. Server-side decide
+          // se consegue transcrever.
+          console.warn("[upload-manager] Compressão falhou, tentando upload do original:", compErr);
+          if (file.size > MAX_UPLOAD_BYTES) {
+            throw new Error(
+              `Otimização indisponível e o arquivo (${formatBytes(file.size)}) excede ${formatBytes(MAX_UPLOAD_BYTES)}. Converta para MP3 menor ou tente outro arquivo.`,
+            );
+          }
+          toast.warning("Otimização indisponível — enviando original", {
+            description: "O arquivo cabe no limite, mas pode demorar mais para transcrever.",
+          });
+          finalFile = file;
+        }
       }
 
       if (abort.signal.aborted) throw new Error("CANCELED");
