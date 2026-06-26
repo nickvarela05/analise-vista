@@ -239,7 +239,7 @@ export function UploadAudioReuniao({
           <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">Clique ou arraste um arquivo</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            MP3, M4A, WAV, WebM, OGG ou MP4 · até 1 GB (otimização automática)
+            MP3, M4A, WAV, WebM, OGG ou MP4 · máximo 25 MB
           </p>
           <p className="mt-2 text-[11px] text-primary">
             ⚡ Processamento em segundo plano — você pode sair da página
