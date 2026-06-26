@@ -3,15 +3,30 @@
 // se indisponível ou falhar, cai no ffmpeg.wasm (single-thread, sem COOP/COEP).
 // Alvo: arquivo pequeno (~10MB/hora) compatível com limite de 25MB do Groq Whisper.
 
-export const COMPRESSION_THRESHOLD_BYTES = 20 * 1024 * 1024; // 20 MB
+// Threshold de compressão: 24MB. Abaixo disso o arquivo cabe no limite do
+// Whisper (25MB) e mandamos direto, sem mexer.
+export const COMPRESSION_THRESHOLD_BYTES = 24 * 1024 * 1024;
 
 // ===== ffmpeg.wasm (fallback) =====
+// Tenta múltiplos CDNs em ordem — unpkg cai eventualmente e quebra o app.
 const CORE_VERSION = "0.12.6";
-const CORE_BASE = `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/umd`;
+const CORE_BASES = [
+  `https://cdn.jsdelivr.net/npm/@ffmpeg/core@${CORE_VERSION}/dist/umd`,
+  `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/umd`,
+];
 
 type FFmpegInstance = import("@ffmpeg/ffmpeg").FFmpeg;
 let ffmpegSingleton: FFmpegInstance | null = null;
 let loadPromise: Promise<FFmpegInstance> | null = null;
+
+async function loadFromBase(base: string) {
+  const { toBlobURL } = await import("@ffmpeg/util");
+  const [coreURL, wasmURL] = await Promise.all([
+    toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+    toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+  ]);
+  return { coreURL, wasmURL };
+}
 
 async function getFFmpeg(): Promise<FFmpegInstance> {
   if (ffmpegSingleton) return ffmpegSingleton;
@@ -19,15 +34,22 @@ async function getFFmpeg(): Promise<FFmpegInstance> {
 
   loadPromise = (async () => {
     const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-    const { toBlobURL } = await import("@ffmpeg/util");
     const ff = new FFmpeg();
-    const [coreURL, wasmURL] = await Promise.all([
-      toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
-      toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
-    ]);
-    await ff.load({ coreURL, wasmURL });
-    ffmpegSingleton = ff;
-    return ff;
+    let lastErr: unknown = null;
+    for (const base of CORE_BASES) {
+      try {
+        const { coreURL, wasmURL } = await loadFromBase(base);
+        await ff.load({ coreURL, wasmURL });
+        ffmpegSingleton = ff;
+        return ff;
+      } catch (e) {
+        console.warn(`[audio-compress] ffmpeg-core falhou em ${base}:`, e);
+        lastErr = e;
+      }
+    }
+    throw new Error(
+      `Falha ao carregar otimizador (ffmpeg-core) em todos os CDNs: ${(lastErr as Error)?.message ?? "desconhecido"}`,
+    );
   })();
 
   try {
@@ -41,6 +63,7 @@ async function getFFmpeg(): Promise<FFmpegInstance> {
 export function shouldCompress(file: File): boolean {
   const isVideoContainer =
     file.type === "video/mp4" || /\.(mp4|mov|mkv|avi|webm)$/i.test(file.name);
+  // Vídeos sempre precisam de extração de áudio. Áudios só comprimem se > 24MB.
   return isVideoContainer || file.size > COMPRESSION_THRESHOLD_BYTES;
 }
 
