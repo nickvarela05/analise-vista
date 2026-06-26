@@ -47,12 +47,19 @@ interface Actions {
 export const useUploadStore = create<State & Actions>((set, get) => ({
   jobs: {},
   upsert: (id, patch) =>
-    set((s) => ({
-      jobs: {
-        ...s.jobs,
-        [id]: { ...(s.jobs[id] as UploadJob), ...patch } as UploadJob,
-      },
-    })),
+    set((s) => {
+      const existing = s.jobs[id];
+      // Se o job foi removido (ex.: cancelado), não recria a partir de um patch parcial.
+      if (!existing && !(patch.phase === "compressing" && patch.startedAt)) {
+        return s;
+      }
+      return {
+        jobs: {
+          ...s.jobs,
+          [id]: { ...(existing as UploadJob), ...patch } as UploadJob,
+        },
+      };
+    }),
   remove: (id) =>
     set((s) => {
       const { [id]: _, ...rest } = s.jobs;
