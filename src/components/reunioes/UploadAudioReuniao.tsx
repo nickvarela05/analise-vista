@@ -41,7 +41,7 @@ interface Props {
 
 const ACCEPT =
   "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
-const MAX_BYTES = 1024 * 1024 * 1024;
+const MAX_BYTES = 25 * 1024 * 1024;
 const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
@@ -116,7 +116,9 @@ export function UploadAudioReuniao({
       return;
     }
     if (rawFile.size > MAX_BYTES) {
-      toast.error("Arquivo acima de 1 GB", { description: "Reduza ou divida o arquivo." });
+      toast.error("Arquivo acima de 25 MB", {
+        description: "O limite é de 25 MB. Reduza, comprima ou divida o arquivo antes de enviar.",
+      });
       return;
     }
 
@@ -207,7 +209,7 @@ export function UploadAudioReuniao({
             Áudio e análise automática
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Anexe a gravação. A otimização e o upload rodam em segundo plano —
+            Anexe a gravação (até 25 MB). O upload roda em segundo plano —
             você pode fechar este formulário e navegar pelo sistema enquanto isso.
           </p>
         </div>
@@ -237,7 +239,7 @@ export function UploadAudioReuniao({
           <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">Clique ou arraste um arquivo</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            MP3, M4A, WAV, WebM, OGG ou MP4 · até 1 GB (otimização automática)
+            MP3, M4A, WAV, WebM, OGG ou MP4 · máximo 25 MB
           </p>
           <p className="mt-2 text-[11px] text-primary">
             ⚡ Processamento em segundo plano — você pode sair da página
