@@ -997,6 +997,7 @@ function Reunioes() {
               <UploadAudioReuniao
                 reuniaoId={editingId}
                 userId={user.id}
+                titulo={form.titulo}
                 audioPath={audioPath}
                 status={(editingRow?.transcricao_status as any) ?? "pendente"}
                 errorMessage={editingRow?.transcricao_erro ?? null}
@@ -1004,9 +1005,10 @@ function Reunioes() {
                   setAudioPath(info.audio_path || null);
                   setAudioSize(info.audio_size || null);
                   setAudioMime(info.audio_mime || null);
-                  setAudioUploadedThisSession(!!info.audio_path);
+                  // Já foi disparado pelo manager — não reprocessar no submit
+                  setAudioUploadedThisSession(false);
                 }}
-                onRequestEarlyAnalysis={handleEarlyAnalysis}
+                onAutoSaveDraft={handleAutoSaveDraft}
               />
             )}
 
