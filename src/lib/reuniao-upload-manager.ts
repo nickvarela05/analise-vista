@@ -9,7 +9,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { compressAudio, shouldCompress, formatBytes } from "@/lib/audio-compress";
+import { formatBytes } from "@/lib/audio-compress";
 
 export type JobPhase =
   | "compressing"
