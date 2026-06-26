@@ -295,8 +295,15 @@ async function compressWithWebCodecs(
     }
   }
 
-  await encoder.flush();
-  encoder.close();
+  // Timeout no flush: se o encoder travar (config rejeitada silenciosamente),
+  // não deixa a UI presa em 0%. 30s é folgado mesmo p/ 1h de áudio.
+  await Promise.race([
+    encoder.flush(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("AudioEncoder.flush() timeout (30s) — encoder travou")), 30000),
+    ),
+  ]);
+  try { encoder.close(); } catch { /* noop */ }
 
   if (encodeError) throw encodeError;
   if (packets.length === 0) throw new Error("Nenhum pacote Opus gerado");
