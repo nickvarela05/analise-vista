@@ -864,9 +864,10 @@ function Reunioes() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1">
-                    {r.transcricao_status === "processando" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                        <Loader2 className="h-3 w-3 animate-spin" /> processando
+                    {isProcessing && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500/15 to-fuchsia-500/15 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300">
+                        <span className="reuniao-processing-dot" />
+                        {phaseLabel}
                       </span>
                     )}
                     {r.transcricao_status === "erro" && (
