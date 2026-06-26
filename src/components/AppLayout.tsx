@@ -39,6 +39,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
         </SidebarInset>
       </div>
+      <BackgroundJobsIndicator />
     </SidebarProvider>
   );
 }
