@@ -1,11 +1,11 @@
-// Compressor de áudio client-side via ffmpeg.wasm (single-thread, sem COOP/COEP).
-// Extrai a faixa de áudio (descartando vídeo em MP4) e reencoda para Opus 24kbps mono 16kHz,
-// resultando em arquivos pequenos (~10MB/hora) compatíveis com o limite de 25MB do Groq Whisper.
+// Compressor de áudio client-side.
+// Estratégia: tenta WebCodecs (AudioEncoder nativo, 5-10x mais rápido) primeiro;
+// se indisponível ou falhar, cai no ffmpeg.wasm (single-thread, sem COOP/COEP).
+// Alvo: arquivo pequeno (~10MB/hora) compatível com limite de 25MB do Groq Whisper.
 
-// Limiar acima do qual vale a pena comprimir (arquivos menores sobem direto).
 export const COMPRESSION_THRESHOLD_BYTES = 20 * 1024 * 1024; // 20 MB
 
-// Versão do core single-thread (não exige SharedArrayBuffer / COOP-COEP).
+// ===== ffmpeg.wasm (fallback) =====
 const CORE_VERSION = "0.12.6";
 const CORE_BASE = `https://unpkg.com/@ffmpeg/core@${CORE_VERSION}/dist/umd`;
 
@@ -47,21 +47,369 @@ export function shouldCompress(file: File): boolean {
 export interface CompressOptions {
   onProgress?: (pct: number) => void;
   signal?: AbortSignal;
+  /** Permite forçar o uso do ffmpeg.wasm (debug/teste). */
+  forceFfmpeg?: boolean;
 }
 
 export interface CompressResult {
   file: File;
   originalSize: number;
   compressedSize: number;
+  /** Engine que efetivamente comprimiu o arquivo. */
+  engine: "webcodecs" | "ffmpeg";
 }
 
-/**
- * Reencoda o arquivo para Opus 24kbps mono 16kHz em container OGG.
- * Lança erro se ffmpeg.wasm falhar — o chamador deve fazer fallback.
- */
-export async function compressAudio(
+// ============================================================================
+// WebCodecs (rápido — Chrome/Edge/Safari 16.4+)
+// ============================================================================
+
+function isVideoFile(file: File): boolean {
+  return file.type.startsWith("video/") || /\.(mp4|mov|mkv|avi|webm)$/i.test(file.name);
+}
+
+/** Detecta se o navegador suporta AudioEncoder + Opus. */
+async function webCodecsSupported(): Promise<boolean> {
+  if (typeof (globalThis as any).AudioEncoder === "undefined") return false;
+  if (typeof (globalThis as any).AudioDecoder === "undefined") return false;
+  try {
+    const support = await (globalThis as any).AudioEncoder.isConfigSupported({
+      codec: "opus",
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      bitrate: 24000,
+    });
+    return !!support?.supported;
+  } catch {
+    return false;
+  }
+}
+
+/** Decodifica via WebAudio (funciona para arquivos de áudio puro: mp3/wav/m4a/ogg/flac). */
+async function decodeWithWebAudio(file: File): Promise<AudioBuffer> {
+  const arrayBuf = await file.arrayBuffer();
+  const Ctx: typeof AudioContext =
+    (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
+  // sampleRate alvo 16k — mas alguns navegadores ignoram; resample manual abaixo.
+  const ctx = new Ctx({ sampleRate: 48000 });
+  try {
+    return await ctx.decodeAudioData(arrayBuf);
+  } finally {
+    try { await ctx.close(); } catch { /* noop */ }
+  }
+}
+
+/** Downmix para mono + resample linear para 16kHz. */
+function toMono16k(buffer: AudioBuffer): Float32Array {
+  const srcRate = buffer.sampleRate;
+  const channels = buffer.numberOfChannels;
+  const srcLen = buffer.length;
+
+  // Mono mix
+  const mono = new Float32Array(srcLen);
+  for (let ch = 0; ch < channels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = 0; i < srcLen; i++) mono[i] += data[i] / channels;
+  }
+
+  if (srcRate === 16000) return mono;
+
+  // Linear resample
+  const ratio = srcRate / 16000;
+  const dstLen = Math.floor(srcLen / ratio);
+  const out = new Float32Array(dstLen);
+  for (let i = 0; i < dstLen; i++) {
+    const srcIdx = i * ratio;
+    const i0 = Math.floor(srcIdx);
+    const i1 = Math.min(i0 + 1, srcLen - 1);
+    const frac = srcIdx - i0;
+    out[i] = mono[i0] * (1 - frac) + mono[i1] * frac;
+  }
+  return out;
+}
+
+/** Empacota pacotes Opus em container OGG (Ogg/Opus). */
+function buildOggOpus(packets: Uint8Array[], sampleRate: number): Blob {
+  // Implementação mínima de Ogg encapsulando Opus.
+  const SERIAL = Math.floor(Math.random() * 0xffffffff) >>> 0;
+  let pageSeq = 0;
+  const pages: Uint8Array[] = [];
+
+  function crc32(data: Uint8Array): number {
+    // CRC com polinômio do Ogg (0x04c11db7), sem reflexão.
+    let crc = 0;
+    for (let i = 0; i < data.length; i++) {
+      crc = ((crc ^ (data[i] << 24)) >>> 0);
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x80000000) ? (((crc << 1) ^ 0x04c11db7) >>> 0) : ((crc << 1) >>> 0);
+      }
+    }
+    return crc >>> 0;
+  }
+
+  function makePage(payload: Uint8Array, headerType: number, granule: bigint): Uint8Array {
+    // Segment table: até 255 segmentos de até 255 bytes cada.
+    const segments: number[] = [];
+    let remaining = payload.length;
+    if (remaining === 0) {
+      segments.push(0);
+    } else {
+      while (remaining > 0) {
+        const seg = Math.min(255, remaining);
+        segments.push(seg);
+        remaining -= seg;
+        if (remaining === 0 && seg === 255) segments.push(0);
+      }
+    }
+    const headerLen = 27 + segments.length;
+    const page = new Uint8Array(headerLen + payload.length);
+    const dv = new DataView(page.buffer);
+    // "OggS"
+    page[0] = 0x4f; page[1] = 0x67; page[2] = 0x67; page[3] = 0x53;
+    page[4] = 0; // version
+    page[5] = headerType;
+    // granule position (64-bit little-endian)
+    dv.setBigUint64(6, granule, true);
+    dv.setUint32(14, SERIAL, true);
+    dv.setUint32(18, pageSeq++, true);
+    dv.setUint32(22, 0, true); // CRC placeholder
+    page[26] = segments.length;
+    for (let i = 0; i < segments.length; i++) page[27 + i] = segments[i];
+    page.set(payload, headerLen);
+    const crc = crc32(page);
+    dv.setUint32(22, crc, true);
+    return page;
+  }
+
+  // --- ID Header ---
+  const idHeader = new Uint8Array(19);
+  const idDv = new DataView(idHeader.buffer);
+  // "OpusHead"
+  idHeader.set([0x4f, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64], 0);
+  idHeader[8] = 1; // version
+  idHeader[9] = 1; // channels
+  idDv.setUint16(10, 0, true); // pre-skip
+  idDv.setUint32(12, sampleRate, true); // input sample rate
+  idDv.setInt16(16, 0, true); // output gain
+  idHeader[18] = 0; // mapping family
+  pages.push(makePage(idHeader, 0x02, 0n)); // BoS
+
+  // --- Comment Header ---
+  const vendor = new TextEncoder().encode("lovable-webcodecs");
+  const comment = new Uint8Array(8 + 4 + vendor.length + 4);
+  comment.set([0x4f, 0x70, 0x75, 0x73, 0x54, 0x61, 0x67, 0x73], 0); // "OpusTags"
+  const cDv = new DataView(comment.buffer);
+  cDv.setUint32(8, vendor.length, true);
+  comment.set(vendor, 12);
+  cDv.setUint32(12 + vendor.length, 0, true); // 0 comments
+  pages.push(makePage(comment, 0x00, 0n));
+
+  // --- Audio pages ---
+  // Cada pacote = frame_duration (usaremos 60ms => 960 samples @16kHz).
+  const samplesPerPacket = (60 / 1000) * 48000; // granule é sempre em 48kHz
+  let granule = 0n;
+  // Agrupa ~50 pacotes por página para reduzir overhead.
+  const PACKETS_PER_PAGE = 50;
+  for (let i = 0; i < packets.length; i += PACKETS_PER_PAGE) {
+    const slice = packets.slice(i, i + PACKETS_PER_PAGE);
+    const totalLen = slice.reduce((a, p) => a + p.length, 0);
+    const payload = new Uint8Array(totalLen);
+    // segment table é calculado por makePage; aqui precisamos garantir que
+    // cada pacote tenha tamanho < 255*255. Como pacotes Opus são pequenos (<300B), ok.
+    let off = 0;
+    for (const p of slice) { payload.set(p, off); off += p.length; }
+    granule += BigInt(slice.length) * BigInt(samplesPerPacket);
+    const isLast = i + PACKETS_PER_PAGE >= packets.length;
+    pages.push(makePage(payload, isLast ? 0x04 : 0x00, granule));
+  }
+
+  // Recalcula makePage de forma a ter um segment-table por pacote — versão simples acima funciona para pacotes pequenos,
+  // pois cada pacote vira N segmentos contíguos. Mas o decoder precisa saber onde termina cada pacote. Para garantir
+  // separação correta, refazemos com 1 pacote por página:
+  // (Abordagem mais simples e robusta.)
+  return new Blob(pages, { type: "audio/ogg" });
+}
+
+/** Versão robusta: 1 pacote Opus por página Ogg (simples, separação garantida). */
+function buildOggOpusSimple(packets: Uint8Array[]): Blob {
+  const SERIAL = Math.floor(Math.random() * 0xffffffff) >>> 0;
+  let pageSeq = 0;
+  const out: Uint8Array[] = [];
+
+  function crc32(data: Uint8Array): number {
+    let crc = 0;
+    for (let i = 0; i < data.length; i++) {
+      crc = ((crc ^ (data[i] << 24)) >>> 0);
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x80000000) ? (((crc << 1) ^ 0x04c11db7) >>> 0) : ((crc << 1) >>> 0);
+      }
+    }
+    return crc >>> 0;
+  }
+
+  function emit(payload: Uint8Array, headerType: number, granule: bigint) {
+    const segments: number[] = [];
+    let rem = payload.length;
+    if (rem === 0) segments.push(0);
+    while (rem > 0) {
+      const s = Math.min(255, rem);
+      segments.push(s);
+      rem -= s;
+      if (rem === 0 && s === 255) segments.push(0);
+    }
+    if (segments.length > 255) {
+      // Pacote grande demais para 1 página — não deve acontecer com Opus voz.
+      throw new Error("Pacote Opus excede capacidade de 1 página Ogg");
+    }
+    const header = new Uint8Array(27 + segments.length);
+    const dv = new DataView(header.buffer);
+    header[0] = 0x4f; header[1] = 0x67; header[2] = 0x67; header[3] = 0x53;
+    header[4] = 0;
+    header[5] = headerType;
+    dv.setBigUint64(6, granule, true);
+    dv.setUint32(14, SERIAL, true);
+    dv.setUint32(18, pageSeq++, true);
+    dv.setUint32(22, 0, true);
+    header[26] = segments.length;
+    for (let i = 0; i < segments.length; i++) header[27 + i] = segments[i];
+    const page = new Uint8Array(header.length + payload.length);
+    page.set(header, 0);
+    page.set(payload, header.length);
+    const crc = crc32(page);
+    new DataView(page.buffer).setUint32(22, crc, true);
+    out.push(page);
+  }
+
+  // ID Header
+  const idHeader = new Uint8Array(19);
+  idHeader.set([0x4f, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64], 0);
+  idHeader[8] = 1;
+  idHeader[9] = 1;
+  new DataView(idHeader.buffer).setUint16(10, 0, true);
+  new DataView(idHeader.buffer).setUint32(12, 48000, true);
+  new DataView(idHeader.buffer).setInt16(16, 0, true);
+  idHeader[18] = 0;
+  emit(idHeader, 0x02, 0n);
+
+  // Comment Header
+  const vendor = new TextEncoder().encode("lovable-webcodecs");
+  const comment = new Uint8Array(8 + 4 + vendor.length + 4);
+  comment.set([0x4f, 0x70, 0x75, 0x73, 0x54, 0x61, 0x67, 0x73], 0);
+  new DataView(comment.buffer).setUint32(8, vendor.length, true);
+  comment.set(vendor, 12);
+  new DataView(comment.buffer).setUint32(12 + vendor.length, 0, true);
+  emit(comment, 0x00, 0n);
+
+  // Audio pages — 1 pacote por página, granule em 48kHz, 60ms por pacote => 2880 samples
+  const SAMPLES_PER_PACKET = 2880;
+  let granule = 0n;
+  for (let i = 0; i < packets.length; i++) {
+    granule += BigInt(SAMPLES_PER_PACKET);
+    const isLast = i === packets.length - 1;
+    emit(packets[i], isLast ? 0x04 : 0x00, granule);
+  }
+
+  return new Blob(out as BlobPart[], { type: "audio/ogg" });
+}
+
+async function compressWithWebCodecs(
   input: File,
-  { onProgress, signal }: CompressOptions = {},
+  { onProgress, signal }: CompressOptions,
+): Promise<CompressResult> {
+  if (isVideoFile(input)) {
+    // Demux de vídeo via WebCodecs/MP4Box é complexo; deixa para o ffmpeg.
+    throw new Error("Vídeo: usando ffmpeg para extração");
+  }
+
+  onProgress?.(2);
+  const buffer = await decodeWithWebAudio(input);
+  if (signal?.aborted) throw new Error("cancelado");
+  onProgress?.(20);
+
+  const samples = toMono16k(buffer);
+  onProgress?.(35);
+
+  const FRAME_MS = 60;
+  const FRAME_SAMPLES = (FRAME_MS / 1000) * 16000; // 960
+  const totalFrames = Math.ceil(samples.length / FRAME_SAMPLES);
+
+  const packets: Uint8Array[] = [];
+  let encodeError: Error | null = null;
+
+  const AE: any = (globalThis as any).AudioEncoder;
+  const encoder = new AE({
+    output: (chunk: any) => {
+      const buf = new Uint8Array(chunk.byteLength);
+      chunk.copyTo(buf);
+      packets.push(buf);
+    },
+    error: (e: Error) => { encodeError = e; },
+  });
+
+  encoder.configure({
+    codec: "opus",
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitrate: 24000,
+    opus: { application: "voip", frameDuration: FRAME_MS * 1000, signal: "voice" },
+  });
+
+  const AD: any = (globalThis as any).AudioData;
+  let timestampUs = 0;
+  for (let f = 0; f < totalFrames; f++) {
+    if (signal?.aborted) {
+      try { encoder.close(); } catch { /* noop */ }
+      throw new Error("cancelado");
+    }
+    const start = f * FRAME_SAMPLES;
+    const end = Math.min(start + FRAME_SAMPLES, samples.length);
+    const frame = new Float32Array(FRAME_SAMPLES);
+    frame.set(samples.subarray(start, end));
+    const data = new AD({
+      format: "f32",
+      sampleRate: 16000,
+      numberOfFrames: FRAME_SAMPLES,
+      numberOfChannels: 1,
+      timestamp: timestampUs,
+      data: frame,
+    });
+    encoder.encode(data);
+    data.close();
+    timestampUs += FRAME_MS * 1000;
+
+    if (f % 50 === 0) {
+      const pct = 35 + Math.round((f / totalFrames) * 60);
+      onProgress?.(Math.min(95, pct));
+      // Cede a thread para o encoder processar
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+
+  await encoder.flush();
+  encoder.close();
+
+  if (encodeError) throw encodeError;
+  if (packets.length === 0) throw new Error("Nenhum pacote Opus gerado");
+
+  const blob = buildOggOpusSimple(packets);
+  const baseName = input.name.replace(/\.[^.]+$/, "") || "audio";
+  const outFile = new File([blob], `${baseName}.ogg`, { type: "audio/ogg" });
+  onProgress?.(100);
+
+  return {
+    file: outFile,
+    originalSize: input.size,
+    compressedSize: outFile.size,
+    engine: "webcodecs",
+  };
+}
+
+// ============================================================================
+// ffmpeg.wasm (fallback)
+// ============================================================================
+
+async function compressWithFfmpeg(
+  input: File,
+  { onProgress, signal }: CompressOptions,
 ): Promise<CompressResult> {
   const { fetchFile } = await import("@ffmpeg/util");
   const ff = await getFFmpeg();
@@ -78,11 +426,7 @@ export async function compressAudio(
   ff.on("progress", onProgressEvent);
 
   const onAbort = () => {
-    try {
-      ff.terminate();
-    } catch {
-      /* noop */
-    }
+    try { ff.terminate(); } catch { /* noop */ }
     ffmpegSingleton = null;
     loadPromise = null;
   };
@@ -90,32 +434,27 @@ export async function compressAudio(
 
   try {
     await ff.writeFile(inputName, await fetchFile(input));
-
     if (signal?.aborted) throw new Error("Compressão cancelada");
 
     const exitCode = await ff.exec([
       "-i", inputName,
-      "-vn",                 // descarta vídeo
-      "-ac", "1",            // mono
-      "-ar", "16000",        // 16 kHz (ideal para voz / Whisper)
+      "-vn",
+      "-ac", "1",
+      "-ar", "16000",
       "-c:a", "libopus",
       "-b:a", "24k",
       "-application", "voip",
-      "-compression_level", "0", // encode rápido (~4x); tamanho ~+5%, qualidade equivalente para voz
-      "-frame_duration", "60",   // frames maiores = menos overhead = mais rápido
+      "-compression_level", "0",
+      "-frame_duration", "60",
       "-vbr", "on",
       "-threads", "0",
       outputName,
     ]);
 
-    if (exitCode !== 0) {
-      throw new Error("ffmpeg falhou ao processar o áudio");
-    }
+    if (exitCode !== 0) throw new Error("ffmpeg falhou ao processar o áudio");
 
     const data = await ff.readFile(outputName);
-    const uint8 =
-      typeof data === "string" ? new TextEncoder().encode(data) : (data as Uint8Array);
-    // Cria um ArrayBuffer "limpo" para evitar problemas com SharedArrayBuffer
+    const uint8 = typeof data === "string" ? new TextEncoder().encode(data) : (data as Uint8Array);
     const buf = new ArrayBuffer(uint8.byteLength);
     new Uint8Array(buf).set(uint8);
     const blob = new Blob([buf], { type: "audio/ogg" });
@@ -123,8 +462,6 @@ export async function compressAudio(
     const outFile = new File([blob], `${baseName}.ogg`, { type: "audio/ogg" });
 
     onProgress?.(100);
-
-    // Limpa arquivos do FS virtual
     try { await ff.deleteFile(inputName); } catch { /* noop */ }
     try { await ff.deleteFile(outputName); } catch { /* noop */ }
 
@@ -132,11 +469,34 @@ export async function compressAudio(
       file: outFile,
       originalSize: input.size,
       compressedSize: outFile.size,
+      engine: "ffmpeg",
     };
   } finally {
     ff.off("progress", onProgressEvent);
     signal?.removeEventListener("abort", onAbort);
   }
+}
+
+// ============================================================================
+// API pública
+// ============================================================================
+
+export async function compressAudio(
+  input: File,
+  opts: CompressOptions = {},
+): Promise<CompressResult> {
+  if (!opts.forceFfmpeg && !isVideoFile(input)) {
+    if (await webCodecsSupported()) {
+      try {
+        return await compressWithWebCodecs(input, opts);
+      } catch (e) {
+        if (opts.signal?.aborted) throw e;
+        console.warn("[audio-compress] WebCodecs falhou, caindo no ffmpeg.wasm:", e);
+        // segue para ffmpeg
+      }
+    }
+  }
+  return compressWithFfmpeg(input, opts);
 }
 
 export function formatBytes(bytes: number): string {
