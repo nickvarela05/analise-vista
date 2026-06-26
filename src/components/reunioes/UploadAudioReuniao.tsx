@@ -209,7 +209,7 @@ export function UploadAudioReuniao({
             Áudio e análise automática
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Anexe a gravação. A otimização e o upload rodam em segundo plano —
+            Anexe a gravação (até 25 MB). O upload roda em segundo plano —
             você pode fechar este formulário e navegar pelo sistema enquanto isso.
           </p>
         </div>
