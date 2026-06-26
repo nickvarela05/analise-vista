@@ -308,7 +308,13 @@ function buildOggOpusSimple(packets: Uint8Array[]): Blob {
     emit(packets[i], isLast ? 0x04 : 0x00, granule);
   }
 
-  return new Blob(out as BlobPart[], { type: "audio/ogg" });
+  // Copia para ArrayBuffers "limpos" (evita variância de SharedArrayBuffer no tipo)
+  const parts: BlobPart[] = out.map((u) => {
+    const ab = new ArrayBuffer(u.byteLength);
+    new Uint8Array(ab).set(u);
+    return ab;
+  });
+  return new Blob(parts, { type: "audio/ogg" });
 }
 
 async function compressWithWebCodecs(
