@@ -357,6 +357,43 @@ function Reunioes() {
     [editingId, data],
   );
 
+  // Cria rascunho da reunião (usado pelo upload em segundo plano antes de enfileirar).
+  const handleAutoSaveDraft = async (): Promise<string | null> => {
+    if (!user) {
+      toast.error("Faça login para anexar áudio");
+      return null;
+    }
+    if (editingId) return editingId;
+    if (!form.titulo.trim()) {
+      toast.error("Informe um título antes de anexar o áudio");
+      return null;
+    }
+    const { participantes_str, ...rest } = form;
+    const participantes = participantes_str
+      ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
+      : null;
+    const { data: inserted, error } = await supabase
+      .from("reuniao")
+      .insert({
+        ...rest,
+        data_reuniao: new Date(form.data_reuniao).toISOString(),
+        duracao_min: Number(form.duracao_min) || null,
+        responsaveis_ids: form.responsaveis_ids,
+        equipe_toda: form.equipe_toda,
+        participantes,
+        criado_por: user.id,
+      })
+      .select("id")
+      .single();
+    if (error || !inserted) {
+      toast.error("Erro ao salvar rascunho", { description: error?.message });
+      return null;
+    }
+    setEditingId(inserted.id);
+    qc.invalidateQueries({ queryKey: ["reunioes"] });
+    return inserted.id;
+  };
+
   const handleEarlyAnalysis = async () => {
     if (!user) {
       toast.error("Faça login para iniciar a análise");
@@ -960,6 +997,7 @@ function Reunioes() {
               <UploadAudioReuniao
                 reuniaoId={editingId}
                 userId={user.id}
+                titulo={form.titulo}
                 audioPath={audioPath}
                 status={(editingRow?.transcricao_status as any) ?? "pendente"}
                 errorMessage={editingRow?.transcricao_erro ?? null}
@@ -967,9 +1005,10 @@ function Reunioes() {
                   setAudioPath(info.audio_path || null);
                   setAudioSize(info.audio_size || null);
                   setAudioMime(info.audio_mime || null);
-                  setAudioUploadedThisSession(!!info.audio_path);
+                  // Já foi disparado pelo manager — não reprocessar no submit
+                  setAudioUploadedThisSession(false);
                 }}
-                onRequestEarlyAnalysis={handleEarlyAnalysis}
+                onAutoSaveDraft={handleAutoSaveDraft}
               />
             )}
 

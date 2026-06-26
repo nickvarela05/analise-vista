@@ -15,13 +15,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { compressAudio, shouldCompress, formatBytes } from "@/lib/audio-compress";
+import { startUploadJob, useUploadJob, useUploadStore } from "@/lib/reuniao-upload-manager";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
 interface Props {
   reuniaoId: string | null; // null em modo "criação" (sem id ainda)
   userId: string;
+  titulo?: string;
   audioPath: string | null;
   status: Status;
   errorMessage: string | null;
@@ -31,36 +32,37 @@ interface Props {
     audio_mime: string;
   }) => Promise<void> | void;
   onProcessingDone?: () => void;
-  /** Em modo criação: cria rascunho da reunião e dispara análise antes de salvar definitivo. */
-  onRequestEarlyAnalysis?: () => Promise<void> | void;
+  /**
+   * Em modo criação: salva rascunho da reunião e devolve o id criado para
+   * que o upload em segundo plano possa atrelar o áudio a uma reunião real.
+   */
+  onAutoSaveDraft?: () => Promise<string | null>;
 }
 
 const ACCEPT =
   "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
-const MAX_BYTES = 1024 * 1024 * 1024; // 1 GB de entrada (será comprimido antes do upload)
-const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // limite do Groq Whisper
+const MAX_BYTES = 1024 * 1024 * 1024;
 const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
   reuniaoId,
   userId,
+  titulo,
   audioPath,
   status,
   errorMessage,
   onUploaded,
   onProcessingDone,
-  onRequestEarlyAnalysis,
+  onAutoSaveDraft,
 }: Props) {
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = React.useState(false);
-  const [uploadPct, setUploadPct] = React.useState(0);
-  const [compressing, setCompressing] = React.useState(false);
-  const [compressPct, setCompressPct] = React.useState(0);
-  const [compressInfo, setCompressInfo] = React.useState<{ original: number; compressed: number } | null>(null);
-  const compressAbortRef = React.useRef<AbortController | null>(null);
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [dragOver, setDragOver] = React.useState(false);
   const [triggering, setTriggering] = React.useState(false);
+  const [preparing, setPreparing] = React.useState(false);
+
+  const job = useUploadJob(reuniaoId);
+  const cancelJob = useUploadStore((s) => s.cancel);
 
   // Signed URL para player
   React.useEffect(() => {
@@ -103,10 +105,6 @@ export function UploadAudioReuniao({
     }
   };
 
-  const cancelCompression = () => {
-    compressAbortRef.current?.abort();
-  };
-
   const handleFile = async (rawFile: File) => {
     const isAudioMime = rawFile.type.startsWith("audio/");
     const isMp4Container = rawFile.type === "video/mp4" || /\.(mp4|mov|mkv|avi)$/i.test(rawFile.name);
@@ -122,90 +120,36 @@ export function UploadAudioReuniao({
       return;
     }
 
-    let file = rawFile;
-    setCompressInfo(null);
-
-    // === Compressão automática (MP4/vídeo ou áudio > 20 MB) ===
-    if (shouldCompress(rawFile)) {
-      setCompressing(true);
-      setCompressPct(0);
-      const ctrl = new AbortController();
-      compressAbortRef.current = ctrl;
-      try {
-        const result = await compressAudio(rawFile, {
-          signal: ctrl.signal,
-          onProgress: (p) => setCompressPct(p),
-        });
-        file = result.file;
-        setCompressInfo({ original: result.originalSize, compressed: result.compressedSize });
-        toast.success("🎛️ Áudio otimizado", {
-          description: `${formatBytes(result.originalSize)} → ${formatBytes(result.compressedSize)}`,
-        });
-      } catch (e: any) {
-        setCompressing(false);
-        compressAbortRef.current = null;
-        if (ctrl.signal.aborted) {
-          toast.info("Compressão cancelada");
-          return;
-        }
-        if (rawFile.size <= MAX_UPLOAD_BYTES) {
-          toast.warning("Não foi possível otimizar o áudio", {
-            description: "Enviando o arquivo original.",
-          });
-          file = rawFile;
-        } else {
-          toast.error("Falha ao comprimir o áudio", {
-            description:
-              e?.message ||
-              `O arquivo (${formatBytes(rawFile.size)}) excede o limite de ${formatBytes(MAX_UPLOAD_BYTES)} da API de transcrição.`,
-          });
-          return;
-        }
-      } finally {
-        setCompressing(false);
-        compressAbortRef.current = null;
+    // Garante uma reunião persistida antes de enfileirar o job
+    let rid = reuniaoId;
+    if (!rid) {
+      if (!onAutoSaveDraft) {
+        toast.error("Salve a reunião primeiro");
+        return;
       }
+      setPreparing(true);
+      try {
+        rid = await onAutoSaveDraft();
+      } catch (e: any) {
+        setPreparing(false);
+        toast.error("Erro ao salvar rascunho", { description: e?.message });
+        return;
+      }
+      setPreparing(false);
+      if (!rid) return;
     }
 
-    if (file.size > MAX_UPLOAD_BYTES) {
-      toast.error(`Áudio acima de ${formatBytes(MAX_UPLOAD_BYTES)}`, {
-        description: "Mesmo após otimização o arquivo é grande demais para a API de transcrição.",
-      });
-      return;
-    }
-
-    setUploading(true);
-    setUploadPct(15);
-
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-    const path = `${userId}/${Date.now()}-${safeName}`;
-    const normalizedType =
-      file.type && file.type !== "video/mp4" ? file.type : "audio/mp4";
-    const { error } = await supabase.storage.from("reuniao-audios").upload(path, file, {
-      upsert: false,
-      contentType: normalizedType,
+    startUploadJob({
+      reuniaoId: rid,
+      userId,
+      titulo: titulo?.trim() || "Reunião",
+      file: rawFile,
+      onUploaded,
     });
-    setUploadPct(100);
 
-    if (error) {
-      setUploading(false);
-      toast.error("Erro no upload", { description: error.message });
-      return;
-    }
-
-    await onUploaded({ audio_path: path, audio_size: file.size, audio_mime: normalizedType });
-    setUploading(false);
-
-    if (reuniaoId) {
-      await triggerProcessing(reuniaoId, path);
-      toast.info("🎧 Transcrevendo áudio...", {
-        description: "Isso pode levar de 20s a 3min dependendo da duração.",
-      });
-    } else {
-      toast.success("Áudio anexado", {
-        description: "A análise por IA começará após você salvar a reunião.",
-      });
-    }
+    toast.info("🚀 Processamento iniciado em segundo plano", {
+      description: "Você pode sair desta página — o upload continuará rodando.",
+    });
   };
 
   const reprocessar = async () => {
@@ -241,7 +185,18 @@ export function UploadAudioReuniao({
     }
   };
 
+  const jobActive =
+    job &&
+    (job.phase === "compressing" ||
+      job.phase === "uploading" ||
+      job.phase === "triggering");
   const isProcessing = status === "processando" || triggering;
+
+  const jobPhaseLabel: Record<string, string> = {
+    compressing: "🎛️ Otimizando áudio",
+    uploading: "📤 Enviando para o servidor",
+    triggering: "✨ Iniciando análise IA",
+  };
 
   return (
     <div className="rounded-lg border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-info/5 p-4">
@@ -252,13 +207,14 @@ export function UploadAudioReuniao({
             Áudio e análise automática
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Anexe a gravação. A IA vai transcrever e preencher resumo, pauta, decisões e próximos passos.
+            Anexe a gravação. A otimização e o upload rodam em segundo plano —
+            você pode fechar este formulário e navegar pelo sistema enquanto isso.
           </p>
         </div>
       </div>
 
-      {/* Sem áudio: drop zone */}
-      {!audioPath && !uploading && !compressing && (
+      {/* Sem áudio e sem job ativo: drop zone */}
+      {!audioPath && !jobActive && !preparing && (
         <div
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => {
@@ -283,46 +239,55 @@ export function UploadAudioReuniao({
           <p className="mt-1 text-xs text-muted-foreground">
             MP3, M4A, WAV, WebM, OGG ou MP4 · até 1 GB (otimização automática)
           </p>
-        </div>
-      )}
-
-      {/* Compressão em progresso */}
-      {compressing && (
-        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
-          <div className="flex items-center justify-between gap-2 text-sm">
-            <span className="flex items-center gap-2">
-              <Wand2 className="h-4 w-4 animate-pulse text-primary" />
-              🎛️ Otimizando áudio para transcrição… {compressPct}%
-            </span>
-            <Button type="button" variant="ghost" size="sm" onClick={cancelCompression}>
-              <X className="mr-1 h-3.5 w-3.5" /> Cancelar
-            </Button>
-          </div>
-          <Progress value={compressPct} />
-          <p className="text-xs text-muted-foreground">
-            Removendo vídeo (se houver) e reencodando para Opus 24 kbps mono — pode levar alguns minutos para arquivos longos.
+          <p className="mt-2 text-[11px] text-primary">
+            ⚡ Processamento em segundo plano — você pode sair da página
           </p>
         </div>
       )}
 
-      {/* Upload em progresso */}
-      {uploading && (
-        <div className="space-y-2 rounded-md border bg-background/80 p-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <span>📤 Enviando áudio...</span>
+      {preparing && (
+        <div className="flex items-center gap-2 rounded-md border bg-background/80 p-3 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span>Salvando rascunho da reunião…</span>
+        </div>
+      )}
+
+      {/* Job em andamento (compressão/upload/trigger) */}
+      {jobActive && job && (
+        <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="flex items-center gap-2">
+              {job.phase === "compressing" && <Wand2 className="h-4 w-4 animate-pulse text-primary" />}
+              {job.phase === "uploading" && <Upload className="h-4 w-4 animate-pulse text-primary" />}
+              {job.phase === "triggering" && <Sparkles className="h-4 w-4 animate-pulse text-primary" />}
+              <span>
+                {jobPhaseLabel[job.phase]}
+                {(job.phase === "compressing" || job.phase === "uploading") &&
+                  ` ${job.progress}%`}
+              </span>
+            </span>
+            {(job.phase === "compressing" || job.phase === "uploading") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => cancelJob(job.reuniaoId)}
+              >
+                <X className="mr-1 h-3.5 w-3.5" /> Cancelar
+              </Button>
+            )}
           </div>
-          <Progress value={uploadPct} />
-          {compressInfo && (
-            <p className="text-xs text-muted-foreground">
-              Otimizado: {formatBytes(compressInfo.original)} → {formatBytes(compressInfo.compressed)}
-            </p>
+          {(job.phase === "compressing" || job.phase === "uploading") && (
+            <Progress value={job.progress} />
           )}
+          <p className="text-xs text-muted-foreground">
+            💡 Você pode fechar este formulário ou navegar para outra página — o processamento continua.
+          </p>
         </div>
       )}
 
       {/* Áudio anexado */}
-      {audioPath && !uploading && (
+      {audioPath && !jobActive && (
         <div className="space-y-3">
           <div className="flex items-center gap-2 rounded-md border bg-background/80 p-2.5">
             <FileAudio className="h-4 w-4 shrink-0 text-primary" />
@@ -335,7 +300,7 @@ export function UploadAudioReuniao({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  disabled={removing || uploading}
+                  disabled={removing}
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
                   {removing ? (
@@ -370,7 +335,6 @@ export function UploadAudioReuniao({
 
           {audioUrl && <audio controls src={audioUrl} className="w-full" />}
 
-          {/* Status processamento */}
           {isProcessing && (
             <div className="flex items-center gap-2 rounded-md border border-info/30 bg-info/5 p-2.5 text-sm text-info">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -419,41 +383,6 @@ export function UploadAudioReuniao({
             >
               <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Iniciar análise por IA
             </Button>
-          )}
-
-          {status === "pendente" && !reuniaoId && (
-            <div className="space-y-2">
-              {onRequestEarlyAnalysis && (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="w-full"
-                  disabled={triggering}
-                  onClick={async () => {
-                    setTriggering(true);
-                    try {
-                      await onRequestEarlyAnalysis();
-                    } finally {
-                      setTriggering(false);
-                    }
-                  }}
-                >
-                  {triggering ? (
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                  )}
-                  Iniciar análise por IA agora
-                </Button>
-              )}
-              <div className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5 text-xs text-primary">
-                <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>
-                  Você pode iniciar a análise agora (cria um rascunho automaticamente) ou clicar em{" "}
-                  <strong>Salvar</strong> para iniciar junto.
-                </span>
-              </div>
-            </div>
           )}
         </div>
       )}

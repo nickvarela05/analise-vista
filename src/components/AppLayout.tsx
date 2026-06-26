@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/lib/auth-context";
+import { BackgroundJobsIndicator } from "@/components/reunioes/BackgroundJobsIndicator";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { session, loading, mustChangePassword } = useAuth();
@@ -38,6 +39,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
         </SidebarInset>
       </div>
+      <BackgroundJobsIndicator />
     </SidebarProvider>
   );
 }
