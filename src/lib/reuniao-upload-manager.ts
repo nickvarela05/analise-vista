@@ -109,7 +109,7 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
     reuniaoId,
     titulo,
     fileName: file.name,
-    phase: "compressing",
+    phase: "uploading",
     progress: 0,
     originalSize: file.size,
     startedAt: Date.now(),
@@ -119,44 +119,16 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
   // Roda em microtask para não bloquear o caller
   (async () => {
     try {
-      let finalFile = file;
+      const finalFile = file;
 
-      if (shouldCompress(file)) {
-        try {
-          const result = await compressAudio(file, {
-            signal: abort.signal,
-            onProgress: (p) =>
-              useUploadStore.getState().upsert(reuniaoId, { phase: "compressing", progress: p }),
-          });
-          finalFile = result.file;
-          useUploadStore
-            .getState()
-            .upsert(reuniaoId, { compressedSize: result.compressedSize, progress: 100 });
-        } catch (compErr: any) {
-          if (abort.signal.aborted) throw compErr;
-          // Fallback: se compressão falhou (ex.: ffmpeg-core CDN bloqueado) mas
-          // o arquivo original já cabe no limite, sobe direto. Server-side decide
-          // se consegue transcrever.
-          console.warn("[upload-manager] Compressão falhou, tentando upload do original:", compErr);
-          if (file.size > MAX_UPLOAD_BYTES) {
-            throw new Error(
-              `Otimização indisponível e o arquivo (${formatBytes(file.size)}) excede ${formatBytes(MAX_UPLOAD_BYTES)}. Converta para MP3 menor ou tente outro arquivo.`,
-            );
-          }
-          toast.warning("Otimização indisponível — enviando original", {
-            description: "O arquivo cabe no limite, mas pode demorar mais para transcrever.",
-          });
-          finalFile = file;
-        }
+      if (finalFile.size > MAX_UPLOAD_BYTES) {
+        throw new Error(
+          `Áudio excede o limite de ${formatBytes(MAX_UPLOAD_BYTES)}. Envie um arquivo menor.`,
+        );
       }
 
       if (abort.signal.aborted) throw new Error("CANCELED");
 
-      if (finalFile.size > MAX_UPLOAD_BYTES) {
-        throw new Error(
-          `Áudio excede ${formatBytes(MAX_UPLOAD_BYTES)} mesmo após otimização.`,
-        );
-      }
 
       // === Upload ===
       useUploadStore.getState().upsert(reuniaoId, { phase: "uploading", progress: 10 });
