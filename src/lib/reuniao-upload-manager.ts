@@ -60,9 +60,21 @@ export const useUploadStore = create<State & Actions>((set, get) => ({
     }),
   cancel: (id) => {
     const j = get().jobs[id];
-    if (j && (j.phase === "compressing" || j.phase === "uploading")) {
-      j.abort.abort();
-    }
+    if (!j) return;
+    // Dispara abort para interromper laços que checam o signal (encode/upload).
+    try { j.abort.abort(); } catch { /* noop */ }
+    // Marca como cancelado e remove rapidamente — operações síncronas
+    // (decodeAudioData, ffmpeg.exec) não atendem ao signal no meio do
+    // trabalho, mas a UI não pode ficar presa esperando.
+    set((s) => ({
+      jobs: { ...s.jobs, [id]: { ...(s.jobs[id] as UploadJob), phase: "canceled", finishedAt: Date.now() } },
+    }));
+    setTimeout(() => {
+      set((s) => {
+        const { [id]: _, ...rest } = s.jobs;
+        return { jobs: rest };
+      });
+    }, 1500);
   },
 }));
 
