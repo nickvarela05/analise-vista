@@ -461,4 +461,108 @@
   .stat-circle-warning { color: var(--warning); border-color: color-mix(in oklab, var(--warning) 60%, transparent); }
   .stat-circle-destructive { color: var(--destructive); border-color: color-mix(in oklab, var(--destructive) 50%, transparent); }
   .stat-circle-info { color: var(--info); border-color: color-mix(in oklab, var(--info) 50%, transparent); }
+
+  /* === Reunião em processamento (background job) ===
+     Combinação de: borda com glow pulsante, listra superior animada (sweep
+     de luz percorrendo a borda) e ring suave em cores violet→fuchsia para
+     remeter à "IA em ação" sem competir com o conteúdo do card. */
+  .reuniao-processing {
+    position: relative;
+    border-color: color-mix(in oklab, oklch(0.62 0.18 295) 45%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, oklch(0.62 0.18 295) 25%, transparent),
+      0 8px 24px -10px color-mix(in oklab, oklch(0.62 0.18 295) 35%, transparent);
+    animation: reuniao-processing-glow 2.4s ease-in-out infinite;
+  }
+  .reuniao-processing::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      transparent 35%,
+      color-mix(in oklab, oklch(0.62 0.18 295) 70%, transparent) 50%,
+      color-mix(in oklab, oklch(0.7 0.22 340) 70%, transparent) 60%,
+      transparent 75%,
+      transparent 100%
+    );
+    background-size: 250% 100%;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+    animation: reuniao-processing-sweep 2.8s linear infinite;
+  }
+
+  .reuniao-processing-bar {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    overflow: hidden;
+    background: color-mix(in oklab, oklch(0.62 0.18 295) 18%, transparent);
+  }
+  .reuniao-processing-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 40%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(0.62 0.18 295),
+      oklch(0.7 0.22 340),
+      transparent
+    );
+    animation: reuniao-processing-indeterminate 1.6s ease-in-out infinite;
+  }
+
+  @keyframes reuniao-processing-glow {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, oklch(0.62 0.18 295) 25%, transparent),
+        0 8px 24px -10px color-mix(in oklab, oklch(0.62 0.18 295) 30%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, oklch(0.7 0.22 340) 45%, transparent),
+        0 12px 32px -8px color-mix(in oklab, oklch(0.7 0.22 340) 45%, transparent);
+    }
+  }
+  @keyframes reuniao-processing-sweep {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -100% 0; }
+  }
+  @keyframes reuniao-processing-indeterminate {
+    0%   { left: -40%; }
+    100% { left: 100%; }
+  }
+
+  /* Sparkle "pulsing dot" — usado dentro da pílula de status */
+  .reuniao-processing-dot {
+    position: relative;
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: oklch(0.62 0.18 295);
+  }
+  .reuniao-processing-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: oklch(0.62 0.18 295);
+    animation: reuniao-processing-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes reuniao-processing-ping {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    80%  { transform: scale(2.6); opacity: 0;   }
+    100% { transform: scale(2.6); opacity: 0;   }
+  }
 }
+

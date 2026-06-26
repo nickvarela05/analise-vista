@@ -75,6 +75,7 @@ import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 import { UploadAudioReuniao } from "@/components/reunioes/UploadAudioReuniao";
 import { TranscricaoFormatada } from "@/components/reunioes/TranscricaoFormatada";
+import { useUploadStore } from "@/lib/reuniao-upload-manager";
 import { DialogHero } from "@/components/shared/DialogHero";
 import {
   Accordion,
@@ -172,6 +173,9 @@ function Reunioes() {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [openDetail, setOpenDetail] = React.useState<any>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<any>(null);
+
+  // Background upload jobs (compressão/upload em segundo plano) → anima cards
+  const uploadJobs = useUploadStore((s) => s.jobs);
 
   // Form
   const [form, setForm] = React.useState<FormState>(emptyForm());
@@ -721,25 +725,45 @@ function Reunioes() {
             const tone = REUNIAO_TONE[r.status] ?? REUNIAO_TONE.agendada;
             const isFuturo = r.status === "agendada" && isFuture(new Date(r.data_reuniao));
             const hasIA = !!(r.transcricao && r.resumo);
+            const job = uploadJobs[r.id];
+            const jobActive =
+              job &&
+              (job.phase === "compressing" ||
+                job.phase === "uploading" ||
+                job.phase === "triggering");
+            const isProcessing = jobActive || r.transcricao_status === "processando";
+            const phaseLabel = jobActive
+              ? job!.phase === "compressing"
+                ? `otimizando ${job!.progress}%`
+                : job!.phase === "uploading"
+                  ? `enviando ${job!.progress}%`
+                  : "iniciando IA"
+              : "transcrevendo";
             return (
               <div
                 key={r.id}
                 className={cn(
                   "group relative cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition-all",
                   "hover:-translate-y-0.5 hover:shadow-lg hover:border-foreground/15",
+                  isProcessing && "reuniao-processing",
                 )}
                 onClick={() => setOpenDetail(r)}
               >
-                {/* top accent strip */}
-                <span
-                  aria-hidden
-                  className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", tone.accent)}
-                />
+                {/* top accent strip — substituído por barra animada quando processando */}
+                {isProcessing ? (
+                  <span aria-hidden className="reuniao-processing-bar" />
+                ) : (
+                  <span
+                    aria-hidden
+                    className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", tone.accent)}
+                  />
+                )}
                 {/* hover wash */}
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/0 to-fuchsia-500/0 opacity-0 transition-opacity group-hover:opacity-100 group-hover:from-violet-500/[0.04] group-hover:to-fuchsia-500/[0.04]"
                 />
+
 
                 <div className="relative p-4 pt-5 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -840,9 +864,10 @@ function Reunioes() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1">
-                    {r.transcricao_status === "processando" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                        <Loader2 className="h-3 w-3 animate-spin" /> processando
+                    {isProcessing && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500/15 to-fuchsia-500/15 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300">
+                        <span className="reuniao-processing-dot" />
+                        {phaseLabel}
                       </span>
                     )}
                     {r.transcricao_status === "erro" && (
