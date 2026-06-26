@@ -41,7 +41,7 @@ interface Props {
 
 const ACCEPT =
   "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
-const MAX_BYTES = 1024 * 1024 * 1024;
+const MAX_BYTES = 25 * 1024 * 1024;
 const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
