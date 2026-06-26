@@ -75,6 +75,7 @@ import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox, AssigneeBadges } from "@/components/AssigneeCombobox";
 import { UploadAudioReuniao } from "@/components/reunioes/UploadAudioReuniao";
 import { TranscricaoFormatada } from "@/components/reunioes/TranscricaoFormatada";
+import { useUploadStore } from "@/lib/reuniao-upload-manager";
 import { DialogHero } from "@/components/shared/DialogHero";
 import {
   Accordion,
