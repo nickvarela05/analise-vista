@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/lib/auth-context";
+import { BackgroundJobsIndicator } from "@/components/reunioes/BackgroundJobsIndicator";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { session, loading, mustChangePassword } = useAuth();
