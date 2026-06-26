@@ -247,15 +247,20 @@ async function compressWithWebCodecs(
       chunk.copyTo(buf);
       packets.push(buf);
     },
-    error: (e: Error) => { encodeError = e; },
+    error: (e: Error) => {
+      console.error("[audio-compress] AudioEncoder error:", e);
+      encodeError = e;
+    },
   });
 
+  // Config mínima — campos extras (opus.signal, opus.application) podem ser
+  // aceitos por isConfigSupported() e rejeitados pelo encoder real, fazendo
+  // o flush() pendurar para sempre.
   encoder.configure({
     codec: "opus",
     sampleRate: 16000,
     numberOfChannels: 1,
     bitrate: 24000,
-    opus: { application: "voip", frameDuration: FRAME_MS * 1000, signal: "voice" },
   });
 
   const AD: any = (globalThis as any).AudioData;
