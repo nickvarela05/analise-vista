@@ -253,14 +253,15 @@ async function compressWithWebCodecs(
     },
   });
 
-  // Config mínima — campos extras (opus.signal, opus.application) podem ser
-  // aceitos por isConfigSupported() e rejeitados pelo encoder real, fazendo
-  // o flush() pendurar para sempre.
+  // Mantém apenas campos opus válidos pela spec WebCodecs (application + frameDuration).
+  // Campos não-padrão (ex.: signal) podem passar isConfigSupported() mas fazer o
+  // encoder real travar no flush() — daí a UI ficava em 0% para sempre.
   encoder.configure({
     codec: "opus",
     sampleRate: 16000,
     numberOfChannels: 1,
     bitrate: 24000,
+    opus: { application: "voip", frameDuration: FRAME_MS * 1000 },
   });
 
   const AD: any = (globalThis as any).AudioData;
