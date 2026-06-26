@@ -116,7 +116,9 @@ export function UploadAudioReuniao({
       return;
     }
     if (rawFile.size > MAX_BYTES) {
-      toast.error("Arquivo acima de 1 GB", { description: "Reduza ou divida o arquivo." });
+      toast.error("Arquivo acima de 25 MB", {
+        description: "O limite é de 25 MB. Reduza, comprima ou divida o arquivo antes de enviar.",
+      });
       return;
     }
 
