@@ -174,6 +174,9 @@ function Reunioes() {
   const [openDetail, setOpenDetail] = React.useState<any>(null);
   const [confirmDelete, setConfirmDelete] = React.useState<any>(null);
 
+  // Background upload jobs (compressão/upload em segundo plano) → anima cards
+  const uploadJobs = useUploadStore((s) => s.jobs);
+
   // Form
   const [form, setForm] = React.useState<FormState>(emptyForm());
   // Áudio já enviado para o storage (caminho final). null = sem áudio.
