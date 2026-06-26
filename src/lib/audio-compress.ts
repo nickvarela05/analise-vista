@@ -247,15 +247,21 @@ async function compressWithWebCodecs(
       chunk.copyTo(buf);
       packets.push(buf);
     },
-    error: (e: Error) => { encodeError = e; },
+    error: (e: Error) => {
+      console.error("[audio-compress] AudioEncoder error:", e);
+      encodeError = e;
+    },
   });
 
+  // Mantém apenas campos opus válidos pela spec WebCodecs (application + frameDuration).
+  // Campos não-padrão (ex.: signal) podem passar isConfigSupported() mas fazer o
+  // encoder real travar no flush() — daí a UI ficava em 0% para sempre.
   encoder.configure({
     codec: "opus",
     sampleRate: 16000,
     numberOfChannels: 1,
     bitrate: 24000,
-    opus: { application: "voip", frameDuration: FRAME_MS * 1000, signal: "voice" },
+    opus: { application: "voip", frameDuration: FRAME_MS * 1000 },
   });
 
   const AD: any = (globalThis as any).AudioData;
@@ -289,8 +295,15 @@ async function compressWithWebCodecs(
     }
   }
 
-  await encoder.flush();
-  encoder.close();
+  // Timeout no flush: se o encoder travar (config rejeitada silenciosamente),
+  // não deixa a UI presa em 0%. 30s é folgado mesmo p/ 1h de áudio.
+  await Promise.race([
+    encoder.flush(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("AudioEncoder.flush() timeout (30s) — encoder travou")), 30000),
+    ),
+  ]);
+  try { encoder.close(); } catch { /* noop */ }
 
   if (encodeError) throw encodeError;
   if (packets.length === 0) throw new Error("Nenhum pacote Opus gerado");
