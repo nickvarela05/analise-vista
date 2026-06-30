@@ -11,7 +11,7 @@ import {
   TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
   ListChecks, Inbox, Clock, Target, ArrowRight, UserSearch,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
