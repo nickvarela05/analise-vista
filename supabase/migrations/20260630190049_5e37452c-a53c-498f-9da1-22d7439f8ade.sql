@@ -1,0 +1,13 @@
+REVOKE EXECUTE ON FUNCTION public.handle_new_user()                FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.log_audit_event()                FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.notify_tarefa_atribuida()        FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.notify_demanda_atribuida()       FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.notify_tarefa_comentario()       FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.notify_aviso_critico()           FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.notify_chamado_externo_criado()  FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.enqueue_email_imediato()         FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.enqueue_notificacao(uuid, notificacao_tipo, text, text, text, jsonb) FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.auto_encerrar_tarefas_antigas()  FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.gerar_notificacoes_prazo()       FROM PUBLIC, authenticated, anon;
+REVOKE EXECUTE ON FUNCTION public.limpar_atribuicoes_finalizadas() FROM PUBLIC, authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.enqueue_notificacao(uuid, notificacao_tipo, text, text, text, jsonb) TO service_role;
