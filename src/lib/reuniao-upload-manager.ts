@@ -9,7 +9,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { formatBytes } from "@/lib/utils";
+import { formatBytes, getErrorMessage } from "@/lib/utils";
 import { MAX_UPLOAD_BYTES } from "@/constants/upload";
 import { logger } from "@/lib/logger";
 
@@ -178,19 +178,20 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
 
       // Auto-remove após 8s
       setTimeout(() => useUploadStore.getState().remove(reuniaoId), 8000);
-    } catch (e: any) {
-      const canceled = abort.signal.aborted || e?.message === "CANCELED";
+    } catch (e: unknown) {
+      const msg = getErrorMessage(e);
+      const canceled = abort.signal.aborted || msg === "CANCELED";
       if (!canceled) {
         logger.error("[upload-manager] Job falhou:", { reuniaoId, titulo, error: e });
       }
       useUploadStore.getState().upsert(reuniaoId, {
         phase: canceled ? "canceled" : "error",
-        errorMsg: canceled ? undefined : e?.message || "Erro desconhecido",
+        errorMsg: canceled ? undefined : msg,
         finishedAt: Date.now(),
       });
       if (!canceled) {
         toast.error(`Falha no upload de "${titulo}"`, {
-          description: e?.message || "Veja o console (F12) para detalhes",
+          description: msg || "Veja o console (F12) para detalhes",
         });
       } else {
         toast.info(`Upload de "${titulo}" cancelado`);

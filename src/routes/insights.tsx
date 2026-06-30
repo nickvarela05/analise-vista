@@ -11,7 +11,7 @@ import {
   TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
   ListChecks, Inbox, Clock, Target, ArrowRight, UserSearch,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -218,8 +218,8 @@ function ResumoSemanal() {
         toast.info("Nenhum resumo novo", { description: "Não foram encontradas atividades na semana anterior para resumir." });
       }
       await carregar();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao gerar");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Falha ao gerar"));
     } finally {
       setGerando(false);
     }

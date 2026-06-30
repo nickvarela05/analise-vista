@@ -2,6 +2,7 @@ import * as React from "react";
 import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -98,8 +99,8 @@ export function UploadAudioReuniao({
         body: { reuniao_id: rid, audio_path: path },
       });
       if (error) throw error;
-    } catch (e: any) {
-      toast.error("Falha ao iniciar análise", { description: e?.message });
+    } catch (e: unknown) {
+      toast.error("Falha ao iniciar análise", { description: getErrorMessage(e) });
     } finally {
       setTriggering(false);
     }
@@ -132,9 +133,9 @@ export function UploadAudioReuniao({
       setPreparing(true);
       try {
         rid = await onAutoSaveDraft();
-      } catch (e: any) {
+      } catch (e: unknown) {
         setPreparing(false);
-        toast.error("Erro ao salvar rascunho", { description: e?.message });
+        toast.error("Erro ao salvar rascunho", { description: getErrorMessage(e) });
         return;
       }
       setPreparing(false);
@@ -180,8 +181,8 @@ export function UploadAudioReuniao({
       }
       await onUploaded({ audio_path: "", audio_size: 0, audio_mime: "" });
       toast.success("Áudio removido com sucesso");
-    } catch (e: any) {
-      toast.error("Erro ao remover áudio", { description: e?.message });
+    } catch (e: unknown) {
+      toast.error("Erro ao remover áudio", { description: getErrorMessage(e) });
     } finally {
       setRemoving(false);
     }
