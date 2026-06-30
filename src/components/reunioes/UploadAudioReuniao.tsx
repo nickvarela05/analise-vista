@@ -2,6 +2,7 @@ import * as React from "react";
 import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2, Wand2, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
