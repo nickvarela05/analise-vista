@@ -9,7 +9,8 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { formatBytes } from "@/lib/audio-compress";
+import { formatBytes } from "@/lib/utils";
+import { MAX_UPLOAD_BYTES } from "@/constants/upload";
 
 export type JobPhase =
   | "compressing"
@@ -85,7 +86,6 @@ export const useUploadStore = create<State & Actions>((set, get) => ({
   },
 }));
 
-const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 export interface StartJobOpts {
   reuniaoId: string;
