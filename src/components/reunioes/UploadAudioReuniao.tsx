@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { startUploadJob, useUploadJob, useUploadStore } from "@/lib/reuniao-upload-manager";
+import { MAX_UPLOAD_BYTES } from "@/constants/upload";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
@@ -41,7 +42,6 @@ interface Props {
 
 const ACCEPT =
   "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
-const MAX_BYTES = 25 * 1024 * 1024;
 const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
@@ -115,7 +115,7 @@ export function UploadAudioReuniao({
       });
       return;
     }
-    if (rawFile.size > MAX_BYTES) {
+    if (rawFile.size > MAX_UPLOAD_BYTES) {
       toast.error("Arquivo acima de 25 MB", {
         description: "O limite é de 25 MB. Reduza, comprima ou divida o arquivo antes de enviar.",
       });
