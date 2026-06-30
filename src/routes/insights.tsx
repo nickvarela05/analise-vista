@@ -218,8 +218,8 @@ function ResumoSemanal() {
         toast.info("Nenhum resumo novo", { description: "Não foram encontradas atividades na semana anterior para resumir." });
       }
       await carregar();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha ao gerar");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Falha ao gerar"));
     } finally {
       setGerando(false);
     }

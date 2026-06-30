@@ -76,8 +76,8 @@ export function ConfiguracoesEmails() {
       await supabase.functions.invoke("dispatch-email-digest", { body: { mode: "imediato" } });
       toast.success(`E-mail de teste enviado para ${user.email}`);
       setTimeout(carregar, 2000);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Falha"));
     } finally {
       setTestando(false);
     }
@@ -94,8 +94,8 @@ export function ConfiguracoesEmails() {
       await supabase.functions.invoke("dispatch-email-digest", { body: { mode: "imediato" } });
       toast.success("Reprocessamento disparado");
       setTimeout(carregar, 2000);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Falha"));
     } finally {
       setReprocessando(false);
     }
@@ -108,8 +108,8 @@ export function ConfiguracoesEmails() {
       if (error) throw error;
       toast.success("Resumo diário enfileirado para todos os usuários elegíveis");
       setTimeout(carregar, 2500);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Falha"));
     } finally {
       setDisparandoResumo(false);
     }
@@ -126,8 +126,8 @@ export function ConfiguracoesEmails() {
       if (error) throw error;
       toast.success("Histórico de disparos limpo");
       await carregar();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Falha");
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, "Falha"));
     } finally {
       setLimpando(false);
     }

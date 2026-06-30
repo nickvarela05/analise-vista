@@ -225,8 +225,8 @@ function Reunioes() {
       link.remove();
       URL.revokeObjectURL(link.href);
       toast.success("Relatório gerado!", { description: filename });
-    } catch (e: any) {
-      toast.error("Falha ao gerar relatório", { description: e?.message });
+    } catch (e: unknown) {
+      toast.error("Falha ao gerar relatório", { description: getErrorMessage(e) });
     } finally {
       setGeneratingReport(false);
     }
