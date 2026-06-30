@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBytes } from "@/lib/utils";
 import { MAX_UPLOAD_BYTES } from "@/constants/upload";
+import { logger } from "@/lib/logger";
 
 export type JobPhase =
   | "compressing"
@@ -180,7 +181,7 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
     } catch (e: any) {
       const canceled = abort.signal.aborted || e?.message === "CANCELED";
       if (!canceled) {
-        console.error("[upload-manager] Job falhou:", { reuniaoId, titulo, error: e });
+        logger.error("[upload-manager] Job falhou:", { reuniaoId, titulo, error: e });
       }
       useUploadStore.getState().upsert(reuniaoId, {
         phase: canceled ? "canceled" : "error",

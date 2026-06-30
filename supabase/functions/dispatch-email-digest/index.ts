@@ -63,41 +63,15 @@ async function sendViaN8n(payload: {
   };
 }
 
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-const PUBLISHABLE_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? "";
-const PUBLISHABLE_KEYS = (Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") ?? "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-
+/**
+ * @description Autoriza apenas chamadas portadoras do SERVICE_ROLE_KEY (cron interno).
+ * Tokens publishable/anon/JWT de usuário NÃO são aceitos: este endpoint dispara e-mails em
+ * massa e processa fila — superfície estritamente interna.
+ */
 function isAuthorized(req: Request): boolean {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (token.length === 0) return false;
-  if (token === SERVICE_KEY) return true;
-  if (ANON_KEY && token === ANON_KEY) return true;
-  if (PUBLISHABLE_KEY && token === PUBLISHABLE_KEY) return true;
-  if (PUBLISHABLE_KEYS.includes(token)) return true;
-  if (token.startsWith("sb_publishable_") || token.startsWith("sb_secret_")) return true;
-  try {
-    const [, payloadB64] = token.split(".");
-    if (payloadB64) {
-      const json = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
-      const iss = typeof json?.iss === "string" ? json.iss : "";
-      const role = json?.role;
-      if (
-        (iss === "supabase" || iss.includes("supabase")) &&
-        (role === "anon" || role === "service_role" || role === "authenticated")
-      ) {
-        return true;
-      }
-      // Supabase publishable/secret novo formato (sb_publishable_..., sb_secret_...)
-      if (typeof json?.ref === "string") return true;
-    }
-  } catch {
-    /* noop */
-  }
-  return false;
+  return token.length > 0 && token === SERVICE_KEY;
 }
 
 async function runResumoDiario() {
