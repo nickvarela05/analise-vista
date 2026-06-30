@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBytes } from "@/lib/utils";
 import { MAX_UPLOAD_BYTES } from "@/constants/upload";
+import { logger } from "@/lib/logger";
 
 export type JobPhase =
   | "compressing"
