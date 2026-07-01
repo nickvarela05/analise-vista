@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { CargoSelect } from "@/components/equipe/CargoSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
 
 export const Route = createFileRoute("/perfil")({
   component: PerfilRoute,
@@ -67,8 +68,8 @@ function Perfil() {
       toast.error("Selecione uma imagem");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem muito grande (máx 5MB)");
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      toast.error(`Imagem muito grande (máx ${formatBytes(MAX_IMAGE_UPLOAD_BYTES)})`);
       return;
     }
     setUploading(true);
