@@ -32,6 +32,7 @@ import {
 import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
 import { supabase } from "@/integrations/supabase/client";
+import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
 
 interface Foto {
   id: string;
@@ -100,8 +101,8 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
       toast.error("Selecione uma imagem");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem maior que 5MB");
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      toast.error(`Imagem muito grande (máx ${formatBytes(MAX_IMAGE_UPLOAD_BYTES)})`);
       return;
     }
     setUploading(true);
