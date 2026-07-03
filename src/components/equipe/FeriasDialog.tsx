@@ -45,13 +45,17 @@ export function FeriasDialog({
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.data_inicio || !form.data_fim) {
-      toast.error("Informe início e fim");
+    const parsed = feriasSchema.safeParse({
+      colaborador_id: colaboradorId,
+      ...form,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
     const { error } = await supabase
       .from("colaborador_ferias")
-      .insert({ colaborador_id: colaboradorId, ...form });
+      .insert(parsed.data);
     if (error) toast.error("Erro", { description: error.message });
     else {
       toast.success("Férias registradas");
