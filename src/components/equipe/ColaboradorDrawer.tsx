@@ -44,6 +44,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
+import { colaboradorSchema } from "@/lib/schemas/colaborador";
+import { validateImageFile } from "@/lib/schemas/_helpers";
 
 interface Props {
   colab: Colaborador | null;
