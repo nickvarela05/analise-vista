@@ -91,6 +91,18 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
   );
 
   const salvar = async () => {
+    const parsed = colaboradorSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
+    if (foto) {
+      const err = validateImageFile(foto);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
     setSaving(true);
     let foto_url = colab.foto_url;
     if (foto) {
@@ -107,7 +119,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     }
     const { error } = await supabase
       .from("colaborador")
-      .update({ ...form, foto_url })
+      .update({ ...parsed.data, foto_url })
       .eq("id", colab.id);
     setSaving(false);
     if (error) {
@@ -118,6 +130,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     setEditing(false);
     qc.invalidateQueries({ queryKey: qk.equipe() });
   };
+
 
   const desativar = async () => {
     if (!confirm("Desativar este colaborador?")) return;
