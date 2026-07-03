@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { StatTone } from "@/components/shared/StatPill";
 import type { AvisoRow, AvisoTipo } from "./AvisoCard";
+import { avisoSchema } from "@/lib/schemas/aviso";
 
 type TipoMeta = {
   value: AvisoTipo;
