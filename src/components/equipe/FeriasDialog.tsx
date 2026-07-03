@@ -16,6 +16,7 @@ import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { feriasSchema } from "@/lib/schemas/ferias";
 
 export function FeriasDialog({
   open,
