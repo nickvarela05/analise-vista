@@ -38,6 +38,7 @@ import {
   type DemandaOrigem,
   type DemandaPrioridade,
 } from "./lib/demanda-utils";
+import { demandaSchema } from "@/lib/schemas/demanda";
 
 interface DemandaInitial {
   id?: string;
