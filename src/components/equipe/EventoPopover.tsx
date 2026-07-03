@@ -119,9 +119,24 @@ export function EventoPopover({
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!colabId || !data) {
-      toast.error("Selecione colaborador e data");
+    const parsed = eventoSchema.safeParse({
+      colaborador_id: colabId,
+      tipo,
+      data,
+      hora_inicio: horaIni,
+      hora_fim: horaFim,
+      observacao: obs,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
+    }
+    if (anexo && tipo === "atestado") {
+      const anexoErr = validateAnexoFile(anexo);
+      if (anexoErr) {
+        toast.error(anexoErr);
+        return;
+      }
     }
     setSaving(true);
     let anexo_url: string | null = null;
@@ -138,12 +153,7 @@ export function EventoPopover({
       anexo_url = path;
     }
     const { error } = await supabase.from("colaborador_evento").insert({
-      colaborador_id: colabId,
-      tipo,
-      data,
-      hora_inicio: tipo === "atraso" ? horaIni || null : null,
-      hora_fim: tipo === "atraso" ? horaFim || null : null,
-      observacao: obs || null,
+      ...parsed.data,
       anexo_url,
     });
     setSaving(false);
