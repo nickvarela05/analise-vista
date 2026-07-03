@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { eventoSchema } from "@/lib/schemas/evento";
+import { validateAnexoFile } from "@/lib/schemas/_helpers";
 import type { EventoTipo, LocalTrabalho } from "./lib/types";
 import { EVENTO_LABEL, LOCAL_TRABALHO_LABEL } from "./lib/types";
 
