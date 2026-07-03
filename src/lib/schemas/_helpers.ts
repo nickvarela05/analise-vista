@@ -1,4 +1,5 @@
 /** Helpers compartilhados por schemas Zod. */
+import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
 
 export const emptyToNull = (v: unknown) =>
   typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : v ?? null;
@@ -16,8 +17,6 @@ export const isRealDate = (s: string) => {
 };
 
 export const todayISO = () => new Date().toISOString().slice(0, 10);
-
-import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
 
 /** Valida um arquivo de imagem. Retorna mensagem de erro ou null. */
 export const validateImageFile = (file: File): string | null => {
