@@ -31,6 +31,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CargoSelect } from "./CargoSelect";
 import { cn } from "@/lib/utils";
 import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
+import { colaboradorSchema } from "@/lib/schemas/colaborador";
+import { validateImageFile } from "@/lib/schemas/_helpers";
 
 export function NovoColaboradorDialog() {
   const qc = useQueryClient();
