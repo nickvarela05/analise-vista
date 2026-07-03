@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { horarioSchema } from "@/lib/schemas/horario";
 
 export function HorarioDialog({
   open,
@@ -43,10 +44,20 @@ export function HorarioDialog({
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    const rows = [1, 2, 3, 4, 5].map((dia_semana) => ({
+    const parsed = horarioSchema.safeParse({
       colaborador_id: colaboradorId,
-      dia_semana,
       ...form,
+    });
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Dados inválidos";
+      toast.error("Erro", { description: msg });
+      return;
+    }
+    const { colaborador_id, ...rest } = parsed.data;
+    const rows = [1, 2, 3, 4, 5].map((dia_semana) => ({
+      colaborador_id,
+      dia_semana,
+      ...rest,
     }));
     const { error } = await supabase
       .from("colaborador_horario")
