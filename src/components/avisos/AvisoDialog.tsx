@@ -152,23 +152,25 @@ export function AvisoDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.titulo.trim() || !form.mensagem.trim()) {
-      toast.error("Preencha título e mensagem");
+    const parsed = avisoSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
     setSaving(true);
-
+    const d = parsed.data;
     const payload = {
-      titulo: form.titulo.trim(),
-      mensagem: form.mensagem.trim(),
-      tipo: form.tipo,
-      ativo: form.ativo,
+      titulo: d.titulo,
+      mensagem: d.mensagem,
+      tipo: d.tipo,
+      ativo: d.ativo,
       colaborador_id: null,
-      colaboradores_ids: form.destinatarios,
-      expira_em: form.expira_em
-        ? new Date(form.expira_em + "T23:59:59").toISOString()
+      colaboradores_ids: d.destinatarios,
+      expira_em: d.expira_em
+        ? new Date(d.expira_em + "T23:59:59").toISOString()
         : null,
     };
+
 
     const { error } = editing
       ? await supabase.from("aviso_gestor").update(payload).eq("id", editing.id)
