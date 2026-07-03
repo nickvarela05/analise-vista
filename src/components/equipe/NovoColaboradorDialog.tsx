@@ -31,6 +31,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CargoSelect } from "./CargoSelect";
 import { cn } from "@/lib/utils";
 import { LOCAL_TRABALHO_LABEL, type LocalTrabalho } from "./lib/types";
+import { colaboradorSchema } from "@/lib/schemas/colaborador";
+import { validateImageFile } from "@/lib/schemas/_helpers";
 
 export function NovoColaboradorDialog() {
   const qc = useQueryClient();
@@ -65,7 +67,18 @@ export function NovoColaboradorDialog() {
 
   const criar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.nome.trim()) return;
+    const parsed = colaboradorSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
+    if (foto) {
+      const err = validateImageFile(foto);
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
     setSaving(true);
     let foto_url: string | null = null;
     if (foto) {
@@ -83,7 +96,9 @@ export function NovoColaboradorDialog() {
         .getPublicUrl(path);
       foto_url = pub.publicUrl;
     }
-    const { error } = await supabase.from("colaborador").insert({ ...form, foto_url });
+    const { error } = await supabase
+      .from("colaborador")
+      .insert({ ...parsed.data, foto_url });
     setSaving(false);
     if (error) {
       toast.error("Erro", { description: error.message });
