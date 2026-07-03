@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { horarioSchema } from "@/lib/schemas/horario";
 
 export function HorarioDialog({
   open,
