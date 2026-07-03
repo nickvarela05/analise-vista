@@ -1,5 +1,9 @@
 /** Helpers compartilhados por schemas Zod. */
-import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
+import {
+  MAX_IMAGE_UPLOAD_BYTES,
+  MAX_ANEXO_UPLOAD_BYTES,
+  formatBytes,
+} from "@/constants/upload";
 
 export const emptyToNull = (v: unknown) =>
   typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : v ?? null;
