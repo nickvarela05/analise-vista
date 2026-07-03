@@ -4,22 +4,11 @@ import {
   ORIGEM_OPTS,
   PRIORIDADE_OPTS,
 } from "@/components/demandas/lib/demanda-utils";
-
-const emptyToNull = (v: unknown) =>
-  typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : v ?? null;
+import { emptyToNull, isRealDate } from "./_helpers";
 
 const nullableTrimmed = (max: number) =>
   z.preprocess(emptyToNull, z.string().max(max).nullable());
 
-const isRealDate = (s: string) => {
-  const [y, m, d] = s.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  return (
-    dt.getUTCFullYear() === y &&
-    dt.getUTCMonth() === m - 1 &&
-    dt.getUTCDate() === d
-  );
-};
 
 export const demandaSchema = z
   .object({
