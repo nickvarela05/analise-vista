@@ -128,22 +128,24 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.titulo.trim()) {
-      toast.error("Informe um título");
+    const parsed = demandaSchema.safeParse(form);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
     setSaving(true);
+    const d = parsed.data;
     const payload = {
-      titulo: form.titulo.trim(),
-      descricao: form.descricao?.trim() || null,
-      origem: form.origem,
-      categoria: form.categoria,
-      prioridade: form.prioridade,
-      solicitante: form.solicitante?.trim() || null,
-      responsaveis_ids: form.responsaveis_ids,
-      equipe_toda: form.equipe_toda,
-      prazo: form.prazo || null,
-      tags: form.tags && form.tags.length > 0 ? form.tags : null,
+      titulo: d.titulo,
+      descricao: d.descricao,
+      origem: d.origem,
+      categoria: d.categoria,
+      prioridade: d.prioridade,
+      solicitante: d.solicitante,
+      responsaveis_ids: d.responsaveis_ids,
+      equipe_toda: d.equipe_toda,
+      prazo: d.prazo ?? null,
+      tags: d.tags.length > 0 ? d.tags : null,
     };
     const { data: saved, error } = isEditing
       ? await supabase.from("demanda").update(payload).eq("id", initial!.id!).select("id").single()
