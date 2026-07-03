@@ -19,6 +19,12 @@ export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 export const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 /**
+ * Tamanho máximo permitido para upload de anexos de eventos (bytes).
+ * 10 MB — usado para comprovantes (atestados médicos, etc.) em imagem ou PDF.
+ */
+export const MAX_ANEXO_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/**
  * Formata um valor em bytes para leitura humana (KB, MB).
  */
 export function formatBytes(bytes: number): string {

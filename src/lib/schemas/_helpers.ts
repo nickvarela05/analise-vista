@@ -1,5 +1,9 @@
 /** Helpers compartilhados por schemas Zod. */
-import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
+import {
+  MAX_IMAGE_UPLOAD_BYTES,
+  MAX_ANEXO_UPLOAD_BYTES,
+  formatBytes,
+} from "@/constants/upload";
 
 export const emptyToNull = (v: unknown) =>
   typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : v ?? null;
@@ -23,5 +27,15 @@ export const validateImageFile = (file: File): string | null => {
   if (!file.type.startsWith("image/")) return "Arquivo deve ser uma imagem";
   if (file.size > MAX_IMAGE_UPLOAD_BYTES)
     return `Imagem muito grande (máx ${formatBytes(MAX_IMAGE_UPLOAD_BYTES)})`;
+  return null;
+};
+
+/** Valida um anexo (imagem ou PDF). Retorna mensagem de erro ou null. */
+export const validateAnexoFile = (file: File): string | null => {
+  const isImage = file.type.startsWith("image/");
+  const isPdf = file.type === "application/pdf";
+  if (!isImage && !isPdf) return "Anexo deve ser imagem ou PDF";
+  if (file.size > MAX_ANEXO_UPLOAD_BYTES)
+    return `Anexo muito grande (máx ${formatBytes(MAX_ANEXO_UPLOAD_BYTES)})`;
   return null;
 };
