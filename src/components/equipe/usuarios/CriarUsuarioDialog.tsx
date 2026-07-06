@@ -53,23 +53,26 @@ export function CriarUsuarioDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.email.trim() || !form.nome.trim()) return;
+    const parsed = criarUsuarioSchema.safeParse({
+      nome: form.nome,
+      email: form.email,
+      role: form.role,
+      colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
+    });
+    if (!parsed.success) {
+      toast.error("Dados inválidos", {
+        description: parsed.error.issues[0]?.message ?? "Verifique os campos.",
+      });
+      return;
+    }
     setSaving(true);
     try {
       const r = await adminFetch<{ ok: true; user_id: string; temp_password: string }>(
         "/api/admin/usuarios?action=create",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: form.email.trim(),
-            nome: form.nome.trim(),
-            role: form.role,
-            colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
-          }),
-        },
+        { method: "POST", body: JSON.stringify(parsed.data) },
       );
       setOpen(false);
-      onCreated({ email: form.email.trim(), password: r.temp_password, context: "create" });
+      onCreated({ email: parsed.data.email, password: r.temp_password, context: "create" });
       setForm(initialForm);
     } catch (e2) {
       toast.error("Erro ao criar usuário", { description: (e2 as Error).message });
@@ -127,18 +130,8 @@ export function CriarUsuarioDialog({
                 />
               </div>
             </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                <Briefcase className="mr-1 inline h-3 w-3" />
-                Cargo (sugestão)
-              </Label>
-              <CargoSelect value={form.cargo} onChange={(v) => setForm({ ...form, cargo: v })} />
-              <p className="text-[11px] text-muted-foreground">
-                O cargo é definido no perfil do colaborador vinculado.
-              </p>
-            </div>
           </DialogSection>
+
 
           <DialogSection title="Acesso e vínculo" icon={Shield} variant="tinted">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -178,11 +171,11 @@ export function CriarUsuarioDialog({
                         ...form,
                         colaborador_id: v,
                         nome: c.nome ?? form.nome,
-                        cargo: c.cargo ?? form.cargo,
                       });
                       toast.success("Dados do colaborador preenchidos", {
-                        description: "Nome e cargo foram migrados automaticamente.",
+                        description: "Nome foi migrado automaticamente.",
                       });
+
                     } else {
                       setForm({ ...form, colaborador_id: v });
                     }

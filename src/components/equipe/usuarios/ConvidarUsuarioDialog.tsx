@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { adminFetch } from "@/lib/admin-fetch";
+import { convidarUsuarioSchema } from "@/lib/schemas/usuario";
 import type { Role } from "./types";
 
 export function ConvidarUsuarioDialog() {
@@ -36,12 +37,18 @@ export function ConvidarUsuarioDialog() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const parsed = convidarUsuarioSchema.safeParse({ email, role });
+    if (!parsed.success) {
+      toast.error("Dados inválidos", {
+        description: parsed.error.issues[0]?.message ?? "Verifique os campos.",
+      });
+      return;
+    }
     setSaving(true);
     try {
       const r = await adminFetch<{ ok: true; token: string; email: string; role: Role }>(
         "/api/admin/usuarios?action=invite",
-        { method: "POST", body: JSON.stringify({ email: email.trim(), role }) },
+        { method: "POST", body: JSON.stringify(parsed.data) },
       );
       const link = `${window.location.origin}/login?invite=${r.token}&email=${encodeURIComponent(r.email)}`;
       setResult({ email: r.email, token: r.token, link });
