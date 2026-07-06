@@ -30,6 +30,7 @@ import { WORKFLOW, STATUS_LABEL, PRIO } from "@/components/tarefas/lib/workflow"
 import type { ColabMini, DemandaMini } from "@/components/tarefas/useTarefasData";
 import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
+import { tarefaSchema } from "@/lib/schemas/tarefa";
 
 interface FormState {
   titulo: string;
