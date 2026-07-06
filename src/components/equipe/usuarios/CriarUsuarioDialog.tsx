@@ -130,18 +130,8 @@ export function CriarUsuarioDialog({
                 />
               </div>
             </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">
-                <Briefcase className="mr-1 inline h-3 w-3" />
-                Cargo (sugestão)
-              </Label>
-              <CargoSelect value={form.cargo} onChange={(v) => setForm({ ...form, cargo: v })} />
-              <p className="text-[11px] text-muted-foreground">
-                O cargo é definido no perfil do colaborador vinculado.
-              </p>
-            </div>
           </DialogSection>
+
 
           <DialogSection title="Acesso e vínculo" icon={Shield} variant="tinted">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
