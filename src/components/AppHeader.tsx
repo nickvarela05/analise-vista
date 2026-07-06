@@ -68,7 +68,7 @@ export function AppHeader() {
       {/* Breadcrumb-ish current page */}
       <div className="hidden items-center gap-1.5 text-sm md:flex">
         <Sparkles className="h-3.5 w-3.5 text-primary/70" />
-        <span className="text-muted-foreground">Sisteplan</span>
+        <span className="text-muted-foreground">NEXOS</span>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
         <span className="font-semibold text-foreground">{pageLabel}</span>
       </div>

@@ -68,9 +68,9 @@ export function ConfiguracoesEmails() {
       const { error } = await supabase.from("email_send_log").insert({
         user_id: user.id,
         recipient_email: user.email,
-        subject: "✅ Teste de envio — Sisteplan",
+        subject: "✅ Teste de envio — NEXOS",
         body_html: `<div style="font-family:Arial,sans-serif"><h2>Funcionou!</h2><p>Se você está lendo isso, o N8N está corretamente conectado ao sistema.</p><p style="color:#888;font-size:12px">Disparado em ${new Date().toLocaleString("pt-BR")}</p></div>`,
-        body_text: "Teste de envio Sisteplan — funcionou.",
+        body_text: "Teste de envio NEXOS — funcionou.",
         status: "pending",
       });
       if (error) throw error;
