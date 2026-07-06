@@ -105,6 +105,7 @@ export function NovaTarefaDialog({
     }
     const { error } = await supabase.from("todo").insert({
       ...parsed.data,
+      status: parsed.data.status as never,
       criado_por: user?.id,
     });
     if (error) {
