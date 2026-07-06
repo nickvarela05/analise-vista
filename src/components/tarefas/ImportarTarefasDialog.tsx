@@ -221,8 +221,8 @@ export function ImportarTarefasDialog() {
       const { data: lote, error: loteErr } = await supabase
         .from("todo_importacao_lote")
         .insert({
-          nome: nomeLote.trim(),
-          descricao: descricaoLote.trim() || null,
+          nome: loteData!.nome,
+          descricao: loteData!.descricao,
           tipo: "homologacao",
           total_tarefas: total,
           criado_por: user.id,
