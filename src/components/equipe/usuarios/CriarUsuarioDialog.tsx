@@ -171,11 +171,11 @@ export function CriarUsuarioDialog({
                         ...form,
                         colaborador_id: v,
                         nome: c.nome ?? form.nome,
-                        cargo: c.cargo ?? form.cargo,
                       });
                       toast.success("Dados do colaborador preenchidos", {
-                        description: "Nome e cargo foram migrados automaticamente.",
+                        description: "Nome foi migrado automaticamente.",
                       });
+
                     } else {
                       setForm({ ...form, colaborador_id: v });
                     }
