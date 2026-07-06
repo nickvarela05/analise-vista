@@ -75,7 +75,7 @@ export function DashboardHero({
                 Painel gerencial
               </p>
               <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                {saudacao()}{primeiroNome ? `, ${primeiroNome}` : ""}, bem-vindo ao NEXOS.
+                {saudacao()}{primeiroNome ? `, ${primeiroNome}` : ""}, Bem vindo ao Nexus
               </h1>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 {subtitle ?? "Sua equipe de Análise de Requisitos em tempo real."}
