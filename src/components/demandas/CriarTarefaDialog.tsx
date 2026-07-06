@@ -27,6 +27,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { AssigneeCombobox, type AssigneeOption } from "@/components/AssigneeCombobox";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { tarefaSchema } from "@/lib/schemas/tarefa";
 
 interface Props {
   open: boolean;
