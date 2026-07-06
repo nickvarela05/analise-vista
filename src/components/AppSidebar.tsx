@@ -156,7 +156,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex min-w-0 flex-col leading-tight">
               <span className="text-sm font-bold uppercase tracking-[0.22em] text-sidebar-foreground">
-                NEXOS
+                NexusGestão
               </span>
               <span className="mt-0.5 flex items-center gap-1 text-[9.5px] uppercase tracking-[0.16em] text-sidebar-foreground/55">
                 <Sparkles className="h-2.5 w-2.5 text-emerald-400" />
