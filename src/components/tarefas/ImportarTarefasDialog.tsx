@@ -101,9 +101,13 @@ export function ImportarTarefasDialog() {
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
 
-      const erroAcum: string[] = [];
-      const out: LinhaImport[] = [];
-      rows.forEach((row, idx) => {
+      const brutas: Array<{
+        titulo: string;
+        descricao: string | null;
+        status: WorkflowStatus;
+        prioridade: "baixa" | "media" | "alta";
+      }> = [];
+      rows.forEach((row) => {
         const tarefa = buscarColuna(row, ["tarefa"]);
         const assunto = buscarColuna(row, ["assunto"]);
         const status = buscarColuna(row, ["status"]);
@@ -121,12 +125,7 @@ export function ImportarTarefasDialog() {
               ? `Tarefa ${tarefaStr}`
               : assuntoStr;
 
-        if (!titulo) {
-          erroAcum.push(`Linha ${idx + 2}: sem Tarefa/Assunto`);
-          return;
-        }
-
-        out.push({
+        brutas.push({
           titulo,
           descricao: descricao ? String(descricao).trim() || null : null,
           status: mapearStatus(status),
@@ -134,9 +133,11 @@ export function ImportarTarefasDialog() {
         });
       });
 
-      setLinhas(out);
+      const { validas, erros: erroAcum } = parseLinhasImport(brutas);
+
+      setLinhas(validas);
       setErros(erroAcum);
-      if (out.length === 0 && erroAcum.length === 0) {
+      if (validas.length === 0 && erroAcum.length === 0) {
         setErros(["Nenhuma linha válida encontrada na planilha."]);
       }
     } catch (e) {
