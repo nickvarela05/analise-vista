@@ -71,21 +71,27 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!demanda || !titulo.trim()) {
-      toast.error("Informe um título");
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("todo").insert({
-      titulo: titulo.trim(),
-      descricao: descricao.trim() || null,
+    if (!demanda) return;
+    const parsed = tarefaSchema.safeParse({
+      titulo,
+      descricao,
       prioridade,
+      status: "aberta",
       data_prevista: prazo,
       responsaveis_ids: responsaveis,
       equipe_toda: equipeToda,
       demanda_id: demanda.id,
+      em_teste: false,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("todo").insert({
+      ...parsed.data,
+      status: parsed.data.status as never,
       criado_por: userId,
-      status: "aberta",
     });
     setSaving(false);
     if (error) {
