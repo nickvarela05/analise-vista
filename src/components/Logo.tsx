@@ -5,7 +5,7 @@ interface LogoProps {
   className?: string;
   /**
    * mark  → só o ícone (cubos isométricos)
-   * lockup → ícone + wordmark "SISTEPLAN"
+   * lockup → ícone + wordmark "NEXOS"
    */
   variant?: "mark" | "lockup";
   /** Força contraste claro (sobre fundos escuros) */
@@ -30,7 +30,7 @@ export function Logo({
     <div className={cn("flex items-center gap-2.5", className)}>
       <img
         src={markUrl}
-        alt="Sisteplan"
+        alt="NEXOS"
         className={cn(
           s.mark,
           "object-contain shrink-0 drop-shadow-[0_2px_6px_rgba(47,128,115,0.25)]",
@@ -44,7 +44,7 @@ export function Logo({
             onDark ? "text-white/95" : "text-foreground",
           )}
         >
-          Sisteplan
+          NEXOS
         </span>
       )}
     </div>

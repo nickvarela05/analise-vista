@@ -197,7 +197,7 @@ function UnidadesPage() {
   const exportarXLSX = async () => {
     const ExcelJS = (await import("exceljs")).default;
     const wb = new ExcelJS.Workbook();
-    wb.creator = "Sisteplan";
+    wb.creator = "NEXOS";
     wb.created = new Date();
 
     // Paleta inspirada no modelo (verde #00B050) + tons complementares
@@ -241,7 +241,7 @@ function UnidadesPage() {
       // Linha 2: subtítulo / data
       ws.mergeCells(2, 1, 2, headers.length);
       const subCell = ws.getCell(2, 1);
-      subCell.value = `Sisteplan — Rede Municipal de Osasco · Gerado em ${stampStr}`;
+      subCell.value = `NEXOS — Rede Municipal de Osasco · Gerado em ${stampStr}`;
       subCell.font = { name: "Calibri", size: 10, italic: true, color: { argb: "FF555555" } };
       subCell.alignment = { vertical: "middle", horizontal: "center" };
       ws.getRow(2).height = 18;
