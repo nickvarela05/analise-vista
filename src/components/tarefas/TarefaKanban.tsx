@@ -18,6 +18,7 @@ interface Props {
 const COL_TONE: Record<string, { wash: string; bar: string; pill: string; ring: string; text: string }> = {
   aberta:             { wash: "from-slate-500/15 via-slate-500/5",   bar: "bg-slate-400",   pill: "bg-slate-500/15 text-slate-700 dark:text-slate-300",   ring: "ring-slate-400/40",  text: "text-slate-700 dark:text-slate-200" },
   em_andamento:       { wash: "from-primary/20 via-primary/5",       bar: "bg-primary",     pill: "bg-primary/15 text-primary",                            ring: "ring-primary/40",    text: "text-primary" },
+  pre_build:          { wash: "from-indigo-500/20 via-indigo-500/5", bar: "bg-indigo-500",  pill: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300", ring: "ring-indigo-500/40", text: "text-indigo-700 dark:text-indigo-300" },
   homologacao:        { wash: "from-sky-500/20 via-sky-500/5",       bar: "bg-sky-500",     pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",          ring: "ring-sky-500/40",    text: "text-sky-700 dark:text-sky-300" },
   aprovado:           { wash: "from-emerald-500/20 via-emerald-500/5", bar: "bg-emerald-500", pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300", ring: "ring-emerald-500/40", text: "text-emerald-700 dark:text-emerald-300" },
   aprovado_ressalvas: { wash: "from-amber-500/20 via-amber-500/5",   bar: "bg-amber-500",   pill: "bg-amber-500/15 text-amber-700 dark:text-amber-300",    ring: "ring-amber-500/40",  text: "text-amber-700 dark:text-amber-300" },
