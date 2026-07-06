@@ -2,11 +2,11 @@
 export const WORKFLOW = [
   "aberta",
   "em_andamento",
-  "pre_build",
   "homologacao",
   "aprovado",
   "aprovado_ressalvas",
   "reprovado",
+  "pre_build",
   "producao",
   "encerrada",
 ] as const;
@@ -130,6 +130,7 @@ export const STATUS_ABERTOS: readonly string[] = [
   "aprovado",
   "aprovado_ressalvas",
   "reprovado",
+  "pre_build",
   "pendente",
   "encaminhada",
 ];
