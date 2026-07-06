@@ -2,6 +2,7 @@
 export const WORKFLOW = [
   "aberta",
   "em_andamento",
+  "pre_build",
   "homologacao",
   "aprovado",
   "aprovado_ressalvas",
@@ -24,6 +25,7 @@ export const ALL_STATUS = [
 export const STATUS_LABEL: Record<string, string> = {
   aberta: "Aberta",
   em_andamento: "Em desenvolvimento/Teste interno",
+  pre_build: "Pré-build",
   homologacao: "Homologação",
   aprovado: "Aprovado",
   aprovado_ressalvas: "Aprovado c/ ressalvas",
@@ -39,6 +41,7 @@ export const STATUS_LABEL: Record<string, string> = {
 export const STATUS_DESCRIPTION: Record<string, string> = {
   aberta: "Aguardando início",
   em_andamento: "Em execução",
+  pre_build: "Preparação para build",
   homologacao: "Validação em andamento",
   aprovado: "Aprovado para produção",
   aprovado_ressalvas: "Aprovado com pendências",
