@@ -1,49 +1,51 @@
-# Schema #11 — UploadAudioReuniao
+# Schema #12 — Configurações (IA + Preferências de Notificação)
 
-Centralizar a validação de arquivo de áudio (tipo, extensão, tamanho) e dos metadados que acompanham o job de upload em um único schema Zod, mantendo o pipeline de upload em segundo plano intacto.
+Do bloco "Configurações", os três painéis relevantes são:
 
-## Escopo
-
-Componente-alvo: `src/components/reunioes/UploadAudioReuniao.tsx`
-Validação atual: dois `if` manuais em `handleFile` — checagem de MIME/extensão e de `MAX_UPLOAD_BYTES`.
+- `ConfiguracoesEmails` — apenas botões de ação em cima de `email_send_log`. **Sem formulário → fica de fora.**
+- `ConfiguracoesIA` — formulário real (prompt principal, instruções extras, toggle ativo). **Alto valor.**
+- `PreferenciasNotificacao` — toggles por `(evento, canal)` gravando em `notificacao_preferencia`. **Vale defesa em profundidade.**
+- `DestinatariosResumoDiario` — busca + toggle direto em `profiles.recebe_resumo_diario`. Sem input estruturado; **fica de fora.**
 
 ## Arquivo novo
 
-`src/lib/schemas/reuniao_audio.ts`, exportando:
+`src/lib/schemas/configuracoes.ts`, exportando:
 
-1. **`audioFileSchema`** — valida a instância `File`:
-   - `instanceof(File)`
-   - `size > 0` (rejeita arquivo vazio)
-   - `size <= MAX_UPLOAD_BYTES` (25 MB, via `refine`)
-   - MIME/extensão: aceita se `type` começa com `audio/`, OU é `video/mp4`, OU extensão bate com `AUDIO_EXTENSIONS` / `mp4|mov|mkv|avi`
-   - Mensagens em português, alinhadas às toasts atuais
+1. **`iaPromptConfigSchema`** — payload de `ConfiguracoesIA`:
+   - `chave`: `z.literal("analise_reuniao")` (defesa em profundidade)
+   - `prompt_sistema`: `z.string().trim().min(1, "O prompt principal não pode ficar vazio").max(8000)`
+   - `instrucoes_extras`: `z.string().trim().max(4000).transform(v => v || null).nullable()` via `emptyToNull`
+   - `ativo`: `z.boolean()`
+   - Tipo exportado: `IaPromptConfig`
+2. **`notifPreferenciaSchema`** — payload de `PreferenciasNotificacao`:
+   - `user_id`: `z.string().uuid()`
+   - `evento`: `z.enum([...EVENTOS_TIPOS])` — os 8 tipos já definidos localmente
+   - `canal`: `z.enum(["in_app", "email"])`
+   - `ativo`: `z.boolean()`
+   - Exportar também `EVENTOS_TIPOS` (const array) e tipo `EventoTipo` para reuso no componente.
 
-2. **`audioUploadMetaSchema`** — metadados do job:
-   - `reuniaoId`: `z.string().uuid().nullable()`
-   - `userId`: `z.string().uuid()`
-   - `titulo`: `z.string().trim().max(200).optional()` (default `"Reunião"` aplicado no consumidor, como hoje)
+## Mudanças em `ConfiguracoesIA.tsx`
 
-3. **`parseAudioFile(file)`** — helper que roda `audioFileSchema.safeParse` e devolve `{ ok: true, file } | { ok: false, error }` com mensagem já pronta para `toast.error`.
+- Importar `iaPromptConfigSchema`, `type IaPromptConfig`.
+- Em `salvar()`: montar `payload` e rodar `iaPromptConfigSchema.safeParse(payload)`. Se falhar, `toast.error` com a mensagem do primeiro issue (substitui o `if (!promptSistema.trim())` manual).
+- `.update(parsed.data)` / `.insert(parsed.data)` — sem mais mudanças de lógica.
+- Manter `CHAVE`, `DEFAULT_PROMPT`, `restaurar()`, UI e permissões (`isGestor`).
 
-Constantes reaproveitadas: `MAX_UPLOAD_BYTES` de `@/constants/upload`, `AUDIO_EXTENSIONS` movido para o schema e re-exportado (o componente passa a importá-lo do schema para eliminar duplicação).
+## Mudanças em `PreferenciasNotificacao.tsx`
 
-## Mudanças em `UploadAudioReuniao.tsx`
+- Passar a importar `EVENTOS_TIPOS`, `type EventoTipo`, `notifPreferenciaSchema` do schema.
+- Remover a definição local duplicada de `EventoTipo` (o array `EVENTOS` continua local — tem `label`, `desc`, `icon`, `tone`, que não vão para o schema).
+- Em `toggle()`: validar o objeto com `notifPreferenciaSchema.safeParse` antes do `upsert`; erro → `toast.error` e aborta. Serve como defesa em profundidade contra chamadas com `canal`/`evento` inválidos vindos de código futuro.
 
-- Importar `parseAudioFile` e `audioUploadMetaSchema`.
-- Em `handleFile`: substituir os dois blocos `if (!isAudioMime …)` e `if (rawFile.size > MAX_UPLOAD_BYTES)` por uma única chamada a `parseAudioFile(rawFile)`. Em caso de erro, `toast.error` com a mensagem do schema; sucesso segue o fluxo atual.
-- Antes de `startUploadJob(...)`: validar os metadados com `audioUploadMetaSchema.safeParse({ reuniaoId: rid, userId, titulo })` como defesa em profundidade; erro dispara `toast.error` e aborta.
-- Remover a constante local `AUDIO_EXTENSIONS` (passa a vir do schema).
+## Fora do Zod (permanece)
 
-## Fora do Zod (permanece como está)
-
-- Fluxo de `onAutoSaveDraft` (rascunho da reunião).
-- `startUploadJob` e todo o gerenciador em background (`reuniao-upload-manager`).
-- Signed URL, remoção via storage, `triggerProcessing`, reprocessamento.
-- Toasts de progresso, UI de drag-and-drop, estados `preparing`/`triggering`/`removing`.
-- Constante `ACCEPT` do `<input type="file">`.
+- `ConfiguracoesEmails` inteiro (sem input estruturado).
+- `DestinatariosResumoDiario` (busca + toggle direto).
+- Consultas `select`, invalidação do React Query, RLS/permissões, UI, gradientes, badges.
+- Chamadas a `supabase.functions.invoke("dispatch-email-digest", ...)`.
 
 ## Resultado
 
-- Uma única fonte de verdade para "o que é um áudio válido de reunião".
-- `handleFile` mais curto e testável.
-- Zero mudança de comportamento para o usuário final.
+- Uma fonte de verdade para o payload de configuração da IA e para preferências de notificação.
+- Elimina a checagem manual `!promptSistema.trim()` e o tipo `EventoTipo` duplicado.
+- Zero mudança de UX.
