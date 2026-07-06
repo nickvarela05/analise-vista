@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Loader2, UserPlus, Mail, Briefcase, Shield, Link2, User as UserIcon } from "lucide-react";
+import { Loader2, UserPlus, Mail, Shield, Link2, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,15 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CargoSelect } from "@/components/equipe/CargoSelect";
 import { adminFetch } from "@/lib/admin-fetch";
+import { criarUsuarioSchema } from "@/lib/schemas/usuario";
 import type { Colaborador } from "@/components/equipe/lib/types";
 import type { Role, TempPasswordInfo } from "./types";
 
 interface FormState {
   email: string;
   nome: string;
-  cargo: string;
   role: Role;
   colaborador_id: string;
 }
@@ -37,7 +36,6 @@ interface FormState {
 const initialForm: FormState = {
   email: "",
   nome: "",
-  cargo: "",
   role: "analista",
   colaborador_id: "__none__",
 };
