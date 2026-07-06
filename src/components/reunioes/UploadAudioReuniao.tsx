@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { startUploadJob, useUploadJob, useUploadStore } from "@/lib/reuniao-upload-manager";
-import { MAX_UPLOAD_BYTES } from "@/constants/upload";
+import { parseAudioFile, audioUploadMetaSchema } from "@/lib/schemas/reuniao_audio";
 
 type Status = "pendente" | "processando" | "concluido" | "erro";
 
@@ -43,7 +43,6 @@ interface Props {
 
 const ACCEPT =
   "audio/*,audio/mpeg,audio/mp3,audio/m4a,audio/x-m4a,audio/wav,audio/webm,audio/ogg,audio/mp4,video/mp4,.mp3,.m4a,.wav,.webm,.ogg,.mp4,.aac,.flac";
-const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|webm|ogg|mp4|aac|flac|oga|opus)$/i;
 
 export function UploadAudioReuniao({
   reuniaoId,
@@ -107,19 +106,9 @@ export function UploadAudioReuniao({
   };
 
   const handleFile = async (rawFile: File) => {
-    const isAudioMime = rawFile.type.startsWith("audio/");
-    const isMp4Container = rawFile.type === "video/mp4" || /\.(mp4|mov|mkv|avi)$/i.test(rawFile.name);
-    const hasAudioExt = AUDIO_EXTENSIONS.test(rawFile.name);
-    if (!isAudioMime && !isMp4Container && !hasAudioExt) {
-      toast.error("Arquivo não é um áudio válido", {
-        description: "Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
-      });
-      return;
-    }
-    if (rawFile.size > MAX_UPLOAD_BYTES) {
-      toast.error("Arquivo acima de 25 MB", {
-        description: "O limite é de 25 MB. Reduza, comprima ou divida o arquivo antes de enviar.",
-      });
+    const parsedFile = parseAudioFile(rawFile);
+    if (!parsedFile.ok) {
+      toast.error(parsedFile.error);
       return;
     }
 
@@ -142,11 +131,23 @@ export function UploadAudioReuniao({
       if (!rid) return;
     }
 
+    const parsedMeta = audioUploadMetaSchema.safeParse({
+      reuniaoId: rid,
+      userId,
+      titulo: titulo?.trim() || undefined,
+    });
+    if (!parsedMeta.success) {
+      toast.error("Metadados de upload inválidos", {
+        description: parsedMeta.error.issues[0]?.message,
+      });
+      return;
+    }
+
     startUploadJob({
       reuniaoId: rid,
       userId,
-      titulo: titulo?.trim() || "Reunião",
-      file: rawFile,
+      titulo: parsedMeta.data.titulo || "Reunião",
+      file: parsedFile.file,
       onUploaded,
     });
 
