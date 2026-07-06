@@ -23,13 +23,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import type { WorkflowStatus } from "@/components/tarefas/lib/workflow";
-
-type LinhaImport = {
-  titulo: string;
-  descricao: string | null;
-  status: WorkflowStatus;
-  prioridade: "baixa" | "media" | "alta";
-};
+import {
+  parseLinhasImport,
+  loteImportSchema,
+  type LinhaImport,
+} from "@/lib/schemas/tarefa_import";
 
 const norm = (s: unknown) =>
   String(s ?? "")
