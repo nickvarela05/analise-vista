@@ -88,17 +88,23 @@ export function NovaTarefaDialog({
 
   const adicionar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.titulo.trim()) return;
-    const { error } = await supabase.from("todo").insert({
+    const parsed = tarefaSchema.safeParse({
       titulo: form.titulo,
-      descricao: form.descricao || null,
+      descricao: form.descricao,
       prioridade: form.prioridade,
-      status: form.status as never,
+      status: form.status,
+      data_prevista: form.data_prevista,
       responsaveis_ids: form.responsaveis_ids,
       equipe_toda: form.equipe_toda,
-      data_prevista: form.data_prevista || null,
       demanda_id: form.demanda_id,
       em_teste: form.em_teste,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
+    const { error } = await supabase.from("todo").insert({
+      ...parsed.data,
       criado_por: user?.id,
     });
     if (error) {
