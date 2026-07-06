@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { adminFetch } from "@/lib/admin-fetch";
+import { convidarUsuarioSchema } from "@/lib/schemas/usuario";
 import type { Role } from "./types";
 
 export function ConvidarUsuarioDialog() {
