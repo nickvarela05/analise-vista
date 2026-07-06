@@ -18,16 +18,7 @@ import {
   Mail,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-type EventoTipo =
-  | "tarefa_atribuida"
-  | "tarefa_prazo"
-  | "tarefa_comentario"
-  | "tarefa_status"
-  | "demanda_atribuida"
-  | "demanda_urgente"
-  | "chamado_sla"
-  | "aviso_critico";
+import { notifPreferenciaSchema, type EventoTipo } from "@/lib/schemas/configuracoes";
 
 const EVENTOS: {
   id: EventoTipo;
@@ -75,12 +66,21 @@ export function PreferenciasNotificacao() {
 
   const toggle = async (evento: EventoTipo, canal: "in_app" | "email", ativo: boolean) => {
     if (!user) return;
+    const parsed = notifPreferenciaSchema.safeParse({
+      user_id: user.id,
+      evento,
+      canal,
+      ativo,
+    });
+    if (!parsed.success) {
+      toast.error("Preferência inválida", {
+        description: parsed.error.issues[0]?.message,
+      });
+      return;
+    }
     const { error } = await supabase
       .from("notificacao_preferencia")
-      .upsert(
-        { user_id: user.id, evento, canal, ativo },
-        { onConflict: "user_id,evento,canal" },
-      );
+      .upsert(parsed.data, { onConflict: "user_id,evento,canal" });
     if (error) {
       toast.error("Não foi possível salvar a preferência");
       return;

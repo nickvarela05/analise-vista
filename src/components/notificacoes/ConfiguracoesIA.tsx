@@ -9,8 +9,12 @@ import { Loader2, Save, RotateCcw, Sparkles, Wand2, BookOpen } from "lucide-reac
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import {
+  iaPromptConfigSchema,
+  IA_CHAVE_ANALISE_REUNIAO,
+} from "@/lib/schemas/configuracoes";
 
-const CHAVE = "analise_reuniao";
+const CHAVE = IA_CHAVE_ANALISE_REUNIAO;
 const DEFAULT_PROMPT =
   "Você é um analista de reuniões. Receberá a transcrição de uma reunião em português. Extraia informações estruturadas, objetivas e profissionais. Não invente nada.";
 
@@ -45,20 +49,20 @@ export function ConfiguracoesIA() {
   }, []);
 
   const salvar = async () => {
-    if (!promptSistema.trim()) {
-      toast.error("O prompt principal não pode ficar vazio");
+    const parsed = iaPromptConfigSchema.safeParse({
+      chave: CHAVE,
+      prompt_sistema: promptSistema,
+      instrucoes_extras: instrucoesExtras,
+      ativo,
+    });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
     setSaving(true);
-    const payload = {
-      chave: CHAVE,
-      prompt_sistema: promptSistema.trim(),
-      instrucoes_extras: instrucoesExtras.trim() || null,
-      ativo,
-    };
     const { error } = id
-      ? await supabase.from("ia_prompt_config").update(payload).eq("id", id)
-      : await supabase.from("ia_prompt_config").insert(payload);
+      ? await supabase.from("ia_prompt_config").update(parsed.data).eq("id", id)
+      : await supabase.from("ia_prompt_config").insert(parsed.data);
     setSaving(false);
     if (error) {
       toast.error("Erro ao salvar", { description: error.message });
