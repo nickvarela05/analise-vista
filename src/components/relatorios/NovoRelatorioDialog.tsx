@@ -27,6 +27,7 @@ import {
   STATUS_SOLICITACAO,
   type StatusSolicitacao,
 } from "@/lib/n8n-db.functions";
+import { relatorioSchema } from "@/lib/schemas/relatorio";
 
 const URGENCIAS = ["Baixa", "Média", "Alta", "Crítica"] as const;
 
@@ -84,26 +85,30 @@ export function NovoRelatorioDialog({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.descricao.trim()) {
-      toast.error("Descrição é obrigatória");
-      return;
-    }
     const categoria =
       form.categoria === "__nova__"
         ? form.categoriaCustom.trim() || "Indefinido"
         : form.categoria || "Indefinido";
+    const responsavel = form.responsavel === "__none__" ? null : form.responsavel;
+    const urgencia = form.urgencia?.trim() ? form.urgencia : "Média";
 
-    mut.mutate({
+    const parsed = relatorioSchema.safeParse({
       categoria,
-      tipo_base: form.tipo_base.trim() || null,
-      solicitante_nome: form.solicitante_nome.trim() || null,
-      solicitante_email: form.solicitante_email.trim() || null,
-      descricao: form.descricao.trim(),
-      urgencia: form.urgencia || null,
-      prazo: form.prazo || null,
-      responsavel: form.responsavel === "__none__" ? null : form.responsavel,
+      tipo_base: form.tipo_base,
+      solicitante_nome: form.solicitante_nome,
+      solicitante_email: form.solicitante_email,
+      descricao: form.descricao,
+      urgencia,
+      prazo: form.prazo,
+      responsavel,
       status: form.status,
     });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
+
+    mut.mutate(parsed.data);
   };
 
   return (
