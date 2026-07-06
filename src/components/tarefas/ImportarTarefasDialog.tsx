@@ -148,9 +148,17 @@ export function ImportarTarefasDialog() {
 
   const importar = async () => {
     if (!user || linhas.length === 0) return;
-    if (forcarHomologacao && !nomeLote.trim()) {
-      toast.error("Informe o nome do lote");
-      return;
+    let loteData: { nome: string; descricao: string | null } | null = null;
+    if (forcarHomologacao) {
+      const parsedLote = loteImportSchema.safeParse({
+        nome: nomeLote,
+        descricao: descricaoLote,
+      });
+      if (!parsedLote.success) {
+        toast.error(parsedLote.error.issues[0]?.message ?? "Dados do lote inválidos");
+        return;
+      }
+      loteData = parsedLote.data;
     }
     setImportando(true);
 
