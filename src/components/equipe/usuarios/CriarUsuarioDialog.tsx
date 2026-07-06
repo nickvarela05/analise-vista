@@ -53,23 +53,26 @@ export function CriarUsuarioDialog({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.email.trim() || !form.nome.trim()) return;
+    const parsed = criarUsuarioSchema.safeParse({
+      nome: form.nome,
+      email: form.email,
+      role: form.role,
+      colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
+    });
+    if (!parsed.success) {
+      toast.error("Dados inválidos", {
+        description: parsed.error.issues[0]?.message ?? "Verifique os campos.",
+      });
+      return;
+    }
     setSaving(true);
     try {
       const r = await adminFetch<{ ok: true; user_id: string; temp_password: string }>(
         "/api/admin/usuarios?action=create",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email: form.email.trim(),
-            nome: form.nome.trim(),
-            role: form.role,
-            colaborador_id: form.colaborador_id === "__none__" ? null : form.colaborador_id,
-          }),
-        },
+        { method: "POST", body: JSON.stringify(parsed.data) },
       );
       setOpen(false);
-      onCreated({ email: form.email.trim(), password: r.temp_password, context: "create" });
+      onCreated({ email: parsed.data.email, password: r.temp_password, context: "create" });
       setForm(initialForm);
     } catch (e2) {
       toast.error("Erro ao criar usuário", { description: (e2 as Error).message });
