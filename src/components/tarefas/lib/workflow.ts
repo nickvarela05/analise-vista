@@ -130,6 +130,7 @@ export const STATUS_ABERTOS: readonly string[] = [
   "aprovado",
   "aprovado_ressalvas",
   "reprovado",
+  "pre_build",
   "pendente",
   "encaminhada",
 ];
