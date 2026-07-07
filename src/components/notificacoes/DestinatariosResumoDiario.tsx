@@ -39,10 +39,14 @@ export function DestinatariosResumoDiario() {
 
   const toggleOne = useMutation({
     mutationFn: async (vars: { userId: string; ativo: boolean }) => {
+      const parsed = resumoDiarioTogglePayloadSchema.safeParse(vars);
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      }
       const { error } = await supabase
         .from("profiles")
-        .update({ recebe_resumo_diario: vars.ativo })
-        .eq("user_id", vars.userId);
+        .update({ recebe_resumo_diario: parsed.data.ativo })
+        .eq("user_id", parsed.data.userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["destinatarios-resumo-diario"] }),
