@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail, Search, MailX, UserCheck, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  resumoDiarioTogglePayloadSchema,
+  resumoDiarioBulkPayloadSchema,
+} from "@/lib/schemas/destinatarios_resumo";
 
 type Perfil = {
   user_id: string;
