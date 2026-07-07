@@ -64,14 +64,26 @@ async function sendViaN8n(payload: {
 }
 
 /**
- * @description Autoriza apenas chamadas portadoras do SERVICE_ROLE_KEY (cron interno).
- * Tokens publishable/anon/JWT de usuário NÃO são aceitos: este endpoint dispara e-mails em
- * massa e processa fila — superfície estritamente interna.
+ * @description Autoriza chamadas do cron interno (SERVICE_ROLE_KEY) OU de
+ * usuários autenticados com papel `gestor` (disparo manual via UI).
  */
-function isAuthorized(req: Request): boolean {
+async function isAuthorized(req: Request): Promise<boolean> {
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  return token.length > 0 && token === SERVICE_KEY;
+  if (!token) return false;
+  if (token === SERVICE_KEY) return true;
+  try {
+    const { data, error } = await admin.auth.getUser(token);
+    if (error || !data.user) return false;
+    const { data: roles } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .eq("role", "gestor");
+    return (roles ?? []).length > 0;
+  } catch {
+    return false;
+  }
 }
 
 async function runResumoDiario() {
