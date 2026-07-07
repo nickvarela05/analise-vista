@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail, Search, MailX, UserCheck, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  resumoDiarioTogglePayloadSchema,
+  resumoDiarioBulkPayloadSchema,
+} from "@/lib/schemas/destinatarios_resumo";
 
 type Perfil = {
   user_id: string;
@@ -35,10 +39,14 @@ export function DestinatariosResumoDiario() {
 
   const toggleOne = useMutation({
     mutationFn: async (vars: { userId: string; ativo: boolean }) => {
+      const parsed = resumoDiarioTogglePayloadSchema.safeParse(vars);
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      }
       const { error } = await supabase
         .from("profiles")
-        .update({ recebe_resumo_diario: vars.ativo })
-        .eq("user_id", vars.userId);
+        .update({ recebe_resumo_diario: parsed.data.ativo })
+        .eq("user_id", parsed.data.userId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["destinatarios-resumo-diario"] }),
@@ -49,10 +57,14 @@ export function DestinatariosResumoDiario() {
     mutationFn: async (ativo: boolean) => {
       const ids = perfis.filter((p) => !!p.email).map((p) => p.user_id);
       if (ids.length === 0) return;
+      const parsed = resumoDiarioBulkPayloadSchema.safeParse({ ids, ativo });
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      }
       const { error } = await supabase
         .from("profiles")
-        .update({ recebe_resumo_diario: ativo })
-        .in("user_id", ids);
+        .update({ recebe_resumo_diario: parsed.data.ativo })
+        .in("user_id", parsed.data.ids);
       if (error) throw error;
     },
     onSuccess: (_d, ativo) => {
