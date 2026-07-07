@@ -18,6 +18,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
+import {
+  emailSendLogInsertSchema,
+  dispatchDigestModeSchema,
+} from "@/lib/schemas/email";
 
 export function ConfiguracoesEmails() {
   const { role, user } = useAuth();
@@ -65,16 +69,27 @@ export function ConfiguracoesEmails() {
     if (!user?.email) { toast.error("Sem e-mail no perfil"); return; }
     setTestando(true);
     try {
-      const { error } = await supabase.from("email_send_log").insert({
+      const payload = {
         user_id: user.id,
         recipient_email: user.email,
         subject: "✅ Teste de envio — NEXOS",
         body_html: `<div style="font-family:Arial,sans-serif"><h2>Funcionou!</h2><p>Se você está lendo isso, o N8N está corretamente conectado ao sistema.</p><p style="color:#888;font-size:12px">Disparado em ${new Date().toLocaleString("pt-BR")}</p></div>`,
         body_text: "Teste de envio NEXOS — funcionou.",
-        status: "pending",
-      });
+        status: "pending" as const,
+      };
+      const parsed = emailSendLogInsertSchema.safeParse(payload);
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "Payload inválido");
+        return;
+      }
+      const { error } = await supabase.from("email_send_log").insert(parsed.data);
       if (error) throw error;
-      await supabase.functions.invoke("dispatch-email-digest", { body: { mode: "imediato" } });
+      const parsedMode = dispatchDigestModeSchema.safeParse("imediato");
+      if (!parsedMode.success) {
+        toast.error(parsedMode.error.issues[0]?.message ?? "Modo inválido");
+        return;
+      }
+      await supabase.functions.invoke("dispatch-email-digest", { body: { mode: parsedMode.data } });
       toast.success(`E-mail de teste enviado para ${user.email}`);
       setTimeout(carregar, 2000);
     } catch (e: unknown) {
@@ -105,7 +120,12 @@ export function ConfiguracoesEmails() {
   async function dispararResumoDiario() {
     setDisparandoResumo(true);
     try {
-      const { error } = await supabase.functions.invoke("dispatch-email-digest", { body: { mode: "resumo_diario" } });
+      const parsedMode = dispatchDigestModeSchema.safeParse("resumo_diario");
+      if (!parsedMode.success) {
+        toast.error(parsedMode.error.issues[0]?.message ?? "Modo inválido");
+        return;
+      }
+      const { error } = await supabase.functions.invoke("dispatch-email-digest", { body: { mode: parsedMode.data } });
       if (error) throw error;
       toast.success("Resumo diário enfileirado para todos os usuários elegíveis");
       setTimeout(carregar, 2500);
