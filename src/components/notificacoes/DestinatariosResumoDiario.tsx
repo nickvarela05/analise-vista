@@ -57,10 +57,14 @@ export function DestinatariosResumoDiario() {
     mutationFn: async (ativo: boolean) => {
       const ids = perfis.filter((p) => !!p.email).map((p) => p.user_id);
       if (ids.length === 0) return;
+      const parsed = resumoDiarioBulkPayloadSchema.safeParse({ ids, ativo });
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      }
       const { error } = await supabase
         .from("profiles")
-        .update({ recebe_resumo_diario: ativo })
-        .in("user_id", ids);
+        .update({ recebe_resumo_diario: parsed.data.ativo })
+        .in("user_id", parsed.data.ids);
       if (error) throw error;
     },
     onSuccess: (_d, ativo) => {
