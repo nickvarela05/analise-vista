@@ -93,7 +93,9 @@ async function runResumoDiario() {
   const inicioDia = `${hoje}T00:00:00Z`;
   const fimSemanaISO = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
 
-  const { data: users } = await admin.from("profiles").select("user_id, email, nome, recebe_resumo_diario");
+  const { data: users } = await admin
+    .from("profiles")
+    .select("user_id, email, nome, recebe_resumo_diario, colaborador_id");
 
   // idempotência: 1x por dia por usuário
   const { data: jaHoje } = await admin
@@ -112,53 +114,58 @@ async function runResumoDiario() {
     (a) => !a.expira_em || new Date(a.expira_em).getTime() >= now.getTime(),
   );
 
-  await Promise.all(
-    (users ?? []).map(async (u) => {
-      if (!u.email || u.recebe_resumo_diario === false || jaSet.has(u.user_id)) return;
+  // ---------------------------------------------------------------
+  // Consultas GLOBAIS (não dependem do usuário) — carregadas UMA vez
+  // e filtradas em memória por usuário. Antes eram disparadas N×
+  // (uma por profile), saturando o PostgREST e causando 503/504.
+  // ---------------------------------------------------------------
+  const [demR, reuR, tarR, relR, prefR] = await Promise.all([
+    admin
+      .from("demanda")
+      .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
+      .gte("prazo", hoje)
+      .lte("prazo", em7dias)
+      .not("status", "in", "(concluida,cancelada)"),
+    admin
+      .from("reuniao")
+      .select("id, titulo, data_reuniao, status, responsavel_id, responsaveis_ids, equipe_toda")
+      .gte("data_reuniao", inicioDia)
+      .lte("data_reuniao", fimSemanaISO)
+      .not("status", "in", "(realizada,cancelada)"),
+    admin
+      .from("todo")
+      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
+      .not("status", "in", "(encerrada,concluida,producao,cancelada)")
+      .not("data_prevista", "is", null)
+      .gte("data_prevista", hoje)
+      .lte("data_prevista", em7dias),
+    admin
+      .from("chamado_externo")
+      .select(
+        "id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at",
+      )
+      .neq("status", "finalizado"),
+    admin
+      .from("notificacao_preferencia")
+      .select("user_id, ativo")
+      .eq("canal", "email")
+      .eq("evento", "sistema"),
+  ]);
 
-      const { data: pref } = await admin
-        .from("notificacao_preferencia")
-        .select("ativo")
-        .eq("user_id", u.user_id)
-        .eq("canal", "email")
-        .eq("evento", "sistema")
-        .maybeSingle();
-      if (pref?.ativo === false) return;
+  const demAll = demR.data ?? [];
+  const reuAll = reuR.data ?? [];
+  const tarAll = tarR.data ?? [];
+  const relAll = relR.data ?? [];
+  const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
-      const [demR, reuR, tarR, relR, profR] = await Promise.all([
-        // Demandas com prazo nos próximos 7 dias
-        admin
-          .from("demanda")
-          .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
-          .gte("prazo", hoje)
-          .lte("prazo", em7dias)
-          .not("status", "in", "(concluida,cancelada)"),
-        // Reuniões da semana
-        admin
-          .from("reuniao")
-          .select("id, titulo, data_reuniao, status, responsavel_id, responsaveis_ids, equipe_toda")
-          .gte("data_reuniao", inicioDia)
-          .lte("data_reuniao", fimSemanaISO)
-          .not("status", "in", "(realizada,cancelada)"),
-        // Tarefas com prazo nos próximos 7 dias
-        admin
-          .from("todo")
-          .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
-          .not("status", "in", "(encerrada,concluida,producao,cancelada)")
-          .not("data_prevista", "is", null)
-          .gte("data_prevista", hoje)
-          .lte("data_prevista", em7dias),
-        // Relatórios pendentes (não finalizados)
-        admin
-          .from("chamado_externo")
-          .select(
-            "id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at",
-          )
-          .neq("status", "finalizado"),
-        admin.from("profiles").select("colaborador_id").eq("user_id", u.user_id).maybeSingle(),
-      ]);
+  // Processa usuários sequencialmente: as consultas pesadas já foram
+  // feitas; resta apenas filtro em memória + 1 INSERT por usuário.
+  for (const u of users ?? []) {
+    try {
+      if (!u.email || u.recebe_resumo_diario === false || jaSet.has(u.user_id)) continue;
+      if (prefOff.has(u.user_id)) continue;
 
-      const colabId = profR.data?.colaborador_id ?? null;
+      const colabId = u.colaborador_id ?? null;
       // responsavel_id / responsaveis_ids armazenam COLABORADOR_ID (não user_id)
       const meu = (r: {
         responsavel_id?: string | null;
