@@ -181,10 +181,10 @@ async function runResumoDiario() {
         equipe_toda?: boolean | null;
       }) => r.equipe_toda === true || r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id);
 
-      const minhasDemandas = (demR.data ?? []).filter(meu);
-      const minhasReunioes = (reuR.data ?? []).filter(meu);
-      const minhasTarefas = (tarR.data ?? []).filter(meu);
-      const meusRelatorios = (relR.data ?? []).filter(meuChamado);
+      const minhasDemandas = demAll.filter(meu);
+      const minhasReunioes = reuAll.filter(meu);
+      const minhasTarefas = tarAll.filter(meu);
+      const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
       );
@@ -195,7 +195,7 @@ async function runResumoDiario() {
         minhasTarefas.length +
         meusRelatorios.length +
         meusAvisos.length;
-      if (total === 0) return;
+      if (total === 0) continue;
 
       const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
       const fmtData = (d: string) => {
