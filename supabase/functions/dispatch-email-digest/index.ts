@@ -360,8 +360,11 @@ async function runResumoDiario() {
         body_text: text,
         status: "pending",
       });
-    }),
-  );
+    } catch (err) {
+      // Uma falha por usuário não deve travar o lote inteiro.
+      console.error("[runResumoDiario] falha para user", u.user_id, err);
+    }
+  }
 }
 
 async function processarPendentes() {
