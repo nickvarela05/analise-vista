@@ -48,7 +48,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
         >
           <img
             src={logoUrl}
-            alt="NEXOS"
+            alt="Nexus"
             width={64}
             height={64}
             className={`${compact ? "h-9 w-9" : "h-10 w-10"} object-contain drop-shadow-[0_2px_8px_oklch(0.78_0.16_180/0.55)]`}
@@ -214,7 +214,7 @@ function LoginPage() {
           </div>
 
           <p className="text-xs text-sidebar-foreground/50">
-            © {new Date().getFullYear()} NEXOS · Uso interno
+            © {new Date().getFullYear()} Nexus · Uso interno
           </p>
         </div>
       </div>
