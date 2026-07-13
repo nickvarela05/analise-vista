@@ -72,9 +72,9 @@ export function ConfiguracoesEmails() {
       const payload = {
         user_id: user.id,
         recipient_email: user.email,
-        subject: "✅ Teste de envio — NEXOS",
+        subject: "✅ Teste de envio — Nexus",
         body_html: `<div style="font-family:Arial,sans-serif"><h2>Funcionou!</h2><p>Se você está lendo isso, o N8N está corretamente conectado ao sistema.</p><p style="color:#888;font-size:12px">Disparado em ${new Date().toLocaleString("pt-BR")}</p></div>`,
-        body_text: "Teste de envio NEXOS — funcionou.",
+        body_text: "Teste de envio Nexus — funcionou.",
         status: "pending" as const,
       };
       const parsed = emailSendLogInsertSchema.safeParse(payload);
