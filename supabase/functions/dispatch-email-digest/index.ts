@@ -215,6 +215,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
       const minhasTarefas = tarAll.filter(meu);
+      const minhasTarefasTeste = tarTesteAll.filter(meu);
       const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
@@ -224,6 +225,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         minhasDemandas.length +
         minhasReunioes.length +
         minhasTarefas.length +
+        minhasTarefasTeste.length +
         meusRelatorios.length +
         meusAvisos.length;
       if (total === 0) continue;
