@@ -521,6 +521,27 @@ export type Database = {
         }
         Relationships: []
       }
+      email_digest_config: {
+        Row: {
+          dias_semana: number[]
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          dias_semana?: number[]
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          dias_semana?: number[]
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           attempts: number

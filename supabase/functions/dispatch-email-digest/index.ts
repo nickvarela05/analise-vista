@@ -64,10 +64,15 @@ async function sendViaN8n(payload: {
 }
 
 /**
- * @description Autoriza chamadas do cron interno (SERVICE_ROLE_KEY) OU de
+ * @description Autoriza chamadas do cron interno via header `x-cron-secret`
+ * (valor em `CRON_SECRET`), do cron interno via SERVICE_ROLE_KEY OU de
  * usuários autenticados com papel `gestor` (disparo manual via UI).
  */
 async function isAuthorized(req: Request): Promise<boolean> {
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  const headerCron = req.headers.get("x-cron-secret") ?? "";
+  if (cronSecret && headerCron && headerCron === cronSecret) return true;
+
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) return false;
@@ -86,8 +91,26 @@ async function isAuthorized(req: Request): Promise<boolean> {
   }
 }
 
-async function runResumoDiario() {
+async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const now = new Date();
+
+  // Checa configuração de dias da semana (0=Dom .. 6=Sáb).
+  // Disparo manual (via UI de gestor) ignora o filtro e sempre executa.
+  if (!opts.forceIgnoreWeekday) {
+    const { data: cfg } = await admin
+      .from("email_digest_config")
+      .select("dias_semana")
+      .eq("id", true)
+      .maybeSingle();
+    const dias: number[] = (cfg?.dias_semana as number[] | null) ?? [1, 2, 3, 4, 5];
+    // Usa fuso America/Sao_Paulo para determinar o dia da semana efetivo.
+    const brDay = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay();
+    if (!dias.includes(brDay)) {
+      console.log(`[resumo_diario] dia ${brDay} não está em ${JSON.stringify(dias)} — pulando.`);
+      return;
+    }
+  }
+
   const hoje = now.toISOString().slice(0, 10);
   const em7dias = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const inicioDia = `${hoje}T00:00:00Z`;
@@ -119,7 +142,7 @@ async function runResumoDiario() {
   // e filtradas em memória por usuário. Antes eram disparadas N×
   // (uma por profile), saturando o PostgREST e causando 503/504.
   // ---------------------------------------------------------------
-  const [demR, reuR, tarR, relR, prefR] = await Promise.all([
+  const [demR, reuR, tarR, tarTesteR, relR, prefR] = await Promise.all([
     admin
       .from("demanda")
       .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
@@ -139,6 +162,13 @@ async function runResumoDiario() {
       .not("data_prevista", "is", null)
       .gte("data_prevista", hoje)
       .lte("data_prevista", em7dias),
+    // Tarefas em teste (independente de prazo) — informa responsáveis que estão
+    // disponíveis para validação, com o prazo caso exista.
+    admin
+      .from("todo")
+      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
+      .eq("em_teste", true)
+      .not("status", "in", "(encerrada,concluida,producao,cancelada)"),
     admin
       .from("chamado_externo")
       .select(
@@ -155,6 +185,7 @@ async function runResumoDiario() {
   const demAll = demR.data ?? [];
   const reuAll = reuR.data ?? [];
   const tarAll = tarR.data ?? [];
+  const tarTesteAll = tarTesteR.data ?? [];
   const relAll = relR.data ?? [];
   const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
@@ -184,6 +215,7 @@ async function runResumoDiario() {
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
       const minhasTarefas = tarAll.filter(meu);
+      const minhasTarefasTeste = tarTesteAll.filter(meu);
       const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
@@ -193,6 +225,7 @@ async function runResumoDiario() {
         minhasDemandas.length +
         minhasReunioes.length +
         minhasTarefas.length +
+        minhasTarefasTeste.length +
         meusRelatorios.length +
         meusAvisos.length;
       if (total === 0) continue;
@@ -253,6 +286,13 @@ async function runResumoDiario() {
           "#10b981",
           `${headRow(escapeHtml(t.titulo), prazoBadge(t.data_prevista))}
          <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${t.data_prevista ? fmtData(t.data_prevista) : "sem prazo"}</div>`,
+        );
+
+      const renderTarefaTeste = (t: (typeof minhasTarefasTeste)[number]) =>
+        card(
+          "#f43f5e",
+          `${headRow(escapeHtml(t.titulo), t.data_prevista ? prazoBadge(t.data_prevista) : `<span style="background:#fce7f3;color:#9d174d;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM TESTE</span>`)}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">🧪 Disponível para validação${t.data_prevista ? " &nbsp;·&nbsp; 📅 " + fmtData(t.data_prevista) : ""}</div>`,
         );
 
       const renderReuniao = (r: (typeof minhasReunioes)[number]) =>
@@ -340,6 +380,7 @@ async function runResumoDiario() {
           <tr><td style="padding:8px 24px 28px">
             ${sectionHoje}
             ${bloco("Avisos da gestão", "📣", meusAvisos.length, meusAvisos.map(renderAviso).join(""))}
+            ${bloco("Tarefas em teste — aguardando validação", "🧪", minhasTarefasTeste.length, minhasTarefasTeste.map(renderTarefaTeste).join(""))}
             ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
             <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
@@ -350,7 +391,7 @@ async function runResumoDiario() {
         </table>
       </div>`;
 
-      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Relatórios: ${meusRelatorios.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
+      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Em teste: ${minhasTarefasTeste.length} · Relatórios: ${meusRelatorios.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
 
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
@@ -436,16 +477,23 @@ Deno.serve(async (req) => {
   }
 
   let mode = "imediato";
+  let force = false;
   try {
     const b = await req.clone().json();
     mode = b?.mode ?? mode;
+    force = b?.force === true;
   } catch {
     /* noop */
   }
 
+  // Chamadas manuais (gestor pela UI) ignoram o filtro de dias da semana.
+  // O cron sempre envia sem `force`, então respeita a configuração.
+  const cameFromCron = (req.headers.get("x-cron-secret") ?? "") !== "";
+  const forceIgnoreWeekday = force || !cameFromCron;
+
   // Background: roda sem bloquear a resposta
   const work = (async () => {
-    if (mode === "resumo_diario") await runResumoDiario();
+    if (mode === "resumo_diario") await runResumoDiario({ forceIgnoreWeekday });
     if (mode === "digest") await runDigest();
     await processarPendentes();
   })();
