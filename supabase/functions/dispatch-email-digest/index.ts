@@ -380,6 +380,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
           <tr><td style="padding:8px 24px 28px">
             ${sectionHoje}
             ${bloco("Avisos da gestão", "📣", meusAvisos.length, meusAvisos.map(renderAviso).join(""))}
+            ${bloco("Tarefas em teste — aguardando validação", "🧪", minhasTarefasTeste.length, minhasTarefasTeste.map(renderTarefaTeste).join(""))}
             ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
             <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
