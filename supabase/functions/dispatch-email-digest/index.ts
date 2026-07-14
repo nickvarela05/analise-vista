@@ -91,8 +91,26 @@ async function isAuthorized(req: Request): Promise<boolean> {
   }
 }
 
-async function runResumoDiario() {
+async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const now = new Date();
+
+  // Checa configuração de dias da semana (0=Dom .. 6=Sáb).
+  // Disparo manual (via UI de gestor) ignora o filtro e sempre executa.
+  if (!opts.forceIgnoreWeekday) {
+    const { data: cfg } = await admin
+      .from("email_digest_config")
+      .select("dias_semana")
+      .eq("id", true)
+      .maybeSingle();
+    const dias: number[] = (cfg?.dias_semana as number[] | null) ?? [1, 2, 3, 4, 5];
+    // Usa fuso America/Sao_Paulo para determinar o dia da semana efetivo.
+    const brDay = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay();
+    if (!dias.includes(brDay)) {
+      console.log(`[resumo_diario] dia ${brDay} não está em ${JSON.stringify(dias)} — pulando.`);
+      return;
+    }
+  }
+
   const hoje = now.toISOString().slice(0, 10);
   const em7dias = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const inicioDia = `${hoje}T00:00:00Z`;
