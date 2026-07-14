@@ -198,6 +198,7 @@ function Configuracoes() {
 
         <TabsContent value="emails" className="space-y-4">
           <ConfiguracoesEmails />
+          <DiasResumoDiario />
           <DestinatariosResumoDiario />
         </TabsContent>
 
