@@ -142,7 +142,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   // e filtradas em memória por usuário. Antes eram disparadas N×
   // (uma por profile), saturando o PostgREST e causando 503/504.
   // ---------------------------------------------------------------
-  const [demR, reuR, tarR, relR, prefR] = await Promise.all([
+  const [demR, reuR, tarR, tarTesteR, relR, prefR] = await Promise.all([
     admin
       .from("demanda")
       .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
@@ -162,6 +162,13 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .not("data_prevista", "is", null)
       .gte("data_prevista", hoje)
       .lte("data_prevista", em7dias),
+    // Tarefas em teste (independente de prazo) — informa responsáveis que estão
+    // disponíveis para validação, com o prazo caso exista.
+    admin
+      .from("todo")
+      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
+      .eq("em_teste", true)
+      .not("status", "in", "(encerrada,concluida,producao,cancelada)"),
     admin
       .from("chamado_externo")
       .select(
@@ -178,6 +185,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const demAll = demR.data ?? [];
   const reuAll = reuR.data ?? [];
   const tarAll = tarR.data ?? [];
+  const tarTesteAll = tarTesteR.data ?? [];
   const relAll = relR.data ?? [];
   const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
