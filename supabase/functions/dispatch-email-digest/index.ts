@@ -64,10 +64,15 @@ async function sendViaN8n(payload: {
 }
 
 /**
- * @description Autoriza chamadas do cron interno (SERVICE_ROLE_KEY) OU de
+ * @description Autoriza chamadas do cron interno via header `x-cron-secret`
+ * (valor em `CRON_SECRET`), do cron interno via SERVICE_ROLE_KEY OU de
  * usuários autenticados com papel `gestor` (disparo manual via UI).
  */
 async function isAuthorized(req: Request): Promise<boolean> {
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  const headerCron = req.headers.get("x-cron-secret") ?? "";
+  if (cronSecret && headerCron && headerCron === cronSecret) return true;
+
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) return false;
