@@ -288,6 +288,13 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
          <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${t.data_prevista ? fmtData(t.data_prevista) : "sem prazo"}</div>`,
         );
 
+      const renderTarefaTeste = (t: (typeof minhasTarefasTeste)[number]) =>
+        card(
+          "#f43f5e",
+          `${headRow(escapeHtml(t.titulo), t.data_prevista ? prazoBadge(t.data_prevista) : `<span style="background:#fce7f3;color:#9d174d;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM TESTE</span>`)}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">🧪 Disponível para validação${t.data_prevista ? " &nbsp;·&nbsp; 📅 " + fmtData(t.data_prevista) : ""}</div>`,
+        );
+
       const renderReuniao = (r: (typeof minhasReunioes)[number]) =>
         card(
           "#6366f1",
