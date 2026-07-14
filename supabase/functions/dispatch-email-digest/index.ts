@@ -477,16 +477,23 @@ Deno.serve(async (req) => {
   }
 
   let mode = "imediato";
+  let force = false;
   try {
     const b = await req.clone().json();
     mode = b?.mode ?? mode;
+    force = b?.force === true;
   } catch {
     /* noop */
   }
 
+  // Chamadas manuais (gestor pela UI) ignoram o filtro de dias da semana.
+  // O cron sempre envia sem `force`, então respeita a configuração.
+  const cameFromCron = (req.headers.get("x-cron-secret") ?? "") !== "";
+  const forceIgnoreWeekday = force || !cameFromCron;
+
   // Background: roda sem bloquear a resposta
   const work = (async () => {
-    if (mode === "resumo_diario") await runResumoDiario();
+    if (mode === "resumo_diario") await runResumoDiario({ forceIgnoreWeekday });
     if (mode === "digest") await runDigest();
     await processarPendentes();
   })();
