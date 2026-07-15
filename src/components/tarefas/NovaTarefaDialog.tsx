@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, ListChecks, FlaskConical, Sparkles } from "lucide-react";
+import { Plus, ListChecks, FlaskConical, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,14 @@ import type { ColabMini, DemandaMini } from "@/components/tarefas/useTarefasData
 import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
 import { tarefaSchema } from "@/lib/schemas/tarefa";
+
+const normalizarTitulo = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 interface FormState {
   titulo: string;
