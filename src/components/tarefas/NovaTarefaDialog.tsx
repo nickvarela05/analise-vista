@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus, ListChecks, FlaskConical, Sparkles } from "lucide-react";
+import { Plus, ListChecks, FlaskConical, Sparkles, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,14 @@ import type { ColabMini, DemandaMini } from "@/components/tarefas/useTarefasData
 import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
 import { tarefaSchema } from "@/lib/schemas/tarefa";
+
+const normalizarTitulo = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 interface FormState {
   titulo: string;
@@ -86,8 +94,39 @@ export function NovaTarefaDialog({
     if (open) setForm((f) => ({ ...f, data_prevista: defaultData ?? f.data_prevista }));
   }, [open, defaultData]);
 
+  // Detecta duplicidade pelo título (normalizado) usando o cache já carregado.
+  const duplicata = React.useMemo(() => {
+    const alvo = normalizarTitulo(form.titulo);
+    if (alvo.length < 3) return null;
+    const cache = qc.getQueryData<Array<{ id: string; titulo: string; status: string }>>(qk.tarefas.all());
+    if (!cache) return null;
+    return cache.find((t) => normalizarTitulo(t.titulo ?? "") === alvo) ?? null;
+  }, [form.titulo, qc]);
+
+  const atualizarStatusDuplicata = async () => {
+    if (!duplicata) return;
+    const { error } = await supabase
+      .from("todo")
+      .update({ status: form.status as never })
+      .eq("id", duplicata.id);
+    if (error) {
+      toast.error("Erro ao atualizar", { description: error.message });
+      return;
+    }
+    toast.success(`Status atualizado para "${STATUS_LABEL[form.status as (typeof WORKFLOW)[number]] ?? form.status}"`);
+    setOpen(false);
+    setForm(initialForm);
+    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+  };
+
   const adicionar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (duplicata) {
+      toast.error("Tarefa duplicada", {
+        description: "Já existe uma tarefa com este título. Atualize o status da existente ou altere o título.",
+      });
+      return;
+    }
     const parsed = tarefaSchema.safeParse({
       titulo: form.titulo,
       descricao: form.descricao,
@@ -147,7 +186,37 @@ export function NovaTarefaDialog({
                 onChange={(e) => setForm({ ...form, titulo: e.target.value })}
                 autoFocus
                 placeholder="Resumo curto da tarefa"
+                aria-invalid={!!duplicata}
+                className={duplicata ? "border-warning focus-visible:ring-warning" : undefined}
               />
+              {duplicata && (
+                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <div className="flex-1 space-y-1.5">
+                    <p>
+                      Já existe uma tarefa com este título{" "}
+                      <span className="font-medium">
+                        (status atual: {STATUS_LABEL[duplicata.status as (typeof WORKFLOW)[number]] ?? duplicata.status})
+                      </span>
+                      . Deseja apenas atualizar o status dela para{" "}
+                      <span className="font-medium">
+                        {STATUS_LABEL[form.status as (typeof WORKFLOW)[number]] ?? form.status}
+                      </span>
+                      ?
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={atualizarStatusDuplicata}
+                    >
+                      <RefreshCw className="mr-1.5 h-3 w-3" />
+                      Atualizar status da existente
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Descrição</Label>
@@ -246,7 +315,7 @@ export function NovaTarefaDialog({
             </p>
             <div className="flex gap-2">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit">
+              <Button type="submit" disabled={!!duplicata}>
                 <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
               </Button>
             </div>
