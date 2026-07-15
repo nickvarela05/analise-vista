@@ -94,8 +94,39 @@ export function NovaTarefaDialog({
     if (open) setForm((f) => ({ ...f, data_prevista: defaultData ?? f.data_prevista }));
   }, [open, defaultData]);
 
+  // Detecta duplicidade pelo título (normalizado) usando o cache já carregado.
+  const duplicata = React.useMemo(() => {
+    const alvo = normalizarTitulo(form.titulo);
+    if (alvo.length < 3) return null;
+    const cache = qc.getQueryData<Array<{ id: string; titulo: string; status: string }>>(qk.tarefas.all());
+    if (!cache) return null;
+    return cache.find((t) => normalizarTitulo(t.titulo ?? "") === alvo) ?? null;
+  }, [form.titulo, qc]);
+
+  const atualizarStatusDuplicata = async () => {
+    if (!duplicata) return;
+    const { error } = await supabase
+      .from("todo")
+      .update({ status: form.status as never })
+      .eq("id", duplicata.id);
+    if (error) {
+      toast.error("Erro ao atualizar", { description: error.message });
+      return;
+    }
+    toast.success(`Status atualizado para "${STATUS_LABEL[form.status as (typeof WORKFLOW)[number]] ?? form.status}"`);
+    setOpen(false);
+    setForm(initialForm);
+    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+  };
+
   const adicionar = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (duplicata) {
+      toast.error("Tarefa duplicada", {
+        description: "Já existe uma tarefa com este título. Atualize o status da existente ou altere o título.",
+      });
+      return;
+    }
     const parsed = tarefaSchema.safeParse({
       titulo: form.titulo,
       descricao: form.descricao,
