@@ -260,6 +260,7 @@ function Tarefas() {
         tone="emerald"
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <TarefasDuplicadasDialog tarefas={tarefas} />
             <ImportarTarefasDialog />
             <ExportarTarefasDialog
               todasTarefas={tarefas}
