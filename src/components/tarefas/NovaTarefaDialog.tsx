@@ -186,7 +186,37 @@ export function NovaTarefaDialog({
                 onChange={(e) => setForm({ ...form, titulo: e.target.value })}
                 autoFocus
                 placeholder="Resumo curto da tarefa"
+                aria-invalid={!!duplicata}
+                className={duplicata ? "border-warning focus-visible:ring-warning" : undefined}
               />
+              {duplicata && (
+                <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <div className="flex-1 space-y-1.5">
+                    <p>
+                      Já existe uma tarefa com este título{" "}
+                      <span className="font-medium">
+                        (status atual: {STATUS_LABEL[duplicata.status as (typeof WORKFLOW)[number]] ?? duplicata.status})
+                      </span>
+                      . Deseja apenas atualizar o status dela para{" "}
+                      <span className="font-medium">
+                        {STATUS_LABEL[form.status as (typeof WORKFLOW)[number]] ?? form.status}
+                      </span>
+                      ?
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={atualizarStatusDuplicata}
+                    >
+                      <RefreshCw className="mr-1.5 h-3 w-3" />
+                      Atualizar status da existente
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Descrição</Label>
