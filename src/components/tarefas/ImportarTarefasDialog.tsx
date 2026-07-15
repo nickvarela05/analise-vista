@@ -133,12 +133,31 @@ export function ImportarTarefasDialog() {
         });
       });
 
-      const { validas, erros: erroAcum } = parseLinhasImport(brutas);
+      // Dedup dentro da própria planilha — mantém a primeira ocorrência de cada título.
+      const vistas = new Set<string>();
+      let duplicadasNaPlanilha = 0;
+      const brutasUnicas = brutas.filter((b) => {
+        const k = norm(b.titulo);
+        if (!k) return false;
+        if (vistas.has(k)) {
+          duplicadasNaPlanilha++;
+          return false;
+        }
+        vistas.add(k);
+        return true;
+      });
+
+      const { validas, erros: erroAcum } = parseLinhasImport(brutasUnicas);
 
       setLinhas(validas);
       setErros(erroAcum);
       if (validas.length === 0 && erroAcum.length === 0) {
         setErros(["Nenhuma linha válida encontrada na planilha."]);
+      }
+      if (duplicadasNaPlanilha > 0) {
+        toast.info(
+          `${duplicadasNaPlanilha} linha(s) duplicada(s) na planilha foram ignoradas.`,
+        );
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
