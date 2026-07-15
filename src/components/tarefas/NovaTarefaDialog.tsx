@@ -315,7 +315,7 @@ export function NovaTarefaDialog({
             </p>
             <div className="flex gap-2">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit">
+              <Button type="submit" disabled={!!duplicata}>
                 <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
               </Button>
             </div>
