@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://tcapurryhrqfykvzxsfq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "nexus-mcp",
+      "version": "0.1.0",
+      "title": "Nexus — Gestão Interna"
+    },
+    "tools": [
+      {
+        "name": "list_tarefas",
+        "title": "Listar tarefas",
+        "description": "Lista tarefas do Nexus visíveis para o usuário autenticado (respeita RLS). Filtra opcionalmente por status e responsável.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Filtrar por status.",
+              "type": "string",
+              "enum": [
+                "backlog",
+                "em_andamento",
+                "em_teste",
+                "concluida",
+                "reprovado",
+                "pre_build",
+                "cancelada"
+              ]
+            },
+            "apenas_minhas": {
+              "description": "Se true, retorna apenas tarefas onde o usuário é responsável.",
+              "type": "boolean"
+            },
+            "limite": {
+              "description": "Máx. de itens (padrão 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_tarefa",
+        "title": "Criar tarefa",
+        "description": "Cria uma nova tarefa no Nexus. Por padrão o criador é adicionado como responsável.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "titulo": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "descricao": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "prioridade": {
+              "type": "string",
+              "enum": [
+                "baixa",
+                "media",
+                "alta",
+                "urgente"
+              ]
+            },
+            "data_prevista": {
+              "description": "Data no formato YYYY-MM-DD.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          "required": [
+            "titulo"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_tarefa_status",
+        "title": "Atualizar status de tarefa",
+        "description": "Atualiza o status de uma tarefa existente no Nexus.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "tarefa_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "backlog",
+                "em_andamento",
+                "em_teste",
+                "concluida",
+                "reprovado",
+                "pre_build",
+                "cancelada"
+              ]
+            }
+          },
+          "required": [
+            "tarefa_id",
+            "status"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reunioes",
+        "title": "Listar reuniões",
+        "description": "Lista reuniões recentes do Nexus com resumo, pauta, decisões e próximos passos (respeita RLS).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "incluir_transcricao": {
+              "description": "Se true, inclui a transcrição completa (pode ser grande).",
+              "type": "boolean"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_demandas",
+        "title": "Listar demandas",
+        "description": "Lista demandas do Nexus visíveis para o usuário autenticado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "apenas_minhas": {
+              "type": "boolean"
+            },
+            "limite": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
