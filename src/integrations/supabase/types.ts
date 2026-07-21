@@ -1362,6 +1362,7 @@ export type Database = {
         | "aprovado_ressalvas"
         | "encerrada"
         | "pre_build"
+        | "reprovado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1557,6 +1558,7 @@ export const Constants = {
         "aprovado_ressalvas",
         "encerrada",
         "pre_build",
+        "reprovado",
       ],
     },
   },
