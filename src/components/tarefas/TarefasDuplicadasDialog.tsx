@@ -91,6 +91,21 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
     refresh();
   };
 
+  const manterMaisRecente = async (g: Grupo) => {
+    if (g.tarefas.length < 2) return;
+    const [manter, ...remover] = g.tarefas; // já ordenado por created_at desc
+    if (!confirm(
+      `Manter a versão mais recente (${format(new Date(manter.created_at), "dd/MM/yyyy")}) e excluir ${remover.length} duplicata(s)?`,
+    )) return;
+    setBusy(g.chave);
+    const ids = remover.map((t) => t.id);
+    const { error } = await supabase.from("todo").delete().in("id", ids);
+    setBusy(null);
+    if (error) return toast.error("Erro ao remover duplicatas", { description: error.message });
+    toast.success(`${ids.length} duplicata(s) removida(s)`);
+    refresh();
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
