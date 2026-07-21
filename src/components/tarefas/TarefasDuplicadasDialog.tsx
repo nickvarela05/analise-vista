@@ -126,8 +126,8 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
             Tarefas duplicadas
           </DialogTitle>
           <DialogDescription>
-            Tarefas com títulos idênticos (ignora acentos, maiúsculas e espaços). Ajuste
-            o status ou remova as sobras — apenas a versão canônica deve permanecer.
+            Agrupadas pelo <span className="font-medium">número da tarefa</span> (ex.: “Tarefa 12345”).
+            Quando não há número, usa o título normalizado. Mantenha apenas a versão canônica.
           </DialogDescription>
         </DialogHeader>
 
@@ -143,13 +143,35 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
             <div className="max-h-[60vh] space-y-3 overflow-auto pr-1">
               {grupos.map((g) => (
                 <div key={g.chave} className="rounded-lg border bg-card">
-                  <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{g.titulo}</p>
+                      <div className="flex items-center gap-2">
+                        {g.numero && (
+                          <Badge variant="outline" className="h-5 px-1.5 font-mono text-[10px]">
+                            #{g.numero}
+                          </Badge>
+                        )}
+                        <p className="truncate text-sm font-medium">{g.titulo}</p>
+                      </div>
                       <p className="text-[11px] text-muted-foreground">
                         {g.tarefas.length} ocorrências
                       </p>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 shrink-0 text-xs"
+                      disabled={busy === g.chave}
+                      onClick={() => manterMaisRecente(g)}
+                      title="Mantém a mais recente e exclui as demais"
+                    >
+                      {busy === g.chave ? (
+                        <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1.5 h-3 w-3" />
+                      )}
+                      Manter mais recente
+                    </Button>
                   </div>
                   <ul className="divide-y">
                     {g.tarefas.map((t, i) => (
