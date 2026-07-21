@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Copy, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { Copy, Loader2, Trash2, AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -29,21 +29,14 @@ import {
   statusVariant,
   normalizeStatus,
 } from "@/components/tarefas/lib/workflow";
+import { taskDedupKey, extractTaskNumber } from "@/components/tarefas/lib/taskNumber";
 
-const norm = (s: unknown) =>
-  String(s ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-type Grupo = { chave: string; titulo: string; tarefas: TarefaRow[] };
+type Grupo = { chave: string; numero: string | null; titulo: string; tarefas: TarefaRow[] };
 
 function agrupar(tarefas: TarefaRow[]): Grupo[] {
   const mapa = new Map<string, TarefaRow[]>();
   for (const t of tarefas) {
-    const k = norm(t.titulo);
+    const k = taskDedupKey(t.titulo);
     if (!k) continue;
     const arr = mapa.get(k) ?? [];
     arr.push(t);
@@ -55,7 +48,12 @@ function agrupar(tarefas: TarefaRow[]): Grupo[] {
     arr.sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
-    grupos.push({ chave, titulo: arr[0].titulo, tarefas: arr });
+    grupos.push({
+      chave,
+      numero: extractTaskNumber(arr[0].titulo),
+      titulo: arr[0].titulo,
+      tarefas: arr,
+    });
   }
   grupos.sort((a, b) => b.tarefas.length - a.tarefas.length);
   return grupos;
@@ -93,6 +91,21 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
     refresh();
   };
 
+  const manterMaisRecente = async (g: Grupo) => {
+    if (g.tarefas.length < 2) return;
+    const [manter, ...remover] = g.tarefas; // já ordenado por created_at desc
+    if (!confirm(
+      `Manter a versão mais recente (${format(new Date(manter.created_at), "dd/MM/yyyy")}) e excluir ${remover.length} duplicata(s)?`,
+    )) return;
+    setBusy(g.chave);
+    const ids = remover.map((t) => t.id);
+    const { error } = await supabase.from("todo").delete().in("id", ids);
+    setBusy(null);
+    if (error) return toast.error("Erro ao remover duplicatas", { description: error.message });
+    toast.success(`${ids.length} duplicata(s) removida(s)`);
+    refresh();
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -113,8 +126,8 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
             Tarefas duplicadas
           </DialogTitle>
           <DialogDescription>
-            Tarefas com títulos idênticos (ignora acentos, maiúsculas e espaços). Ajuste
-            o status ou remova as sobras — apenas a versão canônica deve permanecer.
+            Agrupadas pelo <span className="font-medium">número da tarefa</span> (ex.: “Tarefa 12345”).
+            Quando não há número, usa o título normalizado. Mantenha apenas a versão canônica.
           </DialogDescription>
         </DialogHeader>
 
@@ -130,13 +143,35 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
             <div className="max-h-[60vh] space-y-3 overflow-auto pr-1">
               {grupos.map((g) => (
                 <div key={g.chave} className="rounded-lg border bg-card">
-                  <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{g.titulo}</p>
+                      <div className="flex items-center gap-2">
+                        {g.numero && (
+                          <Badge variant="outline" className="h-5 px-1.5 font-mono text-[10px]">
+                            #{g.numero}
+                          </Badge>
+                        )}
+                        <p className="truncate text-sm font-medium">{g.titulo}</p>
+                      </div>
                       <p className="text-[11px] text-muted-foreground">
                         {g.tarefas.length} ocorrências
                       </p>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 shrink-0 text-xs"
+                      disabled={busy === g.chave}
+                      onClick={() => manterMaisRecente(g)}
+                      title="Mantém a mais recente e exclui as demais"
+                    >
+                      {busy === g.chave ? (
+                        <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-1.5 h-3 w-3" />
+                      )}
+                      Manter mais recente
+                    </Button>
                   </div>
                   <ul className="divide-y">
                     {g.tarefas.map((t, i) => (

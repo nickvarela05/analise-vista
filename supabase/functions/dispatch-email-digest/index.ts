@@ -155,18 +155,15 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .gte("data_reuniao", inicioDia)
       .lte("data_reuniao", fimSemanaISO)
       .not("status", "in", "(realizada,cancelada)"),
+    // Tarefas em HOMOLOGAÇÃO — atribuídas ao usuário, disponíveis para validação.
     admin
       .from("todo")
-      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
-      .not("status", "in", "(encerrada,concluida,producao,cancelada)")
-      .not("data_prevista", "is", null)
-      .gte("data_prevista", hoje)
-      .lte("data_prevista", em7dias),
-    // Tarefas em teste (independente de prazo) — informa responsáveis que estão
-    // disponíveis para validação, com o prazo caso exista.
+      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
+      .eq("status", "homologacao"),
+    // Tarefas EM TESTE — atribuídas ao usuário, independente de status.
     admin
       .from("todo")
-      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids")
+      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
       .eq("em_teste", true)
       .not("status", "in", "(encerrada,concluida,producao,cancelada)"),
     admin
@@ -215,7 +212,8 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
       const minhasTarefas = tarAll.filter(meu);
-      const minhasTarefasTeste = tarTesteAll.filter(meu);
+      const idsHomolog = new Set(minhasTarefas.map((t) => t.id));
+      const minhasTarefasTeste = tarTesteAll.filter((t) => meu(t) && !idsHomolog.has(t.id));
       const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
