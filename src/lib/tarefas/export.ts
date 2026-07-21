@@ -90,6 +90,20 @@ export function exportToXlsx(
   XLSX.writeFile(wb, filename);
 }
 
+// Ordem de exibição dos grupos no PDF
+const STATUS_ORDER: string[] = [
+  "aprovado",
+  "aprovado_ressalvas",
+  "homologacao",
+  "producao",
+  "pre_build",
+  "em_andamento",
+  "aberta",
+  "reprovado",
+  "encerrada",
+  "pendente",
+];
+
 export function exportToPdf(
   tarefas: TarefaRow[],
   colabs: ExportColab[],
@@ -98,34 +112,77 @@ export function exportToPdf(
   filename: string,
   cabecalho: string,
 ) {
-  const rows = buildRows(tarefas, colabs, lotes, demandas);
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-  doc.setFontSize(14);
-  doc.text("Relatório de Tarefas", 40, 40);
-  doc.setFontSize(9);
-  doc.setTextColor(100);
-  doc.text(cabecalho, 40, 56);
-  doc.text(`Total: ${rows.length} tarefa(s) — gerado em ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 70);
-
   const cols = ["Título", "Status", "Prioridade", "Responsáveis", "Prazo", "Lote", "Origem"];
-  const body = rows.map((r) => cols.map((c) => String((r as Record<string, unknown>)[c] ?? "")));
 
-  autoTable(doc, {
-    startY: 84,
-    head: [cols],
-    body,
-    styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
-    headStyles: { fillColor: [40, 40, 60] },
-    columnStyles: {
-      0: { cellWidth: 200 },
-      3: { cellWidth: 130 },
-    },
-    didDrawPage: (data) => {
-      const str = `Página ${doc.getNumberOfPages()}`;
-      doc.setFontSize(8);
-      doc.text(str, data.settings.margin.left, doc.internal.pageSize.height - 12);
-    },
+  // Agrupa por status na ordem definida
+  const grupos: Array<{ status: string; label: string; tarefas: TarefaRow[] }> = [];
+  const usados = new Set<string>();
+  for (const s of STATUS_ORDER) {
+    const filtradas = tarefas.filter((t) => t.status === s);
+    if (filtradas.length > 0) {
+      grupos.push({ status: s, label: STATUS_LABEL[s] ?? s, tarefas: filtradas });
+      usados.add(s);
+    }
+  }
+  // Status não previstos vão pro final
+  const restantes = tarefas.filter((t) => !usados.has(t.status));
+  if (restantes.length > 0) {
+    const map = new Map<string, TarefaRow[]>();
+    for (const t of restantes) {
+      const arr = map.get(t.status) ?? [];
+      arr.push(t);
+      map.set(t.status, arr);
+    }
+    for (const [s, arr] of map.entries()) {
+      grupos.push({ status: s, label: STATUS_LABEL[s] ?? s, tarefas: arr });
+    }
+  }
+
+  const totalGeral = tarefas.length;
+  const geradoEm = format(new Date(), "dd/MM/yyyy HH:mm");
+
+  grupos.forEach((g, idx) => {
+    if (idx > 0) doc.addPage();
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("Relatório de Tarefas", 40, 40);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(cabecalho, 40, 56);
+    doc.text(`Total geral: ${totalGeral} — gerado em ${geradoEm}`, 40, 70);
+
+    doc.setFontSize(12);
+    doc.setTextColor(20);
+    doc.text(`${g.label} (${g.tarefas.length})`, 40, 92);
+
+    const body = buildRows(g.tarefas, colabs, lotes, demandas).map((r) =>
+      cols.map((c) => String((r as Record<string, unknown>)[c] ?? "")),
+    );
+
+    autoTable(doc, {
+      startY: 104,
+      head: [cols],
+      body,
+      styles: { fontSize: 8, cellPadding: 4, overflow: "linebreak" },
+      headStyles: { fillColor: [40, 40, 60] },
+      columnStyles: {
+        0: { cellWidth: 200 },
+        3: { cellWidth: 130 },
+      },
+      didDrawPage: (data) => {
+        const str = `Página ${doc.getNumberOfPages()}`;
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(str, data.settings.margin.left, doc.internal.pageSize.height - 12);
+      },
+    });
   });
+
+  if (grupos.length === 0) {
+    doc.setFontSize(12);
+    doc.text("Nenhuma tarefa para exportar.", 40, 100);
+  }
 
   doc.save(filename);
 }
