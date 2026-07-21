@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Copy, Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { Copy, Loader2, Trash2, AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -29,21 +29,14 @@ import {
   statusVariant,
   normalizeStatus,
 } from "@/components/tarefas/lib/workflow";
+import { taskDedupKey, extractTaskNumber } from "@/components/tarefas/lib/taskNumber";
 
-const norm = (s: unknown) =>
-  String(s ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-type Grupo = { chave: string; titulo: string; tarefas: TarefaRow[] };
+type Grupo = { chave: string; numero: string | null; titulo: string; tarefas: TarefaRow[] };
 
 function agrupar(tarefas: TarefaRow[]): Grupo[] {
   const mapa = new Map<string, TarefaRow[]>();
   for (const t of tarefas) {
-    const k = norm(t.titulo);
+    const k = taskDedupKey(t.titulo);
     if (!k) continue;
     const arr = mapa.get(k) ?? [];
     arr.push(t);
@@ -55,7 +48,12 @@ function agrupar(tarefas: TarefaRow[]): Grupo[] {
     arr.sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
-    grupos.push({ chave, titulo: arr[0].titulo, tarefas: arr });
+    grupos.push({
+      chave,
+      numero: extractTaskNumber(arr[0].titulo),
+      titulo: arr[0].titulo,
+      tarefas: arr,
+    });
   }
   grupos.sort((a, b) => b.tarefas.length - a.tarefas.length);
   return grupos;
