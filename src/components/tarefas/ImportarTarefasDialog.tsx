@@ -19,15 +19,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
-import type { WorkflowStatus } from "@/components/tarefas/lib/workflow";
+import { STATUS_LABEL, type WorkflowStatus } from "@/components/tarefas/lib/workflow";
 import {
   parseLinhasImport,
   loteImportSchema,
   type LinhaImport,
 } from "@/lib/schemas/tarefa_import";
+import { taskDedupKey, extractTaskNumber } from "@/components/tarefas/lib/taskNumber";
 
 const norm = (s: unknown) =>
   String(s ?? "")
@@ -63,6 +65,9 @@ function buscarColuna(row: Record<string, unknown>, alvos: string[]): unknown {
   return undefined;
 }
 
+type Existente = { id: string; titulo: string; status: string };
+type Duplicada = { linha: LinhaImport; existente: Existente };
+
 export function ImportarTarefasDialog() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -72,9 +77,10 @@ export function ImportarTarefasDialog() {
   const [arquivo, setArquivo] = React.useState<string>("");
   const [importando, setImportando] = React.useState(false);
   const [forcarHomologacao, setForcarHomologacao] = React.useState(false);
-  const [atualizarFinais, setAtualizarFinais] = React.useState(false);
   const [nomeLote, setNomeLote] = React.useState("");
   const [descricaoLote, setDescricaoLote] = React.useState("");
+  const [existentes, setExistentes] = React.useState<Existente[]>([]);
+  const [substituirIds, setSubstituirIds] = React.useState<Set<string>>(new Set());
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -82,17 +88,50 @@ export function ImportarTarefasDialog() {
     setErros([]);
     setArquivo("");
     setForcarHomologacao(false);
-    setAtualizarFinais(false);
     setNomeLote("");
     setDescricaoLote("");
+    setExistentes([]);
+    setSubstituirIds(new Set());
     if (inputRef.current) inputRef.current.value = "";
   };
+
+  // Carrega existentes ao abrir para permitir checagem no momento do parse
+  React.useEffect(() => {
+    if (!open) return;
+    supabase
+      .from("todo")
+      .select("id, titulo, status")
+      .then(({ data }) => setExistentes(data ?? []));
+  }, [open]);
+
+  // Índice de existentes por chave de dedup (número → id/status/título)
+  const mapaExistentes = React.useMemo(() => {
+    const m = new Map<string, Existente>();
+    for (const e of existentes) {
+      const k = taskDedupKey(e.titulo);
+      if (k && !m.has(k)) m.set(k, e);
+    }
+    return m;
+  }, [existentes]);
+
+  // Classifica as linhas parseadas em novas vs duplicadas
+  const { novas, duplicadas } = React.useMemo(() => {
+    const novasArr: LinhaImport[] = [];
+    const dupArr: Duplicada[] = [];
+    for (const l of linhas) {
+      const k = taskDedupKey(l.titulo);
+      const ex = k ? mapaExistentes.get(k) : undefined;
+      if (ex) dupArr.push({ linha: l, existente: ex });
+      else novasArr.push(l);
+    }
+    return { novas: novasArr, duplicadas: dupArr };
+  }, [linhas, mapaExistentes]);
 
   const onFile = async (file: File) => {
     setArquivo(file.name);
     setErros([]);
     setLinhas([]);
-    // sugestão automática de nome de lote
+    setSubstituirIds(new Set());
     const baseNome = file.name.replace(/\.(xlsx?|XLSX?)$/, "");
     setNomeLote(`HML – ${baseNome} – ${format(new Date(), "dd/MM/yyyy HH:mm")}`);
     try {
@@ -133,11 +172,11 @@ export function ImportarTarefasDialog() {
         });
       });
 
-      // Dedup dentro da própria planilha — mantém a primeira ocorrência de cada título.
+      // Dedup intra-planilha por número da tarefa (fallback: título normalizado)
       const vistas = new Set<string>();
       let duplicadasNaPlanilha = 0;
       const brutasUnicas = brutas.filter((b) => {
-        const k = norm(b.titulo);
+        const k = taskDedupKey(b.titulo);
         if (!k) return false;
         if (vistas.has(k)) {
           duplicadasNaPlanilha++;
@@ -165,6 +204,18 @@ export function ImportarTarefasDialog() {
     }
   };
 
+  const toggleSubstituir = (id: string) => {
+    setSubstituirIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const selecionarTodas = () =>
+    setSubstituirIds(new Set(duplicadas.map((d) => d.existente.id)));
+  const limparSelecao = () => setSubstituirIds(new Set());
+
   const importar = async () => {
     if (!user || linhas.length === 0) return;
     let loteData: { nome: string; descricao: string | null } | null = null;
@@ -181,62 +232,13 @@ export function ImportarTarefasDialog() {
     }
     setImportando(true);
 
-    // Busca tarefas existentes (título, status, created_at) para decidir caso a caso.
-    const { data: existentes, error: existErr } = await supabase
-      .from("todo")
-      .select("id, titulo, status, created_at");
-    if (existErr) {
-      setImportando(false);
-      toast.error("Erro ao verificar tarefas existentes", { description: existErr.message });
-      return;
-    }
-    const mapaExistentes = new Map<string, { id: string; status: string; created_at: string }>();
-    (existentes ?? []).forEach((t) => {
-      mapaExistentes.set(norm(t.titulo), { id: t.id, status: t.status, created_at: t.created_at });
-    });
-
-    // Status considerados "em aberto" — podem ter o status atualizado pelo import no modo padrão.
-    const STATUS_ATUALIZAVEIS = new Set([
-      "aberta",
-      "em_andamento",
-      "encerrada",
-      "pendente",
-      "encaminhada",
-      "cancelada",
-    ]);
-
-    const novas: LinhaImport[] = [];
-    const atualizarHml: { id: string }[] = [];
-    const atualizarStatus = new Map<WorkflowStatus, string[]>();
-    let preservadas = 0;
-
-    for (const l of linhas) {
-      const existente = mapaExistentes.get(norm(l.titulo));
-      if (!existente) {
-        novas.push(l);
-        continue;
-      }
-      if (forcarHomologacao) {
-        atualizarHml.push({ id: existente.id });
-        continue;
-      }
-      const podeAtualizar = atualizarFinais || STATUS_ATUALIZAVEIS.has(existente.status);
-      if (!podeAtualizar) {
-        preservadas++;
-        continue;
-      }
-      if (existente.status === l.status) {
-        preservadas++;
-        continue;
-      }
-      const arr = atualizarStatus.get(l.status) ?? [];
-      arr.push(existente.id);
-      atualizarStatus.set(l.status, arr);
-    }
+    // Substituições manuais escolhidas pelo usuário
+    const substituicoes = duplicadas.filter((d) => substituirIds.has(d.existente.id));
+    const duplicadasIgnoradas = duplicadas.length - substituicoes.length;
 
     let loteId: string | null = null;
-    if (forcarHomologacao && (novas.length > 0 || atualizarHml.length > 0)) {
-      const total = novas.length + atualizarHml.length;
+    if (forcarHomologacao && (novas.length > 0 || substituicoes.length > 0)) {
+      const total = novas.length + substituicoes.length;
       const { data: lote, error: loteErr } = await supabase
         .from("todo_importacao_lote")
         .insert({
@@ -256,6 +258,7 @@ export function ImportarTarefasDialog() {
       loteId = lote.id;
     }
 
+    // 1) Inserir as novas
     if (novas.length > 0) {
       const payload = novas.map((l) => ({
         titulo: l.titulo,
@@ -277,47 +280,35 @@ export function ImportarTarefasDialog() {
       }
     }
 
-    if (atualizarHml.length > 0 && forcarHomologacao) {
-      const ids = atualizarHml.map((a) => a.id);
-      const { error } = await supabase
-        .from("todo")
-        .update({
-          status: "homologacao" as never,
-          em_teste: true,
-          origem_importacao: "homologacao",
-          lote_importacao_id: loteId,
-        })
-        .in("id", ids);
+    // 2) Substituir apenas os que o usuário marcou
+    // Agrupa por status alvo para minimizar chamadas
+    const porStatus = new Map<WorkflowStatus, string[]>();
+    for (const d of substituicoes) {
+      const alvo: WorkflowStatus = forcarHomologacao ? "homologacao" : d.linha.status;
+      const arr = porStatus.get(alvo) ?? [];
+      arr.push(d.existente.id);
+      porStatus.set(alvo, arr);
+    }
+    let totalAtualizadas = 0;
+    for (const [status, ids] of porStatus.entries()) {
+      if (ids.length === 0) continue;
+      const patch = forcarHomologacao
+        ? { status: status as never, em_teste: true, origem_importacao: "homologacao", lote_importacao_id: loteId }
+        : { status: status as never };
+      const { error } = await supabase.from("todo").update(patch).in("id", ids);
       if (error) {
         setImportando(false);
-        toast.error("Erro ao mover existentes p/ HML", { description: error.message });
+        toast.error("Erro ao substituir tarefas", { description: error.message });
         return;
       }
-    }
-
-    let totalAtualizadas = 0;
-    if (!forcarHomologacao) {
-      for (const [status, ids] of atualizarStatus.entries()) {
-        if (ids.length === 0) continue;
-        const { error } = await supabase
-          .from("todo")
-          .update({ status: status as never })
-          .in("id", ids);
-        if (error) {
-          setImportando(false);
-          toast.error("Erro ao atualizar status", { description: error.message });
-          return;
-        }
-        totalAtualizadas += ids.length;
-      }
+      totalAtualizadas += ids.length;
     }
 
     setImportando(false);
     const partes: string[] = [];
     if (novas.length) partes.push(`${novas.length} nova(s)`);
-    if (atualizarHml.length) partes.push(`${atualizarHml.length} movida(s) p/ HML`);
-    if (totalAtualizadas) partes.push(`${totalAtualizadas} status atualizado(s)`);
-    if (preservadas) partes.push(`${preservadas} preservada(s)`);
+    if (totalAtualizadas) partes.push(`${totalAtualizadas} substituída(s)`);
+    if (duplicadasIgnoradas) partes.push(`${duplicadasIgnoradas} duplicada(s) preservada(s)`);
     toast.success(`Import concluído: ${partes.join(", ") || "nada a fazer"}.`);
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     qc.invalidateQueries({ queryKey: ["tarefas", "lotes"] });
@@ -343,7 +334,7 @@ export function ImportarTarefasDialog() {
           <DialogTitle>Importar tarefas via Excel</DialogTitle>
           <DialogDescription>
             Aceita arquivos .xls e .xlsx. Serão considerados apenas: Tarefa, Assunto, Status,
-            Prioridade e Descrição. Demais colunas serão ignoradas.
+            Prioridade e Descrição. A checagem de duplicidade usa o <span className="font-medium">número da tarefa</span>.
           </DialogDescription>
         </DialogHeader>
 
@@ -371,32 +362,13 @@ export function ImportarTarefasDialog() {
           </div>
 
           <div className="rounded-md border border-border bg-muted/30 p-3 text-xs space-y-1.5">
-            <p className="font-medium text-foreground">Como o import trata tarefas existentes:</p>
+            <p className="font-medium text-foreground">Regras de duplicidade:</p>
             <ul className="list-disc pl-5 space-y-0.5 text-muted-foreground">
-              <li>Tarefas novas (não cadastradas) são sempre incluídas.</li>
-              <li>Tarefas em <span className="font-medium">Aberta</span>, <span className="font-medium">Em desenvolvimento</span> ou <span className="font-medium">Encerrada</span> têm o status atualizado pela planilha.</li>
-              <li>Tarefas em <span className="font-medium">Homologação</span>, <span className="font-medium">Aprovado</span>, <span className="font-medium">Aprovado c/ ressalvas</span>, <span className="font-medium">Reprovado</span> ou <span className="font-medium">Produção</span> são preservadas — exceto se a flag abaixo estiver marcada.</li>
+              <li>Duplicatas são identificadas pelo <span className="font-medium">número da tarefa</span> extraído do título (ex.: “Tarefa 12345”).</li>
+              <li>Tarefas <span className="font-medium">novas</span> são incluídas normalmente.</li>
+              <li>Tarefas <span className="font-medium">duplicadas nunca são criadas</span> — você escolhe manualmente quais devem ter o status substituído pela planilha.</li>
             </ul>
           </div>
-
-          {!forcarHomologacao && (
-            <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 p-3">
-              <Checkbox
-                id="atualizar-finais"
-                checked={atualizarFinais}
-                onCheckedChange={(v) => setAtualizarFinais(v === true)}
-                className="mt-0.5"
-              />
-              <div className="space-y-0.5">
-                <Label htmlFor="atualizar-finais" className="cursor-pointer text-sm font-medium">
-                  Atualizar status de tarefas em estágios finais
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Força a atualização do status mesmo para tarefas em Homologação, Aprovado, Aprovado c/ ressalvas, Reprovado ou Produção.
-                </p>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-3 rounded-md border border-info/30 bg-info/5 p-3">
             <div className="flex items-start gap-2">
@@ -411,7 +383,7 @@ export function ImportarTarefasDialog() {
                   Importar tarefas de homologação
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Cria um <span className="font-medium">lote</span> rastreável e marca todas as tarefas como{" "}
+                  Cria um <span className="font-medium">lote</span> rastreável e marca tudo como{" "}
                   <span className="font-medium">Homologação</span>, ignorando o status da planilha.
                 </p>
               </div>
@@ -462,36 +434,100 @@ export function ImportarTarefasDialog() {
           )}
 
           {linhas.length > 0 && (
-            <div className="rounded-md border">
-              <div className="border-b bg-muted/40 px-3 py-2 text-xs font-medium">
-                Pré-visualização ({linhas.length} tarefa{linhas.length > 1 ? "s" : ""})
+            <>
+              <div className="rounded-md border">
+                <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2 text-xs">
+                  <span className="font-medium">
+                    Novas ({novas.length}) — serão criadas
+                  </span>
+                </div>
+                <div className="max-h-52 overflow-auto">
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {novas.slice(0, 50).map((l, i) => {
+                        const num = extractTaskNumber(l.titulo);
+                        return (
+                          <tr key={i} className="border-b last:border-0">
+                            <td className="w-14 px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
+                              {num ? `#${num}` : "—"}
+                            </td>
+                            <td className="px-3 py-1.5">{l.titulo}</td>
+                            <td className="px-3 py-1.5 capitalize text-muted-foreground">
+                              {forcarHomologacao ? "homologação" : l.status.replace("_", " ")}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {novas.length === 0 && (
+                    <p className="px-3 py-3 text-xs text-muted-foreground">
+                      Nenhuma tarefa nova nesta planilha.
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="max-h-72 overflow-auto">
-                <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-background">
-                    <tr className="border-b text-left">
-                      <th className="px-3 py-2 font-medium">Título</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Prioridade</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {linhas.slice(0, 50).map((l, i) => (
-                      <tr key={i} className="border-b last:border-0">
-                        <td className="px-3 py-1.5">{l.titulo}</td>
-                        <td className="px-3 py-1.5 capitalize">{(forcarHomologacao ? "homologação" : l.status.replace("_", " "))}</td>
-                        <td className="px-3 py-1.5 capitalize">{l.prioridade}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {linhas.length > 50 && (
-                  <p className="px-3 py-2 text-xs text-muted-foreground">
-                    Exibindo 50 de {linhas.length} linhas.
-                  </p>
-                )}
-              </div>
-            </div>
+
+              {duplicadas.length > 0 && (
+                <div className="rounded-md border border-warning/40 bg-warning/5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warning/30 px-3 py-2 text-xs">
+                    <span className="font-medium">
+                      Duplicadas encontradas ({duplicadas.length}) —{" "}
+                      <span className="text-warning">selecione as que devem ser substituídas</span>
+                    </span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={selecionarTodas}>
+                        Selecionar todas
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={limparSelecao}>
+                        Limpar
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="max-h-64 overflow-auto">
+                    <table className="w-full text-xs">
+                      <tbody>
+                        {duplicadas.map((d, i) => {
+                          const num = extractTaskNumber(d.linha.titulo);
+                          const marcada = substituirIds.has(d.existente.id);
+                          return (
+                            <tr key={i} className="border-b last:border-0 align-top">
+                              <td className="px-2 py-2">
+                                <Checkbox
+                                  checked={marcada}
+                                  onCheckedChange={() => toggleSubstituir(d.existente.id)}
+                                />
+                              </td>
+                              <td className="w-14 px-2 py-2 font-mono text-[10px] text-muted-foreground">
+                                {num ? `#${num}` : "—"}
+                              </td>
+                              <td className="px-2 py-2">
+                                <p className="font-medium">{d.linha.titulo}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  já cadastrada: {STATUS_LABEL[d.existente.status] ?? d.existente.status}
+                                </p>
+                              </td>
+                              <td className="px-2 py-2 text-right">
+                                <Badge variant="outline" className="text-[10px]">
+                                  {STATUS_LABEL[forcarHomologacao ? "homologacao" : d.linha.status] ?? d.linha.status}
+                                </Badge>
+                                <p className="mt-1 text-[10px] text-muted-foreground">
+                                  novo status da planilha
+                                </p>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="border-t border-warning/30 bg-warning/10 px-3 py-1.5 text-[11px] text-muted-foreground">
+                    {substituirIds.size} de {duplicadas.length} marcadas para substituição —{" "}
+                    as demais serão preservadas.
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -501,7 +537,7 @@ export function ImportarTarefasDialog() {
           </Button>
           <Button onClick={importar} disabled={linhas.length === 0 || importando}>
             {importando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Importar {linhas.length > 0 ? `(${linhas.length})` : ""}
+            Importar {novas.length + substituirIds.size > 0 ? `(${novas.length + substituirIds.size})` : ""}
           </Button>
         </DialogFooter>
       </DialogContent>
