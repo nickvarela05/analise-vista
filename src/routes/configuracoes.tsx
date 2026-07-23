@@ -16,7 +16,9 @@ import {
   Bell,
   Sparkles,
   User as UserIcon,
+  Calendar,
 } from "lucide-react";
+import { GoogleCalendarConfig } from "@/components/configuracoes/GoogleCalendarConfig";
 import { PreferenciasNotificacao } from "@/components/notificacoes/PreferenciasNotificacao";
 import { ConfiguracoesEmails } from "@/components/notificacoes/ConfiguracoesEmails";
 import { DiasResumoDiario } from "@/components/notificacoes/DiasResumoDiario";
@@ -95,6 +97,7 @@ function Configuracoes() {
               { v: "conta", label: "Conta", icon: UserIcon },
               { v: "notificacoes", label: "Notificações", icon: Bell },
               { v: "emails", label: "E-mails", icon: Mail },
+              { v: "integracoes", label: "Integrações", icon: Calendar },
               { v: "ia", label: "IA", icon: Sparkles },
             ].map((t) => (
               <TabsTrigger
@@ -200,6 +203,10 @@ function Configuracoes() {
           <ConfiguracoesEmails />
           <DiasResumoDiario />
           <DestinatariosResumoDiario />
+        </TabsContent>
+
+        <TabsContent value="integracoes">
+          <GoogleCalendarConfig />
         </TabsContent>
 
         <TabsContent value="ia">
