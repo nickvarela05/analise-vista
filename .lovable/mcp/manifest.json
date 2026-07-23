@@ -33,13 +33,19 @@
               "description": "Filtrar por status.",
               "type": "string",
               "enum": [
-                "backlog",
+                "aberta",
                 "em_andamento",
-                "em_teste",
-                "concluida",
-                "reprovado",
                 "pre_build",
-                "cancelada"
+                "homologacao",
+                "aprovado",
+                "aprovado_ressalvas",
+                "reprovado",
+                "producao",
+                "encerrada",
+                "pendente",
+                "concluida",
+                "cancelada",
+                "encaminhada"
               ]
             },
             "apenas_minhas": {

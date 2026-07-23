@@ -17,13 +17,19 @@ export default defineTool({
   inputSchema: {
     status: z
       .enum([
-        "backlog",
+        "aberta",
         "em_andamento",
-        "em_teste",
-        "concluida",
-        "reprovado",
         "pre_build",
+        "homologacao",
+        "aprovado",
+        "aprovado_ressalvas",
+        "reprovado",
+        "producao",
+        "encerrada",
+        "pendente",
+        "concluida",
         "cancelada",
+        "encaminhada",
       ])
       .optional()
       .describe("Filtrar por status."),
