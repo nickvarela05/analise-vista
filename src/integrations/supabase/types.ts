@@ -596,6 +596,72 @@ export type Database = {
         }
         Relationships: []
       }
+      google_calendar_config: {
+        Row: {
+          created_at: string
+          dias_horizonte: number
+          google_calendar_id: string | null
+          id: boolean
+          sync_ativo: boolean
+          ultima_sync_em: string | null
+          ultimo_erro: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dias_horizonte?: number
+          google_calendar_id?: string | null
+          id?: boolean
+          sync_ativo?: boolean
+          ultima_sync_em?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dias_horizonte?: number
+          google_calendar_id?: string | null
+          id?: boolean
+          sync_ativo?: boolean
+          ultima_sync_em?: string | null
+          ultimo_erro?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      google_calendar_evento: {
+        Row: {
+          conteudo_hash: string
+          created_at: string
+          fonte: string
+          fonte_id: string
+          google_calendar_id: string
+          google_event_id: string
+          id: string
+          ultima_sync_em: string
+        }
+        Insert: {
+          conteudo_hash: string
+          created_at?: string
+          fonte: string
+          fonte_id: string
+          google_calendar_id: string
+          google_event_id: string
+          id?: string
+          ultima_sync_em?: string
+        }
+        Update: {
+          conteudo_hash?: string
+          created_at?: string
+          fonte?: string
+          fonte_id?: string
+          google_calendar_id?: string
+          google_event_id?: string
+          id?: string
+          ultima_sync_em?: string
+        }
+        Relationships: []
+      }
       ia_prompt_config: {
         Row: {
           ativo: boolean
