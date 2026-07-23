@@ -10,13 +10,7 @@ const TIMEZONE = "America/Sao_Paulo";
 
 type Fonte = "reuniao" | "tarefa" | "demanda" | "chamado";
 
-interface GcalHeaders {
-  Authorization: string;
-  "X-Connection-Api-Key": string;
-  "Content-Type": string;
-}
-
-function gcalHeaders(): GcalHeaders {
+function gcalHeaders(): Record<string, string> {
   const bearer = process.env.LOVABLE_API_KEY;
   const key = process.env.GOOGLE_CALENDAR_API_KEY;
   if (!bearer || !key) {

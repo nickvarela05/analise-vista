@@ -2,13 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function ensureGestor(supabase: {
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-}, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "gestor",
-  });
+async function ensureGestor(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "gestor")
+    .maybeSingle();
   if (error) throw new Error("Falha ao verificar papel do usuário.");
   if (!data) throw new Error("Apenas gestores podem gerenciar a integração com Google Agenda.");
 }
@@ -16,7 +17,7 @@ async function ensureGestor(supabase: {
 export const getGoogleCalendarConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await ensureGestor(context.supabase, context.userId);
+    await ensureGestor(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("google_calendar_config")
@@ -37,9 +38,14 @@ export const updateGoogleCalendarConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => updateSchema.parse(input))
   .handler(async ({ data, context }) => {
-    await ensureGestor(context.supabase, context.userId);
+    await ensureGestor(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: {
+      google_calendar_id?: string | null;
+      sync_ativo?: boolean;
+      dias_horizonte?: number;
+      updated_at?: string;
+    } = { updated_at: new Date().toISOString() };
     if (data.google_calendar_id !== undefined) patch.google_calendar_id = data.google_calendar_id || null;
     if (data.sync_ativo !== undefined) patch.sync_ativo = data.sync_ativo;
     if (data.dias_horizonte !== undefined) patch.dias_horizonte = data.dias_horizonte;
@@ -56,7 +62,7 @@ export const updateGoogleCalendarConfig = createServerFn({ method: "POST" })
 export const runGoogleCalendarSyncNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await ensureGestor(context.supabase, context.userId);
+    await ensureGestor(context.userId);
     const { syncGoogleCalendar } = await import("@/lib/google-calendar-sync.server");
     return await syncGoogleCalendar();
   });
@@ -64,7 +70,7 @@ export const runGoogleCalendarSyncNow = createServerFn({ method: "POST" })
 export const listGoogleCalendars = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await ensureGestor(context.supabase, context.userId);
+    await ensureGestor(context.userId);
     const bearer = process.env.LOVABLE_API_KEY;
     const key = process.env.GOOGLE_CALENDAR_API_KEY;
     if (!bearer || !key) throw new Error("Conector Google Agenda não configurado.");
