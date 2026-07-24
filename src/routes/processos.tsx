@@ -1007,7 +1007,7 @@ function ProcessoDialog({
   const salvar = async () => {
     const parsed = processoSchema.safeParse(form);
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message ?? "Dados inválidos");
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
     setSaving(true);
@@ -1017,18 +1017,20 @@ function ProcessoDialog({
         ano,
         criado_por: editing ? undefined : userId,
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any;
 
       let processoId: string;
       if (editing) {
-        const { error } = await supabase
-          .from("processo_anual" as never)
+        const { error } = await db
+          .from("processo_anual")
           .update(payload)
           .eq("id", editing.id);
         if (error) throw error;
         processoId = editing.id;
       } else {
-        const { data, error } = await supabase
-          .from("processo_anual" as never)
+        const { data, error } = await db
+          .from("processo_anual")
           .insert(payload)
           .select("id")
           .single();
@@ -1036,9 +1038,8 @@ function ProcessoDialog({
         processoId = (data as { id: string }).id;
       }
 
-      // Reset vinculos: delete tudo e recria (simples)
-      const { error: delErr } = await supabase
-        .from("processo_anual_vinculo" as never)
+      const { error: delErr } = await db
+        .from("processo_anual_vinculo")
         .delete()
         .eq("processo_id", processoId);
       if (delErr) throw delErr;
@@ -1056,8 +1057,8 @@ function ProcessoDialog({
         })),
       ];
       if (novos.length > 0) {
-        const { error: insErr } = await supabase
-          .from("processo_anual_vinculo" as never)
+        const { error: insErr } = await db
+          .from("processo_anual_vinculo")
           .insert(novos);
         if (insErr) throw insErr;
       }
@@ -1072,6 +1073,7 @@ function ProcessoDialog({
       setSaving(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
