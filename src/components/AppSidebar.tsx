@@ -60,6 +60,7 @@ const groups: NavGroup[] = [
       { title: "Relatórios",          url: "/relatorios", icon: FileBarChart, tone: "amber"   },
       { title: "Atividades semanais", url: "/atividades", icon: CalendarRange,tone: "sky"     },
       { title: "Reuniões",            url: "/reunioes",   icon: Calendar,     tone: "indigo"  },
+      { title: "Processos",           url: "/processos",  icon: CalendarDays, tone: "violet"  },
       { title: "Tarefas",             url: "/tarefas",    icon: CheckSquare,  tone: "emerald" },
       { title: "Demandas",            url: "/demandas",   icon: Inbox,        tone: "cyan"    },
     ],
