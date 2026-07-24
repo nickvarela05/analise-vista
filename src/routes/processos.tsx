@@ -456,31 +456,11 @@ function Processos() {
           </div>
         }
         stats={[
-          { label: "Total", value: stats.total, tone: "indigo" },
-          {
-            label: "Em andamento",
-            value: stats.emAndamento,
-            tone: "sky",
-            icon: Clock,
-          },
-          {
-            label: "Próximos",
-            value: stats.proximos,
-            tone: "amber",
-            icon: AlertTriangle,
-          },
-          {
-            label: "Atrasados",
-            value: stats.atrasados,
-            tone: "rose",
-            icon: AlertTriangle,
-          },
-          {
-            label: "Concluídos",
-            value: stats.concluidos,
-            tone: "emerald",
-            icon: CheckCircle2,
-          },
+          { label: "Total", value: stats.total, tone: "indigo", icon: CalendarDays },
+          { label: "Em andamento", value: stats.emAndamento, tone: "sky", icon: Clock },
+          { label: "Próximos", value: stats.proximos, tone: "amber", icon: AlertTriangle },
+          { label: "Atrasados", value: stats.atrasados, tone: "rose", icon: AlertTriangle },
+          { label: "Concluídos", value: stats.concluidos, tone: "emerald", icon: CheckCircle2 },
         ]}
         statsGridClassName="grid-cols-2 sm:grid-cols-5"
       />
