@@ -1,51 +1,87 @@
-# Schema #12 — Configurações (IA + Preferências de Notificação)
 
-Do bloco "Configurações", os três painéis relevantes são:
+# Plano em 2 fases (5 créditos/dia)
 
-- `ConfiguracoesEmails` — apenas botões de ação em cima de `email_send_log`. **Sem formulário → fica de fora.**
-- `ConfiguracoesIA` — formulário real (prompt principal, instruções extras, toggle ativo). **Alto valor.**
-- `PreferenciasNotificacao` — toggles por `(evento, canal)` gravando em `notificacao_preferencia`. **Vale defesa em profundidade.**
-- `DestinatariosResumoDiario` — busca + toggle direto em `profiles.recebe_resumo_diario`. Sem input estruturado; **fica de fora.**
+Objetivo: entregar (1) tela de **Calendário Anual de Processos** com previsto x real, atribuições, vínculos e alertas; (2) ajustar filtro do **resumo diário** para tarefas em teste e investigar falhas de disparo.
 
-## Arquivo novo
+---
 
-`src/lib/schemas/configuracoes.ts`, exportando:
+## Fase 1 — HOJE (foco: base de dados + tela funcional)
 
-1. **`iaPromptConfigSchema`** — payload de `ConfiguracoesIA`:
-   - `chave`: `z.literal("analise_reuniao")` (defesa em profundidade)
-   - `prompt_sistema`: `z.string().trim().min(1, "O prompt principal não pode ficar vazio").max(8000)`
-   - `instrucoes_extras`: `z.string().trim().max(4000).transform(v => v || null).nullable()` via `emptyToNull`
-   - `ativo`: `z.boolean()`
-   - Tipo exportado: `IaPromptConfig`
-2. **`notifPreferenciaSchema`** — payload de `PreferenciasNotificacao`:
-   - `user_id`: `z.string().uuid()`
-   - `evento`: `z.enum([...EVENTOS_TIPOS])` — os 8 tipos já definidos localmente
-   - `canal`: `z.enum(["in_app", "email"])`
-   - `ativo`: `z.boolean()`
-   - Exportar também `EVENTOS_TIPOS` (const array) e tipo `EventoTipo` para reuso no componente.
+Prioridade: ter a tela usável, salvando dados, sem quebrar orçamento.
 
-## Mudanças em `ConfiguracoesIA.tsx`
+### 1.1 Banco (1 migração única)
+Tabela `public.processo_anual`:
+- `ano` (int), `nome`, `descricao`, `cor` (para o calendário)
+- `previsto_inicio`, `previsto_fim` (date, nullable)
+- `real_inicio`, `real_fim` (date, nullable)
+- `responsaveis_ids` (uuid[]), `equipe_toda` (bool)
+- `status` (enum: `planejado`, `em_andamento`, `concluido`, `atrasado`)
+- `alerta_dias_antes` (int, default 14)
+- `criado_por`, timestamps
 
-- Importar `iaPromptConfigSchema`, `type IaPromptConfig`.
-- Em `salvar()`: montar `payload` e rodar `iaPromptConfigSchema.safeParse(payload)`. Se falhar, `toast.error` com a mensagem do primeiro issue (substitui o `if (!promptSistema.trim())` manual).
-- `.update(parsed.data)` / `.insert(parsed.data)` — sem mais mudanças de lógica.
-- Manter `CHAVE`, `DEFAULT_PROMPT`, `restaurar()`, UI e permissões (`isGestor`).
+Tabela de vínculo `public.processo_anual_vinculo`:
+- `processo_id`, `tipo` (`tarefa`|`demanda`), `ref_id`
 
-## Mudanças em `PreferenciasNotificacao.tsx`
+GRANTs + RLS (leitura autenticada, escrita gestor/admin), trigger `updated_at`.
 
-- Passar a importar `EVENTOS_TIPOS`, `type EventoTipo`, `notifPreferenciaSchema` do schema.
-- Remover a definição local duplicada de `EventoTipo` (o array `EVENTOS` continua local — tem `label`, `desc`, `icon`, `tone`, que não vão para o schema).
-- Em `toggle()`: validar o objeto com `notifPreferenciaSchema.safeParse` antes do `upsert`; erro → `toast.error` e aborta. Serve como defesa em profundidade contra chamadas com `canal`/`evento` inválidos vindos de código futuro.
+### 1.2 Rota + tela
+`src/routes/processos.tsx` com:
+- `PageHero` no padrão do sistema, tone `indigo`
+- **Visão calendário anual**: grid de 12 meses (linhas = processos, colunas = semanas/dias) — timeline horizontal tipo Gantt anual leve. Barras: previsto (contorno) x real (preenchido) sobrepostas.
+- **Visão lista**: cards colapsáveis por processo com status, responsáveis, badges de vínculos.
+- Toggle entre visões (Tabs).
+- Filtro por ano (seletor), status, responsável.
 
-## Fora do Zod (permanece)
+### 1.3 Dialog de processo (`ProcessoDialog.tsx`)
+Campos: nome, descrição, cor, previsto/real (2 range pickers), `AssigneeCombobox`, `alerta_dias_antes`, vínculos (multiselect de tarefas/demandas — reutiliza dados já carregados no app).
 
-- `ConfiguracoesEmails` inteiro (sem input estruturado).
-- `DestinatariosResumoDiario` (busca + toggle direto).
-- Consultas `select`, invalidação do React Query, RLS/permissões, UI, gradientes, badges.
-- Chamadas a `supabase.functions.invoke("dispatch-email-digest", ...)`.
+### 1.4 Sidebar/nav
+Item "Processos" em `AppSidebar.tsx`.
 
-## Resultado
+**Créditos estimados fase 1: ~3–4** (1 migração + 4 arquivos novos + 1 edit no sidebar).
 
-- Uma fonte de verdade para o payload de configuração da IA e para preferências de notificação.
-- Elimina a checagem manual `!promptSistema.trim()` e o tipo `EventoTipo` duplicado.
-- Zero mudança de UX.
+---
+
+## Fase 2 — AMANHÃ (alertas + resumo diário + investigação)
+
+### 2.1 Alertas de aproximação (in-app + e-mail)
+Função SQL `notify_processo_proximo()` agendada via `pg_cron` diária (07:00):
+- Para cada processo cujo `previsto_inicio - alerta_dias_antes <= hoje < previsto_inicio` e não concluído → `enqueue_notificacao` para responsáveis (ou equipe toda), tipo `aviso_critico` se ≤3 dias, senão `sistema`.
+- Também insere linha no `email_send_log` (aproveitando fluxo do resumo diário) marcando prioridade.
+
+### 2.2 Resumo diário — filtro de tarefas em teste
+Ajuste na edge function `dispatch-email-digest`:
+- Seção "Em teste" só inclui `todo` onde `status = 'homologacao' AND em_teste = true`.
+- Adicionar seção "Processos próximos" (próx. 14 dias) no template do resumo.
+
+### 2.3 Investigação de e-mails que não chegam
+Checagens dentro do mesmo turno:
+- Consultar `email_send_log` últimas 30 execuções: status `sent` mas sem `provider_id`? attempts > 1?
+- Verificar `suppressed_emails` do n8n webhook.
+- Confirmar HMAC + retries no `N8N_EMAIL_WEBHOOK_URL`.
+- Provável causa (hipótese): resposta 2xx do n8n mas erro downstream sem retry. Fix: registrar `message_id` retornado pelo n8n e implementar retry em `dispatch-email-digest` quando ausente.
+
+**Créditos estimados fase 2: ~3–4** (1 migração cron + edit edge function + investigação/patch).
+
+---
+
+## Detalhes técnicos (para referência)
+
+```text
+processos.tsx
+ ├─ PageHero (ícone Calendar, tone indigo, stats: total, em_andamento, atrasados, próximos)
+ ├─ Tabs [Calendário | Lista]
+ │   ├─ CalendarioAnual (SVG/grid: 12 colunas mês, linhas processos, barras previsto vs real)
+ │   └─ ProcessosLista (cards com progresso, responsáveis, vínculos)
+ └─ ProcessoDialog (create/edit)
+```
+
+Padrões respeitados: `AssigneeCombobox`, `DialogSection`, `StatPill`, tokens semânticos, sem cores hardcoded, schemas Zod em `src/lib/schemas/processo.ts`.
+
+---
+
+## Ordem de execução
+1. Aprovação do plano → começo pela fase 1 já no próximo turno.
+2. Amanhã, você me pede "fase 2" e sigo com alertas/resumo/investigação.
+
+Confirma?
