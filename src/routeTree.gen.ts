@@ -13,6 +13,7 @@ import { Route as UnidadesRouteImport } from './routes/unidades'
 import { Route as TarefasRouteImport } from './routes/tarefas'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as ProcessosRouteImport } from './routes/processos'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -50,6 +51,11 @@ const ReunioesRoute = ReunioesRouteImport.update({
 const RelatoriosRoute = RelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProcessosRoute = ProcessosRouteImport.update({
+  id: '/processos',
+  path: '/processos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortfolioRoute = PortfolioRouteImport.update({
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
+  '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
+  '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
+  '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/perfil'
     | '/portfolio'
+    | '/processos'
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/perfil'
     | '/portfolio'
+    | '/processos'
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/perfil'
     | '/portfolio'
+    | '/processos'
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
@@ -308,6 +320,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
+  ProcessosRoute: typeof ProcessosRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
   TarefasRoute: typeof TarefasRoute
@@ -348,6 +361,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/processos': {
+      id: '/processos'
+      path: '/processos'
+      fullPath: '/processos'
+      preLoaderRoute: typeof ProcessosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portfolio': {
@@ -492,6 +512,7 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,
+  ProcessosRoute: ProcessosRoute,
   RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,
   TarefasRoute: TarefasRoute,
