@@ -797,6 +797,98 @@ export type Database = {
         }
         Relationships: []
       }
+      processo_anual: {
+        Row: {
+          alerta_dias_antes: number
+          ano: number
+          cor: string
+          created_at: string
+          criado_por: string | null
+          descricao: string | null
+          equipe_toda: boolean
+          id: string
+          nome: string
+          observacoes: string | null
+          previsto_fim: string | null
+          previsto_inicio: string | null
+          real_fim: string | null
+          real_inicio: string | null
+          responsaveis_ids: string[]
+          status: Database["public"]["Enums"]["processo_status"]
+          updated_at: string
+        }
+        Insert: {
+          alerta_dias_antes?: number
+          ano: number
+          cor?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          equipe_toda?: boolean
+          id?: string
+          nome: string
+          observacoes?: string | null
+          previsto_fim?: string | null
+          previsto_inicio?: string | null
+          real_fim?: string | null
+          real_inicio?: string | null
+          responsaveis_ids?: string[]
+          status?: Database["public"]["Enums"]["processo_status"]
+          updated_at?: string
+        }
+        Update: {
+          alerta_dias_antes?: number
+          ano?: number
+          cor?: string
+          created_at?: string
+          criado_por?: string | null
+          descricao?: string | null
+          equipe_toda?: boolean
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          previsto_fim?: string | null
+          previsto_inicio?: string | null
+          real_fim?: string | null
+          real_inicio?: string | null
+          responsaveis_ids?: string[]
+          status?: Database["public"]["Enums"]["processo_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      processo_anual_vinculo: {
+        Row: {
+          created_at: string
+          id: string
+          processo_id: string
+          ref_id: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          processo_id: string
+          ref_id: string
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          processo_id?: string
+          ref_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_anual_vinculo_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processo_anual"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1401,6 +1493,7 @@ export type Database = {
         | "sistema"
         | "resumo_semanal"
         | "relatorio_novo"
+      processo_status: "planejado" | "em_andamento" | "concluido" | "atrasado"
       reuniao_status: "agendada" | "realizada" | "cancelada"
       reuniao_tipo:
         | "interna"
@@ -1595,6 +1688,7 @@ export const Constants = {
         "resumo_semanal",
         "relatorio_novo",
       ],
+      processo_status: ["planejado", "em_andamento", "concluido", "atrasado"],
       reuniao_status: ["agendada", "realizada", "cancelada"],
       reuniao_tipo: [
         "interna",
