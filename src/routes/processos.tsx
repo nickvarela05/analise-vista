@@ -668,7 +668,7 @@ function CalendarioAnual({
                   return (
                     <div
                       key={p.id}
-                      className="grid grid-cols-[220px_1fr] items-center gap-3"
+                      className="grid grid-cols-[260px_1fr] items-center gap-3"
                     >
                       <button
                         type="button"
@@ -724,7 +724,7 @@ function CalendarioAnual({
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className="absolute top-2 flex h-5 items-center overflow-visible rounded-sm border-2 border-dashed"
+                                className="absolute top-2 flex h-5 items-center justify-center overflow-hidden rounded-sm border-2 border-dashed"
                                 style={{
                                   left: `${(pStart / 12) * 100}%`,
                                   width: `${Math.max(1, ((pEnd - pStart) / 12) * 100)}%`,
@@ -732,14 +732,8 @@ function CalendarioAnual({
                                   backgroundColor: `color-mix(in oklab, var(--${corPrev}) 12%, transparent)`,
                                 }}
                               >
-                                <span className="pointer-events-none absolute -left-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
-                                  {fmtBR(p.previsto_inicio)}
-                                </span>
-                                <span className="pointer-events-none absolute -right-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
-                                  {fmtBR(p.previsto_fim)}
-                                </span>
-                                <span className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 text-[9px] font-semibold text-foreground/80 sm:block">
-                                  Previsto{durPrev !== null ? ` · ${durPrev}d` : ""}
+                                <span className="pointer-events-none text-[9px] font-semibold tabular-nums text-foreground/80">
+                                  {durPrev !== null ? `${durPrev}d` : ""}
                                 </span>
                               </div>
                             </TooltipTrigger>
