@@ -969,10 +969,6 @@ function ProcessoCard({
                   {durReal !== null ? ` · ${durReal} dias` : ""}
                 </TooltipContent>
               </Tooltip>
-            ) : (
-              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
-                Sem execução real ainda
-              </div>
             )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
