@@ -620,14 +620,14 @@ function CalendarioAnual({
     <Card>
       <CardContent className="p-4 sm:p-6">
         {/* Legenda */}
-        <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-6 rounded-sm border-2 border-dashed border-foreground/40" />
-            Previsto
+            <span className={cn("inline-block h-3 w-6 rounded-sm border-2 border-dashed", COR_BG_SOFT["indigo"])} />
+            Previsto (cronograma)
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-6 rounded-sm bg-foreground/60" />
-            Real
+            <span className="inline-block h-3 w-6 rounded-sm bg-indigo-500" />
+            Real (executado)
           </span>
           <span className="flex items-center gap-1.5">
             <span className="inline-block h-3 w-[2px] rounded-sm bg-rose-500" />
@@ -637,9 +637,9 @@ function CalendarioAnual({
 
         <TooltipProvider delayDuration={100}>
           <div className="overflow-x-auto">
-            <div className="min-w-[720px]">
+            <div className="min-w-[840px]">
               {/* Header meses */}
-              <div className="mb-2 grid grid-cols-[180px_1fr] gap-2">
+              <div className="mb-2 grid grid-cols-[220px_1fr] gap-3">
                 <div />
                 <div className="grid grid-cols-12 gap-0 border-b">
                   {MESES.map((m) => (
@@ -654,38 +654,61 @@ function CalendarioAnual({
               </div>
 
               {/* Linhas */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {processos.map((p) => {
                   const pStart = toFrac(p.previsto_inicio);
                   const pEnd = toFrac(p.previsto_fim);
                   const rStart = toFrac(p.real_inicio);
                   const rEnd = toFrac(p.real_fim);
                   const s = computarStatusDinamico(p);
+                  const durPrev = duracaoDias(p.previsto_inicio, p.previsto_fim);
+                  const durReal = duracaoDias(p.real_inicio, p.real_fim);
+                  const dev = desvioReal(p.previsto_inicio, p.previsto_fim, p.real_inicio, p.real_fim);
+                  const corPrev = p.cor;
                   return (
                     <div
                       key={p.id}
-                      className="grid grid-cols-[180px_1fr] items-center gap-2"
+                      className="grid grid-cols-[220px_1fr] items-center gap-3"
                     >
                       <button
                         type="button"
                         onClick={onEdit ? () => onEdit(p) : undefined}
                         className={cn(
-                          "group flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left",
+                          "group flex min-w-0 flex-col gap-0.5 rounded-md px-2 py-1.5 text-left",
                           onEdit && "hover:bg-muted",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "h-3 w-3 shrink-0 rounded-full",
-                            COR_BG[p.cor],
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span
+                            className={cn(
+                              "h-3 w-3 shrink-0 rounded-full",
+                              COR_BG[p.cor],
+                            )}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                            {p.nome}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 pl-5">
+                          <span
+                            className={cn(
+                              "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ring-1",
+                              STATUS_TONE[s].bg,
+                              STATUS_TONE[s].text,
+                              STATUS_TONE[s].ring,
+                            )}
+                          >
+                            {STATUS_LABEL[s]}
+                          </span>
+                          {dev.dias !== null && dev.dias > 0 && (
+                            <span className="text-[10px] text-rose-600 dark:text-rose-400">
+                              {dev.tipo === "atraso" ? "atraso" : "adiantado"} {dev.dias}d
+                            </span>
                           )}
-                        />
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                          {p.nome}
-                        </span>
+                        </div>
                       </button>
 
-                      <div className="relative h-9 rounded-md border bg-muted/30">
+                      <div className="relative h-16 rounded-md border bg-muted/30">
                         {/* Grid meses */}
                         <div className="pointer-events-none absolute inset-0 grid grid-cols-12">
                           {Array.from({ length: 12 }).map((_, i) => (
@@ -697,69 +720,90 @@ function CalendarioAnual({
                         </div>
 
                         {/* Barra previsto (contorno) */}
-                        {pStart !== null && pEnd !== null && pEnd > pStart && (
+                        {pStart !== null && pEnd !== null && pEnd >= pStart && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className={cn(
-                                  "absolute top-1 h-3 rounded-sm border-2 border-dashed",
-                                  COR_BG_SOFT[p.cor],
-                                )}
+                                className="absolute top-2 flex h-5 items-center overflow-visible rounded-sm border-2 border-dashed"
                                 style={{
                                   left: `${(pStart / 12) * 100}%`,
-                                  width: `${((pEnd - pStart) / 12) * 100}%`,
+                                  width: `${Math.max(1, ((pEnd - pStart) / 12) * 100)}%`,
+                                  borderColor: `color-mix(in oklab, var(--${corPrev}) 60%, transparent)`,
+                                  backgroundColor: `color-mix(in oklab, var(--${corPrev}) 12%, transparent)`,
                                 }}
-                              />
+                              >
+                                <span className="pointer-events-none absolute -left-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
+                                  {fmtBR(p.previsto_inicio)}
+                                </span>
+                                <span className="pointer-events-none absolute -right-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
+                                  {fmtBR(p.previsto_fim)}
+                                </span>
+                                <span className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 text-[9px] font-semibold text-foreground/80 sm:block">
+                                  Previsto{durPrev !== null ? ` · ${durPrev}d` : ""}
+                                </span>
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                              Previsto: {fmtBR(p.previsto_inicio)} →{" "}
-                              {fmtBR(p.previsto_fim)}
+                              <p className="font-medium">Previsto</p>
+                              <p className="text-xs">
+                                {fmtBR(p.previsto_inicio)} → {fmtBR(p.previsto_fim)}
+                                {durPrev !== null ? ` · ${durPrev} dias` : ""}
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                         )}
 
                         {/* Barra real (preenchida) */}
-                        {rStart !== null && rEnd !== null && rEnd > rStart && (
+                        {rStart !== null && rEnd !== null && rEnd >= rStart ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
                                 className={cn(
-                                  "absolute bottom-1 h-3 rounded-sm",
+                                  "absolute bottom-2 flex h-5 items-center overflow-visible rounded-sm",
                                   COR_BG[p.cor],
                                 )}
                                 style={{
                                   left: `${(rStart / 12) * 100}%`,
-                                  width: `${((rEnd - rStart) / 12) * 100}%`,
+                                  width: `${Math.max(1, ((rEnd - rStart) / 12) * 100)}%`,
                                 }}
-                              />
+                              >
+                                <span className="pointer-events-none absolute -left-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
+                                  {fmtBR(p.real_inicio)}
+                                </span>
+                                <span className="pointer-events-none absolute -right-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
+                                  {fmtBR(p.real_fim)}
+                                </span>
+                                <span className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 text-[9px] font-semibold text-primary-foreground sm:block">
+                                  Real{durReal !== null ? ` · ${durReal}d` : ""}
+                                </span>
+                              </div>
                             </TooltipTrigger>
                             <TooltipContent side="bottom">
-                              Real: {fmtBR(p.real_inicio)} →{" "}
-                              {fmtBR(p.real_fim)}
+                              <p className="font-medium">Real</p>
+                              <p className="text-xs">
+                                {fmtBR(p.real_inicio)} → {fmtBR(p.real_fim)}
+                                {durReal !== null ? ` · ${durReal} dias` : ""}
+                              </p>
                             </TooltipContent>
                           </Tooltip>
+                        ) : (
+                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
+                            Sem execução ainda
+                          </div>
                         )}
 
                         {/* Marker hoje */}
                         {hojeMarker !== null && (
                           <div
-                            className="pointer-events-none absolute inset-y-0 w-[2px] bg-rose-500"
+                            className="pointer-events-none absolute inset-y-0 z-10 w-[2px] bg-rose-500"
                             style={{ left: `${hojeMarker * 100}%` }}
                             aria-label="Hoje"
-                          />
+                          >
+                            <span className="absolute -left-3 -top-4 text-[9px] font-semibold text-rose-500">
+                              Hoje
+                            </span>
+                          </div>
                         )}
-
-                        {/* Status badge canto */}
-                        <span
-                          className={cn(
-                            "absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ring-1",
-                            STATUS_TONE[s].bg,
-                            STATUS_TONE[s].text,
-                            STATUS_TONE[s].ring,
-                          )}
-                        >
-                          {STATUS_LABEL[s]}
-                        </span>
                       </div>
                     </div>
                   );
