@@ -246,8 +246,39 @@ function fmtBR(s: string | null): string {
   });
 }
 
+function fmtBRData(s: string | null): string {
+  const d = parseISODate(s);
+  if (!d) return "—";
+  return d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+  });
+}
+
 function diasEntre(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function duracaoDias(inicio: string | null, fim: string | null): number | null {
+  const a = parseISODate(inicio);
+  const b = parseISODate(fim);
+  if (!a || !b) return null;
+  return diasEntre(a, b) + 1; // inclui o dia inicial
+}
+
+function desvioReal(
+  prevInicio: string | null,
+  prevFim: string | null,
+  realInicio: string | null,
+  realFim: string | null,
+): { tipo: "atraso" | "adiantado" | "igual"; dias: number | null } {
+  const pi = parseISODate(prevInicio);
+  const ri = parseISODate(realInicio);
+  if (!pi || !ri) return { tipo: "igual", dias: null };
+  const d = diasEntre(pi, ri);
+  if (d > 0) return { tipo: "atraso", dias: d };
+  if (d < 0) return { tipo: "adiantado", dias: -d };
+  return { tipo: "igual", dias: 0 };
 }
 
 function computarStatusDinamico(p: Processo): ProcessoStatus {
