@@ -325,6 +325,8 @@ function Processos() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Processo | null>(null);
   const [confirmDel, setConfirmDel] = React.useState<Processo | null>(null);
+  const [filtroResp, setFiltroResp] = React.useState<string | null>(null);
+  const [copiando, setCopiando] = React.useState(false);
 
   // ---------- Queries ----------
   const { data: processos = [], isLoading } = useQuery({
