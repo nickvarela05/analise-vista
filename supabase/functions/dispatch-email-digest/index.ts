@@ -49,17 +49,26 @@ async function sendViaN8n(payload: {
     body,
   });
   const text = await res.text().catch(() => "");
-  let confirmed = false;
+  // Regra: qualquer 2xx do n8n é sucesso, exceto se o corpo indicar
+  // explicitamente falha (success:false / ok:false / error sem success).
+  // Antes exigíamos flag positiva, o que marcava como "failed" e-mails
+  // que o n8n de fato disparou (bug: aparecem no backlog do n8n, mas o
+  // sistema registra falha por ausência da flag).
+  let explicitFailure = false;
   try {
     const json = JSON.parse(text);
-    confirmed = json?.success === true || json?.ok === true;
-  } catch {
-    /* body não-JSON */
-  }
+    if (
+      json?.success === false ||
+      json?.ok === false ||
+      (json?.error && json?.success !== true && json?.ok !== true)
+    ) {
+      explicitFailure = true;
+    }
+  } catch { /* body não-JSON: aceita 2xx */ }
   return {
-    ok: res.ok && confirmed,
+    ok: res.ok && !explicitFailure,
     status: res.status,
-    body: confirmed ? text.slice(0, 500) : text.slice(0, 400) || "N8N respondeu 200 sem flag de sucesso",
+    body: text.slice(0, 500),
   };
 }
 
