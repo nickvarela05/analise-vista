@@ -953,7 +953,7 @@ function ProcessoCard({
                 </TooltipContent>
               </Tooltip>
             )}
-            {rStart !== null && rEnd !== null && rEnd >= rStart ? (
+            {rStart !== null && rEnd !== null && rEnd >= rStart && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
