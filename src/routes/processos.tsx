@@ -989,17 +989,19 @@ function ProcessoDialog({
   const [demandaIds, setDemandaIds] = React.useState<string[]>([]);
   const [saving, setSaving] = React.useState(false);
 
+  const vinculosRef = React.useRef(vinculosDoProcesso);
+  vinculosRef.current = vinculosDoProcesso;
   React.useEffect(() => {
     if (open) {
+      const v = vinculosRef.current;
       setForm(makeInitial(editing));
-      setTarefaIds(
-        vinculosDoProcesso.filter((v) => v.tipo === "tarefa").map((v) => v.ref_id),
-      );
-      setDemandaIds(
-        vinculosDoProcesso.filter((v) => v.tipo === "demanda").map((v) => v.ref_id),
-      );
+      setTarefaIds(v.filter((x) => x.tipo === "tarefa").map((x) => x.ref_id));
+      setDemandaIds(v.filter((x) => x.tipo === "demanda").map((x) => x.ref_id));
     }
-  }, [open, editing, vinculosDoProcesso]);
+    // Only reinitialize when the dialog opens or the target row changes —
+    // never when the parent re-renders with a new vinculos array reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, editing?.id]);
 
   const setField = <K extends keyof ProcessoForm>(k: K, v: ProcessoForm[K]) =>
     setForm((f) => ({ ...f, [k]: v }));

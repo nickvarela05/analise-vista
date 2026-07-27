@@ -120,7 +120,9 @@ export interface SyncResult {
  * Executa uma passagem completa de sincronização Nexus → Google Agenda.
  * Deve ser chamada apenas do servidor (cron ou serverFn autenticada de gestor).
  */
-export async function syncGoogleCalendar(): Promise<SyncResult> {
+export async function syncGoogleCalendar(
+  options: { manual?: boolean } = {},
+): Promise<SyncResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const result: SyncResult = {
     ok: true,
@@ -138,8 +140,19 @@ export async function syncGoogleCalendar(): Promise<SyncResult> {
     .eq("id", true)
     .maybeSingle();
   if (configErr) throw configErr;
-  if (!config || !config.sync_ativo || !config.google_calendar_id) {
-    return { ...result, ok: false, erros: ["Sincronização desativada ou calendário não configurado."] };
+  if (!config || !config.google_calendar_id) {
+    const erro = "Calendário não configurado.";
+    if (config) {
+      await supabaseAdmin
+        .from("google_calendar_config")
+        .update({ ultimo_erro: erro })
+        .eq("id", true);
+    }
+    return { ...result, ok: false, erros: [erro] };
+  }
+  // Cron respects the auto-sync switch; manual "Sincronizar agora" always runs.
+  if (!options.manual && !config.sync_ativo) {
+    return { ...result, ok: false, erros: ["Sincronização automática desativada."] };
   }
 
   const calendarId = encodeURIComponent(config.google_calendar_id);
