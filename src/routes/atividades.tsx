@@ -332,8 +332,8 @@ function Atividades() {
   }, [cursor]);
 
   const onCriado = () => {
-    qc.invalidateQueries({ queryKey: qk.atividades.tarefas() });
-    qc.invalidateQueries({ queryKey: qk.atividades.demandas() });
+    qc.invalidateQueries({ queryKey: qk.dash.tarefas() });
+    qc.invalidateQueries({ queryKey: qk.dash.demandas() });
   };
 
   const novoMenu = (
