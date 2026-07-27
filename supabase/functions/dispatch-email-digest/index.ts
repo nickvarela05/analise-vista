@@ -151,7 +151,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   // e filtradas em memória por usuário. Antes eram disparadas N×
   // (uma por profile), saturando o PostgREST e causando 503/504.
   // ---------------------------------------------------------------
-  const [demR, reuR, tarR, tarTesteR, relR, prefR] = await Promise.all([
+  const [demR, reuR, tarR, tarTesteR, relR, prefR, procR] = await Promise.all([
     admin
       .from("demanda")
       .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
@@ -164,17 +164,17 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .gte("data_reuniao", inicioDia)
       .lte("data_reuniao", fimSemanaISO)
       .not("status", "in", "(realizada,cancelada)"),
-    // Tarefas em HOMOLOGAÇÃO — atribuídas ao usuário, disponíveis para validação.
+    // Tarefas em HOMOLOGAÇÃO (para bloco Agenda da semana).
     admin
       .from("todo")
       .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
       .eq("status", "homologacao"),
-    // Tarefas EM TESTE — atribuídas ao usuário, independente de status.
+    // Tarefas EM TESTE — regra estrita: status = homologacao E em_teste = true.
     admin
       .from("todo")
       .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
-      .eq("em_teste", true)
-      .not("status", "in", "(encerrada,concluida,producao,cancelada)"),
+      .eq("status", "homologacao")
+      .eq("em_teste", true),
     admin
       .from("chamado_externo")
       .select(
@@ -186,6 +186,15 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .select("user_id, ativo")
       .eq("canal", "email")
       .eq("evento", "sistema"),
+    // Processos anuais que se aproximam (próximos 14 dias) ou já em andamento.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any)
+      .from("processo_anual")
+      .select("id, nome, cor, previsto_inicio, previsto_fim, status, responsaveis_ids, equipe_toda, alerta_dias_antes")
+      .in("status", ["planejado", "em_andamento", "atrasado"])
+      .not("previsto_inicio", "is", null)
+      .lte("previsto_inicio", em14dias)
+      .gte("previsto_fim", hoje),
   ]);
 
   const demAll = demR.data ?? [];
@@ -193,6 +202,12 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const tarAll = tarR.data ?? [];
   const tarTesteAll = tarTesteR.data ?? [];
   const relAll = relR.data ?? [];
+  const procAll = (procR.data ?? []) as Array<{
+    id: string; nome: string; cor: string | null;
+    previsto_inicio: string | null; previsto_fim: string | null;
+    status: string; responsaveis_ids: string[] | null; equipe_toda: boolean | null;
+    alerta_dias_antes: number | null;
+  }>;
   const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
   // Processa usuários sequencialmente: as consultas pesadas já foram
