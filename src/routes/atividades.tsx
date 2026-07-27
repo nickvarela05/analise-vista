@@ -194,8 +194,11 @@ function Atividades() {
   });
   const meuColabId = meuProfile?.colaborador_id ?? null;
 
+  // Reaproveita as mesmas queryKeys usadas pelo Dashboard (`qk.dash.*`)
+  // para que Dashboard → Atividades compartilhe cache e evite refetch das
+  // mesmas tabelas em telas irmãs.
   const { data: tarefas = [] } = useQuery({
-    queryKey: qk.atividades.tarefas(),
+    queryKey: qk.dash.tarefas(),
     queryFn: async () => {
       const { data, error } = await supabase.from("todo").select("*");
       if (error) throw error;
@@ -203,7 +206,7 @@ function Atividades() {
     },
   });
   const { data: demandas = [] } = useQuery({
-    queryKey: qk.atividades.demandas(),
+    queryKey: qk.dash.demandas(),
     queryFn: async () => {
       const { data, error } = await supabase.from("demanda").select("*");
       if (error) throw error;
@@ -211,9 +214,9 @@ function Atividades() {
     },
   });
   const { data: reunioes = [] } = useQuery({
-    queryKey: qk.atividades.reunioes(),
+    queryKey: qk.dash.reunioes(),
     queryFn: async () => {
-      const { data, error } = await supabase.from("reuniao").select("*");
+      const { data, error } = await supabase.from("reuniao").select("*").order("data_reuniao");
       if (error) throw error;
       return data ?? [];
     },
