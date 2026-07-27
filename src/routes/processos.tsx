@@ -617,7 +617,11 @@ function Processos() {
             : null;
           return (
             <div className="space-y-4">
-              <FaixaAgora processos={processosFiltrados} ano={ano} />
+              <BentoDoMes
+                processos={processosFiltrados}
+                ano={ano}
+                onEdit={isGestor ? abrirEdicao : undefined}
+              />
 
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -787,6 +791,391 @@ function FaixaAgora({ processos, ano }: { processos: Processo[]; ano: number }) 
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Bento "Foco do mês" ----------
+const MES_NOME_LONGO = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
+function BentoDoMes({
+  processos,
+  ano,
+  onEdit,
+}: {
+  processos: Processo[];
+  ano: number;
+  onEdit?: (p: Processo) => void;
+}) {
+  const hoje = HOJE();
+  const anoEhAtual = hoje.getFullYear() === ano;
+  const [mes, setMes] = React.useState<number>(anoEhAtual ? hoje.getMonth() : 0);
+
+  // Corrige quando o usuário troca o ano
+  React.useEffect(() => {
+    if (anoEhAtual) setMes(hoje.getMonth());
+    else setMes(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ano]);
+
+  const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+  const inicioMes = new Date(ano, mes, 1);
+  const fimMes = new Date(ano, mes, diasNoMes);
+
+  // Barras que aparecem no mês (previsto OU real cruza o mês)
+  const barras = React.useMemo(() => {
+    return processos
+      .map((p) => {
+        const pi = parseISODate(p.previsto_inicio);
+        const pf = parseISODate(p.previsto_fim);
+        const ri = parseISODate(p.real_inicio);
+        const rf = parseISODate(p.real_fim);
+        const clamp = (d: Date | null, isFim: boolean): number | null => {
+          if (!d) return null;
+          if (d > fimMes) return isFim ? diasNoMes : null;
+          if (d < inicioMes) return isFim ? null : 1;
+          return d.getDate();
+        };
+        const previsto =
+          pi && pf && !(pf < inicioMes || pi > fimMes)
+            ? { start: clamp(pi, false)!, end: clamp(pf, true)! }
+            : null;
+        const real =
+          ri && (rf ?? hoje) && !((rf ?? hoje) < inicioMes || ri > fimMes)
+            ? { start: clamp(ri, false)!, end: clamp(rf ?? hoje, true)! }
+            : null;
+        if (!previsto && !real) return null;
+        return { p, previsto, real };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [processos, ano, mes, diasNoMes, hoje]);
+
+  // Próximos 30 dias (a partir de hoje)
+  const proximos = React.useMemo(() => {
+    if (!anoEhAtual) return [];
+    const limite = new Date(hoje);
+    limite.setDate(limite.getDate() + 30);
+    return processos
+      .map((p) => {
+        const pi = parseISODate(p.previsto_inicio);
+        if (!pi) return null;
+        if (pi < hoje || pi > limite) return null;
+        const s = computarStatusDinamico(p);
+        if (s === "concluido" || s === "em_andamento") return null;
+        return { p, dias: diasEntre(hoje, pi) };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => a.dias - b.dias)
+      .slice(0, 6);
+  }, [processos, hoje, anoEhAtual]);
+
+  // Acontecendo agora (só ano atual)
+  const agora = React.useMemo(() => {
+    if (!anoEhAtual) return [];
+    return processos
+      .map((p) => {
+        const inicio = parseISODate(p.real_inicio ?? p.previsto_inicio);
+        const fim = parseISODate(p.real_fim ?? p.previsto_fim);
+        if (!inicio || !fim || fim < inicio) return null;
+        if (hoje < inicio || hoje > fim) return null;
+        const total = Math.max(1, diasEntre(inicio, fim) + 1);
+        const passados = Math.max(0, diasEntre(inicio, hoje) + 1);
+        const pct = Math.min(100, Math.round((passados / total) * 100));
+        const restante = Math.max(0, diasEntre(hoje, fim));
+        return { p, pct, restante };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => a.restante - b.restante)
+      .slice(0, 4);
+  }, [processos, hoje, anoEhAtual]);
+
+  const hojePctNoMes =
+    anoEhAtual && hoje.getMonth() === mes
+      ? ((hoje.getDate() - 1) / (diasNoMes - 1)) * 100
+      : null;
+
+  // Marcadores de semana (7,14,21,28)
+  const semanas = [7, 14, 21, 28].filter((d) => d < diasNoMes);
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-3">
+      {/* Cell A - Timeline do mês (2/3) */}
+      <Card className="lg:col-span-2 overflow-hidden">
+        <CardContent className="p-4 sm:p-5">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Foco do mês
+              </div>
+              <div className="text-base font-semibold leading-tight">
+                {MES_NOME_LONGO[mes]} <span className="text-muted-foreground">/ {ano}</span>
+              </div>
+            </div>
+            <div className="ml-auto flex items-center rounded-md border bg-background/60">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-r-none"
+                onClick={() => setMes((m) => (m + 11) % 12)}
+                aria-label="Mês anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Select value={String(mes)} onValueChange={(v) => setMes(Number(v))}>
+                <SelectTrigger className="h-7 w-[110px] rounded-none border-0 bg-transparent text-xs focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MES_NOME_LONGO.map((n, i) => (
+                    <SelectItem key={n} value={String(i)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-l-none"
+                onClick={() => setMes((m) => (m + 1) % 12)}
+                aria-label="Próximo mês"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Escala de dias */}
+          <div className="relative">
+            <div className="mb-1 grid grid-cols-[160px_1fr] gap-3">
+              <div />
+              <div className="relative h-4">
+                {[1, 5, 10, 15, 20, 25, diasNoMes].map((d) => (
+                  <span
+                    key={d}
+                    className="absolute -translate-x-1/2 text-[10px] tabular-nums text-muted-foreground"
+                    style={{ left: `${((d - 1) / (diasNoMes - 1)) * 100}%` }}
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {barras.length === 0 ? (
+              <div className="rounded-md border border-dashed py-8 text-center text-xs text-muted-foreground">
+                Nenhum processo previsto para {MES_NOME_LONGO[mes]}.
+              </div>
+            ) : (
+              <TooltipProvider delayDuration={100}>
+                <div className="space-y-1.5">
+                  {barras.map(({ p, previsto, real }) => {
+                    const s = computarStatusDinamico(p);
+                    return (
+                      <div
+                        key={p.id}
+                        className="grid grid-cols-[160px_1fr] items-center gap-3"
+                      >
+                        <button
+                          type="button"
+                          onClick={onEdit ? () => onEdit(p) : undefined}
+                          className={cn(
+                            "flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left text-xs",
+                            onEdit && "hover:bg-muted",
+                          )}
+                        >
+                          <span
+                            className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])}
+                          />
+                          <span className="min-w-0 flex-1 truncate font-medium">{p.nome}</span>
+                        </button>
+                        <div className="relative h-7 rounded-md bg-muted/40">
+                          {/* Grades das semanas */}
+                          {semanas.map((d) => (
+                            <span
+                              key={d}
+                              className="absolute top-0 h-full w-px bg-border/60"
+                              style={{ left: `${((d - 1) / (diasNoMes - 1)) * 100}%` }}
+                            />
+                          ))}
+                          {/* Hoje */}
+                          {hojePctNoMes !== null && (
+                            <span
+                              className="absolute top-0 h-full w-[2px] bg-rose-500"
+                              style={{ left: `${hojePctNoMes}%` }}
+                            />
+                          )}
+                          {/* Previsto (contorno tracejado) */}
+                          {previsto && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={cn(
+                                    "absolute top-1 h-5 rounded border-2 border-dashed",
+                                    COR_BG_SOFT[p.cor],
+                                  )}
+                                  style={{
+                                    left: `${((previsto.start - 1) / (diasNoMes - 1)) * 100}%`,
+                                    width: `${((previsto.end - previsto.start) / (diasNoMes - 1)) * 100}%`,
+                                    minWidth: 6,
+                                  }}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                Previsto: dia {previsto.start} → {previsto.end}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {/* Real (barra sólida sobreposta) */}
+                          {real && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={cn(
+                                    "absolute top-2 h-3 rounded-sm shadow-sm",
+                                    COR_BG[p.cor],
+                                  )}
+                                  style={{
+                                    left: `${((real.start - 1) / (diasNoMes - 1)) * 100}%`,
+                                    width: `${((real.end - real.start) / (diasNoMes - 1)) * 100}%`,
+                                    minWidth: 4,
+                                  }}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent side="top">
+                                Real: dia {real.start} → {real.end}
+                                {s === "em_andamento" && " (em andamento)"}
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </TooltipProvider>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Coluna direita: Agora + Próximos */}
+      <div className="grid gap-3">
+        {/* Agora */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Acontecendo agora
+              </span>
+              <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                {agora.length}
+              </span>
+            </div>
+            {agora.length === 0 ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">
+                Nada rodando hoje.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {agora.map(({ p, pct, restante }) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={onEdit ? () => onEdit(p) : undefined}
+                    className={cn(
+                      "block w-full rounded-md border bg-card/40 p-2 text-left",
+                      onEdit && "hover:bg-muted/60",
+                    )}
+                  >
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])} />
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium">
+                        {p.nome}
+                      </span>
+                      <span className="shrink-0 tabular-nums text-[10px] text-muted-foreground">
+                        {restante === 0 ? "hoje" : `${restante}d`}
+                      </span>
+                    </div>
+                    <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={cn("h-full rounded-full", COR_BG[p.cor])}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Próximos 30 dias */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Próximos 30 dias
+              </span>
+              <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                {proximos.length}
+              </span>
+            </div>
+            {proximos.length === 0 ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">
+                Nada previsto para começar.
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {proximos.map(({ p, dias }) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={onEdit ? () => onEdit(p) : undefined}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left",
+                      onEdit && "hover:bg-muted",
+                    )}
+                  >
+                    <span className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])} />
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium">
+                      {p.nome}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "shrink-0 tabular-nums text-[10px]",
+                        dias <= 3 && "border-amber-500/60 text-amber-600 dark:text-amber-400",
+                        dias <= 0 && "border-rose-500/60 text-rose-600 dark:text-rose-400",
+                      )}
+                    >
+                      {dias === 0 ? "hoje" : dias === 1 ? "amanhã" : `em ${dias}d`}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
