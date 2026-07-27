@@ -708,7 +708,7 @@ function CalendarioAnual({
                         </div>
                       </button>
 
-                      <div className="relative h-16 rounded-md border bg-muted/30">
+                      <div className="relative h-[88px] rounded-md border bg-muted/30">
                         {/* Grid meses */}
                         <div className="pointer-events-none absolute inset-0 grid grid-cols-12">
                           {Array.from({ length: 12 }).map((_, i) => (
@@ -753,7 +753,7 @@ function CalendarioAnual({
                             <TooltipTrigger asChild>
                               <div
                                 className={cn(
-                                  "absolute bottom-2 flex h-5 items-center justify-center overflow-hidden rounded-sm",
+                                  "absolute bottom-7 flex h-5 items-center justify-center overflow-hidden rounded-sm",
                                   COR_BG[p.cor],
                                 )}
                                 style={{
@@ -775,10 +775,22 @@ function CalendarioAnual({
                             </TooltipContent>
                           </Tooltip>
                         ) : (
-                          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
-                            Sem execução ainda
+                          <div className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
+                            Sem execução real ainda
                           </div>
                         )}
+
+                        {/* Linha de datas */}
+                        <div className="absolute bottom-1 left-0 right-0 flex flex-wrap items-center justify-between gap-2 px-2 text-[10px] tabular-nums text-muted-foreground">
+                          <span>
+                            Previsto: {fmtBR(p.previsto_inicio)} → {fmtBR(p.previsto_fim)}
+                            {durPrev !== null ? ` · ${durPrev}d` : ""}
+                          </span>
+                          <span>
+                            Real: {fmtBR(p.real_inicio)} → {fmtBR(p.real_fim)}
+                            {durReal !== null ? ` · ${durReal}d` : " — ainda não definido"}
+                          </span>
+                        </div>
 
                         {/* Marker hoje */}
                         {hojeMarker !== null && (
