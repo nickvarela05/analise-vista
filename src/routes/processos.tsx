@@ -519,22 +519,52 @@ function Processos() {
         icon={CalendarDays}
         tone="indigo"
         actions={
-          <div className="flex items-center gap-2">
-            <Select
-              value={String(ano)}
-              onValueChange={(v) => setAno(Number(v))}
-            >
-              <SelectTrigger className="w-[110px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {anosDisponiveis.map((a) => (
-                  <SelectItem key={a} value={String(a)}>
-                    {a}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center rounded-md border bg-background/60 backdrop-blur">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-r-none"
+                onClick={() => setAno((a) => a - 1)}
+                aria-label="Ano anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+                <SelectTrigger className="h-8 w-[92px] rounded-none border-0 bg-transparent focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {anosDisponiveis.map((a) => (
+                    <SelectItem key={a} value={String(a)}>
+                      {a}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-l-none"
+                onClick={() => setAno((a) => a + 1)}
+                aria-label="Próximo ano"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            {isGestor && processos.length === 0 && ano !== anoAtual - 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={copiarDoAnoAnterior}
+                disabled={copiando}
+                title={`Duplicar processos de ${ano - 1} para ${ano}`}
+              >
+                {copiando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                Copiar de {ano - 1}
+              </Button>
+            )}
             {isGestor && (
               <Button onClick={abrirNovo} className="gap-1.5">
                 <Plus className="h-4 w-4" />
