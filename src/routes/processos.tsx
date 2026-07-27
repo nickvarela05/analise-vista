@@ -840,9 +840,26 @@ function ProcessoCard({
   const dias = diasParaInicio(p);
   const proximo =
     dias !== null && dias >= 0 && dias <= p.alerta_dias_antes && s !== "concluido";
+  const durPrev = duracaoDias(p.previsto_inicio, p.previsto_fim);
+  const durReal = duracaoDias(p.real_inicio, p.real_fim);
+  const dev = desvioReal(p.previsto_inicio, p.previsto_fim, p.real_inicio, p.real_fim);
 
   const tarefaMap = new Map(tarefasMini.map((t) => [t.id, t.titulo]));
   const demandaMap = new Map(demandasMini.map((d) => [d.id, d.titulo]));
+
+  const toFracAno = (s: string | null): number | null => {
+    const d = parseISODate(s);
+    if (!d) return null;
+    const ano = p.ano;
+    if (d.getFullYear() < ano) return 0;
+    if (d.getFullYear() > ano) return 12;
+    const diasNoMes = new Date(ano, d.getMonth() + 1, 0).getDate();
+    return d.getMonth() + (d.getDate() - 1) / diasNoMes;
+  };
+  const pStart = toFracAno(p.previsto_inicio);
+  const pEnd = toFracAno(p.previsto_fim);
+  const rStart = toFracAno(p.real_inicio);
+  const rEnd = toFracAno(p.real_fim);
 
   return (
     <Card className={cn("overflow-hidden", proximo && "ring-1 ring-amber-500/40")}>
@@ -900,6 +917,78 @@ function ProcessoCard({
               )}
             </div>
           )}
+        </div>
+
+        {/* Mini timeline comparativa */}
+        <div className="mt-3 rounded-lg border bg-muted/30 p-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="text-muted-foreground">Visualização anual</span>
+            {dev.dias !== null && dev.dias > 0 && (
+              <span className={cn(
+                "font-medium",
+                dev.tipo === "atraso" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400",
+              )}>
+                {dev.tipo === "atraso" ? "Início com atraso" : "Início adiantado"} de {dev.dias} dia{dev.dias === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+          <div className="relative h-10">
+            <div className="pointer-events-none absolute inset-0 grid grid-cols-12">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="border-l first:border-l-0" />
+              ))}
+            </div>
+            {pStart !== null && pEnd !== null && pEnd >= pStart && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="absolute top-1 flex h-3 items-center rounded-sm border-2 border-dashed"
+                    style={{
+                      left: `${(pStart / 12) * 100}%`,
+                      width: `${Math.max(1, ((pEnd - pStart) / 12) * 100)}%`,
+                      borderColor: `color-mix(in oklab, var(--${p.cor}) 60%, transparent)`,
+                      backgroundColor: `color-mix(in oklab, var(--${p.cor}) 12%, transparent)`,
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  Previsto: {fmtBR(p.previsto_inicio)} → {fmtBR(p.previsto_fim)}
+                  {durPrev !== null ? ` · ${durPrev} dias` : ""}
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {rStart !== null && rEnd !== null && rEnd >= rStart ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn("absolute bottom-1 flex h-3 items-center rounded-sm", COR_BG[p.cor])}
+                    style={{
+                      left: `${(rStart / 12) * 100}%`,
+                      width: `${Math.max(1, ((rEnd - rStart) / 12) * 100)}%`,
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Real: {fmtBR(p.real_inicio)} → {fmtBR(p.real_fim)}
+                  {durReal !== null ? ` · ${durReal} dias` : ""}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
+                Sem execução real ainda
+              </div>
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className={cn("inline-block h-2 w-4 rounded-sm border border-dashed", COR_BG_SOFT[p.cor])} />
+              Previsto{durPrev !== null ? ` · ${durPrev}d` : ""}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className={cn("inline-block h-2 w-4 rounded-sm", COR_BG[p.cor])} />
+              Real{durReal !== null ? ` · ${durReal}d` : " — ainda não definido"}
+            </span>
+          </div>
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
