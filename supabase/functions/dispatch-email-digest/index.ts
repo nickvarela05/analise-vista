@@ -345,6 +345,34 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
          ${a.mensagem ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;line-height:1.5">${escapeHtml(a.mensagem)}</div>` : ""}`,
         );
 
+      const renderProcesso = (p: (typeof meusProcessos)[number]) => {
+        const cor = p.cor && /^#[0-9a-fA-F]{6}$/.test(p.cor) ? p.cor : "#4f46e5";
+        const inicio = p.previsto_inicio;
+        const n = diasAte(inicio);
+        let badge = "";
+        if (n === null) badge = "";
+        else if (n < 0)
+          badge = `<span style="background:#4f46e5;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM CURSO</span>`;
+        else if (n === 0)
+          badge = `<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">COMEÇA HOJE</span>`;
+        else if (n <= 3)
+          badge = `<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM ${n}D</span>`;
+        else
+          badge = `<span style="background:#e5e7eb;color:#374151;font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px">em ${n}d</span>`;
+        const periodo =
+          inicio && p.previsto_fim
+            ? `${fmtData(inicio)} → ${fmtData(p.previsto_fim)}`
+            : inicio
+              ? fmtData(inicio)
+              : "sem período";
+        return card(
+          cor,
+          `${headRow(escapeHtml(p.nome), badge)}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${periodo}</div>`,
+        );
+      };
+
+
       const bloco = (titulo: string, icone: string, count: number, items: string) =>
         count === 0
           ? ""
