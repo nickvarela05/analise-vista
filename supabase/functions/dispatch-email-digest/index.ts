@@ -49,17 +49,26 @@ async function sendViaN8n(payload: {
     body,
   });
   const text = await res.text().catch(() => "");
-  let confirmed = false;
+  // Regra: qualquer 2xx do n8n é sucesso, exceto se o corpo indicar
+  // explicitamente falha (success:false / ok:false / error sem success).
+  // Antes exigíamos flag positiva, o que marcava como "failed" e-mails
+  // que o n8n de fato disparou (bug: aparecem no backlog do n8n, mas o
+  // sistema registra falha por ausência da flag).
+  let explicitFailure = false;
   try {
     const json = JSON.parse(text);
-    confirmed = json?.success === true || json?.ok === true;
-  } catch {
-    /* body não-JSON */
-  }
+    if (
+      json?.success === false ||
+      json?.ok === false ||
+      (json?.error && json?.success !== true && json?.ok !== true)
+    ) {
+      explicitFailure = true;
+    }
+  } catch { /* body não-JSON: aceita 2xx */ }
   return {
-    ok: res.ok && confirmed,
+    ok: res.ok && !explicitFailure,
     status: res.status,
-    body: confirmed ? text.slice(0, 500) : text.slice(0, 400) || "N8N respondeu 200 sem flag de sucesso",
+    body: text.slice(0, 500),
   };
 }
 
@@ -115,6 +124,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const em7dias = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const inicioDia = `${hoje}T00:00:00Z`;
   const fimSemanaISO = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
+  const em14dias = new Date(now.getTime() + 14 * 24 * 3600 * 1000).toISOString().slice(0, 10);
 
   const { data: users } = await admin
     .from("profiles")
@@ -142,7 +152,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   // e filtradas em memória por usuário. Antes eram disparadas N×
   // (uma por profile), saturando o PostgREST e causando 503/504.
   // ---------------------------------------------------------------
-  const [demR, reuR, tarR, tarTesteR, relR, prefR] = await Promise.all([
+  const [demR, reuR, tarR, tarTesteR, relR, prefR, procR] = await Promise.all([
     admin
       .from("demanda")
       .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
@@ -155,17 +165,17 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .gte("data_reuniao", inicioDia)
       .lte("data_reuniao", fimSemanaISO)
       .not("status", "in", "(realizada,cancelada)"),
-    // Tarefas em HOMOLOGAÇÃO — atribuídas ao usuário, disponíveis para validação.
+    // Tarefas em HOMOLOGAÇÃO (para bloco Agenda da semana).
     admin
       .from("todo")
       .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
       .eq("status", "homologacao"),
-    // Tarefas EM TESTE — atribuídas ao usuário, independente de status.
+    // Tarefas EM TESTE — regra estrita: status = homologacao E em_teste = true.
     admin
       .from("todo")
       .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
-      .eq("em_teste", true)
-      .not("status", "in", "(encerrada,concluida,producao,cancelada)"),
+      .eq("status", "homologacao")
+      .eq("em_teste", true),
     admin
       .from("chamado_externo")
       .select(
@@ -177,6 +187,15 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .select("user_id, ativo")
       .eq("canal", "email")
       .eq("evento", "sistema"),
+    // Processos anuais que se aproximam (próximos 14 dias) ou já em andamento.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin as any)
+      .from("processo_anual")
+      .select("id, nome, cor, previsto_inicio, previsto_fim, status, responsaveis_ids, equipe_toda, alerta_dias_antes")
+      .in("status", ["planejado", "em_andamento", "atrasado"])
+      .not("previsto_inicio", "is", null)
+      .lte("previsto_inicio", em14dias)
+      .gte("previsto_fim", hoje),
   ]);
 
   const demAll = demR.data ?? [];
@@ -184,6 +203,12 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const tarAll = tarR.data ?? [];
   const tarTesteAll = tarTesteR.data ?? [];
   const relAll = relR.data ?? [];
+  const procAll = (procR.data ?? []) as Array<{
+    id: string; nome: string; cor: string | null;
+    previsto_inicio: string | null; previsto_fim: string | null;
+    status: string; responsaveis_ids: string[] | null; equipe_toda: boolean | null;
+    alerta_dias_antes: number | null;
+  }>;
   const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
   // Processa usuários sequencialmente: as consultas pesadas já foram
@@ -211,13 +236,17 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
 
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
-      const minhasTarefas = tarAll.filter(meu);
-      const idsHomolog = new Set(minhasTarefas.map((t) => t.id));
-      const minhasTarefasTeste = tarTesteAll.filter((t) => meu(t) && !idsHomolog.has(t.id));
+      // "Em teste" = status homologacao + em_teste=true (regra estrita).
+      const minhasTarefasTeste = tarTesteAll.filter(meu);
+      const testIds = new Set(minhasTarefasTeste.map((t) => t.id));
+      // "Agenda da semana" mostra homologação restante (sem duplicar em_teste).
+      const minhasTarefas = tarAll.filter((t) => meu(t) && !testIds.has(t.id));
       const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
       );
+      // Processos anuais atribuídos ao usuário — próximos 14 dias.
+      const meusProcessos = procAll.filter(meu);
 
       const total =
         minhasDemandas.length +
@@ -225,7 +254,8 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         minhasTarefas.length +
         minhasTarefasTeste.length +
         meusRelatorios.length +
-        meusAvisos.length;
+        meusAvisos.length +
+        meusProcessos.length;
       if (total === 0) continue;
 
       const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
@@ -315,6 +345,34 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
          ${a.mensagem ? `<div style="color:#6b7280;font-size:13px;margin-top:6px;line-height:1.5">${escapeHtml(a.mensagem)}</div>` : ""}`,
         );
 
+      const renderProcesso = (p: (typeof meusProcessos)[number]) => {
+        const cor = p.cor && /^#[0-9a-fA-F]{6}$/.test(p.cor) ? p.cor : "#4f46e5";
+        const inicio = p.previsto_inicio;
+        const n = diasAte(inicio);
+        let badge = "";
+        if (n === null) badge = "";
+        else if (n < 0)
+          badge = `<span style="background:#4f46e5;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM CURSO</span>`;
+        else if (n === 0)
+          badge = `<span style="background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">COMEÇA HOJE</span>`;
+        else if (n <= 3)
+          badge = `<span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM ${n}D</span>`;
+        else
+          badge = `<span style="background:#e5e7eb;color:#374151;font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px">em ${n}d</span>`;
+        const periodo =
+          inicio && p.previsto_fim
+            ? `${fmtData(inicio)} → ${fmtData(p.previsto_fim)}`
+            : inicio
+              ? fmtData(inicio)
+              : "sem período";
+        return card(
+          cor,
+          `${headRow(escapeHtml(p.nome), badge)}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${periodo}</div>`,
+        );
+      };
+
+
       const bloco = (titulo: string, icone: string, count: number, items: string) =>
         count === 0
           ? ""
@@ -378,6 +436,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
           <tr><td style="padding:8px 24px 28px">
             ${sectionHoje}
             ${bloco("Avisos da gestão", "📣", meusAvisos.length, meusAvisos.map(renderAviso).join(""))}
+            ${bloco("Processos anuais próximos", "🗂️", meusProcessos.length, meusProcessos.sort((a,b) => (a.previsto_inicio ?? "").localeCompare(b.previsto_inicio ?? "")).map(renderProcesso).join(""))}
             ${bloco("Tarefas em teste — aguardando validação", "🧪", minhasTarefasTeste.length, minhasTarefasTeste.map(renderTarefaTeste).join(""))}
             ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}

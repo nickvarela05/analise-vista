@@ -1455,6 +1455,7 @@ export type Database = {
         Returns: boolean
       }
       limpar_atribuicoes_finalizadas: { Args: never; Returns: Json }
+      notify_processo_proximo: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "gestor" | "analista"
