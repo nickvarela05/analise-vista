@@ -223,22 +223,10 @@ function Dashboard() {
 
   const atribuicoes = React.useMemo(
     () => {
-      const tarefaAtiva = (t: { status: string | null; data_prevista?: string | null }) =>
-        !["encerrada", "concluida", "producao"].includes((t.status ?? "").toLowerCase()) &&
-        !(t.data_prevista && new Date(t.data_prevista) < new Date());
-      const demandaAtiva = (d: { status: string | null; prazo?: string | null }) =>
-        !["concluida", "cancelada"].includes((d.status ?? "").toLowerCase()) &&
-        !(d.prazo && new Date(d.prazo) < new Date());
-      const reuniaoAtiva = (r: { status?: string | null; data_reuniao?: string | null }) =>
-        !["realizada", "cancelada"].includes((r.status ?? "").toLowerCase()) &&
-        !(r.data_reuniao && new Date(r.data_reuniao) < new Date());
-      const chamadoAtivo = (c: { status: string | null }) =>
-        ["pendente", "feito"].includes((c.status ?? "").toLowerCase());
-
-      const tarefasAtivas = tarefas.filter(tarefaAtiva);
-      const demandasAtivas = demandas.filter(demandaAtiva);
-      const reunioesAtivas = reunioes.filter(reuniaoAtiva);
-      const chamadosAtivos = chamados.filter(chamadoAtivo);
+      const tarefasAtivas = tarefas.filter(isTarefaAtiva);
+      const demandasAtivas = demandas.filter(isDemandaAtiva);
+      const reunioesAtivas = reunioes.filter(isReuniaoAtiva);
+      const chamadosAtivos = chamados.filter(isChamadoAtivo);
 
       return colaboradores
         .filter((c) => cargoElegivel(c.cargo))
