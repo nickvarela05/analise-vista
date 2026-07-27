@@ -7,11 +7,14 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
+        // Cache padrão: dados frescos por 1 min, coletados após 5 min.
+        // Refetch periódico foi removido do default para reduzir carga no
+        // Supabase e evitar re-renders no meio de formulários. Ative
+        // `refetchInterval` explicitamente apenas nas queries que precisam
+        // (ex.: notificações, jobs em background do dashboard).
         staleTime: 60_000,
         gcTime: 5 * 60_000,
         refetchOnWindowFocus: false,
-        refetchInterval: 60_000,
-        refetchIntervalInBackground: false,
       },
     },
   });

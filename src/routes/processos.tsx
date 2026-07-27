@@ -13,6 +13,11 @@ import {
   Clock,
   Link2,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Filter,
+  X as XIcon,
 } from "lucide-react";
 import { z } from "zod";
 
@@ -320,6 +325,8 @@ function Processos() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Processo | null>(null);
   const [confirmDel, setConfirmDel] = React.useState<Processo | null>(null);
+  const [filtroResp, setFiltroResp] = React.useState<string | null>(null);
+  const [copiando, setCopiando] = React.useState(false);
 
   // ---------- Queries ----------
   const { data: processos = [], isLoading } = useQuery({
@@ -441,6 +448,56 @@ function Processos() {
     setConfirmDel(null);
   };
 
+  const copiarDoAnoAnterior = async () => {
+    const anoOrigem = ano - 1;
+    setCopiando(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any;
+      const { data: origem, error: readErr } = await db
+        .from("processo_anual")
+        .select("*")
+        .eq("ano", anoOrigem);
+      if (readErr) throw readErr;
+      const rows = (origem ?? []) as Processo[];
+      if (rows.length === 0) {
+        toast.info(`Nenhum processo em ${anoOrigem} para copiar.`);
+        return;
+      }
+      const shift = (iso: string | null): string | null => {
+        if (!iso) return null;
+        const [y, m, d] = iso.split("-").map(Number);
+        if (!y || !m || !d) return null;
+        return `${ano}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      };
+      const payload = rows.map((p) => ({
+        ano,
+        nome: p.nome,
+        descricao: p.descricao,
+        cor: p.cor,
+        previsto_inicio: shift(p.previsto_inicio),
+        previsto_fim: shift(p.previsto_fim),
+        real_inicio: null,
+        real_fim: null,
+        responsaveis_ids: p.responsaveis_ids ?? [],
+        equipe_toda: p.equipe_toda ?? false,
+        status: "planejado" as const,
+        alerta_dias_antes: p.alerta_dias_antes,
+        observacoes: p.observacoes,
+        criado_por: user?.id ?? null,
+      }));
+      const { error: insErr } = await db.from("processo_anual").insert(payload);
+      if (insErr) throw insErr;
+      toast.success(`${rows.length} processo${rows.length === 1 ? "" : "s"} copiado${rows.length === 1 ? "" : "s"} de ${anoOrigem}.`);
+      invalidar();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("Erro ao copiar: " + msg);
+    } finally {
+      setCopiando(false);
+    }
+  };
+
   // Vinculos map: processo_id -> lista
   const vincPorProcesso = React.useMemo(() => {
     const map = new Map<string, ProcessoVinculo[]>();
@@ -462,22 +519,52 @@ function Processos() {
         icon={CalendarDays}
         tone="indigo"
         actions={
-          <div className="flex items-center gap-2">
-            <Select
-              value={String(ano)}
-              onValueChange={(v) => setAno(Number(v))}
-            >
-              <SelectTrigger className="w-[110px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {anosDisponiveis.map((a) => (
-                  <SelectItem key={a} value={String(a)}>
-                    {a}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center rounded-md border bg-background/60 backdrop-blur">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-r-none"
+                onClick={() => setAno((a) => a - 1)}
+                aria-label="Ano anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+                <SelectTrigger className="h-8 w-[92px] rounded-none border-0 bg-transparent focus:ring-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {anosDisponiveis.map((a) => (
+                    <SelectItem key={a} value={String(a)}>
+                      {a}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-l-none"
+                onClick={() => setAno((a) => a + 1)}
+                aria-label="Próximo ano"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            {isGestor && processos.length === 0 && ano !== anoAtual - 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={copiarDoAnoAnterior}
+                disabled={copiando}
+                title={`Duplicar processos de ${ano - 1} para ${ano}`}
+              >
+                {copiando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                Copiar de {ano - 1}
+              </Button>
+            )}
             {isGestor && (
               <Button onClick={abrirNovo} className="gap-1.5">
                 <Plus className="h-4 w-4" />
@@ -519,35 +606,89 @@ function Processos() {
           }
         />
       ) : (
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList>
-            <TabsTrigger value="calendario">Calendário anual</TabsTrigger>
-            <TabsTrigger value="lista">Lista</TabsTrigger>
-          </TabsList>
+        (() => {
+          const processosFiltrados = filtroResp
+            ? processos.filter((p) =>
+                p.equipe_toda || (p.responsaveis_ids ?? []).includes(filtroResp),
+              )
+            : processos;
+          const respAtivo = filtroResp
+            ? colabs.find((c) => c.id === filtroResp)
+            : null;
+          return (
+            <div className="space-y-4">
+              <FaixaAgora processos={processosFiltrados} ano={ano} />
 
-          <TabsContent value="calendario" className="mt-4">
-            <CalendarioAnual
-              processos={processos}
-              ano={ano}
-              onEdit={isGestor ? abrirEdicao : undefined}
-            />
-          </TabsContent>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Filter className="h-3.5 w-3.5" />
+                  <span>Responsável:</span>
+                </div>
+                <Select
+                  value={filtroResp ?? "__all"}
+                  onValueChange={(v) => setFiltroResp(v === "__all" ? null : v)}
+                >
+                  <SelectTrigger className="h-8 w-[200px]">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">Todos</SelectItem>
+                    {colabs.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {respAtivo && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 text-xs"
+                    onClick={() => setFiltroResp(null)}
+                  >
+                    <XIcon className="h-3 w-3" />
+                    Limpar
+                  </Button>
+                )}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {processosFiltrados.length} de {processos.length} processo
+                  {processos.length === 1 ? "" : "s"}
+                </span>
+              </div>
 
-          <TabsContent value="lista" className="mt-4 space-y-3">
-            {processos.map((p) => (
-              <ProcessoCard
-                key={p.id}
-                processo={p}
-                colabs={colabs}
-                vinculos={vincPorProcesso.get(p.id) ?? []}
-                tarefasMini={tarefasMini}
-                demandasMini={demandasMini}
-                onEdit={isGestor ? () => abrirEdicao(p) : undefined}
-                onDelete={isGestor ? () => setConfirmDel(p) : undefined}
-              />
-            ))}
-          </TabsContent>
-        </Tabs>
+              <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+                <TabsList>
+                  <TabsTrigger value="calendario">Calendário anual</TabsTrigger>
+                  <TabsTrigger value="lista">Lista</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="calendario" className="mt-4">
+                  <CalendarioAnual
+                    processos={processosFiltrados}
+                    ano={ano}
+                    onEdit={isGestor ? abrirEdicao : undefined}
+                  />
+                </TabsContent>
+
+                <TabsContent value="lista" className="mt-4 space-y-3">
+                  {processosFiltrados.map((p) => (
+                    <ProcessoCard
+                      key={p.id}
+                      processo={p}
+                      colabs={colabs}
+                      vinculos={vincPorProcesso.get(p.id) ?? []}
+                      tarefasMini={tarefasMini}
+                      demandasMini={demandasMini}
+                      onEdit={isGestor ? () => abrirEdicao(p) : undefined}
+                      onDelete={isGestor ? () => setConfirmDel(p) : undefined}
+                    />
+                  ))}
+                </TabsContent>
+              </Tabs>
+            </div>
+          );
+        })()
       )}
 
       <ProcessoDialog
@@ -590,6 +731,68 @@ function Processos() {
 
 // ---------- Calendário anual (Gantt leve) ----------
 
+// ---------- Faixa "Agora" (sticky) ----------
+function FaixaAgora({ processos, ano }: { processos: Processo[]; ano: number }) {
+  const hoje = HOJE();
+  const emAndamento = React.useMemo(() => {
+    return processos
+      .map((p) => {
+        const s = computarStatusDinamico(p);
+        const inicio = parseISODate(p.real_inicio ?? p.previsto_inicio);
+        const fim = parseISODate(p.real_fim ?? p.previsto_fim);
+        if (!inicio || !fim || fim < inicio) return null;
+        if (hoje < inicio || hoje > fim) return null;
+        const total = Math.max(1, diasEntre(inicio, fim) + 1);
+        const passados = Math.max(0, diasEntre(inicio, hoje) + 1);
+        const pct = Math.min(100, Math.round((passados / total) * 100));
+        const restante = Math.max(0, diasEntre(hoje, fim));
+        return { p, s, pct, restante, total };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => a.restante - b.restante);
+  }, [processos, hoje]);
+
+  if (hoje.getFullYear() !== ano) return null;
+  if (emAndamento.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border bg-gradient-to-r from-primary/5 via-background to-background p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+        </span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Acontecendo agora
+        </span>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {emAndamento.slice(0, 6).map(({ p, pct, restante }) => (
+          <div key={p.id} className="rounded-lg border bg-card/60 p-2.5">
+            <div className="mb-1.5 flex items-center gap-2">
+              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", COR_BG[p.cor])} />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium">{p.nome}</span>
+              <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
+                {restante === 0 ? "termina hoje" : `${restante}d restantes`}
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full transition-all", COR_BG[p.cor])}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="mt-1 text-[10px] tabular-nums text-muted-foreground">
+              {pct}% concluído
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Calendário anual (single-row overlay) ----------
 function CalendarioAnual({
   processos,
   ano,
@@ -622,7 +825,7 @@ function CalendarioAnual({
         {/* Legenda */}
         <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className={cn("inline-block h-3 w-6 rounded-sm border-2 border-dashed", COR_BG_SOFT["indigo"])} />
+            <span className="inline-block h-3 w-6 rounded-sm border-2 border-dashed border-muted-foreground/50" />
             Previsto (cronograma)
           </span>
           <span className="flex items-center gap-1.5">
@@ -637,9 +840,9 @@ function CalendarioAnual({
 
         <TooltipProvider delayDuration={100}>
           <div className="overflow-x-auto">
-            <div className="min-w-[840px]">
+            <div className="min-w-[900px]">
               {/* Header meses */}
-              <div className="mb-2 grid grid-cols-[260px_1fr] gap-3">
+              <div className="mb-2 grid grid-cols-[240px_1fr] gap-3">
                 <div />
                 <div className="grid grid-cols-12 gap-0 border-b">
                   {MESES.map((m) => (
@@ -654,7 +857,7 @@ function CalendarioAnual({
               </div>
 
               {/* Linhas */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {processos.map((p) => {
                   const pStart = toFrac(p.previsto_inicio);
                   const pEnd = toFrac(p.previsto_fim);
@@ -663,33 +866,34 @@ function CalendarioAnual({
                   const s = computarStatusDinamico(p);
                   const durPrev = duracaoDias(p.previsto_inicio, p.previsto_fim);
                   const durReal = duracaoDias(p.real_inicio, p.real_fim);
-                  const dev = desvioReal(p.previsto_inicio, p.previsto_fim, p.real_inicio, p.real_fim);
+                  const dev = desvioReal(
+                    p.previsto_inicio,
+                    p.previsto_fim,
+                    p.real_inicio,
+                    p.real_fim,
+                  );
                   const corPrev = p.cor;
                   return (
                     <div
                       key={p.id}
-                      className="grid grid-cols-[260px_1fr] items-center gap-3"
+                      className="grid grid-cols-[240px_1fr] items-stretch gap-3"
                     >
+                      {/* Coluna esquerda: nome + meta */}
                       <button
                         type="button"
                         onClick={onEdit ? () => onEdit(p) : undefined}
                         className={cn(
-                          "group flex min-w-0 flex-col gap-0.5 rounded-md px-2 py-1.5 text-left",
+                          "group flex min-w-0 flex-col justify-center gap-0.5 rounded-md px-2 py-1.5 text-left",
                           onEdit && "hover:bg-muted",
                         )}
                       >
                         <div className="flex min-w-0 items-center gap-2">
-                          <span
-                            className={cn(
-                              "h-3 w-3 shrink-0 rounded-full",
-                              COR_BG[p.cor],
-                            )}
-                          />
+                          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", COR_BG[p.cor])} />
                           <span className="min-w-0 flex-1 truncate text-sm font-medium">
                             {p.nome}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 pl-5">
+                        <div className="flex flex-wrap items-center gap-1.5 pl-4.5">
                           <span
                             className={cn(
                               "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ring-1",
@@ -700,42 +904,54 @@ function CalendarioAnual({
                           >
                             {STATUS_LABEL[s]}
                           </span>
+                          {durPrev !== null && (
+                            <span className="text-[10px] tabular-nums text-muted-foreground">
+                              prev {durPrev}d
+                            </span>
+                          )}
+                          {durReal !== null && (
+                            <span className="text-[10px] tabular-nums text-foreground/80">
+                              · real {durReal}d
+                            </span>
+                          )}
                           {dev.dias !== null && dev.dias > 0 && (
-                            <span className="text-[10px] text-rose-600 dark:text-rose-400">
-                              {dev.tipo === "atraso" ? "atraso" : "adiantado"} {dev.dias}d
+                            <span
+                              className={cn(
+                                "text-[10px] tabular-nums",
+                                dev.tipo === "atraso"
+                                  ? "text-rose-600 dark:text-rose-400"
+                                  : "text-emerald-600 dark:text-emerald-400",
+                              )}
+                            >
+                              {dev.tipo === "atraso" ? "+" : "−"}
+                              {dev.dias}d
                             </span>
                           )}
                         </div>
                       </button>
 
-                      <div className="relative h-[88px] rounded-md border bg-muted/30">
+                      {/* Coluna direita: timeline com previsto e real sobrepostos */}
+                      <div className="relative h-11 rounded-md border bg-muted/20">
                         {/* Grid meses */}
                         <div className="pointer-events-none absolute inset-0 grid grid-cols-12">
                           {Array.from({ length: 12 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="border-l first:border-l-0"
-                            />
+                            <div key={i} className="border-l first:border-l-0" />
                           ))}
                         </div>
 
-                        {/* Barra previsto (contorno) */}
+                        {/* Barra previsto — contorno tracejado, altura total */}
                         {pStart !== null && pEnd !== null && pEnd >= pStart && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className="absolute top-2 flex h-5 items-center justify-center overflow-hidden rounded-sm border-2 border-dashed"
+                                className="absolute inset-y-1.5 rounded-md border-2 border-dashed"
                                 style={{
                                   left: `${(pStart / 12) * 100}%`,
                                   width: `${Math.max(1, ((pEnd - pStart) / 12) * 100)}%`,
-                                  borderColor: `color-mix(in oklab, var(--${corPrev}) 60%, transparent)`,
-                                  backgroundColor: `color-mix(in oklab, var(--${corPrev}) 12%, transparent)`,
+                                  borderColor: `color-mix(in oklab, var(--${corPrev}) 65%, transparent)`,
+                                  backgroundColor: `color-mix(in oklab, var(--${corPrev}) 8%, transparent)`,
                                 }}
-                              >
-                                <span className="pointer-events-none text-[9px] font-semibold tabular-nums text-foreground/80">
-                                  {durPrev !== null ? `${durPrev}d` : ""}
-                                </span>
-                              </div>
+                              />
                             </TooltipTrigger>
                             <TooltipContent side="top">
                               <p className="font-medium">Previsto</p>
@@ -747,13 +963,13 @@ function CalendarioAnual({
                           </Tooltip>
                         )}
 
-                        {/* Barra real (preenchida) */}
+                        {/* Barra real — preenchida, sobreposta em cima */}
                         {rStart !== null && rEnd !== null && rEnd >= rStart && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
                                 className={cn(
-                                  "absolute bottom-7 flex h-5 items-center justify-center overflow-hidden rounded-sm",
+                                  "absolute inset-y-[10px] flex items-center justify-center overflow-hidden rounded-sm shadow-sm",
                                   COR_BG[p.cor],
                                 )}
                                 style={{
@@ -761,7 +977,7 @@ function CalendarioAnual({
                                   width: `${Math.max(1, ((rEnd - rStart) / 12) * 100)}%`,
                                 }}
                               >
-                                <span className="pointer-events-none text-[9px] font-semibold tabular-nums text-primary-foreground">
+                                <span className="pointer-events-none truncate px-1 text-[9px] font-semibold tabular-nums text-primary-foreground">
                                   {durReal !== null ? `${durReal}d` : ""}
                                 </span>
                               </div>
@@ -776,35 +992,34 @@ function CalendarioAnual({
                           </Tooltip>
                         )}
 
-                        {/* Linha de datas */}
-                        <div className="absolute bottom-1 left-0 right-0 flex flex-wrap items-center justify-between gap-2 px-2 text-[10px] tabular-nums text-muted-foreground">
-                          <span>
-                            Previsto: {fmtBR(p.previsto_inicio)} → {fmtBR(p.previsto_fim)}
-                            {durPrev !== null ? ` · ${durPrev}d` : ""}
-                          </span>
-                          <span>
-                            Real: {fmtBR(p.real_inicio)} → {fmtBR(p.real_fim)}
-                            {durReal !== null ? ` · ${durReal}d` : " — ainda não definido"}
-                          </span>
-                        </div>
-
                         {/* Marker hoje */}
                         {hojeMarker !== null && (
                           <div
-                            className="pointer-events-none absolute inset-y-0 z-10 w-[2px] bg-rose-500"
+                            className="pointer-events-none absolute inset-y-0 z-10 w-[2px] bg-rose-500/80"
                             style={{ left: `${hojeMarker * 100}%` }}
                             aria-label="Hoje"
-                          >
-                            <span className="absolute -left-3 -top-4 text-[9px] font-semibold text-rose-500">
-                              Hoje
-                            </span>
-                          </div>
+                          />
                         )}
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {/* Rodapé com marca "Hoje" para orientação */}
+              {hojeMarker !== null && (
+                <div className="mt-2 grid grid-cols-[240px_1fr] gap-3">
+                  <div />
+                  <div className="relative h-4">
+                    <div
+                      className="absolute -translate-x-1/2 text-[9px] font-semibold text-rose-500"
+                      style={{ left: `${hojeMarker * 100}%` }}
+                    >
+                      Hoje
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </TooltipProvider>
@@ -814,6 +1029,8 @@ function CalendarioAnual({
 }
 
 // ---------- Card lista ----------
+
+
 
 function ProcessoCard({
   processo: p,
