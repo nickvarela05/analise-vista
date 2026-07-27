@@ -748,7 +748,7 @@ function CalendarioAnual({
                         )}
 
                         {/* Barra real (preenchida) */}
-                        {rStart !== null && rEnd !== null && rEnd >= rStart ? (
+                        {rStart !== null && rEnd !== null && rEnd >= rStart && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
@@ -774,10 +774,6 @@ function CalendarioAnual({
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                        ) : (
-                          <div className="absolute bottom-7 left-1/2 -translate-x-1/2 text-[10px] text-muted-foreground">
-                            Sem execução real ainda
-                          </div>
                         )}
 
                         {/* Linha de datas */}
