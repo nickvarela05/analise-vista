@@ -606,35 +606,89 @@ function Processos() {
           }
         />
       ) : (
-        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList>
-            <TabsTrigger value="calendario">Calendário anual</TabsTrigger>
-            <TabsTrigger value="lista">Lista</TabsTrigger>
-          </TabsList>
+        (() => {
+          const processosFiltrados = filtroResp
+            ? processos.filter((p) =>
+                p.equipe_toda || (p.responsaveis_ids ?? []).includes(filtroResp),
+              )
+            : processos;
+          const respAtivo = filtroResp
+            ? colabs.find((c) => c.id === filtroResp)
+            : null;
+          return (
+            <div className="space-y-4">
+              <FaixaAgora processos={processosFiltrados} ano={ano} />
 
-          <TabsContent value="calendario" className="mt-4">
-            <CalendarioAnual
-              processos={processos}
-              ano={ano}
-              onEdit={isGestor ? abrirEdicao : undefined}
-            />
-          </TabsContent>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Filter className="h-3.5 w-3.5" />
+                  <span>Responsável:</span>
+                </div>
+                <Select
+                  value={filtroResp ?? "__all"}
+                  onValueChange={(v) => setFiltroResp(v === "__all" ? null : v)}
+                >
+                  <SelectTrigger className="h-8 w-[200px]">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">Todos</SelectItem>
+                    {colabs.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {respAtivo && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 text-xs"
+                    onClick={() => setFiltroResp(null)}
+                  >
+                    <XIcon className="h-3 w-3" />
+                    Limpar
+                  </Button>
+                )}
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {processosFiltrados.length} de {processos.length} processo
+                  {processos.length === 1 ? "" : "s"}
+                </span>
+              </div>
 
-          <TabsContent value="lista" className="mt-4 space-y-3">
-            {processos.map((p) => (
-              <ProcessoCard
-                key={p.id}
-                processo={p}
-                colabs={colabs}
-                vinculos={vincPorProcesso.get(p.id) ?? []}
-                tarefasMini={tarefasMini}
-                demandasMini={demandasMini}
-                onEdit={isGestor ? () => abrirEdicao(p) : undefined}
-                onDelete={isGestor ? () => setConfirmDel(p) : undefined}
-              />
-            ))}
-          </TabsContent>
-        </Tabs>
+              <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+                <TabsList>
+                  <TabsTrigger value="calendario">Calendário anual</TabsTrigger>
+                  <TabsTrigger value="lista">Lista</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="calendario" className="mt-4">
+                  <CalendarioAnual
+                    processos={processosFiltrados}
+                    ano={ano}
+                    onEdit={isGestor ? abrirEdicao : undefined}
+                  />
+                </TabsContent>
+
+                <TabsContent value="lista" className="mt-4 space-y-3">
+                  {processosFiltrados.map((p) => (
+                    <ProcessoCard
+                      key={p.id}
+                      processo={p}
+                      colabs={colabs}
+                      vinculos={vincPorProcesso.get(p.id) ?? []}
+                      tarefasMini={tarefasMini}
+                      demandasMini={demandasMini}
+                      onEdit={isGestor ? () => abrirEdicao(p) : undefined}
+                      onDelete={isGestor ? () => setConfirmDel(p) : undefined}
+                    />
+                  ))}
+                </TabsContent>
+              </Tabs>
+            </div>
+          );
+        })()
       )}
 
       <ProcessoDialog
