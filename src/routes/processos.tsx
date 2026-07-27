@@ -966,15 +966,19 @@ function InfoBloco({
   inicio: string | null;
   fim: string | null;
 }) {
+  const dur = duracaoDias(inicio, fim);
   return (
     <div>
       <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         {titulo}
       </p>
-      <p className="text-sm">
-        {fmtBR(inicio)} <span className="text-muted-foreground">→</span>{" "}
-        {fmtBR(fim)}
+      <p className="text-sm font-medium">
+        {fmtBRData(inicio)} <span className="text-muted-foreground">→</span>{" "}
+        {fmtBRData(fim)}
       </p>
+      {dur !== null && (
+        <p className="text-xs text-muted-foreground">{dur} dia{dur === 1 ? "" : "s"}</p>
+      )}
     </div>
   );
 }
