@@ -15,11 +15,24 @@ import { emptyToNull } from "./_helpers";
 import { WORKFLOW, PRIO } from "@/components/tarefas/lib/workflow";
 
 export const linhaImportSchema = z.object({
-  titulo: z
-    .string()
-    .trim()
-    .min(1, "Título vazio")
-    .max(200, "Título deve ter no máximo 200 caracteres"),
+  titulo: z.preprocess(
+    (v) => {
+      if (typeof v !== "string") return v;
+      const t = v.trim();
+      if (t.length <= 200) return t;
+      // Otimiza: preserva início e finaliza com reticências, sem cortar no meio de palavra quando possível.
+      const limite = 199;
+      const corte = t.slice(0, limite);
+      const ultimoEspaco = corte.lastIndexOf(" ");
+      const base = ultimoEspaco > 150 ? corte.slice(0, ultimoEspaco) : corte;
+      return `${base.trimEnd()}…`;
+    },
+    z
+      .string()
+      .trim()
+      .min(1, "Título vazio")
+      .max(200, "Título deve ter no máximo 200 caracteres"),
+  ),
   descricao: z.preprocess(
     emptyToNull,
     z
