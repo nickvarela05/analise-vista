@@ -236,13 +236,17 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
 
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
-      const minhasTarefas = tarAll.filter(meu);
-      const idsHomolog = new Set(minhasTarefas.map((t) => t.id));
-      const minhasTarefasTeste = tarTesteAll.filter((t) => meu(t) && !idsHomolog.has(t.id));
+      // "Em teste" = status homologacao + em_teste=true (regra estrita).
+      const minhasTarefasTeste = tarTesteAll.filter(meu);
+      const testIds = new Set(minhasTarefasTeste.map((t) => t.id));
+      // "Agenda da semana" mostra homologação restante (sem duplicar em_teste).
+      const minhasTarefas = tarAll.filter((t) => meu(t) && !testIds.has(t.id));
       const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
       );
+      // Processos anuais atribuídos ao usuário — próximos 14 dias.
+      const meusProcessos = procAll.filter(meu);
 
       const total =
         minhasDemandas.length +
@@ -250,7 +254,8 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         minhasTarefas.length +
         minhasTarefasTeste.length +
         meusRelatorios.length +
-        meusAvisos.length;
+        meusAvisos.length +
+        meusProcessos.length;
       if (total === 0) continue;
 
       const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
