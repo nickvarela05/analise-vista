@@ -13,6 +13,11 @@ import {
   Clock,
   Link2,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Filter,
+  X as XIcon,
 } from "lucide-react";
 import { z } from "zod";
 
