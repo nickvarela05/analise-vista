@@ -742,10 +742,10 @@ function FaixaAgora({ processos, ano }: { processos: Processo[]; ano: number }) 
         const fim = parseISODate(p.real_fim ?? p.previsto_fim);
         if (!inicio || !fim || fim < inicio) return null;
         if (hoje < inicio || hoje > fim) return null;
-        const total = Math.max(1, differenceInCalendarDays(fim, inicio) + 1);
-        const passados = Math.max(0, differenceInCalendarDays(hoje, inicio) + 1);
+        const total = Math.max(1, diasEntre(inicio, fim) + 1);
+        const passados = Math.max(0, diasEntre(inicio, hoje) + 1);
         const pct = Math.min(100, Math.round((passados / total) * 100));
-        const restante = Math.max(0, differenceInCalendarDays(fim, hoje));
+        const restante = Math.max(0, diasEntre(hoje, fim));
         return { p, s, pct, restante, total };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
