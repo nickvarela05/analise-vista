@@ -753,7 +753,7 @@ function CalendarioAnual({
                             <TooltipTrigger asChild>
                               <div
                                 className={cn(
-                                  "absolute bottom-2 flex h-5 items-center overflow-visible rounded-sm",
+                                  "absolute bottom-2 flex h-5 items-center justify-center overflow-hidden rounded-sm",
                                   COR_BG[p.cor],
                                 )}
                                 style={{
@@ -761,14 +761,8 @@ function CalendarioAnual({
                                   width: `${Math.max(1, ((rEnd - rStart) / 12) * 100)}%`,
                                 }}
                               >
-                                <span className="pointer-events-none absolute -left-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
-                                  {fmtBR(p.real_inicio)}
-                                </span>
-                                <span className="pointer-events-none absolute -right-16 top-1/2 hidden -translate-y-1/2 text-[9px] tabular-nums text-muted-foreground lg:block">
-                                  {fmtBR(p.real_fim)}
-                                </span>
-                                <span className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 text-[9px] font-semibold text-primary-foreground sm:block">
-                                  Real{durReal !== null ? ` · ${durReal}d` : ""}
+                                <span className="pointer-events-none text-[9px] font-semibold tabular-nums text-primary-foreground">
+                                  {durReal !== null ? `${durReal}d` : ""}
                                 </span>
                               </div>
                             </TooltipTrigger>
