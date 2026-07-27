@@ -448,6 +448,56 @@ function Processos() {
     setConfirmDel(null);
   };
 
+  const copiarDoAnoAnterior = async () => {
+    const anoOrigem = ano - 1;
+    setCopiando(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any;
+      const { data: origem, error: readErr } = await db
+        .from("processo_anual")
+        .select("*")
+        .eq("ano", anoOrigem);
+      if (readErr) throw readErr;
+      const rows = (origem ?? []) as Processo[];
+      if (rows.length === 0) {
+        toast.info(`Nenhum processo em ${anoOrigem} para copiar.`);
+        return;
+      }
+      const shift = (iso: string | null): string | null => {
+        if (!iso) return null;
+        const [y, m, d] = iso.split("-").map(Number);
+        if (!y || !m || !d) return null;
+        return `${ano}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      };
+      const payload = rows.map((p) => ({
+        ano,
+        nome: p.nome,
+        descricao: p.descricao,
+        cor: p.cor,
+        previsto_inicio: shift(p.previsto_inicio),
+        previsto_fim: shift(p.previsto_fim),
+        real_inicio: null,
+        real_fim: null,
+        responsaveis_ids: p.responsaveis_ids ?? [],
+        equipe_toda: p.equipe_toda ?? false,
+        status: "planejado" as const,
+        alerta_dias_antes: p.alerta_dias_antes,
+        observacoes: p.observacoes,
+        criado_por: user?.id ?? null,
+      }));
+      const { error: insErr } = await db.from("processo_anual").insert(payload);
+      if (insErr) throw insErr;
+      toast.success(`${rows.length} processo${rows.length === 1 ? "" : "s"} copiado${rows.length === 1 ? "" : "s"} de ${anoOrigem}.`);
+      invalidar();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("Erro ao copiar: " + msg);
+    } finally {
+      setCopiando(false);
+    }
+  };
+
   // Vinculos map: processo_id -> lista
   const vincPorProcesso = React.useMemo(() => {
     const map = new Map<string, ProcessoVinculo[]>();
