@@ -138,8 +138,8 @@ export async function syncGoogleCalendar(): Promise<SyncResult> {
     .eq("id", true)
     .maybeSingle();
   if (configErr) throw configErr;
-  if (!config || !config.sync_ativo || !config.google_calendar_id) {
-    return { ...result, ok: false, erros: ["Sincronização desativada ou calendário não configurado."] };
+  if (!config || !config.google_calendar_id) {
+    return { ...result, ok: false, erros: ["Calendário não configurado."] };
   }
 
   const calendarId = encodeURIComponent(config.google_calendar_id);
