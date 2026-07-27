@@ -124,6 +124,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const em7dias = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
   const inicioDia = `${hoje}T00:00:00Z`;
   const fimSemanaISO = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
+  const em14dias = new Date(now.getTime() + 14 * 24 * 3600 * 1000).toISOString().slice(0, 10);
 
   const { data: users } = await admin
     .from("profiles")
