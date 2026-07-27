@@ -30,7 +30,14 @@ import { AppLayout } from "@/components/AppLayout";
 import { DashboardHero, type PulseItem } from "@/components/dashboard/DashboardHero";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { cargoElegivel } from "@/lib/domain/cargos";
-import { contarAtribuicoes, isAtribuidoA } from "@/lib/domain/atividades";
+import {
+  contarAtribuicoes,
+  isAtribuidoA,
+  isTarefaAtiva,
+  isDemandaAtiva,
+  isReuniaoAtiva,
+  isChamadoAtivo,
+} from "@/lib/domain/atividades";
 import { useDashboardData } from "@/components/dashboard/useDashboardData";
 import { AvisosBanner } from "@/components/dashboard/AvisosBanner";
 import { AtribuicoesChart, StatusTarefasPie } from "@/components/dashboard/DashboardCharts";
