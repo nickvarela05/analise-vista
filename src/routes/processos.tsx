@@ -639,7 +639,7 @@ function CalendarioAnual({
           <div className="overflow-x-auto">
             <div className="min-w-[840px]">
               {/* Header meses */}
-              <div className="mb-2 grid grid-cols-[220px_1fr] gap-3">
+              <div className="mb-2 grid grid-cols-[260px_1fr] gap-3">
                 <div />
                 <div className="grid grid-cols-12 gap-0 border-b">
                   {MESES.map((m) => (
