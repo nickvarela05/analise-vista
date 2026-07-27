@@ -64,7 +64,7 @@ export const runGoogleCalendarSyncNow = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     await ensureGestor(context.userId);
     const { syncGoogleCalendar } = await import("@/lib/google-calendar-sync.server");
-    return await syncGoogleCalendar();
+    return await syncGoogleCalendar({ manual: true });
   });
 
 export const listGoogleCalendars = createServerFn({ method: "GET" })
