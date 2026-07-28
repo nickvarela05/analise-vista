@@ -622,12 +622,6 @@ function Processos() {
             : null;
           return (
             <div className="space-y-4">
-              <BentoDoMes
-                processos={processosFiltrados}
-                ano={ano}
-                onEdit={isGestor ? abrirEdicao : undefined}
-              />
-
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Filter className="h-3.5 w-3.5" />
@@ -668,16 +662,17 @@ function Processos() {
 
               <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
                 <TabsList>
-                  <TabsTrigger value="calendario">Calendário anual</TabsTrigger>
+                  <TabsTrigger value="calendario">Ano</TabsTrigger>
                   <TabsTrigger value="lista">Lista</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="calendario" className="mt-4">
-                  <CalendarioAnual
+                <TabsContent value="calendario" className="mt-4 space-y-4">
+                  <CalendarioAnoGoogle
                     processos={processosFiltrados}
                     ano={ano}
                     onEdit={isGestor ? abrirEdicao : undefined}
                   />
+                  <LegendaProcessos processos={processosFiltrados} />
                 </TabsContent>
 
                 <TabsContent value="lista" className="mt-4 space-y-3">
