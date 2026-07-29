@@ -38,6 +38,7 @@ import {
   SlaUrgenciaCard,
 } from "./analytics/AnalyticsCards";
 import { ProcessosPreviewCard } from "./ProcessosPreviewCard";
+import { ProcessosCalendarioListaCard } from "./ProcessosCalendarioListaCard";
 import type { PreviewItem } from "@/components/PreviewDialog";
 import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
 
@@ -371,10 +372,16 @@ function buildPanels(p: PresentationProps): PanelDef[] {
             />
           </div>
 
-          {/* Processos — destaque em altura total */}
-          <div className="col-span-12 row-span-3 min-h-0 overflow-hidden xl:col-span-5">
-            <ProcessosPreviewCard />
+          {/* Processos — timeline + calendário/lista */}
+          <div className="col-span-12 row-span-3 flex min-h-0 flex-col gap-3 overflow-hidden xl:col-span-5">
+            <div className="min-h-0 flex-[1.1]">
+              <ProcessosPreviewCard />
+            </div>
+            <div className="min-h-0 flex-1">
+              <ProcessosCalendarioListaCard />
+            </div>
           </div>
+
 
           {/* Rodapé compacto: heatmap · equipe · horários */}
           <div className="col-span-12 row-span-1 min-h-0 overflow-hidden sm:col-span-6 xl:col-span-3">
