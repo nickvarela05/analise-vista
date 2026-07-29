@@ -85,6 +85,7 @@ type Scoped = PresentationProps & {
 type PanelDef = {
   key: string;
   title: string;
+  shortTitle?: string;
   subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
   render: () => React.ReactNode;
@@ -374,7 +375,7 @@ export function PresentationMode(props: PresentationProps) {
 /* Painéis (4, sem redundância)                                               */
 /* -------------------------------------------------------------------------- */
 
-function buildPanels(p: Scoped): (PanelDef & { shortTitle?: string })[] {
+function buildPanels(p: Scoped): PanelDef[] {
   return [
     {
       key: "pulso",
