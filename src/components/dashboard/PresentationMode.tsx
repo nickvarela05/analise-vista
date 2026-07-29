@@ -37,6 +37,7 @@ import {
   CategoriaOrigemCard,
   SlaUrgenciaCard,
 } from "./analytics/AnalyticsCards";
+import { ProcessosPreviewCard } from "./ProcessosPreviewCard";
 import type { PreviewItem } from "@/components/PreviewDialog";
 import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
 
@@ -375,9 +376,10 @@ function buildPanels(p: PresentationProps): PanelDef[] {
               proximasFerias={p.proximasFerias}
             />
           </div>
-          <div className="xl:col-span-3">
-            <HorariosPanel horarios={p.horarios} />
+          <div className="xl:col-span-2">
+            <ProcessosPreviewCard />
           </div>
+          <HorariosPanel horarios={p.horarios} />
         </div>
       ),
     },
