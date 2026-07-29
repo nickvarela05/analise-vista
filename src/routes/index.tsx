@@ -71,6 +71,7 @@ function Dashboard() {
   const [preview, setPreview] = React.useState<PreviewItem | null>(null);
   const [previewOpen, setPreviewOpen] = React.useState(false);
   const [minhasOpen, setMinhasOpen] = React.useState(false);
+  const [apresentacaoOpen, setApresentacaoOpen] = React.useState(false);
 
   const openPreview = React.useCallback((item: PreviewItem) => {
     setPreview(item);
@@ -364,12 +365,18 @@ function Dashboard() {
         subtitle="Visão consolidada da equipe de Análise de Requisitos."
         pulse={pulseItems}
         actions={
-          meuColabId ? (
-            <Button variant="outline" size="sm" onClick={() => setMinhasOpen(true)} className="gap-2 backdrop-blur">
-              <ListChecks className="h-4 w-4" />
-              Minhas atribuições
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setApresentacaoOpen(true)} className="gap-2 backdrop-blur">
+              <Presentation className="h-4 w-4" />
+              Modo apresentação
             </Button>
-          ) : null
+            {meuColabId ? (
+              <Button variant="outline" size="sm" onClick={() => setMinhasOpen(true)} className="gap-2 backdrop-blur">
+                <ListChecks className="h-4 w-4" />
+                Minhas atribuições
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -465,6 +472,27 @@ function Dashboard() {
           setMinhasOpen(false);
           openPreview(item);
         }}
+      />
+      <PresentationMode
+        open={apresentacaoOpen}
+        onClose={() => setApresentacaoOpen(false)}
+        nome={meuProfile?.nome ?? null}
+        pulse={pulseItems}
+        avisos={avisos}
+        solicitacoes={solicitacoes}
+        inativosIds={inativosIds}
+        atribuicoes={atribuicoes}
+        pieTarefas={pieTarefas}
+        atividades={atividades}
+        weekStart={weekStart}
+        weekEnd={weekEnd}
+        colaboradores={colaboradores.map((c) => ({ id: c.id, nome: c.nome }))}
+        meuColabId={meuColabId}
+        horarios={horarios}
+        totalColaboradores={colaboradores.length}
+        feriasAtivas={feriasAtivas}
+        proximasFerias={proximasFerias}
+        onPreview={openPreview}
       />
     </div>
   );
