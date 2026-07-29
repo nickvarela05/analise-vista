@@ -376,9 +376,10 @@ function buildPanels(p: PresentationProps): PanelDef[] {
               proximasFerias={p.proximasFerias}
             />
           </div>
-          <div className="xl:col-span-3">
-            <HorariosPanel horarios={p.horarios} />
+          <div className="xl:col-span-2">
+            <ProcessosPreviewCard />
           </div>
+          <HorariosPanel horarios={p.horarios} />
         </div>
       ),
     },
