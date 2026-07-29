@@ -498,14 +498,14 @@ function MiniStat({
   return (
     <div
       className={cn(
-        "flex items-baseline justify-between rounded-xl border px-4 py-3",
+        "flex items-baseline justify-between gap-2 rounded-xl border px-3 py-2 sm:px-4 sm:py-3",
         toneMap[tone],
       )}
     >
-      <span className="text-xs font-medium uppercase tracking-wider opacity-80">
+      <span className="min-w-0 truncate text-[10px] font-medium uppercase tracking-wider opacity-80 sm:text-xs">
         {label}
       </span>
-      <span className="text-2xl font-bold tabular-nums">{value}</span>
+      <span className="text-lg font-bold tabular-nums sm:text-2xl">{value}</span>
     </div>
   );
 }
