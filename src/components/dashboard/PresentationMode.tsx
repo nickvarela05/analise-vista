@@ -37,8 +37,9 @@ import {
   CategoriaOrigemCard,
   SlaUrgenciaCard,
 } from "./analytics/AnalyticsCards";
-import { ProcessosPreviewCard } from "./ProcessosPreviewCard";
 import { ProcessosCalendarioListaCard } from "./ProcessosCalendarioListaCard";
+import { HomologacaoPanel } from "./HomologacaoPanel";
+
 import type { PreviewItem } from "@/components/PreviewDialog";
 import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
 
@@ -306,62 +307,63 @@ function buildPanels(p: PresentationProps): PanelDef[] {
       render: () => <VisaoGeralPanel p={p} />,
     },
     {
-      key: "produtividade",
-      title: "Produtividade da equipe",
-      subtitle: "Velocidade, tempo de entrega e quem mais entregou.",
-      icon: Activity,
-      render: () => (
-        <div className="grid h-full grid-cols-1 gap-4 overflow-auto lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <VelocitySemanalCard tarefas={p.tarefas} />
-          </div>
-          <LeadTimeCard tarefas={p.tarefas} />
-          <div className="lg:col-span-3">
-            <ThroughputCard tarefas={p.tarefas} colaboradores={p.colaboradores} />
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "qualidade",
-      title: "Qualidade & fluxo",
-      subtitle: "Reprovações, tempo por etapa, envelhecimento e carga atual.",
+      key: "homologacao",
+      title: "Homologação & qualidade",
+      subtitle: "Em teste, pré-build, aprovadas, com ressalvas e reprovadas — por pessoa ou equipe.",
       icon: Gauge,
       render: () => (
-        <div className="grid h-full grid-cols-1 gap-4 overflow-auto lg:grid-cols-2 xl:grid-cols-4">
-          <TaxaReprovacaoCard tarefas={p.tarefas} />
-          <div className="xl:col-span-2">
-            <TempoPorEtapaCard tarefas={p.tarefas} />
+        <div className="grid h-full min-h-0 grid-cols-12 grid-rows-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden">
+            <HomologacaoPanel tarefas={p.tarefas} colaboradores={p.colaboradores} />
           </div>
-          <AgingBacklogCard tarefas={p.tarefas} />
-          <div className="lg:col-span-2 xl:col-span-4">
-            <WipColaboradorCard tarefas={p.tarefas} colaboradores={p.colaboradores} />
+          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden md:col-span-4">
+            <TaxaReprovacaoCard tarefas={p.tarefas} />
+          </div>
+          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden md:col-span-8">
+            <TempoPorEtapaCard tarefas={p.tarefas} />
           </div>
         </div>
       ),
     },
     {
-      key: "relatorios",
-      title: "Relatórios (canal externo)",
-      subtitle: "Funil de solicitações, SLA e principais solicitantes.",
-      icon: Inbox,
+      key: "produtividade",
+      title: "Produtividade & carga",
+      subtitle: "Velocidade, tempo de entrega, entregas por pessoa e trabalho em andamento.",
+      icon: Activity,
       render: () => (
-        <div className="grid h-full grid-cols-1 gap-4 overflow-auto lg:grid-cols-3">
-          <FunilRelatoriosCard solicitacoes={p.solicitacoes} inativosIds={p.inativosIds} />
-          <SlaUrgenciaCard solicitacoes={p.solicitacoes} />
-          <TopSolicitantesCard solicitacoes={p.solicitacoes} />
+        <div className="grid h-full min-h-0 grid-cols-12 grid-rows-2 gap-3">
+          <div className="col-span-12 min-h-0 overflow-hidden lg:col-span-5">
+            <VelocitySemanalCard tarefas={p.tarefas} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden sm:col-span-6 lg:col-span-3">
+            <LeadTimeCard tarefas={p.tarefas} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden sm:col-span-6 lg:col-span-4">
+            <StatusTarefasPie data={p.pieTarefas} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden lg:col-span-5">
+            <ThroughputCard tarefas={p.tarefas} colaboradores={p.colaboradores} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden sm:col-span-6 lg:col-span-4">
+            <WipColaboradorCard tarefas={p.tarefas} colaboradores={p.colaboradores} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden sm:col-span-6 lg:col-span-3">
+            <AgingBacklogCard tarefas={p.tarefas} />
+          </div>
         </div>
       ),
     },
     {
       key: "agenda",
-      title: "Agenda & pessoas",
-      subtitle: "Compromissos da semana, mapa de calor e equipe.",
+      title: "Processos & agenda",
+      subtitle: "Calendário de processos, compromissos da semana e disponibilidade da equipe.",
       icon: CalendarClock,
       render: () => (
-        <div className="grid h-full min-h-0 grid-cols-12 grid-rows-3 gap-4">
-          {/* Atividades da semana — coluna principal */}
-          <div className="col-span-12 row-span-2 min-h-0 overflow-hidden xl:col-span-7">
+        <div className="grid h-full min-h-0 grid-cols-12 grid-rows-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
+          <div className="col-span-12 min-h-0 overflow-hidden xl:col-span-7">
+            <ProcessosCalendarioListaCard />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden xl:col-span-5">
             <AtividadesSemanaPanel
               atividades={p.atividades}
               weekStart={p.weekStart}
@@ -371,47 +373,42 @@ function buildPanels(p: PresentationProps): PanelDef[] {
               defaultColabId={p.meuColabId}
             />
           </div>
-
-          {/* Processos — timeline + calendário/lista */}
-          <div className="col-span-12 row-span-3 flex min-h-0 flex-col gap-3 overflow-hidden xl:col-span-5">
-            <div className="min-h-0 flex-[1.1]">
-              <ProcessosPreviewCard />
-            </div>
-            <div className="min-h-0 flex-1">
-              <ProcessosCalendarioListaCard />
-            </div>
-          </div>
-
-
-          {/* Rodapé compacto: heatmap · equipe · horários */}
-          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden sm:col-span-6 xl:col-span-3">
+          <div className="col-span-12 min-h-0 overflow-hidden md:col-span-5">
             <HeatmapPrazosCard tarefas={p.tarefas} demandas={p.demandas} reunioes={p.reunioes} />
           </div>
-          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden sm:col-span-6 xl:col-span-2">
+          <div className="col-span-12 min-h-0 overflow-hidden md:col-span-4">
             <EquipeAtivaPanel
               totalColaboradores={p.totalColaboradores}
               feriasAtivas={p.feriasAtivas}
               proximasFerias={p.proximasFerias}
             />
           </div>
-          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden xl:col-span-2">
+          <div className="col-span-12 min-h-0 overflow-hidden md:col-span-3">
             <HorariosPanel horarios={p.horarios} />
           </div>
         </div>
       ),
     },
     {
-      key: "distribuicao",
-      title: "Distribuição da equipe",
-      subtitle: "Quem está envolvido em quê e de onde vêm as demandas.",
-      icon: Users,
+      key: "relatorios",
+      title: "Relatórios & distribuição",
+      subtitle: "Funil externo, SLA, solicitantes e como o trabalho está distribuído.",
+      icon: Inbox,
       render: () => (
-        <div className="grid h-full grid-cols-1 gap-4 overflow-auto lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className="grid h-full min-h-0 grid-cols-12 grid-rows-2 gap-3">
+          <div className="col-span-12 min-h-0 overflow-hidden md:col-span-4">
+            <FunilRelatoriosCard solicitacoes={p.solicitacoes} inativosIds={p.inativosIds} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden md:col-span-4">
+            <SlaUrgenciaCard solicitacoes={p.solicitacoes} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden md:col-span-4">
+            <TopSolicitantesCard solicitacoes={p.solicitacoes} />
+          </div>
+          <div className="col-span-12 min-h-0 overflow-hidden lg:col-span-7">
             <AtribuicoesChart data={p.atribuicoes} />
           </div>
-          <StatusTarefasPie data={p.pieTarefas} />
-          <div className="lg:col-span-3">
+          <div className="col-span-12 min-h-0 overflow-hidden lg:col-span-5">
             <CategoriaOrigemCard demandas={p.demandas} />
           </div>
         </div>
@@ -419,6 +416,7 @@ function buildPanels(p: PresentationProps): PanelDef[] {
     },
   ];
 }
+
 
 /* -------------------------------------------------------------------------- */
 /* Painel de Visão Geral (hero maior)                                          */
