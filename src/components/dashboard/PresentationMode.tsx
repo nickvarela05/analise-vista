@@ -169,21 +169,21 @@ export function PresentationMode(props: PresentationProps) {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-gradient-to-br from-background via-background to-muted/30 animate-fade-in">
       {/* Top bar */}
-      <header className="relative flex shrink-0 items-center justify-between gap-4 border-b border-border/60 bg-card/70 px-6 py-3 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/20">
-            <Presentation className="h-5 w-5" />
+      <header className="relative flex shrink-0 items-center justify-between gap-2 border-b border-border/60 bg-card/70 px-3 py-2 backdrop-blur-md sm:gap-4 sm:px-6 sm:py-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-primary/20 sm:h-10 sm:w-10">
+            <Presentation className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div>
-            <div className="text-sm font-semibold leading-tight">Modo apresentação</div>
-            <div className="text-xs text-muted-foreground capitalize tabular-nums">
+          <div className="min-w-0">
+            <div className="truncate text-xs font-semibold leading-tight sm:text-sm">Modo apresentação</div>
+            <div className="hidden truncate text-[10px] text-muted-foreground capitalize tabular-nums sm:block sm:text-xs">
               {hoje} · {hora}
             </div>
           </div>
         </div>
 
         {/* Segmented tabs */}
-        <nav className="hidden lg:flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1">
+        <nav className="hidden items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 xl:flex">
           {panels.map((p, i) => {
             const Icon = p.icon;
             const active = i === idx;
@@ -205,9 +205,9 @@ export function PresentationMode(props: PresentationProps) {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {/* Dots (mobile fallback) */}
-          <div className="flex items-center gap-1.5 lg:hidden">
+          <div className="flex items-center gap-1.5 xl:hidden">
             {panels.map((p, i) => (
               <button
                 key={p.key}
@@ -215,14 +215,14 @@ export function PresentationMode(props: PresentationProps) {
                 aria-label={`Ir para ${p.title}`}
                 className={cn(
                   "h-2 rounded-full transition-all",
-                  i === idx ? "w-8 bg-primary" : "w-2 bg-muted hover:bg-muted-foreground/40",
+                  i === idx ? "w-6 bg-primary sm:w-8" : "w-2 bg-muted hover:bg-muted-foreground/40",
                 )}
               />
             ))}
           </div>
 
           <div className={cn(
-            "hidden md:flex h-8 min-w-16 items-center justify-center rounded-full border px-3 text-[11px] font-semibold tabular-nums",
+            "hidden h-8 min-w-14 items-center justify-center rounded-full border px-2 text-[11px] font-semibold tabular-nums md:flex sm:min-w-16 sm:px-3",
             paused
               ? "border-warning/40 bg-warning/10 text-warning"
               : "border-primary/30 bg-primary/10 text-primary",
@@ -230,22 +230,23 @@ export function PresentationMode(props: PresentationProps) {
             {paused ? "PAUSA" : `${secondsLeft}s`}
           </div>
 
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={() => go(idx - 1)} aria-label="Anterior">
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => go(idx - 1)} aria-label="Anterior">
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
+              className="h-8 w-8 sm:h-9 sm:w-9"
               onClick={() => setPaused((p) => !p)}
               aria-label={paused ? "Retomar" : "Pausar"}
             >
               {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => go(idx + 1)} aria-label="Próximo">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => go(idx + 1)} aria-label="Próximo">
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Sair (Esc)">
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={onClose} aria-label="Sair (Esc)">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -261,22 +262,22 @@ export function PresentationMode(props: PresentationProps) {
       </div>
 
       {/* Content */}
-      <main className="flex-1 overflow-hidden px-6 py-5">
+      <main className="min-h-0 flex-1 overflow-hidden px-3 py-3 sm:px-6 sm:py-5">
         <div className="mx-auto flex h-full max-w-[1800px] flex-col">
-          <div className="mb-4 flex items-end justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-                <CurrentIcon className="h-5 w-5" />
+          <div className="mb-2 flex items-end justify-between gap-2 sm:mb-4 sm:gap-4">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 sm:h-11 sm:w-11">
+                <CurrentIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight leading-tight">
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-bold tracking-tight leading-tight sm:text-2xl">
                   {current.title}
                 </h2>
-                <p className="text-sm text-muted-foreground">{current.subtitle}</p>
+                <p className="truncate text-xs text-muted-foreground sm:text-sm">{current.subtitle}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="rounded-full border border-border/60 bg-card/60 px-2.5 py-1 tabular-nums">
+            <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+              <span className="rounded-full border border-border/60 bg-card/60 px-2 py-0.5 tabular-nums sm:px-2.5 sm:py-1">
                 {String(idx + 1).padStart(2, "0")} <span className="opacity-50">/</span> {String(panels.length).padStart(2, "0")}
               </span>
             </div>
