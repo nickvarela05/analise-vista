@@ -842,7 +842,7 @@ function MiniMes({
               type="button"
               disabled={!hasProc && !inMonth}
               className={cn(
-                "relative mx-auto flex h-7 w-7 flex-col items-center justify-center rounded-md text-[11px] leading-none transition-colors",
+                "relative mx-auto flex h-10 w-10 flex-col items-center justify-center rounded-lg text-sm leading-none transition-colors",
                 !inMonth && "text-muted-foreground/30",
                 inMonth && !isHoje && "text-foreground/80 hover:bg-muted",
                 isHoje &&
@@ -852,15 +852,16 @@ function MiniMes({
             >
               <span>{date.getDate()}</span>
               {hasProc && (
-                <span className="absolute bottom-0.5 flex gap-[2px]">
+                <span className="absolute bottom-1 flex gap-[3px]">
                   {cores.map((c, idx) => (
                     <span
                       key={idx}
-                      className={cn("h-1 w-1 rounded-full", COR_BG[c])}
+                      className={cn("h-1.5 w-1.5 rounded-full", COR_BG[c])}
                     />
                   ))}
                 </span>
               )}
+
             </button>
           );
 
