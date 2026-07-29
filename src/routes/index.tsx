@@ -493,6 +493,9 @@ function Dashboard() {
         feriasAtivas={feriasAtivas}
         proximasFerias={proximasFerias}
         onPreview={openPreview}
+        tarefas={tarefas}
+        demandas={demandas}
+        reunioes={reunioes}
       />
     </div>
   );
