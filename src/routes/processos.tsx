@@ -662,9 +662,43 @@ function Processos() {
 
               <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
                 <TabsList>
+                  <TabsTrigger value="dividido">Calendário + Lista</TabsTrigger>
                   <TabsTrigger value="calendario">Ano</TabsTrigger>
                   <TabsTrigger value="lista">Lista</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="dividido" className="mt-4">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)]">
+                    <div className="space-y-4 min-w-0">
+                      <CalendarioAnoGoogle
+                        processos={processosFiltrados}
+                        ano={ano}
+                        onEdit={isGestor ? abrirEdicao : undefined}
+                      />
+                      <LegendaProcessos processos={processosFiltrados} />
+                    </div>
+                    <div className="space-y-3 xl:max-h-[calc(100vh-16rem)] xl:overflow-y-auto xl:pr-1">
+                      {processosFiltrados.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
+                          Nenhum processo para os filtros atuais.
+                        </div>
+                      ) : (
+                        processosFiltrados.map((p) => (
+                          <ProcessoCard
+                            key={p.id}
+                            processo={p}
+                            colabs={colabs}
+                            vinculos={vincPorProcesso.get(p.id) ?? []}
+                            tarefasMini={tarefasMini}
+                            demandasMini={demandasMini}
+                            onEdit={isGestor ? () => abrirEdicao(p) : undefined}
+                            onDelete={isGestor ? () => setConfirmDel(p) : undefined}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
 
                 <TabsContent value="calendario" className="mt-4 space-y-4">
                   <CalendarioAnoGoogle
