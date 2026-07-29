@@ -135,22 +135,37 @@ export function ProcessosPreviewCard() {
   }
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-border/60 bg-card/60 p-4 backdrop-blur">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
-            <CalendarRange className="h-4 w-4" />
+    <div
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden rounded-2xl border-2 border-primary/40 p-5",
+        "bg-gradient-to-br from-primary/10 via-card to-card shadow-lg shadow-primary/10 backdrop-blur",
+      )}
+    >
+      <div
+        className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/20 opacity-40 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/30">
+            <CalendarRange className="h-5 w-5" />
           </div>
           <div>
-            <div className="text-sm font-semibold leading-tight">Processos anuais</div>
+            <div className="flex items-center gap-2">
+              <div className="text-base font-bold leading-tight">Processos anuais</div>
+              <Badge className="bg-primary/15 text-[10px] font-semibold uppercase text-primary hover:bg-primary/15">
+                {filtrados.length} ativos
+              </Badge>
+            </div>
             <div className="text-[11px] text-muted-foreground">
-              {fmtBR(janelaIni)} — {fmtBR(janelaFim)} · 2 meses antes / 2 depois
+              {fmtBR(janelaIni)} — {fmtBR(janelaFim)} · janela de ±2 meses
             </div>
           </div>
         </div>
         <Link
           to="/processos"
-          className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+          className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
         >
           Abrir <ArrowUpRight className="h-3 w-3" />
         </Link>
