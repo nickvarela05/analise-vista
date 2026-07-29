@@ -429,16 +429,16 @@ function VisaoGeralPanel({ p }: { p: PresentationProps }) {
   const totalReunioes = p.reunioes.length;
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-auto">
+    <div className="flex h-full flex-col gap-3 overflow-auto sm:gap-4">
       {/* Pulse hero */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-5 lg:gap-4">
         {p.pulse.map((item, i) => {
           const Icon = item.icon;
           return (
             <div
               key={item.label}
               className={cn(
-                "group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-6 shadow-sm backdrop-blur",
+                "group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-muted/30 p-3 shadow-sm backdrop-blur sm:p-4 lg:p-6",
                 "transition-all hover:border-primary/40 hover:shadow-md",
               )}
             >
@@ -447,19 +447,19 @@ function VisaoGeralPanel({ p }: { p: PresentationProps }) {
                 style={{ background: `var(--chart-${(i % 5) + 1})` }}
                 aria-hidden
               />
-              <div className="relative flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
-                  <Icon className="h-5 w-5" />
+              <div className="relative flex items-center gap-2 sm:gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 sm:h-11 sm:w-11">
+                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <div className="text-sm font-medium text-muted-foreground">{item.label}</div>
+                <div className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm">{item.label}</div>
               </div>
-              <div className="relative mt-4 flex items-baseline gap-2">
-                <span className="text-5xl font-bold tabular-nums tracking-tight">
+              <div className="relative mt-2 flex items-baseline gap-2 sm:mt-4">
+                <span className="text-2xl font-bold tabular-nums tracking-tight sm:text-3xl lg:text-4xl xl:text-5xl">
                   {item.value}
                 </span>
               </div>
               {item.hint && (
-                <div className="relative mt-1 text-xs text-muted-foreground">{item.hint}</div>
+                <div className="relative mt-1 truncate text-[10px] text-muted-foreground sm:text-xs">{item.hint}</div>
               )}
             </div>
           );
@@ -467,7 +467,7 @@ function VisaoGeralPanel({ p }: { p: PresentationProps }) {
       </div>
 
       {/* Faixa lateral: totais gerais */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <MiniStat label="Tarefas ativas" value={totalTarefasAtivas} tone="primary" />
         <MiniStat label="Demandas totais" value={totalDemandas} tone="info" />
         <MiniStat label="Reuniões registradas" value={totalReunioes} tone="success" />
