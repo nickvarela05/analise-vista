@@ -93,7 +93,7 @@ function MiniMesCompacto({
       </div>
       <div className="grid grid-cols-7 gap-y-0.5 text-center">
         {WEEKDAYS.map((w, i) => (
-          <div key={i} className="text-[8px] font-semibold uppercase text-muted-foreground/60">
+          <div key={i} className="text-[9px] font-semibold uppercase text-muted-foreground/60">
             {w}
           </div>
         ))}
@@ -104,7 +104,7 @@ function MiniMesCompacto({
             <div
               key={i}
               className={cn(
-                "relative mx-auto flex h-5 w-5 items-center justify-center rounded text-[10px] leading-none",
+                "relative mx-auto flex h-6 w-6 items-center justify-center rounded text-[11px] leading-none",
                 !c.inMonth && "text-muted-foreground/25",
                 c.inMonth && "text-foreground/80",
                 cores.length > 0 && c.inMonth && "font-semibold",
@@ -215,9 +215,9 @@ export function ProcessosCalendarioListaCard() {
         </Link>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-5">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-12">
         {/* Calendário */}
-        <div className="grid min-h-0 grid-cols-3 gap-2 lg:col-span-3">
+        <div className="grid min-h-0 grid-cols-3 gap-2 lg:col-span-8">
           {meses.map((m) => (
             <MiniMesCompacto
               key={`${m.ano}-${m.mes}`}
@@ -230,7 +230,7 @@ export function ProcessosCalendarioListaCard() {
         </div>
 
         {/* Lista */}
-        <div className="min-h-0 space-y-1.5 overflow-auto pr-1 lg:col-span-2">
+        <div className="min-h-0 space-y-1.5 overflow-auto pr-1 lg:col-span-4">
           {itens.length === 0 ? (
             <div className="flex h-full items-center justify-center text-[11px] text-muted-foreground">
               Nenhum processo nesta janela.
