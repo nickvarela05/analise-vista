@@ -938,7 +938,7 @@ function CalendarioAnoGoogle({
   const indice = React.useMemo(() => buildIndiceAno(processos, ano), [processos, ano]);
   const hojeISO = toISO(HOJE());
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {Array.from({ length: 12 }, (_, m) => (
         <MiniMes
           key={m}
