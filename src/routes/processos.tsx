@@ -815,20 +815,21 @@ function MiniMes({
   const nomeMes = new Date(ano, mes, 1).toLocaleDateString("pt-BR", { month: "long" });
 
   return (
-    <div className="rounded-xl border bg-card/60 p-3 shadow-sm">
-      <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold capitalize text-foreground">{nomeMes}</h3>
-        <span className="text-[10px] text-muted-foreground">{ano}</span>
+    <div className="rounded-2xl border bg-card/60 p-5 shadow-sm">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-base font-semibold capitalize text-foreground">{nomeMes}</h3>
+        <span className="text-xs text-muted-foreground">{ano}</span>
       </div>
-      <div className="grid grid-cols-7 gap-y-1 text-center">
+      <div className="grid grid-cols-7 gap-y-1.5 text-center">
         {WEEKDAYS.map((w, i) => (
           <div
             key={i}
-            className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70"
+            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70"
           >
             {w}
           </div>
         ))}
+
         {cells.map(({ date, inMonth, iso }, i) => {
           const info = indice.get(iso);
           const isHoje = iso === hojeISO;
@@ -841,7 +842,7 @@ function MiniMes({
               type="button"
               disabled={!hasProc && !inMonth}
               className={cn(
-                "relative mx-auto flex h-7 w-7 flex-col items-center justify-center rounded-md text-[11px] leading-none transition-colors",
+                "relative mx-auto flex h-10 w-10 flex-col items-center justify-center rounded-lg text-sm leading-none transition-colors",
                 !inMonth && "text-muted-foreground/30",
                 inMonth && !isHoje && "text-foreground/80 hover:bg-muted",
                 isHoje &&
@@ -851,15 +852,16 @@ function MiniMes({
             >
               <span>{date.getDate()}</span>
               {hasProc && (
-                <span className="absolute bottom-0.5 flex gap-[2px]">
+                <span className="absolute bottom-1 flex gap-[3px]">
                   {cores.map((c, idx) => (
                     <span
                       key={idx}
-                      className={cn("h-1 w-1 rounded-full", COR_BG[c])}
+                      className={cn("h-1.5 w-1.5 rounded-full", COR_BG[c])}
                     />
                   ))}
                 </span>
               )}
+
             </button>
           );
 
@@ -936,7 +938,7 @@ function CalendarioAnoGoogle({
   const indice = React.useMemo(() => buildIndiceAno(processos, ano), [processos, ano]);
   const hojeISO = toISO(HOJE());
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {Array.from({ length: 12 }, (_, m) => (
         <MiniMes
           key={m}
