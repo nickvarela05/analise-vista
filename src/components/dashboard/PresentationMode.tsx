@@ -38,6 +38,7 @@ import {
   SlaUrgenciaCard,
 } from "./analytics/AnalyticsCards";
 import { ProcessosPreviewCard } from "./ProcessosPreviewCard";
+import { ProcessosCalendarioListaCard } from "./ProcessosCalendarioListaCard";
 import type { PreviewItem } from "@/components/PreviewDialog";
 import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
 
