@@ -37,8 +37,9 @@ import {
   CategoriaOrigemCard,
   SlaUrgenciaCard,
 } from "./analytics/AnalyticsCards";
-import { ProcessosPreviewCard } from "./ProcessosPreviewCard";
 import { ProcessosCalendarioListaCard } from "./ProcessosCalendarioListaCard";
+import { HomologacaoPanel } from "./HomologacaoPanel";
+
 import type { PreviewItem } from "@/components/PreviewDialog";
 import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
 
