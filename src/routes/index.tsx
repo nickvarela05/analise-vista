@@ -15,8 +15,10 @@ import {
 
   CalendarClock,
   UserCircle2,
+  Presentation,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PresentationMode } from "@/components/dashboard/PresentationMode";
 import { useAuth } from "@/lib/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
