@@ -815,20 +815,21 @@ function MiniMes({
   const nomeMes = new Date(ano, mes, 1).toLocaleDateString("pt-BR", { month: "long" });
 
   return (
-    <div className="rounded-xl border bg-card/60 p-3 shadow-sm">
-      <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold capitalize text-foreground">{nomeMes}</h3>
-        <span className="text-[10px] text-muted-foreground">{ano}</span>
+    <div className="rounded-2xl border bg-card/60 p-5 shadow-sm">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-base font-semibold capitalize text-foreground">{nomeMes}</h3>
+        <span className="text-xs text-muted-foreground">{ano}</span>
       </div>
-      <div className="grid grid-cols-7 gap-y-1 text-center">
+      <div className="grid grid-cols-7 gap-y-1.5 text-center">
         {WEEKDAYS.map((w, i) => (
           <div
             key={i}
-            className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70"
+            className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70"
           >
             {w}
           </div>
         ))}
+
         {cells.map(({ date, inMonth, iso }, i) => {
           const info = indice.get(iso);
           const isHoje = iso === hojeISO;
