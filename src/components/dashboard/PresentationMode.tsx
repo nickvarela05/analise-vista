@@ -423,8 +423,8 @@ function buildPanels(p: Scoped): PanelDef[] {
       subtitle: "Semana em curso, calendário anual de processos, férias e horários.",
       icon: CalendarClock,
       render: () => (
-        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1.15fr)_minmax(0,1fr)] gap-3 xl:grid-cols-12 xl:grid-rows-[minmax(0,1.25fr)_minmax(0,1fr)]">
-          <div className="min-h-0 overflow-hidden xl:col-span-7 xl:row-span-1">
+        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1.1fr)_minmax(0,1fr)] gap-3 xl:grid-cols-12 xl:grid-rows-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="min-h-0 overflow-hidden xl:col-span-8">
             <AtividadesSemanaPanel
               atividades={p.atividades}
               weekStart={p.weekStart}
@@ -434,25 +434,32 @@ function buildPanels(p: Scoped): PanelDef[] {
               defaultColabId={p.colabId ?? p.meuColabId}
             />
           </div>
-          <div className="min-h-0 overflow-hidden xl:col-span-5 xl:row-span-2">
-            <ProcessosCalendarioListaCard />
+
+          {/* Horários ocupa a coluna lateral inteira */}
+          <div className="min-h-0 overflow-hidden xl:col-span-4 xl:row-span-2">
+            <HorariosPanel horarios={p.horarios} />
           </div>
-          <div className="grid min-h-0 grid-cols-1 gap-3 sm:grid-cols-3 xl:col-span-7">
-            <div className="min-h-0 overflow-hidden">
-              <HeatmapPrazosCard tarefas={p.tarefas} demandas={p.demandas} reunioes={p.reunioes} />
+
+          {/* Faixa horizontal: processos (calendários + lista) · calor · equipe */}
+          <div className="grid min-h-0 grid-cols-1 gap-3 xl:col-span-8 xl:grid-cols-12">
+            <div className="min-h-0 overflow-hidden xl:col-span-8">
+              <ProcessosCalendarioListaCard />
             </div>
-            <div className="min-h-0 overflow-hidden">
-              <EquipeAtivaPanel
-                totalColaboradores={p.totalColaboradores}
-                feriasAtivas={p.feriasAtivas}
-                proximasFerias={p.proximasFerias}
-              />
-            </div>
-            <div className="min-h-0 overflow-hidden">
-              <HorariosPanel horarios={p.horarios} />
+            <div className="grid min-h-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-1">
+              <div className="min-h-0 overflow-hidden">
+                <HeatmapPrazosCard tarefas={p.tarefas} demandas={p.demandas} reunioes={p.reunioes} />
+              </div>
+              <div className="min-h-0 overflow-hidden">
+                <EquipeAtivaPanel
+                  totalColaboradores={p.totalColaboradores}
+                  feriasAtivas={p.feriasAtivas}
+                  proximasFerias={p.proximasFerias}
+                />
+              </div>
             </div>
           </div>
         </div>
+
       ),
     },
     {
