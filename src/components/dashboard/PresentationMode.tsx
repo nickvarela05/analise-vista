@@ -357,8 +357,9 @@ function buildPanels(p: PresentationProps): PanelDef[] {
       subtitle: "Compromissos da semana, mapa de calor e equipe.",
       icon: CalendarClock,
       render: () => (
-        <div className="grid h-full grid-cols-1 gap-4 overflow-auto xl:grid-cols-3">
-          <div className="xl:col-span-2">
+        <div className="grid h-full min-h-0 grid-cols-12 grid-rows-3 gap-4">
+          {/* Atividades da semana — coluna principal */}
+          <div className="col-span-12 row-span-2 min-h-0 overflow-hidden xl:col-span-7">
             <AtividadesSemanaPanel
               atividades={p.atividades}
               weekStart={p.weekStart}
@@ -368,18 +369,26 @@ function buildPanels(p: PresentationProps): PanelDef[] {
               defaultColabId={p.meuColabId}
             />
           </div>
-          <div className="flex flex-col gap-4">
+
+          {/* Processos — destaque em altura total */}
+          <div className="col-span-12 row-span-3 min-h-0 overflow-hidden xl:col-span-5">
+            <ProcessosPreviewCard />
+          </div>
+
+          {/* Rodapé compacto: heatmap · equipe · horários */}
+          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden sm:col-span-6 xl:col-span-3">
             <HeatmapPrazosCard tarefas={p.tarefas} demandas={p.demandas} reunioes={p.reunioes} />
+          </div>
+          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden sm:col-span-6 xl:col-span-2">
             <EquipeAtivaPanel
               totalColaboradores={p.totalColaboradores}
               feriasAtivas={p.feriasAtivas}
               proximasFerias={p.proximasFerias}
             />
           </div>
-          <div className="xl:col-span-2">
-            <ProcessosPreviewCard />
+          <div className="col-span-12 row-span-1 min-h-0 overflow-hidden xl:col-span-2">
+            <HorariosPanel horarios={p.horarios} />
           </div>
-          <HorariosPanel horarios={p.horarios} />
         </div>
       ),
     },
