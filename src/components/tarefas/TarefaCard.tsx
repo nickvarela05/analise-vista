@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { parseDateOnly } from "@/lib/date";
 
 interface Counts {
   comentarios: number;
@@ -45,7 +46,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
     ? colabs
     : colabs.filter((c) => (tarefa.responsaveis_ids ?? []).includes(c.id));
 
-  const prazo = tarefa.data_prevista ? new Date(tarefa.data_prevista) : null;
+  const prazo = parseDateOnly(tarefa.data_prevista);
   const atrasada = !!(prazo && isPast(prazo) && !isToday(prazo) && !["producao", "aprovado"].includes(tarefa.status));
   const hojeFlag = !!(prazo && isToday(prazo));
   const diasRestantes = prazo ? differenceInCalendarDays(prazo, new Date()) : null;

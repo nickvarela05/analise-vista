@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 import type { TarefaRow } from "@/lib/db-types";
 import type { CountsMap, ColabMini } from "@/components/tarefas/useTarefasData";
+import { parseDateOnly } from "@/lib/date";
 
 interface Props {
   tarefas: TarefaRow[];
@@ -21,7 +22,7 @@ export function TarefasLista({ tarefas, colabs, selectedIds, onToggleSelect, onO
         const responsaveis = t.equipe_toda
           ? colabs
           : colabs.filter((c) => (t.responsaveis_ids ?? []).includes(c.id));
-        const prazo = t.data_prevista ? new Date(t.data_prevista) : null;
+        const prazo = parseDateOnly(t.data_prevista);
         const atrasada =
           prazo && isPast(prazo) && !isToday(prazo) && !["producao", "aprovado"].includes(t.status);
         const c = countsMap[t.id] ?? { comentarios: 0, checklistTotal: 0, checklistDone: 0, anexos: 0 };

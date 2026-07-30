@@ -9,6 +9,7 @@ import {
   isSameDay,
 } from "date-fns";
 import type { TarefaRow, DemandaRow, ReuniaoRow } from "@/lib/db-types";
+import { parseDateOnly } from "@/lib/date";
 
 const STATUS_CONCLUIDA = ["concluida", "producao"] as const;
 const STATUS_ATIVAS = [
@@ -121,8 +122,8 @@ export function computeHeatmap(
     const cell = grid.find((g) => isSameDay(g.date, d));
     if (cell) cell.count++;
   };
-  tarefas.forEach((t) => t.data_prevista && inc(new Date(t.data_prevista)));
-  demandas.forEach((d) => d.prazo && inc(new Date(d.prazo)));
+  tarefas.forEach((t) => t.data_prevista && inc(parseDateOnly(t.data_prevista)));
+  demandas.forEach((d) => d.prazo && inc(parseDateOnly(d.prazo)));
   reunioes.forEach((r) => r.status !== "cancelada" && inc(new Date(r.data_reuniao)));
   const max = Math.max(1, ...grid.map((g) => g.count));
   return { grid, max };

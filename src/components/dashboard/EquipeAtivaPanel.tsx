@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { Plane, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Panel } from "@/components/KpiTile";
+import { parseDateOnly } from "@/lib/date";
 
 interface FeriasItem {
   id: string;
@@ -61,7 +62,7 @@ export function EquipeAtivaPanel({ totalColaboradores, feriasAtivas, proximasFer
                     {f.colaborador?.nome?.split(" ")[0] ?? "—"}
                   </span>
                   <span className="text-muted-foreground">
-                    {format(new Date(f.data_inicio), "dd/MM")} – {format(new Date(f.data_fim), "dd/MM")}
+                    {format(parseDateOnly(f.data_inicio)!, "dd/MM")} – {format(parseDateOnly(f.data_fim)!, "dd/MM")}
                   </span>
                 </li>
               ))}
