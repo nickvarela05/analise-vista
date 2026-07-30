@@ -423,7 +423,7 @@ function buildPanels(p: Scoped): PanelDef[] {
       subtitle: "Semana em curso, calendário anual de processos, férias e horários.",
       icon: CalendarClock,
       render: () => (
-        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,1.1fr)_minmax(0,1fr)] gap-3 xl:grid-cols-12 xl:grid-rows-[minmax(0,1.1fr)_minmax(0,1fr)]">
+        <div className="grid h-full min-h-0 grid-cols-1 grid-rows-[minmax(0,0.7fr)_minmax(0,1.3fr)] gap-3 xl:grid-cols-12">
           <div className="min-h-0 overflow-hidden xl:col-span-8">
             <AtividadesSemanaPanel
               atividades={p.atividades}
@@ -442,10 +442,10 @@ function buildPanels(p: Scoped): PanelDef[] {
 
           {/* Faixa horizontal: processos (calendários + lista) · calor · equipe */}
           <div className="grid min-h-0 grid-cols-1 gap-3 xl:col-span-8 xl:grid-cols-12">
-            <div className="min-h-0 overflow-hidden xl:col-span-8">
+            <div className="min-h-0 overflow-hidden xl:col-span-7">
               <ProcessosCalendarioListaCard />
             </div>
-            <div className="grid min-h-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-1">
+            <div className="grid min-h-0 grid-rows-2 gap-3 xl:col-span-5">
               <div className="min-h-0 overflow-hidden">
                 <HeatmapPrazosCard tarefas={p.tarefas} demandas={p.demandas} reunioes={p.reunioes} />
               </div>
@@ -459,6 +459,7 @@ function buildPanels(p: Scoped): PanelDef[] {
             </div>
           </div>
         </div>
+
 
       ),
     },
