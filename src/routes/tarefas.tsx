@@ -37,6 +37,7 @@ import { TarefasDuplicadasDialog } from "@/components/tarefas/TarefasDuplicadasD
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
 import type { TarefaRow } from "@/lib/db-types";
+import { parseDateOnly } from "@/lib/date";
 
 export const Route = createFileRoute("/tarefas")({
   errorComponent: RouteErrorBoundary,
@@ -80,7 +81,7 @@ function Tarefas() {
       if (filters.origem === "manual" && t.origem_importacao) return false;
       if (filters.lotes.length && (!t.lote_importacao_id || !filters.lotes.includes(t.lote_importacao_id))) return false;
       if (filters.prazo !== "todos") {
-        const prazo = t.data_prevista ? new Date(t.data_prevista) : null;
+        const prazo = parseDateOnly(t.data_prevista);
         if (filters.prazo === "sem_prazo" && prazo) return false;
         if (filters.prazo !== "sem_prazo" && !prazo) return false;
         if (prazo) {

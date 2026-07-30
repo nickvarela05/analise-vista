@@ -48,6 +48,7 @@ import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import {
+import { parseDateOnly } from "@/lib/date";
   FunilRelatoriosCard,
   TopSolicitantesCard,
 } from "@/components/dashboard/analytics/AnalyticsCards";
@@ -188,8 +189,8 @@ function Dashboard() {
   const feriasAtivas = React.useMemo(
     () =>
       ferias.filter((f) => {
-        const inicio = new Date(f.data_inicio);
-        const fim = new Date(f.data_fim);
+        const inicio = parseDateOnly(f.data_inicio)!;
+        const fim = parseDateOnly(f.data_fim)!;
         return inicio <= now && fim >= now;
       }).length,
     [ferias, now],
@@ -262,7 +263,7 @@ function Dashboard() {
     };
     tarefas.forEach((t) => {
       if (t.data_prevista) {
-        const d = new Date(t.data_prevista);
+        const d = parseDateOnly(t.data_prevista)!;
         if (isWithinInterval(d, { start: weekStart, end: weekEnd })) {
           list.push({
             id: t.id,
@@ -283,7 +284,7 @@ function Dashboard() {
     });
     demandas.forEach((d) => {
       if (d.prazo) {
-        const dt = new Date(d.prazo);
+        const dt = parseDateOnly(d.prazo)!;
         if (isWithinInterval(dt, { start: weekStart, end: weekEnd })) {
           list.push({
             id: d.id,
