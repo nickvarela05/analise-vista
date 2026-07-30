@@ -48,10 +48,10 @@ import { EquipeAtivaPanel } from "@/components/dashboard/EquipeAtivaPanel";
 import { HorariosPanel, type HorarioItem } from "@/components/dashboard/HorariosPanel";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
 import {
-import { parseDateOnly } from "@/lib/date";
   FunilRelatoriosCard,
   TopSolicitantesCard,
 } from "@/components/dashboard/analytics/AnalyticsCards";
+import { parseDateOnly } from "@/lib/date";
 
 
 export const Route = createFileRoute("/")({
