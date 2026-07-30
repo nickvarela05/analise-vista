@@ -217,7 +217,7 @@ export function ProcessosCalendarioListaCard() {
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-12">
         {/* Calendário */}
-        <div className="grid min-h-0 grid-cols-3 gap-2 lg:col-span-8">
+        <div className="grid min-h-0 grid-cols-3 gap-2 overflow-auto lg:col-span-8">
           {meses.map((m) => (
             <MiniMesCompacto
               key={`${m.ano}-${m.mes}`}
