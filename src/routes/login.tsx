@@ -122,20 +122,30 @@ const signupSchema = loginSchema.extend({
   invite: z.string().min(8, "Informe o código de convite"),
 });
 
+const NETWORK_HINT =
+  "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente em instantes.";
+
+function isNetworkError(message: string) {
+  return /failed to fetch|network|networkerror|load failed|retryable/i.test(message);
+}
+
 function LoginPage() {
   const navigate = useNavigate();
   const { session, loading: authLoading } = useAuth();
   const [loading, setLoading] = React.useState(false);
+  const redirectedRef = React.useRef(false);
 
   const finishLogin = React.useCallback(() => {
+    if (redirectedRef.current) return;
+    redirectedRef.current = true;
     let target = "/";
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const r = params.get("redirect");
       if (r && r.startsWith("/") && !r.startsWith("//")) target = r;
     }
-    window.location.replace(target);
-  }, []);
+    void navigate({ to: target, replace: true });
+  }, [navigate]);
 
   React.useEffect(() => {
     if (!authLoading && session) finishLogin();
@@ -160,7 +170,9 @@ function LoginPage() {
     setLoading(false);
 
     if (error) {
-      toast.error("Falha no login", { description: error.message });
+      toast.error("Falha no login", {
+        description: isNetworkError(error.message) ? NETWORK_HINT : error.message,
+      });
       return;
     }
 
@@ -184,7 +196,9 @@ function LoginPage() {
       toast.error("Falha no cadastro", {
         description: /invite|convite/i.test(error.message)
           ? "Código de convite inválido ou expirado. Solicite um novo ao gestor."
-          : error.message,
+          : isNetworkError(error.message)
+            ? NETWORK_HINT
+            : error.message,
       });
       return;
     }
@@ -192,6 +206,7 @@ function LoginPage() {
       description: "Verifique seu e-mail para confirmar o acesso.",
     });
   };
+
 
   return (
     <div className="flex min-h-screen w-full">
