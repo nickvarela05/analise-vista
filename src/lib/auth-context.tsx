@@ -65,9 +65,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let active = true;
     let initialized = false;
     let lastUserId: string | null = null;
+    let lastToken: string | null = null;
 
     const syncAuth = async (newSession: Session | null, isInitial: boolean) => {
       if (!active) return;
+
+      const nextToken = newSession?.access_token ?? null;
+      // Eventos repetidos com a mesma sessão (ex.: tentativas de refresh que falham
+      // por rede) não devem reatualizar o estado — isso causava loop de re-render.
+      if (!isInitial && nextToken === lastToken) return;
+      lastToken = nextToken;
 
       setSession(newSession);
 
@@ -99,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       initialized = true;
       void syncAuth(newSession, isInitial);
     });
+
 
     void supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (initialized) return; // onAuthStateChange já tratou
