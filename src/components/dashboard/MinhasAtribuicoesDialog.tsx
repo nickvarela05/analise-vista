@@ -1,3 +1,4 @@
+import { parseDateOnly } from "@/lib/date";
 import * as React from "react";
 import { format, isBefore, isToday, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -117,7 +118,7 @@ function MinhasAtribuicoesDialogImpl({
     const today = startOfDay(new Date());
     const overdue = (rows: any[], key: string) =>
       rows.filter((r) => {
-        const dt = r[key] ? new Date(r[key]) : null;
+        const dt = parseDateOnly(r[key]);
         const done = STATUS_CONCLUIDOS.has((r.status ?? "").toLowerCase());
         return dt && isBefore(dt, today) && !done;
       }).length;
@@ -160,7 +161,7 @@ function MinhasAtribuicoesDialogImpl({
     ];
 
     for (const it of items) {
-      const dt = it[dataKey] ? new Date(it[dataKey]) : null;
+      const dt = parseDateOnly(it[dataKey]);
       const done = STATUS_CONCLUIDOS.has((it.status ?? "").toLowerCase());
       if (!dt) groups[3].items.push(it);
       else if (isBefore(dt, today) && !done) groups[0].items.push(it);
@@ -170,8 +171,8 @@ function MinhasAtribuicoesDialogImpl({
 
     for (const g of groups) {
       g.items.sort((a, b) => {
-        const da = a[dataKey] ? new Date(a[dataKey]).getTime() : Infinity;
-        const db = b[dataKey] ? new Date(b[dataKey]).getTime() : Infinity;
+        const da = parseDateOnly(a[dataKey])?.getTime() ?? Infinity;
+        const db = parseDateOnly(b[dataKey])?.getTime() ?? Infinity;
         return da - db;
       });
     }
@@ -196,7 +197,7 @@ function MinhasAtribuicoesDialogImpl({
                 </header>
                 <ul className="space-y-1.5">
                   {g.items.map((it) => {
-                    const dt = it[dataKey] ? new Date(it[dataKey]) : null;
+                    const dt = parseDateOnly(it[dataKey]);
                     const atrasada = g.key === "atrasadas";
                     const isPrio =
                       it.prioridade === "alta" || it.prioridade === "critica";
@@ -264,7 +265,7 @@ function MinhasAtribuicoesDialogImpl({
                               >
                                 <Clock className="h-3 w-3" />
                                 {dt
-                                  ? `${dataLabel}: ${format(dt, "EEE, dd/MM 'às' HH:mm", { locale: ptBR })}`
+                                  ? `${dataLabel}: ${format(dt, String(it[dataKey]).length <= 10 ? "EEE, dd/MM" : "EEE, dd/MM 'às' HH:mm", { locale: ptBR })}`
                                   : "Sem data definida"}
                               </span>
                               {atrasada && (
