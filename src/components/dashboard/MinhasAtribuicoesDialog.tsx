@@ -265,7 +265,7 @@ function MinhasAtribuicoesDialogImpl({
                               >
                                 <Clock className="h-3 w-3" />
                                 {dt
-                                  ? `${dataLabel}: ${format(dt, "EEE, dd/MM 'às' HH:mm", { locale: ptBR })}`
+                                  ? `${dataLabel}: ${format(dt, String(it[dataKey]).length <= 10 ? "EEE, dd/MM" : "EEE, dd/MM 'às' HH:mm", { locale: ptBR })}`
                                   : "Sem data definida"}
                               </span>
                               {atrasada && (

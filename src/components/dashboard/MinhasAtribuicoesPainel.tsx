@@ -231,7 +231,7 @@ function MinhasAtribuicoesPainelImpl({
                                 )}
                               >
                                 {dt
-                                  ? `${g.dataLabel}: ${format(dt, "dd/MM HH:mm", { locale: ptBR })}`
+                                  ? `${g.dataLabel}: ${format(dt, String(it[g.dataKey]).length <= 10 ? "dd/MM" : "dd/MM HH:mm", { locale: ptBR })}`
                                   : "Sem data"}
                                 {it.status && ` · ${it.status}`}
                               </p>
