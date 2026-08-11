@@ -1,3 +1,4 @@
+import { parseDateOnly } from "@/lib/date";
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { format, isBefore, startOfDay } from "date-fns";
@@ -153,8 +154,8 @@ function MinhasAtribuicoesPainelImpl({
           {grupos.map((g) => {
             const Icon = g.icon;
             const sorted = [...g.items].sort((a, b) => {
-              const da = a[g.dataKey] ? new Date(a[g.dataKey]).getTime() : Infinity;
-              const db = b[g.dataKey] ? new Date(b[g.dataKey]).getTime() : Infinity;
+              const da = a[g.dataKey] ? (parseDateOnly(a[g.dataKey]) ?? new Date(0)).getTime() : Infinity;
+              const db = b[g.dataKey] ? (parseDateOnly(b[g.dataKey]) ?? new Date(0)).getTime() : Infinity;
               return da - db;
             });
             return (
@@ -186,7 +187,7 @@ function MinhasAtribuicoesPainelImpl({
                 ) : (
                   <ul className="space-y-1">
                     {sorted.slice(0, maxItems).map((it) => {
-                      const dt = it[g.dataKey] ? new Date(it[g.dataKey]) : null;
+                      const dt = parseDateOnly(it[g.dataKey]);
                       const concluido = STATUS_CONCLUIDOS.has(
                         (it.status ?? "").toLowerCase(),
                       );
