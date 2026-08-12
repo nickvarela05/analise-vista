@@ -1180,9 +1180,18 @@ function Reunioes() {
                           <Loader2 className="h-3 w-3 animate-spin" /> processando
                         </Badge>
                       )}
+                      {openDetail.transcricao_status === "pausado" && (
+                        <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
+                          ⏸ pausado
+                          {openDetail.transcricao_partes_total
+                            ? ` ${openDetail.transcricao_partes_feitas}/${openDetail.transcricao_partes_total}`
+                            : ""}
+                        </Badge>
+                      )}
                       {openDetail.transcricao_status === "erro" && (
                         <Badge variant="destructive">⚠️ erro IA</Badge>
                       )}
+
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-1">
