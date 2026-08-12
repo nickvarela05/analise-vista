@@ -258,6 +258,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
 export const TarefaCard = React.memo(TarefaCardImpl, (prev, next) => {
   if (prev.selected !== next.selected) return false;
   if (prev.hasDemanda !== next.hasDemanda) return false;
+  if (prev.statusLog !== next.statusLog) return false;
   if (prev.onOpen !== next.onOpen || prev.onSelect !== next.onSelect) return false;
   if (prev.colabs !== next.colabs) return false;
   if (
