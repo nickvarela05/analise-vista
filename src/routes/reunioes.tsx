@@ -891,11 +891,20 @@ function Reunioes() {
                         {phaseLabel}
                       </span>
                     )}
+                    {r.transcricao_status === "pausado" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                        ⏸ pausado
+                        {r.transcricao_partes_total
+                          ? ` ${r.transcricao_partes_feitas}/${r.transcricao_partes_total}`
+                          : ""}
+                      </span>
+                    )}
                     {r.transcricao_status === "erro" && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
                         ⚠ erro IA
                       </span>
                     )}
+
                     {r.participantes && r.participantes.length > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         <Users className="h-3 w-3" /> {r.participantes.length}
