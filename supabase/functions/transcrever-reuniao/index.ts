@@ -556,33 +556,91 @@ async function analyzeWithAI(transcricao: string): Promise<{
   };
 }
 
-/** Limite global do pipeline: evita reunião presa em "processando" para sempre. */
-const PIPELINE_TIMEOUT_MS = 25 * 60 * 1000;
+/** Limite de cada rodada: evita reunião presa em "processando" para sempre. */
+const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
+/** Quantas rodadas automáticas (pausa + retomada) são permitidas. */
+const MAX_ROUNDS = 5;
 
-/** Pipeline completo: baixa → transcreve → analisa → salva. */
-async function processarReuniao(reuniaoId: string, audioPath: string): Promise<void> {
-  const deadline = new Promise<never>((_, reject) =>
-    setTimeout(
-      () => reject(new Error("Tempo máximo de processamento excedido (25 min). Tente novamente ou divida o áudio.")),
-      PIPELINE_TIMEOUT_MS,
-    )
-  );
-  try {
-    await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
-  } catch (e: any) {
-    console.error("transcrever-reuniao error:", e);
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Executa o pipeline em rodadas: ao esbarrar em limite temporário do serviço
+ * de transcrição, marca a reunião como `pausado`, espera e retoma da última
+ * parte concluída. Só vira `erro` quando o problema é definitivo ou acabam
+ * as rodadas.
+ */
+async function processarReuniao(reuniaoId: string, audioPath: string, reset = false): Promise<void> {
+  if (reset) {
     await admin
       .from("reuniao")
-      .update({
-        transcricao_status: "erro",
-        transcricao_erro: String(e?.message ?? e).slice(0, 500),
-      })
+      .update({ transcricao_rodadas: 0, transcricao_partes_feitas: 0 })
       .eq("id", reuniaoId);
+  }
+
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const deadline = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new RetryableError("Rodada excedeu o tempo máximo — retomando de onde parou.", 60)),
+        PIPELINE_TIMEOUT_MS,
+      )
+    );
+    try {
+      await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
+      return;
+    } catch (e: any) {
+      console.error("transcrever-reuniao error:", e);
+      const wait = retryableWait(e);
+      const ultima = round === MAX_ROUNDS - 1;
+      if (wait === null || ultima) {
+        await admin
+          .from("reuniao")
+          .update({
+            transcricao_status: "erro",
+            transcricao_erro: String(e?.message ?? e).slice(0, 500),
+          })
+          .eq("id", reuniaoId);
+        return;
+      }
+      const espera = Math.min(Math.max(wait, 30), 300);
+      const { data: row } = await admin
+        .from("reuniao")
+        .select("transcricao_partes_feitas, transcricao_partes_total")
+        .eq("id", reuniaoId)
+        .maybeSingle();
+      const progresso =
+        row?.transcricao_partes_total
+          ? ` (parte ${row.transcricao_partes_feitas} de ${row.transcricao_partes_total})`
+          : "";
+      await admin
+        .from("reuniao")
+        .update({
+          transcricao_status: "pausado",
+          transcricao_rodadas: round + 1,
+          transcricao_erro:
+            `Pausado por limite do serviço — retomando automaticamente em ~${Math.ceil(espera / 60)} min${progresso}.`,
+        })
+        .eq("id", reuniaoId);
+      console.log(`[transcrever] pausado ${espera}s — rodada ${round + 2}/${MAX_ROUNDS}`);
+      await sleep(espera * 1000);
+    }
   }
 }
 
 async function executarPipeline(reuniaoId: string, audioPath: string): Promise<void> {
   {
+    // Estado de retomada: partes já concluídas e texto acumulado.
+    const { data: atual } = await admin
+      .from("reuniao")
+      .select("transcricao, transcricao_partes_feitas")
+      .eq("id", reuniaoId)
+      .maybeSingle();
+    const resume: ResumeState = {
+      startIndex: atual?.transcricao_partes_feitas ?? 0,
+      prefixText: atual?.transcricao ?? "",
+    };
+
     await admin
       .from("reuniao")
       .update({ transcricao_status: "processando", transcricao_erro: null })
@@ -602,6 +660,8 @@ async function executarPipeline(reuniaoId: string, audioPath: string): Promise<v
         .from("reuniao")
         .update({
           transcricao: textoAcumulado,
+          transcricao_partes_feitas: parte,
+          transcricao_partes_total: total,
           transcricao_erro: `Transcrevendo… parte ${parte} de ${total}`,
         })
         .eq("id", reuniaoId);
@@ -609,8 +669,9 @@ async function executarPipeline(reuniaoId: string, audioPath: string): Promise<v
 
     // 2. Transcreve (Groq → fallback Gemini para arquivos grandes)
     const { formatted, speakers, engine } = GROQ_API_KEY
-      ? await transcribeAudio(blob, fileName, onProgress)
+      ? await transcribeAudio(blob, fileName, onProgress, resume)
       : { ...(await transcribeWithGemini(blob, fileName)), engine: "gemini" };
+
     console.log(`[transcrever] engine=${engine} size=${formatBytes(blob.size)}`);
     if (!formatted.trim()) throw new Error("Transcrição vazia");
 
