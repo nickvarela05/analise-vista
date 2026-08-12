@@ -2,7 +2,7 @@ import * as React from "react";
 import { format, differenceInCalendarDays, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical,
+  AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical, History,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
