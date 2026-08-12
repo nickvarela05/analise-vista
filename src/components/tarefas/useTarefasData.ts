@@ -9,6 +9,14 @@ export type CountsMap = Record<
   { comentarios: number; checklistTotal: number; checklistDone: number; anexos: number }
 >;
 
+export type StatusLogItem = {
+  de: string | null;
+  para: string | null;
+  quando: string;
+  autor: string | null;
+};
+export type StatusLogMap = Record<string, StatusLogItem[]>;
+
 export type ColabMini = { id: string; nome: string; cargo: string | null };
 export type DemandaMini = { id: string; titulo: string };
 export type LoteMini = { id: string; nome: string; tipo: string; total_tarefas: number; created_at: string };
