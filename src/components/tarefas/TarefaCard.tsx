@@ -29,6 +29,12 @@ interface Props {
   onOpen: () => void;
   counts: Counts;
   hasDemanda: boolean;
+  statusLog?: StatusLogItem[];
+}
+
+function statusLabel(s: string | null) {
+  if (!s) return "—";
+  return STATUS_LABEL[s] ?? s;
 }
 
 const PRIO_BAR: Record<string, string> = {
