@@ -714,13 +714,16 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const reuniaoId: string | null = body.reuniao_id;
     const audioPath: string = body.audio_path;
+    // `retomar: true` continua da última parte concluída; caso contrário recomeça.
+    const retomar: boolean = body.retomar === true;
     if (!reuniaoId || !audioPath) throw new Error("reuniao_id e audio_path são obrigatórios");
 
     await assertReuniaoAccess(admin, user.id, reuniaoId);
 
     // Roda em segundo plano: o cliente não precisa esperar (áudios longos
     // levam minutos) e a desconexão do cliente não interrompe o trabalho.
-    const task = processarReuniao(reuniaoId, audioPath);
+    const task = processarReuniao(reuniaoId, audioPath, !retomar);
+
     // @ts-ignore — API do runtime de edge functions
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
       // @ts-ignore
