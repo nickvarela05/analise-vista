@@ -150,7 +150,7 @@ async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
     }
     if (res.status === 413) {
       throw new AudioTooLargeError(
-        `Groq recusou o áudio de ${formatBytes(audioBlob.size)} por tamanho.`,
+        `Groq recusou o áudio de ${formatBytes(audioBlob.size)}: ${errText.slice(0, 200)}`,
       );
     }
     if (res.status === 429) {
@@ -166,10 +166,110 @@ async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
   return { text, formatted: text, speakers: [] };
 }
 
+/** Tamanho alvo de cada parte enviada ao Groq (bem abaixo do limite prático). */
+const CHUNK_TARGET_BYTES = 8 * 1024 * 1024;
+
+/** Tabelas de bitrate/sample rate para cálculo do tamanho do frame MP3. */
+const MP3_BITRATES_V1_L3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
+const MP3_BITRATES_V2_L3 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 0];
+const MP3_RATES: Record<number, number[]> = {
+  3: [44100, 48000, 32000, 0], // MPEG1
+  2: [22050, 24000, 16000, 0], // MPEG2
+  0: [11025, 12000, 8000, 0], // MPEG2.5
+};
+
+/**
+ * Divide um MP3 em partes respeitando os limites de frame (sem reencode).
+ * Retorna `null` quando o arquivo não parece um MP3 válido.
+ */
+function splitMp3(bytes: Uint8Array, targetBytes: number): Uint8Array[] | null {
+  const parts: Uint8Array[] = [];
+  let start = 0;
+  let i = 0;
+
+  // Pula tag ID3v2, se houver.
+  if (bytes.length > 10 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+    const size =
+      ((bytes[6] & 0x7f) << 21) | ((bytes[7] & 0x7f) << 14) | ((bytes[8] & 0x7f) << 7) | (bytes[9] & 0x7f);
+    i = 10 + size;
+    start = i;
+  }
+
+  let frames = 0;
+  while (i + 4 <= bytes.length) {
+    if (bytes[i] !== 0xff || (bytes[i + 1] & 0xe0) !== 0xe0) {
+      i++;
+      continue;
+    }
+    const versionBits = (bytes[i + 1] >> 3) & 0x03;
+    const layerBits = (bytes[i + 1] >> 1) & 0x03;
+    if (versionBits === 1 || layerBits !== 1) {
+      i++;
+      continue;
+    }
+    const bitrateIdx = (bytes[i + 2] >> 4) & 0x0f;
+    const rateIdx = (bytes[i + 2] >> 2) & 0x03;
+    const padding = (bytes[i + 2] >> 1) & 0x01;
+    const bitrate =
+      (versionBits === 3 ? MP3_BITRATES_V1_L3[bitrateIdx] : MP3_BITRATES_V2_L3[bitrateIdx]) * 1000;
+    const rate = (MP3_RATES[versionBits] ?? [])[rateIdx] ?? 0;
+    if (!bitrate || !rate) {
+      i++;
+      continue;
+    }
+    const samples = versionBits === 3 ? 1152 : 576;
+    const frameLen = Math.floor((samples / 8) * (bitrate / rate)) + padding;
+    if (frameLen < 4) {
+      i++;
+      continue;
+    }
+    frames++;
+
+    // Fecha a parte quando o próximo frame ultrapassaria o alvo.
+    if (i + frameLen - start > targetBytes) {
+      parts.push(bytes.subarray(start, i));
+      start = i;
+    }
+    i += frameLen;
+  }
+
+  if (frames < 10) return null;
+  if (start < bytes.length) parts.push(bytes.subarray(start, bytes.length));
+  return parts.filter((p) => p.length > 0);
+}
+
+/** Transcreve um MP3 grande em partes sequenciais e concatena o texto. */
+async function transcribeChunked(
+  audioBlob: Blob,
+  fileName: string,
+): Promise<{ text: string; formatted: string; speakers: string[] } | null> {
+  const bytes = new Uint8Array(await audioBlob.arrayBuffer());
+  const parts = splitMp3(bytes, CHUNK_TARGET_BYTES);
+  if (!parts || parts.length < 2) return null;
+
+  console.log(`[transcrever] dividindo em ${parts.length} partes`);
+  const textos: string[] = [];
+  for (let idx = 0; idx < parts.length; idx++) {
+    const part = parts[idx];
+    const partBlob = new Blob([part], { type: "audio/mpeg" });
+    console.log(`[transcrever] parte ${idx + 1}/${parts.length} (${formatBytes(part.length)})`);
+    let r: { text: string };
+    try {
+      r = await transcribeWithGroq(partBlob, `parte-${idx + 1}.mp3`);
+    } catch (e) {
+      console.log(`[transcrever] parte ${idx + 1} falhou no Groq (${(e as Error).message}) → Gemini`);
+      r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
+    }
+    if (r.text.trim()) textos.push(r.text.trim());
+  }
+  const full = textos.join("\n\n");
+  return { text: full, formatted: full, speakers: [] };
+}
+
 /**
  * Escolhe a melhor rota de transcrição:
- * arquivos grandes vão direto para o Gemini; pequenos tentam Groq e caem
- * para o Gemini se forem recusados por tamanho/limite.
+ * arquivos grandes são divididos em partes e transcritos pelo Groq;
+ * se a divisão não for possível (não-MP3), cai para o Gemini.
  */
 async function transcribeAudio(audioBlob: Blob, fileName: string): Promise<{
   text: string;
@@ -178,13 +278,18 @@ async function transcribeAudio(audioBlob: Blob, fileName: string): Promise<{
   engine: string;
 }> {
   if (audioBlob.size > GROQ_SAFE_BYTES) {
-    console.log(`[transcrever] ${formatBytes(audioBlob.size)} → Gemini (direto)`);
+    console.log(`[transcrever] ${formatBytes(audioBlob.size)} → tentando divisão em partes`);
+    const chunked = await transcribeChunked(audioBlob, fileName);
+    if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
+    console.log(`[transcrever] divisão indisponível → Gemini`);
     return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini" };
   }
   try {
     return { ...(await transcribeWithGroq(audioBlob, fileName)), engine: "groq" };
   } catch (e) {
     if (e instanceof AudioTooLargeError) {
+      const chunked = await transcribeChunked(audioBlob, fileName);
+      if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
       console.log(`[transcrever] Groq recusou → fallback Gemini`);
       return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini-fallback" };
     }
