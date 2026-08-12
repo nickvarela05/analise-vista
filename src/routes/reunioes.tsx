@@ -590,6 +590,27 @@ function Reunioes() {
     else toast.info("✨ Regerando análise com IA...", { description: "A reunião será atualizada em instantes." });
   };
 
+  const [resuming, setResuming] = React.useState(false);
+  /** Retoma a transcrição da última parte concluída. */
+  const handleRetomarTranscricao = async (reuniao: any) => {
+    if (!reuniao?.audio_path) {
+      toast.error("Reunião sem áudio para transcrever");
+      return;
+    }
+    setResuming(true);
+    const { error } = await supabase.functions.invoke("transcrever-reuniao", {
+      body: { reuniao_id: reuniao.id, audio_path: reuniao.audio_path, retomar: true },
+    });
+    setResuming(false);
+    if (error) toast.error("Falha ao retomar transcrição", { description: error.message });
+    else
+      toast.info("▶️ Retomando transcrição...", {
+        description: "Continua da última parte já transcrita.",
+      });
+    qc.invalidateQueries({ queryKey: ["reunioes"] });
+  };
+
+
   // Filtragem em memória
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -870,11 +891,20 @@ function Reunioes() {
                         {phaseLabel}
                       </span>
                     )}
+                    {r.transcricao_status === "pausado" && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                        ⏸ pausado
+                        {r.transcricao_partes_total
+                          ? ` ${r.transcricao_partes_feitas}/${r.transcricao_partes_total}`
+                          : ""}
+                      </span>
+                    )}
                     {r.transcricao_status === "erro" && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-medium text-destructive">
                         ⚠ erro IA
                       </span>
                     )}
+
                     {r.participantes && r.participantes.length > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         <Users className="h-3 w-3" /> {r.participantes.length}
@@ -1150,9 +1180,18 @@ function Reunioes() {
                           <Loader2 className="h-3 w-3 animate-spin" /> processando
                         </Badge>
                       )}
+                      {openDetail.transcricao_status === "pausado" && (
+                        <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
+                          ⏸ pausado
+                          {openDetail.transcricao_partes_total
+                            ? ` ${openDetail.transcricao_partes_feitas}/${openDetail.transcricao_partes_total}`
+                            : ""}
+                        </Badge>
+                      )}
                       {openDetail.transcricao_status === "erro" && (
                         <Badge variant="destructive">⚠️ erro IA</Badge>
                       )}
+
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-1">
@@ -1311,11 +1350,43 @@ function Reunioes() {
                   )}
 
                 {openDetail.transcricao_erro && (
-                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                    <p className="font-semibold">⚠️ Erro no processamento IA</p>
+                  <div
+                    className={cn(
+                      "rounded-md border p-3 text-sm",
+                      openDetail.transcricao_status === "erro"
+                        ? "border-destructive/30 bg-destructive/5 text-destructive"
+                        : "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300",
+                    )}
+                  >
+                    <p className="font-semibold">
+                      {openDetail.transcricao_status === "erro"
+                        ? "⚠️ Erro no processamento IA"
+                        : openDetail.transcricao_status === "pausado"
+                          ? "⏸ Transcrição pausada"
+                          : "🎧 Transcrição em andamento"}
+                    </p>
                     <p className="mt-1 text-xs">{openDetail.transcricao_erro}</p>
+                    {(openDetail.transcricao_status === "erro" ||
+                      openDetail.transcricao_status === "pausado") &&
+                      openDetail.audio_path && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          disabled={resuming}
+                          onClick={() => handleRetomarTranscricao(openDetail)}
+                        >
+                          {resuming ? (
+                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          Retomar transcrição
+                        </Button>
+                      )}
                   </div>
                 )}
+
 
                 {openDetail.transcricao && (
                   <Accordion type="single" collapsible>

@@ -293,19 +293,55 @@ function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): U
 /** Notificação de progresso parte a parte. */
 type ProgressFn = (info: { parte: number; total: number; textoAcumulado: string }) => Promise<void>;
 
+/** Contexto de retomada: partes já concluídas e o texto acumulado até aqui. */
+interface ResumeState {
+  startIndex: number;
+  prefixText: string;
+}
+
+/**
+ * Erro temporário (cota / limite de tempo): a transcrição pode ser retomada
+ * automaticamente depois de esperar.
+ */
+class RetryableError extends Error {
+  waitSeconds: number;
+  constructor(message: string, waitSeconds: number) {
+    super(message);
+    this.waitSeconds = waitSeconds;
+  }
+}
+
+/** Classifica o erro final: retomável (com espera) ou definitivo. */
+function retryableWait(e: unknown): number | null {
+  if (e instanceof RetryableError) return e.waitSeconds;
+  if (e instanceof GroqQuotaError) return Math.min(Math.max(e.retryAfter, 60), 300);
+  const msg = String((e as Error)?.message ?? e);
+  if (/Limite de requisições|rate.?limit|429|cota|Tempo máximo de processamento/i.test(msg)) {
+    return 120;
+  }
+  return null;
+}
+
 /** Transcreve um MP3 grande em partes sequenciais e concatena o texto. */
 async function transcribeChunked(
   audioBlob: Blob,
   _fileName: string,
   onProgress?: ProgressFn,
+  resume?: ResumeState,
 ): Promise<{ text: string; formatted: string; speakers: string[] } | null> {
   const bytes = new Uint8Array(await audioBlob.arrayBuffer());
   const parts = splitMp3(bytes, CHUNK_TARGET_SECONDS, CHUNK_MAX_BYTES);
   if (!parts || parts.length < 2) return null;
 
-  console.log(`[transcrever] dividindo em ${parts.length} partes`);
+  const startIndex = Math.min(resume?.startIndex ?? 0, parts.length);
   const textos: string[] = [];
-  for (let idx = 0; idx < parts.length; idx++) {
+  const prefix = (resume?.prefixText ?? "").trim();
+  const acumulado = () => [prefix, ...textos].filter(Boolean).join("\n\n");
+
+  console.log(
+    `[transcrever] ${parts.length} partes — retomando a partir da parte ${startIndex + 1}`,
+  );
+  for (let idx = startIndex; idx < parts.length; idx++) {
     const part = parts[idx];
     const partBlob = new Blob([part as unknown as BlobPart], { type: "audio/mpeg" });
     console.log(`[transcrever] parte ${idx + 1}/${parts.length} (${formatBytes(part.length)})`);
@@ -314,25 +350,43 @@ async function transcribeChunked(
       r = await transcribeWithGroqRetry(partBlob, `parte-${idx + 1}.mp3`);
     } catch (e) {
       console.log(`[transcrever] parte ${idx + 1} falhou no Groq (${(e as Error).message}) → Gemini`);
-      r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
+      try {
+        r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
+      } catch (e2) {
+        const wait = retryableWait(e2) ?? retryableWait(e);
+        if (wait !== null) {
+          // Progresso já foi salvo: interrompe para retomar desta parte depois.
+          throw new RetryableError(
+            `Pausado na parte ${idx + 1} de ${parts.length}: limite temporário do serviço de transcrição.`,
+            wait,
+          );
+        }
+        throw e2;
+      }
     }
     if (r.text.trim()) textos.push(r.text.trim());
     await onProgress?.({
       parte: idx + 1,
       total: parts.length,
-      textoAcumulado: textos.join("\n\n"),
+      textoAcumulado: acumulado(),
     });
   }
-  const full = textos.join("\n\n");
+  const full = acumulado();
   return { text: full, formatted: full, speakers: [] };
 }
+
 
 /**
  * Escolhe a melhor rota de transcrição:
  * arquivos grandes são divididos em partes e transcritos pelo Groq;
  * se a divisão não for possível (não-MP3), cai para o Gemini.
  */
-async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: ProgressFn): Promise<{
+async function transcribeAudio(
+  audioBlob: Blob,
+  fileName: string,
+  onProgress?: ProgressFn,
+  resume?: ResumeState,
+): Promise<{
   text: string;
   formatted: string;
   speakers: string[];
@@ -340,7 +394,7 @@ async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: P
 }> {
   if (audioBlob.size > GROQ_SAFE_BYTES) {
     console.log(`[transcrever] ${formatBytes(audioBlob.size)} → tentando divisão em partes`);
-    const chunked = await transcribeChunked(audioBlob, fileName, onProgress);
+    const chunked = await transcribeChunked(audioBlob, fileName, onProgress, resume);
     if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
     console.log(`[transcrever] divisão indisponível → Gemini`);
     return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini" };
@@ -349,7 +403,7 @@ async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: P
     return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
   } catch (e) {
     if (e instanceof AudioTooLargeError || e instanceof GroqQuotaError) {
-      const chunked = await transcribeChunked(audioBlob, fileName, onProgress);
+      const chunked = await transcribeChunked(audioBlob, fileName, onProgress, resume);
       if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
       console.log(`[transcrever] Groq recusou → fallback Gemini`);
       return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini-fallback" };
@@ -357,6 +411,7 @@ async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: P
     throw e;
   }
 }
+
 
 
 /* =============================================================
@@ -501,33 +556,91 @@ async function analyzeWithAI(transcricao: string): Promise<{
   };
 }
 
-/** Limite global do pipeline: evita reunião presa em "processando" para sempre. */
-const PIPELINE_TIMEOUT_MS = 25 * 60 * 1000;
+/** Limite de cada rodada: evita reunião presa em "processando" para sempre. */
+const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
+/** Quantas rodadas automáticas (pausa + retomada) são permitidas. */
+const MAX_ROUNDS = 5;
 
-/** Pipeline completo: baixa → transcreve → analisa → salva. */
-async function processarReuniao(reuniaoId: string, audioPath: string): Promise<void> {
-  const deadline = new Promise<never>((_, reject) =>
-    setTimeout(
-      () => reject(new Error("Tempo máximo de processamento excedido (25 min). Tente novamente ou divida o áudio.")),
-      PIPELINE_TIMEOUT_MS,
-    )
-  );
-  try {
-    await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
-  } catch (e: any) {
-    console.error("transcrever-reuniao error:", e);
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Executa o pipeline em rodadas: ao esbarrar em limite temporário do serviço
+ * de transcrição, marca a reunião como `pausado`, espera e retoma da última
+ * parte concluída. Só vira `erro` quando o problema é definitivo ou acabam
+ * as rodadas.
+ */
+async function processarReuniao(reuniaoId: string, audioPath: string, reset = false): Promise<void> {
+  if (reset) {
     await admin
       .from("reuniao")
-      .update({
-        transcricao_status: "erro",
-        transcricao_erro: String(e?.message ?? e).slice(0, 500),
-      })
+      .update({ transcricao_rodadas: 0, transcricao_partes_feitas: 0 })
       .eq("id", reuniaoId);
+  }
+
+  for (let round = 0; round < MAX_ROUNDS; round++) {
+    const deadline = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new RetryableError("Rodada excedeu o tempo máximo — retomando de onde parou.", 60)),
+        PIPELINE_TIMEOUT_MS,
+      )
+    );
+    try {
+      await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
+      return;
+    } catch (e: any) {
+      console.error("transcrever-reuniao error:", e);
+      const wait = retryableWait(e);
+      const ultima = round === MAX_ROUNDS - 1;
+      if (wait === null || ultima) {
+        await admin
+          .from("reuniao")
+          .update({
+            transcricao_status: "erro",
+            transcricao_erro: String(e?.message ?? e).slice(0, 500),
+          })
+          .eq("id", reuniaoId);
+        return;
+      }
+      const espera = Math.min(Math.max(wait, 30), 300);
+      const { data: row } = await admin
+        .from("reuniao")
+        .select("transcricao_partes_feitas, transcricao_partes_total")
+        .eq("id", reuniaoId)
+        .maybeSingle();
+      const progresso =
+        row?.transcricao_partes_total
+          ? ` (parte ${row.transcricao_partes_feitas} de ${row.transcricao_partes_total})`
+          : "";
+      await admin
+        .from("reuniao")
+        .update({
+          transcricao_status: "pausado",
+          transcricao_rodadas: round + 1,
+          transcricao_erro:
+            `Pausado por limite do serviço — retomando automaticamente em ~${Math.ceil(espera / 60)} min${progresso}.`,
+        })
+        .eq("id", reuniaoId);
+      console.log(`[transcrever] pausado ${espera}s — rodada ${round + 2}/${MAX_ROUNDS}`);
+      await sleep(espera * 1000);
+    }
   }
 }
 
 async function executarPipeline(reuniaoId: string, audioPath: string): Promise<void> {
   {
+    // Estado de retomada: partes já concluídas e texto acumulado.
+    const { data: atual } = await admin
+      .from("reuniao")
+      .select("transcricao, transcricao_partes_feitas")
+      .eq("id", reuniaoId)
+      .maybeSingle();
+    const resume: ResumeState = {
+      startIndex: atual?.transcricao_partes_feitas ?? 0,
+      prefixText: atual?.transcricao ?? "",
+    };
+
     await admin
       .from("reuniao")
       .update({ transcricao_status: "processando", transcricao_erro: null })
@@ -547,6 +660,8 @@ async function executarPipeline(reuniaoId: string, audioPath: string): Promise<v
         .from("reuniao")
         .update({
           transcricao: textoAcumulado,
+          transcricao_partes_feitas: parte,
+          transcricao_partes_total: total,
           transcricao_erro: `Transcrevendo… parte ${parte} de ${total}`,
         })
         .eq("id", reuniaoId);
@@ -554,8 +669,9 @@ async function executarPipeline(reuniaoId: string, audioPath: string): Promise<v
 
     // 2. Transcreve (Groq → fallback Gemini para arquivos grandes)
     const { formatted, speakers, engine } = GROQ_API_KEY
-      ? await transcribeAudio(blob, fileName, onProgress)
+      ? await transcribeAudio(blob, fileName, onProgress, resume)
       : { ...(await transcribeWithGemini(blob, fileName)), engine: "gemini" };
+
     console.log(`[transcrever] engine=${engine} size=${formatBytes(blob.size)}`);
     if (!formatted.trim()) throw new Error("Transcrição vazia");
 
@@ -598,13 +714,16 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const reuniaoId: string | null = body.reuniao_id;
     const audioPath: string = body.audio_path;
+    // `retomar: true` continua da última parte concluída; caso contrário recomeça.
+    const retomar: boolean = body.retomar === true;
     if (!reuniaoId || !audioPath) throw new Error("reuniao_id e audio_path são obrigatórios");
 
     await assertReuniaoAccess(admin, user.id, reuniaoId);
 
     // Roda em segundo plano: o cliente não precisa esperar (áudios longos
     // levam minutos) e a desconexão do cliente não interrompe o trabalho.
-    const task = processarReuniao(reuniaoId, audioPath);
+    const task = processarReuniao(reuniaoId, audioPath, !retomar);
+
     // @ts-ignore — API do runtime de edge functions
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
       // @ts-ignore

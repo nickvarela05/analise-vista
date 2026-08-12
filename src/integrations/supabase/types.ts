@@ -1030,6 +1030,9 @@ export type Database = {
           titulo: string
           transcricao: string | null
           transcricao_erro: string | null
+          transcricao_partes_feitas: number
+          transcricao_partes_total: number
+          transcricao_rodadas: number
           transcricao_status: Database["public"]["Enums"]["reuniao_transcricao_status"]
           updated_at: string
         }
@@ -1057,6 +1060,9 @@ export type Database = {
           titulo: string
           transcricao?: string | null
           transcricao_erro?: string | null
+          transcricao_partes_feitas?: number
+          transcricao_partes_total?: number
+          transcricao_rodadas?: number
           transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"]
           updated_at?: string
         }
@@ -1084,6 +1090,9 @@ export type Database = {
           titulo?: string
           transcricao?: string | null
           transcricao_erro?: string | null
+          transcricao_partes_feitas?: number
+          transcricao_partes_total?: number
+          transcricao_rodadas?: number
           transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"]
           updated_at?: string
         }
@@ -1507,6 +1516,7 @@ export type Database = {
         | "processando"
         | "concluido"
         | "erro"
+        | "pausado"
       todo_prioridade: "baixa" | "media" | "alta"
       todo_status:
         | "pendente"
@@ -1703,6 +1713,7 @@ export const Constants = {
         "processando",
         "concluido",
         "erro",
+        "pausado",
       ],
       todo_prioridade: ["baixa", "media", "alta"],
       todo_status: [
