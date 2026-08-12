@@ -224,6 +224,29 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
           )}
         </div>
       </div>
+
+      {statusLog.length > 0 && (
+        <div className="mt-2.5 border-t border-dashed pt-2">
+          <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+            <History className="h-3 w-3" /> Log de status
+          </div>
+          <ul className="space-y-0.5">
+            {statusLog.slice(0, 3).map((l, i) => (
+              <li key={`${l.quando}-${i}`} className="flex items-start gap-1 text-[10.5px] leading-tight text-muted-foreground">
+                <span className="tabular-nums text-muted-foreground/70">
+                  {format(new Date(l.quando), "dd/MM HH:mm", { locale: ptBR })}
+                </span>
+                <span className="truncate">
+                  <span className="text-muted-foreground/60">{statusLabel(l.de)}</span>
+                  {" → "}
+                  <span className="font-medium text-foreground/80">{statusLabel(l.para)}</span>
+                  {l.autor ? <span className="text-muted-foreground/60"> · {l.autor}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Card>
   );
 }
