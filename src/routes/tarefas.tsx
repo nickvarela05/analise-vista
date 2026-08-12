@@ -61,7 +61,7 @@ function Tarefas() {
   const [drawerTarefa, setDrawerTarefa] = React.useState<TarefaRow | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  const { colabs, demandas, tarefas, lotes, isLoading, countsMap } = useTarefasData();
+  const { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap } = useTarefasData();
 
   // Aplica filtros
   const filtered = React.useMemo(() => {
@@ -351,6 +351,7 @@ function Tarefas() {
           }}
           onDropStatus={onDropStatus}
           countsMap={countsMap}
+          statusLogMap={statusLogMap}
         />
       ) : (
         <TarefasLista

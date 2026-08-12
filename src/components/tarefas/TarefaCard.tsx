@@ -2,7 +2,7 @@ import * as React from "react";
 import { format, differenceInCalendarDays, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical,
+  AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical, History,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { parseDateOnly } from "@/lib/date";
+import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
+import type { StatusLogItem } from "@/components/tarefas/useTarefasData";
 
 interface Counts {
   comentarios: number;
@@ -27,6 +29,12 @@ interface Props {
   onOpen: () => void;
   counts: Counts;
   hasDemanda: boolean;
+  statusLog?: StatusLogItem[];
+}
+
+function statusLabel(s: string | null) {
+  if (!s) return "—";
+  return STATUS_LABEL[s] ?? s;
 }
 
 const PRIO_BAR: Record<string, string> = {
@@ -41,7 +49,7 @@ const PRIO_BADGE: Record<string, string> = {
   baixa: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
 };
 
-function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda }: Props) {
+function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda, statusLog = [] }: Props) {
   const responsaveis = tarefa.equipe_toda
     ? colabs
     : colabs.filter((c) => (tarefa.responsaveis_ids ?? []).includes(c.id));
@@ -216,6 +224,29 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
           )}
         </div>
       </div>
+
+      {statusLog.length > 0 && (
+        <div className="mt-2.5 border-t border-dashed pt-2">
+          <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
+            <History className="h-3 w-3" /> Log de status
+          </div>
+          <ul className="space-y-0.5">
+            {statusLog.slice(0, 3).map((l, i) => (
+              <li key={`${l.quando}-${i}`} className="flex items-start gap-1 text-[10.5px] leading-tight text-muted-foreground">
+                <span className="tabular-nums text-muted-foreground/70">
+                  {format(new Date(l.quando), "dd/MM HH:mm", { locale: ptBR })}
+                </span>
+                <span className="truncate">
+                  <span className="text-muted-foreground/60">{statusLabel(l.de)}</span>
+                  {" → "}
+                  <span className="font-medium text-foreground/80">{statusLabel(l.para)}</span>
+                  {l.autor ? <span className="text-muted-foreground/60"> · {l.autor}</span> : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Card>
   );
 }
@@ -227,6 +258,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
 export const TarefaCard = React.memo(TarefaCardImpl, (prev, next) => {
   if (prev.selected !== next.selected) return false;
   if (prev.hasDemanda !== next.hasDemanda) return false;
+  if (prev.statusLog !== next.statusLog) return false;
   if (prev.onOpen !== next.onOpen || prev.onSelect !== next.onSelect) return false;
   if (prev.colabs !== next.colabs) return false;
   if (
