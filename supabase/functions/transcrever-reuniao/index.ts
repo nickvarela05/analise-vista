@@ -47,6 +47,24 @@ const GROQ_SAFE_BYTES = 18 * 1024 * 1024;
 
 class AudioTooLargeError extends Error {}
 
+/** Recusa por cota de segundos de áudio por hora (ASPH) — não é tamanho. */
+class GroqQuotaError extends Error {
+  retryAfter: number;
+  constructor(message: string, retryAfter: number) {
+    super(message);
+    this.retryAfter = retryAfter;
+  }
+}
+
+/** Extrai o tempo de espera sugerido pelo Groq (header ou texto do erro). */
+function retryAfterSeconds(res: Response, errText: string): number {
+  const header = Number(res.headers.get("retry-after"));
+  if (Number.isFinite(header) && header > 0) return header;
+  const m = errText.match(/try again in ([\d.]+)(m|s)/i);
+  if (m) return Math.ceil(parseFloat(m[1]) * (m[2].toLowerCase() === "m" ? 60 : 1));
+  return 20;
+}
+
 /** Deriva o `format` aceito pelo bloco input_audio a partir do mime/nome. */
 function audioFormat(fileName: string, mime: string | undefined): string {
   const ext = (fileName.split(".").pop() ?? "").toLowerCase();
@@ -148,13 +166,17 @@ async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
     if (res.status === 401) {
       throw new Error("Groq: API key inválida. Verifique o secret GROQ_API_KEY em console.groq.com.");
     }
+    // Cota de segundos de áudio por hora (ASPH) / rate limit: não é tamanho.
+    if (/ASPH|seconds of audio|rate.?limit|too many requests/i.test(errText) || res.status === 429) {
+      throw new GroqQuotaError(
+        `Groq: cota de áudio por hora atingida`,
+        retryAfterSeconds(res, errText),
+      );
+    }
     if (res.status === 413) {
       throw new AudioTooLargeError(
         `Groq recusou o áudio de ${formatBytes(audioBlob.size)}: ${errText.slice(0, 200)}`,
       );
-    }
-    if (res.status === 429) {
-      throw new Error("Groq: limite de requisições atingido. Aguarde alguns minutos e tente novamente.");
     }
     throw new Error(`Groq Whisper (${res.status}): ${errText.slice(0, 300)}`);
   }
@@ -166,8 +188,31 @@ async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
   return { text, formatted: text, speakers: [] };
 }
 
-/** Tamanho alvo de cada parte enviada ao Groq (bem abaixo do limite prático). */
-const CHUNK_TARGET_BYTES = 8 * 1024 * 1024;
+/** Tenta o Groq com re-tentativas curtas quando a recusa é por cota horária. */
+async function transcribeWithGroqRetry(
+  blob: Blob,
+  fileName: string,
+  attempts = 2,
+): Promise<{ text: string; formatted: string; speakers: string[] }> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await transcribeWithGroq(blob, fileName);
+    } catch (e) {
+      last = e;
+      if (!(e instanceof GroqQuotaError) || i === attempts - 1) throw e;
+      const wait = Math.min(Math.max(e.retryAfter, 5), 60);
+      console.log(`[transcrever] cota Groq — aguardando ${wait}s e repetindo`);
+      await new Promise((r) => setTimeout(r, wait * 1000));
+    }
+  }
+  throw last;
+}
+
+
+/** Duração alvo de cada parte (segundos) e teto de tamanho. */
+const CHUNK_TARGET_SECONDS = 600; // ~10 min
+const CHUNK_MAX_BYTES = 5 * 1024 * 1024;
 
 /** Tabelas de bitrate/sample rate para cálculo do tamanho do frame MP3. */
 const MP3_BITRATES_V1_L3 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0];
@@ -179,13 +224,15 @@ const MP3_RATES: Record<number, number[]> = {
 };
 
 /**
- * Divide um MP3 em partes respeitando os limites de frame (sem reencode).
- * Retorna `null` quando o arquivo não parece um MP3 válido.
+ * Divide um MP3 em partes de ~`targetSeconds` (teto de `maxBytes`), respeitando
+ * os limites de frame (sem reencode). `null` quando não parece um MP3 válido.
  */
-function splitMp3(bytes: Uint8Array, targetBytes: number): Uint8Array[] | null {
+function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): Uint8Array[] | null {
   const parts: Uint8Array[] = [];
   let start = 0;
   let i = 0;
+  let partSeconds = 0;
+  let totalSeconds = 0;
 
   // Pula tag ID3v2, se houver.
   if (bytes.length > 10 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
@@ -224,43 +271,57 @@ function splitMp3(bytes: Uint8Array, targetBytes: number): Uint8Array[] | null {
       continue;
     }
     frames++;
+    const frameSeconds = samples / rate;
 
-    // Fecha a parte quando o próximo frame ultrapassaria o alvo.
-    if (i + frameLen - start > targetBytes) {
+    // Fecha a parte quando o próximo frame ultrapassaria o alvo (tempo ou peso).
+    if (partSeconds + frameSeconds > targetSeconds || i + frameLen - start > maxBytes) {
       parts.push(bytes.subarray(start, i));
       start = i;
+      partSeconds = 0;
     }
+    partSeconds += frameSeconds;
+    totalSeconds += frameSeconds;
     i += frameLen;
   }
 
   if (frames < 10) return null;
   if (start < bytes.length) parts.push(bytes.subarray(start, bytes.length));
+  console.log(`[transcrever] duração estimada: ${Math.round(totalSeconds / 60)} min`);
   return parts.filter((p) => p.length > 0);
 }
+
+/** Notificação de progresso parte a parte. */
+type ProgressFn = (info: { parte: number; total: number; textoAcumulado: string }) => Promise<void>;
 
 /** Transcreve um MP3 grande em partes sequenciais e concatena o texto. */
 async function transcribeChunked(
   audioBlob: Blob,
-  fileName: string,
+  _fileName: string,
+  onProgress?: ProgressFn,
 ): Promise<{ text: string; formatted: string; speakers: string[] } | null> {
   const bytes = new Uint8Array(await audioBlob.arrayBuffer());
-  const parts = splitMp3(bytes, CHUNK_TARGET_BYTES);
+  const parts = splitMp3(bytes, CHUNK_TARGET_SECONDS, CHUNK_MAX_BYTES);
   if (!parts || parts.length < 2) return null;
 
   console.log(`[transcrever] dividindo em ${parts.length} partes`);
   const textos: string[] = [];
   for (let idx = 0; idx < parts.length; idx++) {
     const part = parts[idx];
-    const partBlob = new Blob([part], { type: "audio/mpeg" });
+    const partBlob = new Blob([part as unknown as BlobPart], { type: "audio/mpeg" });
     console.log(`[transcrever] parte ${idx + 1}/${parts.length} (${formatBytes(part.length)})`);
     let r: { text: string };
     try {
-      r = await transcribeWithGroq(partBlob, `parte-${idx + 1}.mp3`);
+      r = await transcribeWithGroqRetry(partBlob, `parte-${idx + 1}.mp3`);
     } catch (e) {
       console.log(`[transcrever] parte ${idx + 1} falhou no Groq (${(e as Error).message}) → Gemini`);
       r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
     }
     if (r.text.trim()) textos.push(r.text.trim());
+    await onProgress?.({
+      parte: idx + 1,
+      total: parts.length,
+      textoAcumulado: textos.join("\n\n"),
+    });
   }
   const full = textos.join("\n\n");
   return { text: full, formatted: full, speakers: [] };
@@ -271,7 +332,7 @@ async function transcribeChunked(
  * arquivos grandes são divididos em partes e transcritos pelo Groq;
  * se a divisão não for possível (não-MP3), cai para o Gemini.
  */
-async function transcribeAudio(audioBlob: Blob, fileName: string): Promise<{
+async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: ProgressFn): Promise<{
   text: string;
   formatted: string;
   speakers: string[];
@@ -279,16 +340,16 @@ async function transcribeAudio(audioBlob: Blob, fileName: string): Promise<{
 }> {
   if (audioBlob.size > GROQ_SAFE_BYTES) {
     console.log(`[transcrever] ${formatBytes(audioBlob.size)} → tentando divisão em partes`);
-    const chunked = await transcribeChunked(audioBlob, fileName);
+    const chunked = await transcribeChunked(audioBlob, fileName, onProgress);
     if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
     console.log(`[transcrever] divisão indisponível → Gemini`);
     return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini" };
   }
   try {
-    return { ...(await transcribeWithGroq(audioBlob, fileName)), engine: "groq" };
+    return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
   } catch (e) {
-    if (e instanceof AudioTooLargeError) {
-      const chunked = await transcribeChunked(audioBlob, fileName);
+    if (e instanceof AudioTooLargeError || e instanceof GroqQuotaError) {
+      const chunked = await transcribeChunked(audioBlob, fileName, onProgress);
       if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
       console.log(`[transcrever] Groq recusou → fallback Gemini`);
       return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini-fallback" };
@@ -440,9 +501,33 @@ async function analyzeWithAI(transcricao: string): Promise<{
   };
 }
 
+/** Limite global do pipeline: evita reunião presa em "processando" para sempre. */
+const PIPELINE_TIMEOUT_MS = 25 * 60 * 1000;
+
 /** Pipeline completo: baixa → transcreve → analisa → salva. */
 async function processarReuniao(reuniaoId: string, audioPath: string): Promise<void> {
+  const deadline = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new Error("Tempo máximo de processamento excedido (25 min). Tente novamente ou divida o áudio.")),
+      PIPELINE_TIMEOUT_MS,
+    )
+  );
   try {
+    await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
+  } catch (e: any) {
+    console.error("transcrever-reuniao error:", e);
+    await admin
+      .from("reuniao")
+      .update({
+        transcricao_status: "erro",
+        transcricao_erro: String(e?.message ?? e).slice(0, 500),
+      })
+      .eq("id", reuniaoId);
+  }
+}
+
+async function executarPipeline(reuniaoId: string, audioPath: string): Promise<void> {
+  {
     await admin
       .from("reuniao")
       .update({ transcricao_status: "processando", transcricao_erro: null })
@@ -456,9 +541,20 @@ async function processarReuniao(reuniaoId: string, audioPath: string): Promise<v
 
     const fileName = audioPath.split("/").pop() ?? "audio.mp3";
 
+    // Progresso parte a parte: grava o texto já transcrito e o andamento.
+    const onProgress: ProgressFn = async ({ parte, total, textoAcumulado }) => {
+      await admin
+        .from("reuniao")
+        .update({
+          transcricao: textoAcumulado,
+          transcricao_erro: `Transcrevendo… parte ${parte} de ${total}`,
+        })
+        .eq("id", reuniaoId);
+    };
+
     // 2. Transcreve (Groq → fallback Gemini para arquivos grandes)
     const { formatted, speakers, engine } = GROQ_API_KEY
-      ? await transcribeAudio(blob, fileName)
+      ? await transcribeAudio(blob, fileName, onProgress)
       : { ...(await transcribeWithGemini(blob, fileName)), engine: "gemini" };
     console.log(`[transcrever] engine=${engine} size=${formatBytes(blob.size)}`);
     if (!formatted.trim()) throw new Error("Transcrição vazia");
@@ -487,15 +583,6 @@ async function processarReuniao(reuniaoId: string, audioPath: string): Promise<v
       })
       .eq("id", reuniaoId);
     if (upErr) throw new Error(`Falha ao salvar: ${upErr.message}`);
-  } catch (e: any) {
-    console.error("transcrever-reuniao error:", e);
-    await admin
-      .from("reuniao")
-      .update({
-        transcricao_status: "erro",
-        transcricao_erro: String(e?.message ?? e).slice(0, 500),
-      })
-      .eq("id", reuniaoId);
   }
 }
 
