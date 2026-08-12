@@ -381,7 +381,12 @@ async function transcribeChunked(
  * arquivos grandes são divididos em partes e transcritos pelo Groq;
  * se a divisão não for possível (não-MP3), cai para o Gemini.
  */
-async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: ProgressFn): Promise<{
+async function transcribeAudio(
+  audioBlob: Blob,
+  fileName: string,
+  onProgress?: ProgressFn,
+  resume?: ResumeState,
+): Promise<{
   text: string;
   formatted: string;
   speakers: string[];
@@ -389,7 +394,7 @@ async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: P
 }> {
   if (audioBlob.size > GROQ_SAFE_BYTES) {
     console.log(`[transcrever] ${formatBytes(audioBlob.size)} → tentando divisão em partes`);
-    const chunked = await transcribeChunked(audioBlob, fileName, onProgress);
+    const chunked = await transcribeChunked(audioBlob, fileName, onProgress, resume);
     if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
     console.log(`[transcrever] divisão indisponível → Gemini`);
     return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini" };
@@ -398,7 +403,7 @@ async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: P
     return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
   } catch (e) {
     if (e instanceof AudioTooLargeError || e instanceof GroqQuotaError) {
-      const chunked = await transcribeChunked(audioBlob, fileName, onProgress);
+      const chunked = await transcribeChunked(audioBlob, fileName, onProgress, resume);
       if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
       console.log(`[transcrever] Groq recusou → fallback Gemini`);
       return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini-fallback" };
@@ -406,6 +411,7 @@ async function transcribeAudio(audioBlob: Blob, fileName: string, onProgress?: P
     throw e;
   }
 }
+
 
 
 /* =============================================================
