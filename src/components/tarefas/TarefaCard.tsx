@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { parseDateOnly } from "@/lib/date";
+import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
+import type { StatusLogItem } from "@/components/tarefas/useTarefasData";
 
 interface Counts {
   comentarios: number;
