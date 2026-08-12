@@ -293,19 +293,55 @@ function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): U
 /** Notificação de progresso parte a parte. */
 type ProgressFn = (info: { parte: number; total: number; textoAcumulado: string }) => Promise<void>;
 
+/** Contexto de retomada: partes já concluídas e o texto acumulado até aqui. */
+interface ResumeState {
+  startIndex: number;
+  prefixText: string;
+}
+
+/**
+ * Erro temporário (cota / limite de tempo): a transcrição pode ser retomada
+ * automaticamente depois de esperar.
+ */
+class RetryableError extends Error {
+  waitSeconds: number;
+  constructor(message: string, waitSeconds: number) {
+    super(message);
+    this.waitSeconds = waitSeconds;
+  }
+}
+
+/** Classifica o erro final: retomável (com espera) ou definitivo. */
+function retryableWait(e: unknown): number | null {
+  if (e instanceof RetryableError) return e.waitSeconds;
+  if (e instanceof GroqQuotaError) return Math.min(Math.max(e.retryAfter, 60), 300);
+  const msg = String((e as Error)?.message ?? e);
+  if (/Limite de requisições|rate.?limit|429|cota|Tempo máximo de processamento/i.test(msg)) {
+    return 120;
+  }
+  return null;
+}
+
 /** Transcreve um MP3 grande em partes sequenciais e concatena o texto. */
 async function transcribeChunked(
   audioBlob: Blob,
   _fileName: string,
   onProgress?: ProgressFn,
+  resume?: ResumeState,
 ): Promise<{ text: string; formatted: string; speakers: string[] } | null> {
   const bytes = new Uint8Array(await audioBlob.arrayBuffer());
   const parts = splitMp3(bytes, CHUNK_TARGET_SECONDS, CHUNK_MAX_BYTES);
   if (!parts || parts.length < 2) return null;
 
-  console.log(`[transcrever] dividindo em ${parts.length} partes`);
+  const startIndex = Math.min(resume?.startIndex ?? 0, parts.length);
   const textos: string[] = [];
-  for (let idx = 0; idx < parts.length; idx++) {
+  const prefix = (resume?.prefixText ?? "").trim();
+  const acumulado = () => [prefix, ...textos].filter(Boolean).join("\n\n");
+
+  console.log(
+    `[transcrever] ${parts.length} partes — retomando a partir da parte ${startIndex + 1}`,
+  );
+  for (let idx = startIndex; idx < parts.length; idx++) {
     const part = parts[idx];
     const partBlob = new Blob([part as unknown as BlobPart], { type: "audio/mpeg" });
     console.log(`[transcrever] parte ${idx + 1}/${parts.length} (${formatBytes(part.length)})`);
@@ -314,18 +350,31 @@ async function transcribeChunked(
       r = await transcribeWithGroqRetry(partBlob, `parte-${idx + 1}.mp3`);
     } catch (e) {
       console.log(`[transcrever] parte ${idx + 1} falhou no Groq (${(e as Error).message}) → Gemini`);
-      r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
+      try {
+        r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
+      } catch (e2) {
+        const wait = retryableWait(e2) ?? retryableWait(e);
+        if (wait !== null) {
+          // Progresso já foi salvo: interrompe para retomar desta parte depois.
+          throw new RetryableError(
+            `Pausado na parte ${idx + 1} de ${parts.length}: limite temporário do serviço de transcrição.`,
+            wait,
+          );
+        }
+        throw e2;
+      }
     }
     if (r.text.trim()) textos.push(r.text.trim());
     await onProgress?.({
       parte: idx + 1,
       total: parts.length,
-      textoAcumulado: textos.join("\n\n"),
+      textoAcumulado: acumulado(),
     });
   }
-  const full = textos.join("\n\n");
+  const full = acumulado();
   return { text: full, formatted: full, speakers: [] };
 }
+
 
 /**
  * Escolhe a melhor rota de transcrição:
