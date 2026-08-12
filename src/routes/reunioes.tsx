@@ -590,6 +590,27 @@ function Reunioes() {
     else toast.info("✨ Regerando análise com IA...", { description: "A reunião será atualizada em instantes." });
   };
 
+  const [resuming, setResuming] = React.useState(false);
+  /** Retoma a transcrição da última parte concluída. */
+  const handleRetomarTranscricao = async (reuniao: any) => {
+    if (!reuniao?.audio_path) {
+      toast.error("Reunião sem áudio para transcrever");
+      return;
+    }
+    setResuming(true);
+    const { error } = await supabase.functions.invoke("transcrever-reuniao", {
+      body: { reuniao_id: reuniao.id, audio_path: reuniao.audio_path, retomar: true },
+    });
+    setResuming(false);
+    if (error) toast.error("Falha ao retomar transcrição", { description: error.message });
+    else
+      toast.info("▶️ Retomando transcrição...", {
+        description: "Continua da última parte já transcrita.",
+      });
+    qc.invalidateQueries({ queryKey: ["reunioes"] });
+  };
+
+
   // Filtragem em memória
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
