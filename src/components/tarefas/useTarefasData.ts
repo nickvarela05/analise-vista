@@ -139,5 +139,33 @@ export function useTarefasData() {
     },
   });
 
-  return { colabs, demandas, tarefas, lotes, isLoading, countsMap };
+  // Últimas mudanças de status por tarefa (log exibido no card).
+  const { data: statusLogMap = {} } = useQuery<StatusLogMap>({
+    queryKey: ["tarefas", "status-log"],
+    staleTime: 2 * 60_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("todo_historico")
+        .select("todo_id, valor_antigo, valor_novo, autor_nome, created_at")
+        .eq("campo", "status")
+        .order("created_at", { ascending: false })
+        .limit(3000);
+      if (error) throw error;
+      const m: StatusLogMap = {};
+      for (const r of data ?? []) {
+        const list = (m[r.todo_id] ??= []);
+        if (list.length >= 3) continue;
+        list.push({
+          de: r.valor_antigo,
+          para: r.valor_novo,
+          quando: r.created_at,
+          autor: r.autor_nome,
+        });
+      }
+      return m;
+    },
+  });
+
+  return { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap };
 }
