@@ -1350,11 +1350,43 @@ function Reunioes() {
                   )}
 
                 {openDetail.transcricao_erro && (
-                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                    <p className="font-semibold">⚠️ Erro no processamento IA</p>
+                  <div
+                    className={cn(
+                      "rounded-md border p-3 text-sm",
+                      openDetail.transcricao_status === "erro"
+                        ? "border-destructive/30 bg-destructive/5 text-destructive"
+                        : "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300",
+                    )}
+                  >
+                    <p className="font-semibold">
+                      {openDetail.transcricao_status === "erro"
+                        ? "⚠️ Erro no processamento IA"
+                        : openDetail.transcricao_status === "pausado"
+                          ? "⏸ Transcrição pausada"
+                          : "🎧 Transcrição em andamento"}
+                    </p>
                     <p className="mt-1 text-xs">{openDetail.transcricao_erro}</p>
+                    {(openDetail.transcricao_status === "erro" ||
+                      openDetail.transcricao_status === "pausado") &&
+                      openDetail.audio_path && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          disabled={resuming}
+                          onClick={() => handleRetomarTranscricao(openDetail)}
+                        >
+                          {resuming ? (
+                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          )}
+                          Retomar transcrição
+                        </Button>
+                      )}
                   </div>
                 )}
+
 
                 {openDetail.transcricao && (
                   <Accordion type="single" collapsible>
