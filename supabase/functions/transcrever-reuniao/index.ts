@@ -564,20 +564,46 @@ async function analyzeWithAI(transcricao: string): Promise<{
   };
 }
 
-/** Limite de cada rodada: evita reunião presa em "processando" para sempre. */
-const PIPELINE_TIMEOUT_MS = 20 * 60 * 1000;
-/** Quantas rodadas automáticas (pausa + retomada) são permitidas. */
-const MAX_ROUNDS = 5;
+/** Orçamento de trabalho de UMA execução (o ambiente encerra execuções longas). */
+const ROUND_BUDGET_MS = 5 * 60 * 1000;
+/** Teto rígido de cada execução, mesmo que uma parte trave. */
+const PIPELINE_TIMEOUT_MS = 8 * 60 * 1000;
+/** Quantas execuções seguidas SEM progresso são toleradas antes de virar erro. */
+const MAX_ROUNDS_SEM_PROGRESSO = 6;
+/** Prazo (ms) a partir do qual a execução para entre partes. */
+let roundDeadlineAt = 0;
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/** Dispara uma nova execução desta mesma função para continuar o trabalho. */
+async function reinvocar(reuniaoId: string, audioPath: string, waitSeconds: number) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/transcrever-reuniao`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-internal-secret": Deno.env.get("CRON_SECRET") ?? "",
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+      },
+      body: JSON.stringify({
+        reuniao_id: reuniaoId,
+        audio_path: audioPath,
+        retomar: true,
+        wait_seconds: waitSeconds,
+      }),
+    });
+    console.log(`[transcrever] reencadeado (${res.status})`);
+  } catch (e) {
+    console.error("[transcrever] falha ao reencadear:", e);
+  }
+}
+
 /**
- * Executa o pipeline em rodadas: ao esbarrar em limite temporário do serviço
- * de transcrição, marca a reunião como `pausado`, espera e retoma da última
- * parte concluída. Só vira `erro` quando o problema é definitivo ou acabam
- * as rodadas.
+ * Executa UMA rodada curta do pipeline. Ao esbarrar em limite temporário ou no
+ * orçamento de tempo, salva o progresso, marca a reunião como `pausado` e
+ * dispara uma nova execução que continua da última parte concluída.
  */
 async function processarReuniao(reuniaoId: string, audioPath: string, reset = false): Promise<void> {
   if (reset) {
@@ -587,54 +613,70 @@ async function processarReuniao(reuniaoId: string, audioPath: string, reset = fa
       .eq("id", reuniaoId);
   }
 
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    const deadline = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new RetryableError("Rodada excedeu o tempo máximo — retomando de onde parou.", 60)),
-        PIPELINE_TIMEOUT_MS,
-      )
-    );
-    try {
-      await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
-      return;
-    } catch (e: any) {
-      console.error("transcrever-reuniao error:", e);
-      const wait = retryableWait(e);
-      const ultima = round === MAX_ROUNDS - 1;
-      if (wait === null || ultima) {
-        await admin
-          .from("reuniao")
-          .update({
-            transcricao_status: "erro",
-            transcricao_erro: String(e?.message ?? e).slice(0, 500),
-          })
-          .eq("id", reuniaoId);
-        return;
-      }
-      const espera = Math.min(Math.max(wait, 30), 300);
-      const { data: row } = await admin
-        .from("reuniao")
-        .select("transcricao_partes_feitas, transcricao_partes_total")
-        .eq("id", reuniaoId)
-        .maybeSingle();
-      const progresso =
-        row?.transcricao_partes_total
-          ? ` (parte ${row.transcricao_partes_feitas} de ${row.transcricao_partes_total})`
-          : "";
+  const { data: antes } = await admin
+    .from("reuniao")
+    .select("transcricao_partes_feitas, transcricao_rodadas")
+    .eq("id", reuniaoId)
+    .maybeSingle();
+  const partesAntes = antes?.transcricao_partes_feitas ?? 0;
+  const rodadasAntes = reset ? 0 : (antes?.transcricao_rodadas ?? 0);
+
+  roundDeadlineAt = Date.now() + ROUND_BUDGET_MS;
+
+  const deadline = new Promise<never>((_, reject) =>
+    setTimeout(
+      () => reject(new RetryableError("Execução excedeu o tempo máximo — retomando de onde parou.", 0)),
+      PIPELINE_TIMEOUT_MS,
+    )
+  );
+
+  try {
+    await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
+    return;
+  } catch (e: any) {
+    console.error("transcrever-reuniao error:", e);
+    const wait = retryableWait(e);
+
+    const { data: row } = await admin
+      .from("reuniao")
+      .select("transcricao_partes_feitas, transcricao_partes_total")
+      .eq("id", reuniaoId)
+      .maybeSingle();
+    const partesDepois = row?.transcricao_partes_feitas ?? 0;
+    const houveProgresso = partesDepois > partesAntes;
+    const rodadas = houveProgresso ? 0 : rodadasAntes + 1;
+    const progresso = row?.transcricao_partes_total
+      ? ` (parte ${partesDepois} de ${row.transcricao_partes_total})`
+      : "";
+
+    if (wait === null || rodadas >= MAX_ROUNDS_SEM_PROGRESSO) {
       await admin
         .from("reuniao")
         .update({
-          transcricao_status: "pausado",
-          transcricao_rodadas: round + 1,
-          transcricao_erro:
-            `Pausado por limite do serviço — retomando automaticamente em ~${Math.ceil(espera / 60)} min${progresso}.`,
+          transcricao_status: "erro",
+          transcricao_rodadas: rodadas,
+          transcricao_erro: String(e?.message ?? e).slice(0, 500),
         })
         .eq("id", reuniaoId);
-      console.log(`[transcrever] pausado ${espera}s — rodada ${round + 2}/${MAX_ROUNDS}`);
-      await sleep(espera * 1000);
+      return;
     }
+
+    const espera = Math.min(Math.max(wait, 0), 300);
+    await admin
+      .from("reuniao")
+      .update({
+        transcricao_status: "pausado",
+        transcricao_rodadas: rodadas,
+        transcricao_erro: espera > 0
+          ? `Pausado por limite do serviço — retomando automaticamente em ~${Math.ceil(espera / 60)} min${progresso}.`
+          : `Retomando automaticamente${progresso}…`,
+      })
+      .eq("id", reuniaoId);
+    console.log(`[transcrever] pausado — nova execução em ${espera}s`);
+    await reinvocar(reuniaoId, audioPath, espera);
   }
 }
+
 
 async function executarPipeline(reuniaoId: string, audioPath: string): Promise<void> {
   {
