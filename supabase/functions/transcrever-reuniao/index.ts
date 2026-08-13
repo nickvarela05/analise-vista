@@ -342,6 +342,14 @@ async function transcribeChunked(
     `[transcrever] ${parts.length} partes — retomando a partir da parte ${startIndex + 1}`,
   );
   for (let idx = startIndex; idx < parts.length; idx++) {
+    // Orçamento da execução atual: para entre partes e deixa a próxima
+    // execução continuar (o ambiente encerra trabalhos longos em segundo plano).
+    if (roundDeadlineAt && Date.now() > roundDeadlineAt && idx > startIndex) {
+      throw new RetryableError(
+        `Pausado na parte ${idx + 1} de ${parts.length}: continuando em uma nova execução.`,
+        0,
+      );
+    }
     const part = parts[idx];
     const partBlob = new Blob([part as unknown as BlobPart], { type: "audio/mpeg" });
     console.log(`[transcrever] parte ${idx + 1}/${parts.length} (${formatBytes(part.length)})`);
