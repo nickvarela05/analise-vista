@@ -1464,6 +1464,7 @@ export type Database = {
         Returns: boolean
       }
       limpar_atribuicoes_finalizadas: { Args: never; Returns: Json }
+      marcar_transcricoes_travadas: { Args: never; Returns: number }
       notify_processo_proximo: { Args: never; Returns: undefined }
     }
     Enums: {
