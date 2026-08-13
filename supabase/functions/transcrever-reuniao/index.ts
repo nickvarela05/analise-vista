@@ -757,7 +757,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const user = await requireUser(req);
+    // Chamada interna (reencadeamento / vigia) dispensa sessão de usuário.
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const interna = !!cronSecret && req.headers.get("x-internal-secret") === cronSecret;
+    const user = interna ? null : await requireUser(req);
     if (!GROQ_API_KEY) console.warn("GROQ_API_KEY ausente — usando apenas a transcrição por IA");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
@@ -766,13 +769,18 @@ Deno.serve(async (req) => {
     const audioPath: string = body.audio_path;
     // `retomar: true` continua da última parte concluída; caso contrário recomeça.
     const retomar: boolean = body.retomar === true;
+    const waitSeconds: number = Math.min(Number(body.wait_seconds) || 0, 300);
     if (!reuniaoId || !audioPath) throw new Error("reuniao_id e audio_path são obrigatórios");
 
-    await assertReuniaoAccess(admin, user.id, reuniaoId);
+    if (user) await assertReuniaoAccess(admin, user.id, reuniaoId);
 
     // Roda em segundo plano: o cliente não precisa esperar (áudios longos
     // levam minutos) e a desconexão do cliente não interrompe o trabalho.
-    const task = processarReuniao(reuniaoId, audioPath, !retomar);
+    const task = (async () => {
+      if (waitSeconds > 0) await sleep(waitSeconds * 1000);
+      await processarReuniao(reuniaoId, audioPath, !retomar);
+    })();
+
 
     // @ts-ignore — API do runtime de edge functions
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
