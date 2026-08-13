@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.marcar_transcricoes_travadas() FROM authenticated;
