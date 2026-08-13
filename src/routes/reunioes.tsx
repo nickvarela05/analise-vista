@@ -610,6 +610,30 @@ function Reunioes() {
     qc.invalidateQueries({ queryKey: ["reunioes"] });
   };
 
+  // Retomada automática: reuniões pausadas há mais de 1 minuto voltam a
+  // processar sozinhas assim que alguém abre a tela (rede de segurança para
+  // quando o encadeamento automático no servidor é interrompido).
+  const autoResumidas = React.useRef<Set<string>>(new Set());
+  React.useEffect(() => {
+    const alvos = (data as any[]).filter(
+      (r) =>
+        r.transcricao_status === "pausado" &&
+        r.audio_path &&
+        !autoResumidas.current.has(r.id) &&
+        Date.now() - new Date(r.updated_at).getTime() > 60_000,
+    );
+    if (alvos.length === 0) return;
+    alvos.forEach((r) => {
+      autoResumidas.current.add(r.id);
+      supabase.functions
+        .invoke("transcrever-reuniao", {
+          body: { reuniao_id: r.id, audio_path: r.audio_path, retomar: true },
+        })
+        .then(() => qc.invalidateQueries({ queryKey: ["reunioes"] }))
+        .catch(() => autoResumidas.current.delete(r.id));
+    });
+  }, [data, qc]);
+
 
   // Filtragem em memória
   const filtered = React.useMemo(() => {
