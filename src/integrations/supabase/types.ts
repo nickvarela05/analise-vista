@@ -60,6 +60,7 @@ export type Database = {
           expira_em: string | null
           id: string
           mensagem: string
+          processo_id: string | null
           tipo: Database["public"]["Enums"]["aviso_tipo"]
           titulo: string
           updated_at: string
@@ -73,6 +74,7 @@ export type Database = {
           expira_em?: string | null
           id?: string
           mensagem: string
+          processo_id?: string | null
           tipo?: Database["public"]["Enums"]["aviso_tipo"]
           titulo: string
           updated_at?: string
@@ -86,6 +88,7 @@ export type Database = {
           expira_em?: string | null
           id?: string
           mensagem?: string
+          processo_id?: string | null
           tipo?: Database["public"]["Enums"]["aviso_tipo"]
           titulo?: string
           updated_at?: string
@@ -96,6 +99,13 @@ export type Database = {
             columns: ["colaborador_id"]
             isOneToOne: false
             referencedRelation: "colaborador"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aviso_gestor_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processo_anual"
             referencedColumns: ["id"]
           },
         ]
@@ -1445,6 +1455,7 @@ export type Database = {
         Returns: string
       }
       executar_busca_natural: { Args: { _sql: string }; Returns: Json }
+      gerar_avisos_processos_proximos: { Args: never; Returns: number }
       gerar_notificacoes_prazo: { Args: never; Returns: undefined }
       get_tarefa_counts: {
         Args: never
