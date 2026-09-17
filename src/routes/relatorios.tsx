@@ -154,6 +154,7 @@ function Relatorios() {
   const [search, setSearch] = React.useState("");
   const [mostrarInativos, setMostrarInativos] = React.useState(false);
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+  const [paraExcluir, setParaExcluir] = React.useState<RowExt | null>(null);
 
   const { data, isLoading, isFetching, error } = useQuery({
     queryKey: qk.relatorios.solicitacoes(),
