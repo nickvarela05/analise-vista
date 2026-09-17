@@ -244,6 +244,22 @@ function Relatorios() {
     onError: (e: Error) => toast.error("Erro ao alternar status", { description: e.message }),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      // Remove a marcação de inativo local (se houver) e exclui no banco externo.
+      await supabase.from("relatorio_inativo").delete().eq("solicitacao_id", id);
+      const res = await deleteSolicitacaoRelatorio({ data: { id } });
+      if (!res.ok) throw new Error(res.error);
+    },
+    onSuccess: () => {
+      toast.success("Solicitação excluída");
+      setParaExcluir(null);
+      qc.invalidateQueries({ queryKey: qk.relatorios.solicitacoes() });
+      qc.invalidateQueries({ queryKey: qk.relatorios.inativos() });
+    },
+    onError: (e: Error) => toast.error("Erro ao excluir", { description: e.message }),
+  });
+
   const rows: RowExt[] = React.useMemo(
     () =>
       (data?.ok ? data.rows : []).map((r) => {
