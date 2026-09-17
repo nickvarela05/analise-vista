@@ -323,22 +323,36 @@ function Relatorios() {
     });
   }, [rows, categoria, search, mostrarInativos]);
 
-  // Agrupa por categoria
+  // Agrupa por categoria; na visão de inativas, agrupa por solicitante.
   const grupos = React.useMemo(() => {
     const map = new Map<string, RowExt[]>();
     for (const r of filtered) {
-      const cat = (r.categoria ?? "Indefinido").trim() || "Indefinido";
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(r);
+      const key = mostrarInativos
+        ? (r.solicitante_nome ?? "").trim() || "Sem solicitante"
+        : (r.categoria ?? "Indefinido").trim() || "Indefinido";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
     }
-    return Array.from(map.entries())
-      .map(([nome, items]) => ({
-        nome,
-        items,
-        ativos: items.filter((i) => !i._inativo).length,
-      }))
-      .sort((a, b) => b.ativos - a.ativos || a.nome.localeCompare(b.nome));
-  }, [filtered]);
+    const arr = Array.from(map.entries()).map(([nome, items]) => ({
+      nome,
+      items,
+      ativos: items.filter((i) => !i._inativo).length,
+    }));
+    if (mostrarInativos) {
+      // Grupos com o recebimento mais recente primeiro.
+      const maisRecente = (items: RowExt[]) =>
+        items.reduce(
+          (acc, i) => (i.criado_em && i.criado_em > acc ? i.criado_em : acc),
+          "",
+        );
+      return arr.sort(
+        (a, b) =>
+          maisRecente(b.items).localeCompare(maisRecente(a.items)) ||
+          a.nome.localeCompare(b.nome),
+      );
+    }
+    return arr.sort((a, b) => b.ativos - a.ativos || a.nome.localeCompare(b.nome));
+  }, [filtered, mostrarInativos]);
 
   return (
     <div>
