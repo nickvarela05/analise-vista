@@ -700,6 +700,7 @@ function RelatorioTable({
   onToggleExpand,
   onUpdate,
   onToggleAtivo,
+  onDelete,
 }: { items: RowExt[] } & RowHandlers) {
   return (
     <Card className="overflow-x-auto">
@@ -717,6 +718,7 @@ function RelatorioTable({
             <TableHead>Prazo</TableHead>
             <TableHead>Recebido</TableHead>
             <TableHead className="w-24 text-right">Ativa</TableHead>
+            <TableHead className="w-12 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
