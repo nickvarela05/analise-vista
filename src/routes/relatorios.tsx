@@ -519,10 +519,41 @@ function Relatorios() {
               onToggleAtivo={(id, ativarNovamente) =>
                 toggleAtivoMut.mutate({ solicitacaoId: id, ativarNovamente })
               }
+              onDelete={(row) => setParaExcluir(row)}
+              ordemRecebimento={mostrarInativos}
             />
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!paraExcluir} onOpenChange={(o) => !o && setParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove permanentemente a solicitação
+              {paraExcluir?.solicitante_nome ? ` de ${paraExcluir.solicitante_nome}` : ""}
+              {paraExcluir?.descricao
+                ? ` (“${paraExcluir.descricao.slice(0, 80)}${paraExcluir.descricao.length > 80 ? "…" : ""}”)`
+                : ""}
+              . Não é possível desfazer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMut.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (paraExcluir) deleteMut.mutate(paraExcluir.id);
+              }}
+            >
+              {deleteMut.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
