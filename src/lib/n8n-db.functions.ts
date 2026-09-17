@@ -59,6 +59,19 @@ export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const deleteSolicitacaoRelatorio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => data)
+  .handler(async ({ data }) => {
+    const client = getN8nDbClient();
+    const { error } = await client
+      .from("solicitacoes_relatorios")
+      .delete()
+      .eq("id", data.id);
+    if (error) return { ok: false as const, error: error.message };
+    return { ok: true as const };
+  });
+
 export const createSolicitacaoRelatorio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
