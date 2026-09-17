@@ -871,9 +871,20 @@ function RelatorioTable({
                       )}
                     </div>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => onDelete(r)}
+                      aria-label="Excluir solicitação"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
                 <TableRow className="border-0 hover:bg-transparent">
-                  <TableCell colSpan={11} className="p-0">
+                  <TableCell colSpan={12} className="p-0">
                     <Collapsible open={isOpen}>
                       <CollapsibleContent>
                         <DetalhesEmail row={r} />
