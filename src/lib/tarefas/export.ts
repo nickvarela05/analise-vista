@@ -3,22 +3,11 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import type { TarefaRow } from "@/lib/db-types";
+import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 
 export type ExportColab = { id: string; nome: string };
 export type ExportLote = { id: string; nome: string };
 export type ExportDemanda = { id: string; titulo: string };
-
-const STATUS_LABEL: Record<string, string> = {
-  aberta: "Aberta",
-  em_andamento: "Em desenvolvimento",
-  teste_interno: "Teste interno",
-  homologacao: "Homologação",
-  aprovado: "Aprovado",
-  aprovado_ressalvas: "Aprovado com ressalvas",
-  reprovado: "Reprovado",
-  producao: "Produção",
-  pendente: "Pendente",
-};
 
 export function buildRows(
   tarefas: TarefaRow[],
