@@ -15,6 +15,7 @@ import {
   ChevronRight,
   User,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -55,10 +56,21 @@ import { qk } from "@/lib/queries/keys";
 import {
   listSolicitacoesRelatorios,
   updateSolicitacaoRelatorio,
+  deleteSolicitacaoRelatorio,
   STATUS_SOLICITACAO,
   type SolicitacaoRelatorio,
   type StatusSolicitacao,
 } from "@/lib/n8n-db.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { NovoRelatorioDialog } from "@/components/relatorios/NovoRelatorioDialog";
 
 export const Route = createFileRoute("/relatorios")({
