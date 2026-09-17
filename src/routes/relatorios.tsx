@@ -15,6 +15,7 @@ import {
   ChevronRight,
   User,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -55,10 +56,21 @@ import { qk } from "@/lib/queries/keys";
 import {
   listSolicitacoesRelatorios,
   updateSolicitacaoRelatorio,
+  deleteSolicitacaoRelatorio,
   STATUS_SOLICITACAO,
   type SolicitacaoRelatorio,
   type StatusSolicitacao,
 } from "@/lib/n8n-db.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { NovoRelatorioDialog } from "@/components/relatorios/NovoRelatorioDialog";
 
 export const Route = createFileRoute("/relatorios")({
@@ -142,6 +154,7 @@ function Relatorios() {
   const [search, setSearch] = React.useState("");
   const [mostrarInativos, setMostrarInativos] = React.useState(false);
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
+  const [paraExcluir, setParaExcluir] = React.useState<RowExt | null>(null);
 
   const { data, isLoading, isFetching, error } = useQuery({
     queryKey: qk.relatorios.solicitacoes(),
@@ -231,6 +244,22 @@ function Relatorios() {
     onError: (e: Error) => toast.error("Erro ao alternar status", { description: e.message }),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      // Remove a marcação de inativo local (se houver) e exclui no banco externo.
+      await supabase.from("relatorio_inativo").delete().eq("solicitacao_id", id);
+      const res = await deleteSolicitacaoRelatorio({ data: { id } });
+      if (!res.ok) throw new Error(res.error);
+    },
+    onSuccess: () => {
+      toast.success("Solicitação excluída");
+      setParaExcluir(null);
+      qc.invalidateQueries({ queryKey: qk.relatorios.solicitacoes() });
+      qc.invalidateQueries({ queryKey: qk.relatorios.inativos() });
+    },
+    onError: (e: Error) => toast.error("Erro ao excluir", { description: e.message }),
+  });
+
   const rows: RowExt[] = React.useMemo(
     () =>
       (data?.ok ? data.rows : []).map((r) => {
@@ -294,22 +323,36 @@ function Relatorios() {
     });
   }, [rows, categoria, search, mostrarInativos]);
 
-  // Agrupa por categoria
+  // Agrupa por categoria; na visão de inativas, agrupa por solicitante.
   const grupos = React.useMemo(() => {
     const map = new Map<string, RowExt[]>();
     for (const r of filtered) {
-      const cat = (r.categoria ?? "Indefinido").trim() || "Indefinido";
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(r);
+      const key = mostrarInativos
+        ? (r.solicitante_nome ?? "").trim() || "Sem solicitante"
+        : (r.categoria ?? "Indefinido").trim() || "Indefinido";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(r);
     }
-    return Array.from(map.entries())
-      .map(([nome, items]) => ({
-        nome,
-        items,
-        ativos: items.filter((i) => !i._inativo).length,
-      }))
-      .sort((a, b) => b.ativos - a.ativos || a.nome.localeCompare(b.nome));
-  }, [filtered]);
+    const arr = Array.from(map.entries()).map(([nome, items]) => ({
+      nome,
+      items,
+      ativos: items.filter((i) => !i._inativo).length,
+    }));
+    if (mostrarInativos) {
+      // Grupos com o recebimento mais recente primeiro.
+      const maisRecente = (items: RowExt[]) =>
+        items.reduce(
+          (acc, i) => (i.criado_em && i.criado_em > acc ? i.criado_em : acc),
+          "",
+        );
+      return arr.sort(
+        (a, b) =>
+          maisRecente(b.items).localeCompare(maisRecente(a.items)) ||
+          a.nome.localeCompare(b.nome),
+      );
+    }
+    return arr.sort((a, b) => b.ativos - a.ativos || a.nome.localeCompare(b.nome));
+  }, [filtered, mostrarInativos]);
 
   return (
     <div>
@@ -476,10 +519,41 @@ function Relatorios() {
               onToggleAtivo={(id, ativarNovamente) =>
                 toggleAtivoMut.mutate({ solicitacaoId: id, ativarNovamente })
               }
+              onDelete={(row) => setParaExcluir(row)}
+              ordemRecebimento={mostrarInativos}
             />
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!paraExcluir} onOpenChange={(o) => !o && setParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir solicitação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove permanentemente a solicitação
+              {paraExcluir?.solicitante_nome ? ` de ${paraExcluir.solicitante_nome}` : ""}
+              {paraExcluir?.descricao
+                ? ` (“${paraExcluir.descricao.slice(0, 80)}${paraExcluir.descricao.length > 80 ? "…" : ""}”)`
+                : ""}
+              . Não é possível desfazer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMut.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (paraExcluir) deleteMut.mutate(paraExcluir.id);
+              }}
+            >
+              {deleteMut.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -496,6 +570,9 @@ type RowHandlers = {
     categoria?: string | null;
   }) => void;
   onToggleAtivo: (id: string, ativarNovamente: boolean) => void;
+  onDelete: (row: RowExt) => void;
+  /** Visão de inativas: ordena do recebimento mais recente ao mais antigo. */
+  ordemRecebimento?: boolean;
 };
 
 function CategoriaSecao({
@@ -503,6 +580,7 @@ function CategoriaSecao({
   ativos,
   total,
   items,
+  ordemRecebimento = false,
   ...handlers
 }: {
   nome: string;
@@ -510,7 +588,7 @@ function CategoriaSecao({
   total: number;
   items: RowExt[];
 } & RowHandlers) {
-  const isSolic = isSolicitacaoCat(nome);
+  const isSolic = !ordemRecebimento && isSolicitacaoCat(nome);
 
   // Ordena por prioridade (urgência) desc, depois prazo asc, depois recebido desc.
   const sortByPrio = React.useCallback((arr: RowExt[]) => {
@@ -524,7 +602,13 @@ function CategoriaSecao({
     });
   }, []);
 
-  const itemsSorted = React.useMemo(() => sortByPrio(items), [items, sortByPrio]);
+  const itemsSorted = React.useMemo(
+    () =>
+      ordemRecebimento
+        ? [...items].sort((a, b) => (b.criado_em ?? "").localeCompare(a.criado_em ?? ""))
+        : sortByPrio(items),
+    [items, sortByPrio, ordemRecebimento],
+  );
 
   const novas = React.useMemo(
     () => itemsSorted.filter((r) => !(r.responsavel ?? "").trim()),
@@ -616,6 +700,7 @@ function RelatorioTable({
   onToggleExpand,
   onUpdate,
   onToggleAtivo,
+  onDelete,
 }: { items: RowExt[] } & RowHandlers) {
   return (
     <Card className="overflow-x-auto">
@@ -633,6 +718,7 @@ function RelatorioTable({
             <TableHead>Prazo</TableHead>
             <TableHead>Recebido</TableHead>
             <TableHead className="w-24 text-right">Ativa</TableHead>
+            <TableHead className="w-12 text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -785,9 +871,20 @@ function RelatorioTable({
                       )}
                     </div>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => onDelete(r)}
+                      aria-label="Excluir solicitação"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
                 <TableRow className="border-0 hover:bg-transparent">
-                  <TableCell colSpan={11} className="p-0">
+                  <TableCell colSpan={12} className="p-0">
                     <Collapsible open={isOpen}>
                       <CollapsibleContent>
                         <DetalhesEmail row={r} />
