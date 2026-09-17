@@ -570,6 +570,9 @@ type RowHandlers = {
     categoria?: string | null;
   }) => void;
   onToggleAtivo: (id: string, ativarNovamente: boolean) => void;
+  onDelete: (row: RowExt) => void;
+  /** Visão de inativas: ordena do recebimento mais recente ao mais antigo. */
+  ordemRecebimento?: boolean;
 };
 
 function CategoriaSecao({
@@ -577,6 +580,7 @@ function CategoriaSecao({
   ativos,
   total,
   items,
+  ordemRecebimento = false,
   ...handlers
 }: {
   nome: string;
@@ -584,7 +588,7 @@ function CategoriaSecao({
   total: number;
   items: RowExt[];
 } & RowHandlers) {
-  const isSolic = isSolicitacaoCat(nome);
+  const isSolic = !ordemRecebimento && isSolicitacaoCat(nome);
 
   // Ordena por prioridade (urgência) desc, depois prazo asc, depois recebido desc.
   const sortByPrio = React.useCallback((arr: RowExt[]) => {
@@ -598,7 +602,13 @@ function CategoriaSecao({
     });
   }, []);
 
-  const itemsSorted = React.useMemo(() => sortByPrio(items), [items, sortByPrio]);
+  const itemsSorted = React.useMemo(
+    () =>
+      ordemRecebimento
+        ? [...items].sort((a, b) => (b.criado_em ?? "").localeCompare(a.criado_em ?? ""))
+        : sortByPrio(items),
+    [items, sortByPrio, ordemRecebimento],
+  );
 
   const novas = React.useMemo(
     () => itemsSorted.filter((r) => !(r.responsavel ?? "").trim()),
