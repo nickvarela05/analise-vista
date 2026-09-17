@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import type { TarefaRow } from "@/lib/db-types";
@@ -37,6 +37,24 @@ const TAREFA_COLUMNS =
  *  - Contagens (comentários/checklist/anexos) vêm de uma única RPC agregada.
  */
 export function useTarefasData() {
+  const qc = useQueryClient();
+
+  // Realtime: qualquer alteração em `todo` feita por outro usuário atualiza o
+  // Kanban/Lista na hora, sem precisar de F5.
+  React.useEffect(() => {
+    const ch = supabase
+      .channel("tarefas-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "todo" }, () => {
+        qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+        qc.invalidateQueries({ queryKey: ["tarefas", "status-log"] });
+        qc.invalidateQueries({ queryKey: qk.tarefas.counts() });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [qc]);
+
   const { data: colabs = [] } = useQuery<ColabMini[]>({
     queryKey: qk.tarefas.colabs(),
     staleTime: 5 * 60_000,
