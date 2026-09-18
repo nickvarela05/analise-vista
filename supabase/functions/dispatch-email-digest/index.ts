@@ -550,7 +550,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         </table>
       </div>`;
 
-      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Em teste: ${minhasTarefasTeste.length} · Relatórios: ${meusRelatorios.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
+      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Em teste: ${minhasTarefasTeste.length} · Relatórios: ${meusRelatorios.length} · Solicitações pendentes: ${minhasSolicitacoes.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
 
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
