@@ -322,6 +322,23 @@ export function AvisoCard({
   const expiraEm = aviso.expira_em ? new Date(aviso.expira_em) : null;
   const expirado = expiraEm ? expiraEm.getTime() < Date.now() : false;
 
+  if (aviso.processo_id) {
+    return (
+      <AvisoProcessoCard
+        aviso={aviso}
+        colabsMap={colabsMap}
+        isGestor={isGestor}
+        isLido={isLido}
+        totalLeituras={totalLeituras}
+        totalDestinatarios={totalDestinatarios}
+        onToggleLido={onToggleLido}
+        onToggleAtivo={onToggleAtivo}
+        onEdit={onEdit}
+        onRemove={onRemove}
+      />
+    );
+  }
+
   return (
     <div
       className={cn(
