@@ -310,6 +310,14 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       );
       // Processos anuais atribuídos ao usuário — próximos 14 dias.
       const meusProcessos = procAll.filter(meu);
+      // Solicitações de relatório: as minhas (por nome do responsável) + as sem responsável.
+      const nomeUser = (u.nome ?? "").trim().toLowerCase();
+      const minhasSolicitacoes = solicitacoesPendentes.filter((s) => {
+        const resp = (s.responsavel ?? "").trim().toLowerCase();
+        if (!resp) return true;
+        if (!nomeUser) return false;
+        return resp === nomeUser || resp.includes(nomeUser) || nomeUser.includes(resp);
+      });
 
       const total =
         minhasDemandas.length +
@@ -318,7 +326,8 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         minhasTarefasTeste.length +
         meusRelatorios.length +
         meusAvisos.length +
-        meusProcessos.length;
+        meusProcessos.length +
+        minhasSolicitacoes.length;
       if (total === 0) continue;
 
       const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
