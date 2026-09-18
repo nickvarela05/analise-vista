@@ -71,6 +71,9 @@ const tipoConfig = {
     bar: "bg-destructive",
     badge: "border-destructive/40 bg-destructive/10 text-destructive",
     iconBg: "bg-destructive/10 text-destructive",
+    frame: "border-destructive/30",
+    gradient: "from-destructive via-destructive/70 to-amber-500",
+    chip: "bg-destructive/10 text-destructive ring-destructive/25",
     pulse: true,
   },
   alerta: {
@@ -79,6 +82,9 @@ const tipoConfig = {
     bar: "bg-amber-500",
     badge: "border-amber-500/40 bg-amber-500/10 text-amber-600",
     iconBg: "bg-amber-500/10 text-amber-600",
+    frame: "border-amber-500/30",
+    gradient: "from-amber-500 via-amber-400 to-orange-400",
+    chip: "bg-amber-500/10 text-amber-700 ring-amber-500/25 dark:text-amber-300",
     pulse: false,
   },
   informativo: {
@@ -87,9 +93,205 @@ const tipoConfig = {
     bar: "bg-sky-500",
     badge: "border-sky-500/40 bg-sky-500/10 text-sky-600",
     iconBg: "bg-sky-500/10 text-sky-600",
+    frame: "border-sky-500/30",
+    gradient: "from-sky-500 via-sky-400 to-cyan-400",
+    chip: "bg-sky-500/10 text-sky-700 ring-sky-500/25 dark:text-sky-300",
     pulse: false,
   },
 } as const;
+
+/** Extrai "em X dias" / "começa hoje" / "começa amanhã" do título do aviso de processo. */
+function countdownDoTitulo(titulo: string): string | null {
+  if (/começa hoje/i.test(titulo)) return "Começa hoje";
+  if (/começa amanhã/i.test(titulo)) return "Começa amanhã";
+  const m = titulo.match(/em (\d+) dias/i);
+  return m ? `Faltam ${m[1]} dias` : null;
+}
+
+/** Layout especial para avisos automáticos de processos do calendário anual. */
+function AvisoProcessoCard({
+  aviso,
+  isGestor,
+  isLido,
+  onToggleLido,
+  onToggleAtivo,
+  onEdit,
+  onRemove,
+}: AvisoCardProps) {
+  const cfg = tipoConfig[aviso.tipo];
+  const Icon = cfg.Icon;
+  const countdown = countdownDoTitulo(aviso.titulo);
+  const nomeProcesso = aviso.titulo.replace(/^Processo.*?:\s*/i, "");
+
+  return (
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md",
+        cfg.frame,
+        !aviso.ativo && "opacity-60",
+      )}
+    >
+      {/* Faixa superior em gradiente por urgência */}
+      <div className={cn("h-1.5 w-full bg-gradient-to-r", cfg.gradient)} />
+
+      <div className="space-y-3 p-4 sm:p-5">
+        {/* Cabeçalho */}
+        <div className="flex flex-wrap items-start gap-3">
+          <div
+            className={cn(
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1",
+              cfg.chip,
+              cfg.pulse && aviso.ativo && !isLido && "animate-pulse",
+            )}
+          >
+            <CalendarRange className="h-5 w-5" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <Badge variant="outline" className={cn("text-[10px]", cfg.badge)}>
+                <Icon className="mr-1 h-3 w-3" />
+                {cfg.label}
+              </Badge>
+              <Badge variant="secondary" className="text-[10px]">
+                Processo anual
+              </Badge>
+              {countdown && (
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1",
+                    cfg.chip,
+                  )}
+                >
+                  {countdown}
+                </span>
+              )}
+              {!isLido && aviso.ativo && (
+                <span className="inline-flex h-2 w-2 rounded-full bg-primary" aria-label="Não lida" />
+              )}
+              {!aviso.ativo && (
+                <Badge variant="secondary" className="text-[10px]">
+                  Inativo
+                </Badge>
+              )}
+            </div>
+            <h3
+              className={cn(
+                "mt-1.5 text-base leading-snug",
+                isLido ? "font-medium text-foreground/90" : "font-semibold text-foreground",
+              )}
+            >
+              {nomeProcesso}
+            </h3>
+          </div>
+
+          {/* Ações */}
+          <div className="flex shrink-0 items-center gap-1">
+            {!isGestor && aviso.ativo && (
+              <Button
+                variant={isLido ? "ghost" : "outline"}
+                size="sm"
+                onClick={onToggleLido}
+                className="h-8 gap-1 text-xs"
+              >
+                <Check className="h-3.5 w-3.5" />
+                {isLido ? "Lida" : "Marcar como lida"}
+              </Button>
+            )}
+            {isGestor && (
+              <>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center">
+                        <Switch
+                          checked={aviso.ativo}
+                          onCheckedChange={onToggleAtivo}
+                          aria-label="Ativar/desativar aviso"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {aviso.ativo ? "Desativar" : "Ativar"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={onEdit}
+                  aria-label="Editar"
+                >
+                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      aria-label="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir aviso?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        O aviso "{aviso.titulo}" será removido permanentemente. Um novo
+                        aviso será gerado automaticamente enquanto o processo estiver
+                        próximo.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={onRemove}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Corpo completo da mensagem */}
+        <div className="rounded-lg border bg-muted/40 px-4 py-3">
+          <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">
+            {aviso.mensagem}
+          </p>
+        </div>
+
+        {/* Rodapé */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Aviso gerado{" "}
+            {formatDistanceToNow(new Date(aviso.created_at), {
+              addSuffix: true,
+              locale: ptBR,
+            })}
+          </span>
+          <Link
+            to="/processos"
+            className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+          >
+            Abrir calendário anual
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function AvisoCard({
   aviso,
