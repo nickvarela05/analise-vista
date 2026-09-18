@@ -57,6 +57,9 @@ export type Database = {
           colaboradores_ids: string[]
           created_at: string
           criado_por: string | null
+          email_assunto: string | null
+          email_html: string | null
+          email_texto: string | null
           expira_em: string | null
           id: string
           mensagem: string
@@ -71,6 +74,9 @@ export type Database = {
           colaboradores_ids?: string[]
           created_at?: string
           criado_por?: string | null
+          email_assunto?: string | null
+          email_html?: string | null
+          email_texto?: string | null
           expira_em?: string | null
           id?: string
           mensagem: string
@@ -85,6 +91,9 @@ export type Database = {
           colaboradores_ids?: string[]
           created_at?: string
           criado_por?: string | null
+          email_assunto?: string | null
+          email_html?: string | null
+          email_texto?: string | null
           expira_em?: string | null
           id?: string
           mensagem?: string
@@ -1474,6 +1483,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      html_escape: { Args: { _t: string }; Returns: string }
       limpar_atribuicoes_finalizadas: { Args: never; Returns: Json }
       marcar_transcricoes_travadas: { Args: never; Returns: number }
       notify_processo_proximo: { Args: never; Returns: undefined }
