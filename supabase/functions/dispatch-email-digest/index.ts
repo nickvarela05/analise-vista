@@ -7,6 +7,66 @@ const N8N_SECRET = Deno.env.get("N8N_EMAIL_HMAC_SECRET") ?? "";
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
+// Banco do workflow (n8n) — origem das solicitações de relatório.
+const N8N_DB_URL_RAW = Deno.env.get("N8N_DB_URL") ?? "";
+const N8N_DB_KEY =
+  Deno.env.get("N8N_DB_SERVICE_ROLE_KEY") ?? Deno.env.get("N8N_DB_ANON_KEY") ?? "";
+const n8nDb =
+  N8N_DB_URL_RAW && N8N_DB_KEY
+    ? createClient(new URL(N8N_DB_URL_RAW).origin, N8N_DB_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+
+type SolicitacaoPendente = {
+  id: string;
+  categoria: string | null;
+  tipo_base: string | null;
+  descricao: string | null;
+  solicitante_nome: string | null;
+  solicitante_email: string | null;
+  prazo: string | null;
+  urgencia: string | null;
+  status: string | null;
+  responsavel: string | null;
+  criado_em: string | null;
+};
+
+/** Solicitações de relatório ainda não enviadas (exclui inativadas e Google). */
+async function carregarSolicitacoesPendentes(): Promise<SolicitacaoPendente[]> {
+  if (!n8nDb) return [];
+  try {
+    const [{ data, error }, inativosRes] = await Promise.all([
+      n8nDb
+        .from("solicitacoes_relatorios")
+        .select(
+          "id, categoria, tipo_base, descricao, solicitante_nome, solicitante_email, prazo, urgencia, status, responsavel, criado_em",
+        )
+        .order("criado_em", { ascending: false }),
+      admin.from("relatorio_inativo").select("solicitacao_id"),
+    ]);
+    if (error) {
+      console.error("[solicitacoes] erro:", error.message);
+      return [];
+    }
+    const inativos = new Set(
+      (inativosRes.data ?? []).map((r: { solicitacao_id: string }) => String(r.solicitacao_id)),
+    );
+    return ((data ?? []) as SolicitacaoPendente[]).filter((r) => {
+      const status = (r.status ?? "").toLowerCase();
+      if (status === "enviado") return false;
+      if (inativos.has(String(r.id))) return false;
+      const nome = (r.solicitante_nome ?? "").toLowerCase();
+      const email = (r.solicitante_email ?? "").toLowerCase();
+      if (nome.includes("google") || /@(.*\.)?google\.com$/.test(email)) return false;
+      return true;
+    });
+  } catch (e) {
+    console.error("[solicitacoes] falha:", e);
+    return [];
+  }
+}
+
 function buildDigestHtml(
   rows: Array<{ titulo: string; mensagem: string | null; tipo: string; created_at: string; link: string | null }>,
 ) {
