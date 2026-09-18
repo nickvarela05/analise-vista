@@ -1,6 +1,7 @@
 import * as React from "react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   AlertCircle,
@@ -10,6 +11,8 @@ import {
   Trash2,
   Users,
   Clock,
+  CalendarRange,
+  ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +48,7 @@ export interface AvisoRow {
   expira_em: string | null;
   colaborador_id: string | null;
   colaboradores_ids: string[] | null;
+  processo_id?: string | null;
 }
 
 interface AvisoCardProps {
