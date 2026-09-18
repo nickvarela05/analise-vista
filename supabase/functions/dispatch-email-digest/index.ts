@@ -7,6 +7,66 @@ const N8N_SECRET = Deno.env.get("N8N_EMAIL_HMAC_SECRET") ?? "";
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
+// Banco do workflow (n8n) — origem das solicitações de relatório.
+const N8N_DB_URL_RAW = Deno.env.get("N8N_DB_URL") ?? "";
+const N8N_DB_KEY =
+  Deno.env.get("N8N_DB_SERVICE_ROLE_KEY") ?? Deno.env.get("N8N_DB_ANON_KEY") ?? "";
+const n8nDb =
+  N8N_DB_URL_RAW && N8N_DB_KEY
+    ? createClient(new URL(N8N_DB_URL_RAW).origin, N8N_DB_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+
+type SolicitacaoPendente = {
+  id: string;
+  categoria: string | null;
+  tipo_base: string | null;
+  descricao: string | null;
+  solicitante_nome: string | null;
+  solicitante_email: string | null;
+  prazo: string | null;
+  urgencia: string | null;
+  status: string | null;
+  responsavel: string | null;
+  criado_em: string | null;
+};
+
+/** Solicitações de relatório ainda não enviadas (exclui inativadas e Google). */
+async function carregarSolicitacoesPendentes(): Promise<SolicitacaoPendente[]> {
+  if (!n8nDb) return [];
+  try {
+    const [{ data, error }, inativosRes] = await Promise.all([
+      n8nDb
+        .from("solicitacoes_relatorios")
+        .select(
+          "id, categoria, tipo_base, descricao, solicitante_nome, solicitante_email, prazo, urgencia, status, responsavel, criado_em",
+        )
+        .order("criado_em", { ascending: false }),
+      admin.from("relatorio_inativo").select("solicitacao_id"),
+    ]);
+    if (error) {
+      console.error("[solicitacoes] erro:", error.message);
+      return [];
+    }
+    const inativos = new Set(
+      (inativosRes.data ?? []).map((r: { solicitacao_id: string }) => String(r.solicitacao_id)),
+    );
+    return ((data ?? []) as SolicitacaoPendente[]).filter((r) => {
+      const status = (r.status ?? "").toLowerCase();
+      if (status === "enviado") return false;
+      if (inativos.has(String(r.id))) return false;
+      const nome = (r.solicitante_nome ?? "").toLowerCase();
+      const email = (r.solicitante_email ?? "").toLowerCase();
+      if (nome.includes("google") || /@(.*\.)?google\.com$/.test(email)) return false;
+      return true;
+    });
+  } catch (e) {
+    console.error("[solicitacoes] falha:", e);
+    return [];
+  }
+}
+
 function buildDigestHtml(
   rows: Array<{ titulo: string; mensagem: string | null; tipo: string; created_at: string; link: string | null }>,
 ) {
@@ -211,6 +271,9 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   }>;
   const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
+  // Solicitações de relatório pendentes de envio (base do workflow n8n).
+  const solicitacoesPendentes = await carregarSolicitacoesPendentes();
+
   // Processa usuários sequencialmente: as consultas pesadas já foram
   // feitas; resta apenas filtro em memória + 1 INSERT por usuário.
   for (const u of users ?? []) {
@@ -247,6 +310,14 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       );
       // Processos anuais atribuídos ao usuário — próximos 14 dias.
       const meusProcessos = procAll.filter(meu);
+      // Solicitações de relatório: as minhas (por nome do responsável) + as sem responsável.
+      const nomeUser = (u.nome ?? "").trim().toLowerCase();
+      const minhasSolicitacoes = solicitacoesPendentes.filter((s) => {
+        const resp = (s.responsavel ?? "").trim().toLowerCase();
+        if (!resp) return true;
+        if (!nomeUser) return false;
+        return resp === nomeUser || resp.includes(nomeUser) || nomeUser.includes(resp);
+      });
 
       const total =
         minhasDemandas.length +
@@ -255,7 +326,8 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         minhasTarefasTeste.length +
         meusRelatorios.length +
         meusAvisos.length +
-        meusProcessos.length;
+        meusProcessos.length +
+        minhasSolicitacoes.length;
       if (total === 0) continue;
 
       const isHoje = (d: string | null | undefined) => !!d && d.slice(0, 10) === hoje;
@@ -336,6 +408,35 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
           `${headRow(escapeHtml(r.codigo) + " — " + escapeHtml(r.titulo ?? ""), r.prazo ? prazoBadge(r.prazo) : "")}
          <div style="color:#6b7280;font-size:12px;margin-top:6px">${r.cliente ? "🏢 " + escapeHtml(r.cliente) + " &nbsp;·&nbsp; " : ""}Status: <b style="color:#0369a1">${escapeHtml(r.status)}</b></div>`,
         );
+
+      const renderSolicitacao = (s: SolicitacaoPendente) => {
+        const titulo =
+          (s.tipo_base ?? "").trim() ||
+          (s.categoria ?? "").trim() ||
+          (s.descricao ?? "").slice(0, 80) ||
+          "Solicitação de relatório";
+        const urg = (s.urgencia ?? "").trim();
+        const badge = s.prazo
+          ? prazoBadge(s.prazo)
+          : urg
+            ? `<span style="background:#e0f2fe;color:#075985;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px">${escapeHtml(urg.toUpperCase())}</span>`
+            : "";
+        const detalhes = [
+          s.solicitante_nome ? `👤 ${escapeHtml(s.solicitante_nome)}` : "",
+          s.prazo ? `📅 ${fmtData(s.prazo)}` : "",
+          s.responsavel ? `🙋 ${escapeHtml(s.responsavel)}` : "sem responsável",
+          `Status: <b style="color:#0369a1">${escapeHtml(s.status ?? "Pendente")}</b>`,
+        ]
+          .filter(Boolean)
+          .join(" &nbsp;·&nbsp; ");
+        return card(
+          "#0284c7",
+          `${headRow(escapeHtml(titulo), badge)}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">${detalhes}</div>`,
+        );
+      };
+
+
 
       const renderAviso = (a: (typeof meusAvisos)[number]) =>
         card(
@@ -439,6 +540,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
             ${bloco("Processos anuais próximos", "🗂️", meusProcessos.length, meusProcessos.sort((a,b) => (a.previsto_inicio ?? "").localeCompare(b.previsto_inicio ?? "")).map(renderProcesso).join(""))}
             ${bloco("Tarefas em teste — aguardando validação", "🧪", minhasTarefasTeste.length, minhasTarefasTeste.map(renderTarefaTeste).join(""))}
             ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
+            ${bloco("Solicitações de relatório pendentes de envio", "📨", minhasSolicitacoes.length, minhasSolicitacoes.map(renderSolicitacao).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
             <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
               <a href="https://analise-vista.lovable.app" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px">Abrir painel completo →</a>
@@ -448,7 +550,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
         </table>
       </div>`;
 
-      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Em teste: ${minhasTarefasTeste.length} · Relatórios: ${meusRelatorios.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
+      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Em teste: ${minhasTarefasTeste.length} · Relatórios: ${meusRelatorios.length} · Solicitações pendentes: ${minhasSolicitacoes.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
 
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
