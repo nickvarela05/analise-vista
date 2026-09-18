@@ -409,6 +409,35 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
          <div style="color:#6b7280;font-size:12px;margin-top:6px">${r.cliente ? "🏢 " + escapeHtml(r.cliente) + " &nbsp;·&nbsp; " : ""}Status: <b style="color:#0369a1">${escapeHtml(r.status)}</b></div>`,
         );
 
+      const renderSolicitacao = (s: SolicitacaoPendente) => {
+        const titulo =
+          (s.tipo_base ?? "").trim() ||
+          (s.categoria ?? "").trim() ||
+          (s.descricao ?? "").slice(0, 80) ||
+          "Solicitação de relatório";
+        const urg = (s.urgencia ?? "").trim();
+        const badge = s.prazo
+          ? prazoBadge(s.prazo)
+          : urg
+            ? `<span style="background:#e0f2fe;color:#075985;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px">${escapeHtml(urg.toUpperCase())}</span>`
+            : "";
+        const detalhes = [
+          s.solicitante_nome ? `👤 ${escapeHtml(s.solicitante_nome)}` : "",
+          s.prazo ? `📅 ${fmtData(s.prazo)}` : "",
+          s.responsavel ? `🙋 ${escapeHtml(s.responsavel)}` : "sem responsável",
+          `Status: <b style="color:#0369a1">${escapeHtml(s.status ?? "Pendente")}</b>`,
+        ]
+          .filter(Boolean)
+          .join(" &nbsp;·&nbsp; ");
+        return card(
+          "#0284c7",
+          `${headRow(escapeHtml(titulo), badge)}
+         <div style="color:#6b7280;font-size:12px;margin-top:6px">${detalhes}</div>`,
+        );
+      };
+
+
+
       const renderAviso = (a: (typeof meusAvisos)[number]) =>
         card(
           "#a855f7",
