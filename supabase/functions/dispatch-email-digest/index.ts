@@ -271,6 +271,9 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   }>;
   const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
 
+  // Solicitações de relatório pendentes de envio (base do workflow n8n).
+  const solicitacoesPendentes = await carregarSolicitacoesPendentes();
+
   // Processa usuários sequencialmente: as consultas pesadas já foram
   // feitas; resta apenas filtro em memória + 1 INSERT por usuário.
   for (const u of users ?? []) {
