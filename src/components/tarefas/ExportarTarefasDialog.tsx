@@ -27,6 +27,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "aprovado", label: "Aprovado" },
   { value: "aprovado_ressalvas", label: "Aprovado c/ ressalvas" },
   { value: "reprovado", label: "Reprovado" },
+  { value: "pre_build", label: "Pré-build" },
   { value: "producao", label: "Produção" },
 ];
 
