@@ -145,7 +145,8 @@ export const Route = createFileRoute("/api/admin/usuarios")({
               email: data.email,
               password: tempPassword,
               email_confirm: true,
-              user_metadata: { nome: data.nome, role: data.role },
+              user_metadata: { nome: data.nome, role: data.role, invite_token: internalInviteToken },
+              app_metadata: { created_by_admin: true, role: data.role },
             });
             if (error) {
               await admin.from("invite_token").delete().eq("token", internalInviteToken);
