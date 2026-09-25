@@ -2,10 +2,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
+import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   let reuniaoId: string | null = null;
   try {
     const user = await requireUser(req);
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    if (!AI_API_KEY) throw new Error("AI_API_KEY não configurada");
 
     const body = await req.json();
     reuniaoId = body.reuniao_id;
@@ -75,10 +75,10 @@ Deno.serve(async (req) => {
       .update({ transcricao_status: "processando", transcricao_erro: null })
       .eq("id", reuniaoId);
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await aiFetch({
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     });
 
     if (res.status === 429) throw new Error("Limite de requisições à IA atingido");
-    if (res.status === 402) throw new Error("Créditos da IA esgotados");
+    if (res.status === 402) throw new Error("Cota do provedor de IA esgotada");
     if (!res.ok) throw new Error(`IA (${res.status}): ${(await res.text()).slice(0, 300)}`);
 
     const json = await res.json();

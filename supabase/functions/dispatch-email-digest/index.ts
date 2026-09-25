@@ -4,6 +4,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const N8N_URL = Deno.env.get("N8N_EMAIL_WEBHOOK_URL") ?? "";
 const N8N_SECRET = Deno.env.get("N8N_EMAIL_HMAC_SECRET") ?? "";
+// URL pública do NEXUS usada no botão do e-mail.
+const APP_URL = (Deno.env.get("APP_URL") ?? "").split(",")[0].trim().replace(/\/+$/, "");
 
 const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
@@ -543,7 +545,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
             ${bloco("Solicitações de relatório pendentes de envio", "📨", minhasSolicitacoes.length, minhasSolicitacoes.map(renderSolicitacao).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
             <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
-              <a href="https://analise-vista.lovable.app" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px">Abrir painel completo →</a>
+              <a href="${APP_URL}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px">Abrir painel completo →</a>
               <p style="color:#9ca3af;font-size:12px;margin:16px 0 0">Você recebe este resumo porque a opção está ativa. Ajuste em <i>Configurações → Notificações</i>.</p>
             </div>
           </td></tr>

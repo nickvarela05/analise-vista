@@ -3,10 +3,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser } from "../_shared/auth.ts";
+import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
 // tabelas permitidas e suas colunas relevantes
 const ALLOWED_TABLES: Record<string, string[]> = {
@@ -38,10 +38,10 @@ async function gerarSQL(pergunta: string, userId: string): Promise<string> {
     .map(([t, cols]) => `${t}(${cols.join(", ")})`)
     .join("\n");
 
-  const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const r = await aiFetch({
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+      "Authorization": `Bearer ${AI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

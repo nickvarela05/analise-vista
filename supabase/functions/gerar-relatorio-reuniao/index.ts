@@ -24,10 +24,10 @@ import {
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 import { LOGO_BASE64 } from "../_shared/logo.ts";
+import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -412,7 +412,7 @@ Deno.serve(async (req) => {
 
   try {
     const user = await requireUser(req);
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    if (!AI_API_KEY) throw new Error("AI_API_KEY não configurada");
 
     const { reuniao_id, modelo } = await req.json();
     if (!reuniao_id) throw new Error("reuniao_id é obrigatório");
@@ -441,10 +441,10 @@ Deno.serve(async (req) => {
       transcricao: truncateMiddle(r.transcricao ?? "", 40000),
     };
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiRes = await aiFetch({
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -462,7 +462,7 @@ Deno.serve(async (req) => {
     });
 
     if (aiRes.status === 429) throw new Error("Limite de requisições à IA atingido. Aguarde alguns segundos.");
-    if (aiRes.status === 402) throw new Error("Créditos da IA esgotados. Contate o administrador.");
+    if (aiRes.status === 402) throw new Error("Cota do provedor de IA esgotada. Contate o administrador.");
     if (!aiRes.ok) {
       const t = await aiRes.text();
       throw new Error(`Falha na IA (${aiRes.status}): ${t.slice(0, 300)}`);

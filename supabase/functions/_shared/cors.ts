@@ -1,8 +1,12 @@
-const ALLOWED_ORIGIN_SUFFIXES = [
-  ".lovable.app",
-  ".lovableproject.com",
-];
+// Origens do app em produção vêm do secret APP_URL (uma ou mais URLs separadas por vírgula).
+const APP_ORIGINS = (Deno.env.get("APP_URL") ?? "")
+  .split(",")
+  .map((u) => u.trim())
+  .filter(Boolean)
+  .map((u) => new URL(u).origin);
+const ALLOWED_ORIGIN_SUFFIXES: string[] = [];
 const ALLOWED_ORIGIN_EXACT = new Set<string>([
+  ...APP_ORIGINS,
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:8080",
