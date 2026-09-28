@@ -69,6 +69,11 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
 }
 
 function isAuthorized(req: Request): boolean {
+  // Cron interno: segredo em `x-cron-secret` (lido do Vault pelo pg_cron), sem chave em texto puro.
+  const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
+  const headerCron = req.headers.get("x-cron-secret") ?? "";
+  if (cronSecret && headerCron === cronSecret) return true;
+
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   return token.length > 0 && token === SERVICE_KEY;

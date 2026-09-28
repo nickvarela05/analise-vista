@@ -10,9 +10,10 @@ const APP_URL = (Deno.env.get("APP_URL") ?? "").split(",")[0].trim().replace(/\/
 const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
 // Banco do workflow (n8n) — origem das solicitações de relatório.
-const N8N_DB_URL_RAW = Deno.env.get("N8N_DB_URL") ?? "";
+// Desde a migração vive no mesmo projeto: sem N8N_DB_*, usa o próprio projeto.
+const N8N_DB_URL_RAW = Deno.env.get("N8N_DB_URL") ?? SUPABASE_URL;
 const N8N_DB_KEY =
-  Deno.env.get("N8N_DB_SERVICE_ROLE_KEY") ?? Deno.env.get("N8N_DB_ANON_KEY") ?? "";
+  Deno.env.get("N8N_DB_SERVICE_ROLE_KEY") ?? Deno.env.get("N8N_DB_ANON_KEY") ?? SERVICE_KEY;
 const n8nDb =
   N8N_DB_URL_RAW && N8N_DB_KEY
     ? createClient(new URL(N8N_DB_URL_RAW).origin, N8N_DB_KEY, {
