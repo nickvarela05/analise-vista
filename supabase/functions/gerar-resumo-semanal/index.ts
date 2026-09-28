@@ -68,15 +68,32 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   return { texto, insights };
 }
 
-function isAuthorized(req: Request): boolean {
-  // Cron interno: segredo em `x-cron-secret` (lido do Vault pelo pg_cron), sem chave em texto puro.
+/**
+ * Autoriza o cron interno (`x-cron-secret`, lido do Vault pelo pg_cron), chamadas com a
+ * SERVICE_ROLE_KEY ou gestores autenticados (botão "Gerar agora" do Insights) — mesma
+ * regra do dispatch-email-digest.
+ */
+async function isAuthorized(req: Request): Promise<boolean> {
   const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
   const headerCron = req.headers.get("x-cron-secret") ?? "";
   if (cronSecret && headerCron === cronSecret) return true;
 
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  return token.length > 0 && token === SERVICE_KEY;
+  if (!token) return false;
+  if (token === SERVICE_KEY) return true;
+  try {
+    const { data, error } = await admin.auth.getUser(token);
+    if (error || !data.user) return false;
+    const { data: roles } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.user.id)
+      .eq("role", "gestor");
+    return (roles ?? []).length > 0;
+  } catch {
+    return false;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -84,7 +101,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors });
   }
-  if (!isAuthorized(req)) {
+  if (!(await isAuthorized(req))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403, headers: { ...cors, "Content-Type": "application/json" },
     });
