@@ -8,6 +8,12 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
 export default defineConfig({
+  // Modo SPA: as páginas são montadas no navegador e o Worker só entrega o shell estático
+  // e as rotas de API. No plano Free do Cloudflare Workers (10 ms de CPU por requisição) o
+  // SSR media ~28 ms por requisição (métricas de 2026-09-28) e seria encerrado com erro 1102.
+  tanstackStart: {
+    spa: { enabled: true },
+  },
   vite: {
     plugins: [mcpPlugin()],
   },
