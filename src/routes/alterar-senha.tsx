@@ -19,6 +19,9 @@ function AlterarSenhaPage() {
   const [novaSenha, setNovaSenha] = React.useState("");
   const [confirmar, setConfirmar] = React.useState("");
   const [saving, setSaving] = React.useState(false);
+  // Chegou pelo link de "Esqueci minha senha" (redirectTo com ?recuperacao=1).
+  const recuperacao =
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("recuperacao");
 
   if (loading) {
     return (
@@ -66,12 +69,14 @@ function AlterarSenhaPage() {
             <KeyRound className="h-5 w-5" />
           </div>
           <CardTitle>
-            {mustChangePassword ? "Defina sua nova senha" : "Alterar senha"}
+            {recuperacao ? "Redefinir senha" : mustChangePassword ? "Defina sua nova senha" : "Alterar senha"}
           </CardTitle>
           <CardDescription>
-            {mustChangePassword
-              ? "Você está usando uma senha temporária. Por segurança, defina uma senha pessoal antes de continuar."
-              : "Escolha uma nova senha para sua conta."}
+            {recuperacao
+              ? "Crie uma nova senha para voltar a acessar o Nexus."
+              : mustChangePassword
+                ? "Você está usando uma senha temporária. Por segurança, defina uma senha pessoal antes de continuar."
+                : "Escolha uma nova senha para sua conta."}
           </CardDescription>
         </CardHeader>
         <CardContent>
