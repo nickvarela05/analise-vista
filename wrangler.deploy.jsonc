@@ -1,0 +1,22 @@
+// Config de publicação do Worker (usada pelo deploy command: `npx wrangler deploy --config wrangler.deploy.jsonc`).
+// Espelha o .output/server/wrangler.json que o nitro gera no build com SSR. Com o modo SPA
+// (vite.config.ts) o nitro não gera esse arquivo, e o `wrangler deploy` sem --config caía no
+// wrangler.jsonc da raiz, cujo `main` só existe durante o build.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nexus",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2025-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".output/public"
+  },
+  "no_bundle": true,
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": ["**/*.mjs", "**/*.js"]
+    }
+  ]
+}
