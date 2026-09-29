@@ -2,11 +2,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
+import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -98,10 +98,10 @@ async function transcribeWithGemini(audioBlob: Blob, fileName: string): Promise<
   const base64 = blobToBase64(bytes);
   const format = audioFormat(fileName, audioBlob.type);
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await aiFetch({
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${AI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -126,7 +126,7 @@ async function transcribeWithGemini(audioBlob: Blob, fileName: string): Promise<
   if (!res.ok) {
     const t = await res.text();
     if (res.status === 429) throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
-    if (res.status === 402) throw new Error("Créditos da IA esgotados. Adicione créditos no workspace.");
+    if (res.status === 402) throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
     if (res.status === 413) {
       throw new Error(
         `Áudio de ${formatBytes(audioBlob.size)} é grande demais também para a transcrição por IA. Divida o arquivo antes de enviar.`,
@@ -523,10 +523,10 @@ async function analyzeWithAI(transcricao: string): Promise<{
     },
   };
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await aiFetch({
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${AI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -544,7 +544,7 @@ async function analyzeWithAI(transcricao: string): Promise<{
   });
 
   if (res.status === 429) throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
-  if (res.status === 402) throw new Error("Créditos da IA esgotados. Adicione créditos no workspace.");
+  if (res.status === 402) throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`Lovable AI (${res.status}): ${t.slice(0, 300)}`);
@@ -564,10 +564,15 @@ async function analyzeWithAI(transcricao: string): Promise<{
   };
 }
 
-/** Orçamento de trabalho de UMA execução (o ambiente encerra execuções longas). */
-const ROUND_BUDGET_MS = 5 * 60 * 1000;
-/** Teto rígido de cada execução, mesmo que uma parte trave. */
-const PIPELINE_TIMEOUT_MS = 8 * 60 * 1000;
+/**
+ * Orçamento de trabalho de UMA execução. No plano Free do Supabase cada worker
+ * vive no máximo 150 s (wall clock), contando a espera inicial e a análise final.
+ */
+const ROUND_BUDGET_MS = 60 * 1000;
+/** Teto rígido de cada execução, abaixo dos 150 s para o `catch` ainda conseguir reencadear. */
+const PIPELINE_TIMEOUT_MS = 120 * 1000;
+/** Espera máxima dentro da própria execução; esperas maiores ficam para o vigia de retomada. */
+const MAX_WAIT_IN_WORKER_S = 20;
 /** Quantas execuções seguidas SEM progresso são toleradas antes de virar erro. */
 const MAX_ROUNDS_SEM_PROGRESSO = 6;
 /** Prazo (ms) a partir do qual a execução para entre partes. */
@@ -672,8 +677,14 @@ async function processarReuniao(reuniaoId: string, audioPath: string, reset = fa
           : `Retomando automaticamente${progresso}…`,
       })
       .eq("id", reuniaoId);
-    console.log(`[transcrever] pausado — nova execução em ${espera}s`);
-    await reinvocar(reuniaoId, audioPath, espera);
+    if (espera <= MAX_WAIT_IN_WORKER_S) {
+      console.log(`[transcrever] pausado — nova execução em ${espera}s`);
+      await reinvocar(reuniaoId, audioPath, espera);
+    } else {
+      // Espera longa (ex.: cota horária da Groq) não cabe no limite do worker:
+      // fica `pausado` e o vigia `retomar-transcricoes` (pg_cron) retoma depois.
+      console.log(`[transcrever] pausado — aguardando o vigia de retomada (~${espera}s)`);
+    }
   }
 }
 
@@ -762,14 +773,14 @@ Deno.serve(async (req) => {
     const interna = !!cronSecret && req.headers.get("x-internal-secret") === cronSecret;
     const user = interna ? null : await requireUser(req);
     if (!GROQ_API_KEY) console.warn("GROQ_API_KEY ausente — usando apenas a transcrição por IA");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
+    if (!AI_API_KEY) throw new Error("AI_API_KEY não configurada");
 
     const body = await req.json();
     const reuniaoId: string | null = body.reuniao_id;
     const audioPath: string = body.audio_path;
     // `retomar: true` continua da última parte concluída; caso contrário recomeça.
     const retomar: boolean = body.retomar === true;
-    const waitSeconds: number = Math.min(Number(body.wait_seconds) || 0, 300);
+    const waitSeconds: number = Math.min(Number(body.wait_seconds) || 0, MAX_WAIT_IN_WORKER_S);
     if (!reuniaoId || !audioPath) throw new Error("reuniao_id e audio_path são obrigatórios");
 
     if (user) await assertReuniaoAccess(admin, user.id, reuniaoId);

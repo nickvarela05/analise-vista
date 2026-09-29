@@ -180,6 +180,35 @@ function LoginPage() {
     finishLogin();
   };
 
+  const onEsqueciSenha = async () => {
+    const email = loginForm.getValues("email").trim();
+    if (!z.string().email().safeParse(email).success) {
+      toast.error("Informe seu e-mail", {
+        description: "Digite o e-mail da sua conta no campo acima e clique de novo.",
+      });
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/alterar-senha?recuperacao=1`,
+    });
+    setLoading(false);
+    if (error && (error.status === 429 || /security purposes|rate limit/i.test(error.message))) {
+      toast.error("Aguarde um pouco", {
+        description: "Já enviamos um link há pouco. Tente de novo em 1 minuto.",
+      });
+      return;
+    }
+    if (error && isNetworkError(error.message)) {
+      toast.error("Falha ao enviar", { description: NETWORK_HINT });
+      return;
+    }
+    // Mesma mensagem com ou sem conta cadastrada, para não revelar quais e-mails existem.
+    toast.success("Verifique seu e-mail", {
+      description: "Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha.",
+    });
+  };
+
   const onSignup = async (values: z.infer<typeof signupSchema>) => {
     setLoading(true);
     const redirectTo = `${window.location.origin}/`;
@@ -278,6 +307,14 @@ function LoginPage() {
                       autoComplete="current-password"
                       {...loginForm.register("password")}
                     />
+                    <button
+                      type="button"
+                      onClick={onEsqueciSenha}
+                      disabled={loading}
+                      className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
+                    >
+                      Esqueci minha senha
+                    </button>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
