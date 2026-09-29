@@ -300,7 +300,9 @@ function computarStatusDinamico(p: Processo): ProcessoStatus {
   const ri = parseISODate(p.real_inicio);
   const rf = parseISODate(p.real_fim);
   if (rf && rf < hoje) return "concluido";
-  if (ri && !rf) return "em_andamento";
+  // Já começou de fato e o fim real ainda não passou (vazio ou preenchido com data futura).
+  // Antes exigia fim real vazio: um processo com fim real antecipado caía em "planejado".
+  if (ri && ri <= hoje) return "em_andamento";
   if (pf && !rf && pf < hoje) return "atrasado";
   if (pi && !ri && pi <= hoje) return "em_andamento";
   return "planejado";
