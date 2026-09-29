@@ -8,9 +8,13 @@
   "main": ".output/server/index.mjs",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
+  // Navegações do navegador (Sec-Fetch-Mode: navigate) que não casam com um arquivo recebem
+  // o index.html (shell do SPA) direto dos assets, sem invocar o Worker. Requisições que não
+  // são navegação (fetch das rotas /api, /mcp, /.well-known) seguem para o Worker.
   "assets": {
     "binding": "ASSETS",
-    "directory": ".output/public"
+    "directory": ".output/public",
+    "not_found_handling": "single-page-application"
   },
   "no_bundle": true,
   "rules": [
