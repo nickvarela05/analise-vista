@@ -100,7 +100,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
             className="h-px w-6 bg-gradient-to-r from-transparent via-sidebar-foreground/60 to-sidebar-foreground/0"
           />
           <span className="text-[10px] uppercase tracking-[0.32em] text-sidebar-foreground/55">
-            Gestão Interna
+            Nexus
           </span>
         </div>
       </div>

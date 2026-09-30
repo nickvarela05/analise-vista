@@ -138,7 +138,7 @@ function Dashboard() {
     [chamados],
   );
 
-  const { taskAbertas, taskHML, taskProd, taskUrgentes, taskEmTeste, taskHMLEmTeste } = React.useMemo(() => {
+  const { taskAbertas, taskHML, taskProd, taskEmTeste, taskHMLEmTeste } = React.useMemo(() => {
     let abertas = 0,
       hml = 0,
       prod = 0,
@@ -354,7 +354,7 @@ function Dashboard() {
   const pulseItems: PulseItem[] = [
     { icon: FileBarChart, label: "Solicitações", value: solicRelatPend, hint: "Relatórios pendentes", tone: "amber",   to: "/relatorios" },
     { icon: FlaskConical, label: "Em teste",     value: taskEmTeste,    hint: "Tarefas sinalizadas",  tone: "cyan",    to: "/tarefas" },
-    { icon: CheckSquare,  label: "Homologação",  value: taskHML,        hint: `${taskUrgentes} urgentes`, tone: "indigo", to: "/tarefas" },
+    { icon: CheckSquare,  label: "Homologação",  value: taskHML,        hint: "Em validação", tone: "indigo", to: "/tarefas" },
     { icon: Calendar,     label: "Reuniões",     value: reunioesSemana, hint: "Nesta semana",         tone: "violet",  to: "/reunioes" },
     { icon: Megaphone,    label: "Avisos",       value: avisosCrit,     hint: `${avisos.length} ativos`,  tone: "rose",   to: "/avisos" },
   ];
@@ -362,6 +362,7 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <DashboardHero
+        loading={loading.tarefas || loading.reunioes || loading.avisos || loading.solicitacoes}
         nome={meuProfile?.nome ?? null}
         subtitle="Visão consolidada da equipe de Análise de Requisitos."
         pulse={pulseItems}
@@ -408,7 +409,7 @@ function Dashboard() {
       {/* === RELATÓRIOS (N8N) === */}
       <SectionHeader
         title="Relatórios (canal externo)"
-        description="Solicitações que chegam pelo fluxo N8N."
+        description="Solicitações que chegam pelo fluxo do n8n."
         icon={Inbox}
         tone="amber"
       />

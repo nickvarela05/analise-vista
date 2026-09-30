@@ -25,9 +25,11 @@ export type StatPillProps = {
   hint?: string;
   tone?: StatTone;
   pulse?: boolean;
+  /** Enquanto os dados carregam, mostra um marcador em vez do valor (evita exibir um "0" falso). */
+  loading?: boolean;
 };
 
-export function StatPill({ icon: Icon, label, value, hint, tone = "primary", pulse }: StatPillProps) {
+export function StatPill({ icon: Icon, label, value, hint, tone = "primary", pulse, loading }: StatPillProps) {
   const t = tones[tone];
   return (
     <div
@@ -46,7 +48,13 @@ export function StatPill({ icon: Icon, label, value, hint, tone = "primary", pul
             <span className={cn("inline-flex h-1.5 w-1.5 rounded-full animate-pulse", t.bar)} aria-hidden />
           )}
         </div>
-        <div className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-foreground">{value}</div>
+        {loading ? (
+          <div className="mt-2 flex h-8 items-center" aria-label="Carregando">
+            <span className="h-5 w-10 animate-pulse rounded-md bg-muted-foreground/20" />
+          </div>
+        ) : (
+          <div className="mt-2 text-2xl font-bold tabular-nums tracking-tight text-foreground">{value}</div>
+        )}
         <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           {label}
         </div>

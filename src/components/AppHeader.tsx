@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme-provider";
 import { useAuth } from "@/lib/auth-context";
 import { GlobalSearch, useGlobalSearchHotkey } from "@/components/GlobalSearch";
-import { cn } from "@/lib/utils";
+import { cn, iniciais } from "@/lib/utils";
 
 const ROUTE_LABELS: Record<string, string> = {
   "/": "Dashboard",
@@ -33,6 +33,8 @@ const ROUTE_LABELS: Record<string, string> = {
   "/equipe": "Equipe",
   "/configuracoes": "Configurações",
   "/perfil": "Meu perfil",
+  "/processos": "Processos",
+  "/alterar-senha": "Alterar senha",
 };
 
 function currentLabel(pathname: string) {
@@ -50,7 +52,7 @@ export function AppHeader() {
   useGlobalSearchHotkey(setSearchOpen);
 
   const displayName = user?.email?.split("@")[0] ?? "Convidado";
-  const initials = (user?.email ?? "DV").split("@")[0].slice(0, 2).toUpperCase();
+  const initials = user?.email ? iniciais(user.email) : "DV";
   const pageLabel = currentLabel(location.pathname);
 
   return (
@@ -70,7 +72,7 @@ export function AppHeader() {
         <Sparkles className="h-3.5 w-3.5 text-primary/70" />
         <span className="text-muted-foreground">Nexus</span>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-        <span className="font-semibold text-foreground">{pageLabel}</span>
+        <span className="whitespace-nowrap font-semibold text-foreground">{pageLabel}</span>
       </div>
 
       {/* Search */}

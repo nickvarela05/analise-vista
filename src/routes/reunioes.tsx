@@ -662,6 +662,7 @@ function Reunioes() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={isLoading}
         eyebrow="Conversas e decisões"
         title="Reuniões"
         description="Pautas, resumos, transcrições, participantes e próximos passos — com IA."

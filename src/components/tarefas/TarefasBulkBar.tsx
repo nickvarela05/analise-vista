@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WORKFLOW, STATUS_LABEL, PRIO } from "@/components/tarefas/lib/workflow";
 
+import { prioridadeLabel } from "@/lib/utils";
 interface Props {
   count: number;
   onBulkStatus: (status: string) => void;
@@ -50,7 +51,7 @@ export function TarefasBulkBar({ count, onBulkStatus, onBulkPriority, onBulkEmTe
           <DropdownMenuContent>
             {PRIO.map((p) => (
               <DropdownMenuItem key={p} onClick={() => onBulkPriority(p)} className="capitalize">
-                {p}
+                {prioridadeLabel(p)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

@@ -206,13 +206,13 @@ export const Route = createFileRoute("/processos")({
   component: ProcessosRoute,
   head: () => ({
     meta: [
-      { title: "Processos Anuais · NexusGestão" },
+      { title: "Processos Anuais · Nexus" },
       {
         name: "description",
         content:
           "Calendário anual de processos: acompanhe períodos previstos e reais e organize a equipe.",
       },
-      { property: "og:title", content: "Processos Anuais · NexusGestão" },
+      { property: "og:title", content: "Processos Anuais · Nexus" },
       {
         property: "og:description",
         content:
@@ -520,6 +520,7 @@ function Processos() {
   return (
     <div className="space-y-6">
       <PageHero
+        loading={isLoading}
         eyebrow="Organização anual"
         title="Processos Anuais"
         description="Cronograma dos processos recorrentes da equipe: acompanhe o período previsto x período real de cada um."

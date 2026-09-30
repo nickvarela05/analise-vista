@@ -133,6 +133,7 @@ function Equipe() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={isLoading}
         eyebrow="Gestão de pessoas"
         title="Equipe"
         description="Disponibilidade em tempo real, eventos diários, horários e férias."

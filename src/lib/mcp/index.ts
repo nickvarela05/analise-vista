@@ -10,7 +10,7 @@ const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unse
 
 export default defineMcp({
   name: "nexus-mcp",
-  title: "Nexus — Gestão Interna",
+  title: "Nexus",
   version: "0.1.0",
   instructions:
     "Ferramentas do Nexus (gestão interna): consultar e atualizar tarefas, listar reuniões, demandas e criar tarefas em nome do usuário autenticado. Todas as chamadas respeitam as regras de acesso (RLS) do usuário.",

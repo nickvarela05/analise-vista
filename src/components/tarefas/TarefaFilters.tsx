@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 
+import { prioridadeLabel } from "@/lib/utils";
 export interface TarefaFiltersState {
   search: string;
   responsaveis: string[];
@@ -115,7 +116,7 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
                     className="h-7 flex-1 text-xs capitalize"
                     onClick={() => togglePrio(p)}
                   >
-                    {p}
+                    {prioridadeLabel(p)}
                   </Button>
                 ))}
               </div>

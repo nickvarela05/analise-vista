@@ -4,7 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { Calendar, ListChecks, MessageSquare, Tag, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { AssigneeBadges, type AssigneeOption } from "@/components/AssigneeCombobox";
-import { cn } from "@/lib/utils";
+import { cn, prioridadeLabel } from "@/lib/utils";
 import {
   describePrazo,
   prazoBadgeClass,
@@ -103,7 +103,7 @@ export function DemandaCard({
         <div className="flex flex-wrap items-center gap-1.5">
           {!isCritica && (
             <Badge variant="outline" className={cn("capitalize text-[10px]", prioridadeBadgeClass(demanda.prioridade))}>
-              {demanda.prioridade}
+              {prioridadeLabel(demanda.prioridade)}
             </Badge>
           )}
           <Badge variant="outline" className="text-[10px] capitalize text-muted-foreground">

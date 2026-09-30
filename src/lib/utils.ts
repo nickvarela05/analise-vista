@@ -23,6 +23,43 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const PRIORIDADE_LABEL: Record<string, string> = {
+  baixa: "Baixa",
+  media: "Média",
+  alta: "Alta",
+  critica: "Crítica",
+  urgente: "Urgente",
+};
+
+/**
+ * @description Rótulo em português (com acento) para o valor de prioridade gravado no banco.
+ * Substitui o `capitalize` do CSS, que exibia "Media" e "Critica".
+ * @param p Valor do banco (`baixa`, `media`, `alta`, `critica`, `urgente`).
+ * @returns Rótulo de exibição; valores desconhecidos voltam como vieram.
+ * @example
+ * prioridadeLabel("media") // => "Média"
+ */
+export function prioridadeLabel(p: string | null | undefined): string {
+  if (!p) return "";
+  return PRIORIDADE_LABEL[p] ?? p;
+}
+
+/**
+ * @description Iniciais do avatar: primeira letra do primeiro e do último nome.
+ * Aceita nome ("Nickolas Brussolo Varela") ou e-mail ("nickolas.varela@..."), para o avatar
+ * mostrar as mesmas iniciais no topo, no menu, no perfil e em Configurações.
+ * @param texto Nome completo ou e-mail.
+ * @returns Duas letras maiúsculas; "?" se vazio.
+ * @example
+ * iniciais("nickolas.varela@sisteplan.com.br") // => "NV"
+ */
+export function iniciais(texto: string | null | undefined): string {
+  const partes = (texto ?? "").split("@")[0].split(/[\s._-]+/).filter(Boolean);
+  if (partes.length === 0) return "?";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
 /**
  * @description Extrai uma mensagem legível de um valor de erro `unknown` capturado em `catch`.
  * Aceita `Error`, `string` e objetos com propriedade `message: string`.

@@ -45,7 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, prioridadeLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   STATUS_OPTS,
@@ -161,7 +161,7 @@ export function DemandaDetailDrawer({
             chips={
               <>
                 <Badge variant="outline" className={cn("capitalize", prioridadeBadgeClass(demanda.prioridade))}>
-                  {demanda.prioridade}
+                  {prioridadeLabel(demanda.prioridade)}
                 </Badge>
                 <Badge variant="outline" className={cn("capitalize", statusBadgeClass(demanda.status))}>
                   {STATUS_LABEL[demanda.status as DemandaStatus] ?? demanda.status}

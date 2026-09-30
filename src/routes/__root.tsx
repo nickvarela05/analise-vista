@@ -33,19 +33,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nexus — Gestão Interna" },
+      { title: "Nexus" },
       {
         name: "description",
         content: "Sistema interno de gestão da equipe de Análise de Requisitos.",
       },
       { name: "author", content: "Nexus" },
-      { property: "og:title", content: "Nexus — Gestão Interna" },
+      { property: "og:title", content: "Nexus" },
       {
         property: "og:description",
         content: "Sistema interno de gestão da equipe de Análise de Requisitos.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "Nexus — Gestão Interna" },
+      { name: "twitter:title", content: "Nexus" },
       { name: "description", content: "Demand Hub is a web application for managing requirements analysis team tasks and demands." },
       { property: "og:description", content: "Demand Hub is a web application for managing requirements analysis team tasks and demands." },
       { name: "twitter:description", content: "Demand Hub is a web application for managing requirements analysis team tasks and demands." },

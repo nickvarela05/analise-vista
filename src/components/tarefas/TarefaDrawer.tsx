@@ -42,6 +42,7 @@ import { AssigneeCombobox } from "@/components/AssigneeCombobox";
 import { WORKFLOW, STATUS_LABEL, statusVariant, prioVariant, PRIO } from "./lib/workflow";
 import { DialogHero } from "@/components/shared/DialogHero";
 
+import { prioridadeLabel } from "@/lib/utils";
 interface Props {
   tarefa: any | null;
   open: boolean;
@@ -343,7 +344,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                 {STATUS_LABEL[tarefa.status] ?? tarefa.status}
               </Badge>
               <Badge variant="outline" className={`capitalize ${prioVariant(tarefa.prioridade)}`}>
-                {tarefa.prioridade}
+                {prioridadeLabel(tarefa.prioridade)}
               </Badge>
               {tarefa.em_teste && (
                 <Badge variant="outline" className="gap-1 border-info/30 bg-info/5 text-info">
@@ -380,7 +381,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
               <SelectContent>
                 {PRIO.map((p) => (
                   <SelectItem key={p} value={p} className="text-xs capitalize">
-                    {p}
+                    {prioridadeLabel(p)}
                   </SelectItem>
                 ))}
               </SelectContent>

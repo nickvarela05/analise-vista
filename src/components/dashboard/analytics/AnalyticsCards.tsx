@@ -483,7 +483,8 @@ export function FunilRelatoriosCard({
               <div className="h-7 overflow-hidden rounded-md bg-muted">
                 <div
                   className="flex h-full items-center justify-end px-2 text-[10px] font-semibold text-background transition-all"
-                  style={{ width: `${Math.max(d.pct, 4)}%`, background: tones[i] }}
+                  // Mínimo de 4% só para caber o número; com 0 a barra fica vazia.
+                  style={{ width: `${d.total > 0 ? Math.max(d.pct, 4) : 0}%`, background: tones[i] }}
                 >
                   {d.total > 0 ? d.total : ""}
                 </div>

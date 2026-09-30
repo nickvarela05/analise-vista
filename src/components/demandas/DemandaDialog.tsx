@@ -28,7 +28,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AssigneeCombobox, type AssigneeOption } from "@/components/AssigneeCombobox";
-import { cn } from "@/lib/utils";
+import { cn, prioridadeLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import {
   CATEGORIA_OPTS,
@@ -254,7 +254,7 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {PRIORIDADE_OPTS.map((o) => (
-                    <SelectItem key={o} value={o} className="capitalize">{o}</SelectItem>
+                    <SelectItem key={o} value={o} className="capitalize">{prioridadeLabel(o)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

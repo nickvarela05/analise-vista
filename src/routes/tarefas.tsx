@@ -254,6 +254,7 @@ function Tarefas() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={isLoading}
         eyebrow="Fluxo de trabalho"
         title="Tarefas"
         description="Acompanhe o andamento da equipe — da abertura à produção, com visão por status e prioridade."

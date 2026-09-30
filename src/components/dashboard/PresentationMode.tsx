@@ -220,7 +220,7 @@ export function PresentationMode(props: PresentationProps) {
             <div className="truncate text-xs font-semibold leading-tight sm:text-sm">
               Modo apresentação
             </div>
-            <div className="hidden truncate text-[10px] capitalize text-muted-foreground tabular-nums lg:block">
+            <div className="hidden truncate text-[10px] text-muted-foreground tabular-nums first-letter:uppercase lg:block">
               {hoje} · {hora}
             </div>
           </div>
