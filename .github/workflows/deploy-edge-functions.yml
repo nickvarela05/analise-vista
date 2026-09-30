@@ -36,4 +36,6 @@ jobs:
 
       # Sem nome de função, publica todas as pastas de supabase/functions,
       # respeitando o verify_jwt de cada uma no config.toml.
-      - run: supabase functions deploy --project-ref "$PROJECT_ID"
+      # --use-api: empacota no servidor do Supabase, sem Docker (evita o limite de downloads
+      # do Docker Hub, "toomanyrequests: Data limit exceeded", visto no primeiro deploy).
+      - run: supabase functions deploy --project-ref "$PROJECT_ID" --use-api
