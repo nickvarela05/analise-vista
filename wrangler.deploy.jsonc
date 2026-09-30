@@ -16,6 +16,10 @@
     "directory": ".output/public",
     "not_found_handling": "single-page-application"
   },
+  // Obrigatório para `wrangler preview` (prévias por branch/PR), mesmo vazio. Os secrets das
+  // prévias ficam na "Preview base config" (`wrangler preview base-config secret put`), não aqui;
+  // assets e compatibility_* do topo valem também para as prévias.
+  "previews": {},
   "no_bundle": true,
   "rules": [
     {
