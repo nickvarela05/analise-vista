@@ -1,0 +1,39 @@
+# Publica as Edge Functions do Supabase quando uma mudança aprovada entra em main.
+# Estrutura do banco (migrations) continua manual, de propósito: cada mudança merece conferência.
+#
+# Secret necessário: SUPABASE_ACCESS_TOKEN — token escopado ao projeto NEXUS com
+# "Edge Functions" (Read-write) e "Project Settings" (Read). Vence em 2026-09-29 + 1 ano
+# (29/09/2027): renovar antes, senão as funções deixam de ser publicadas.
+name: Deploy Edge Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+      - ".github/workflows/deploy-edge-functions.yml"
+  workflow_dispatch:
+
+# Evita duas publicações simultâneas; a mais nova espera a anterior terminar.
+concurrency:
+  group: deploy-edge-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_ID: toatihyfgqnrxwgotwrn
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+
+      # Sem nome de função, publica todas as pastas de supabase/functions,
+      # respeitando o verify_jwt de cada uma no config.toml.
+      - run: supabase functions deploy --project-ref "$PROJECT_ID"
