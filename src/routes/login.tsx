@@ -79,7 +79,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
               color: "transparent",
             }}
           >
-            SISTE
+            NEX
           </span>
           <span
             className={`${compact ? "text-xl" : "text-2xl"} font-light tracking-[0.18em]`}
@@ -91,7 +91,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
               color: "transparent",
             }}
           >
-            PLAN
+            US
           </span>
         </div>
         <div className="mt-1.5 flex items-center gap-2">
@@ -100,7 +100,7 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
             className="h-px w-6 bg-gradient-to-r from-transparent via-sidebar-foreground/60 to-sidebar-foreground/0"
           />
           <span className="text-[10px] uppercase tracking-[0.32em] text-sidebar-foreground/55">
-            Nexus
+            Análise de Requisitos
           </span>
         </div>
       </div>
