@@ -1132,6 +1132,7 @@ export type Database = {
           origem_importacao: string | null
           data_homologacao: string | null
           link_homologacao: string | null
+          numero_eproject: number | null
           observacao_homologacao: string | null
           sistema: string | null
           prioridade: Database["public"]["Enums"]["todo_prioridade"]
@@ -1155,6 +1156,7 @@ export type Database = {
           origem_importacao?: string | null
           data_homologacao?: string | null
           link_homologacao?: string | null
+          numero_eproject?: number | null
           observacao_homologacao?: string | null
           sistema?: string | null
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
@@ -1178,6 +1180,7 @@ export type Database = {
           origem_importacao?: string | null
           data_homologacao?: string | null
           link_homologacao?: string | null
+          numero_eproject?: number | null
           observacao_homologacao?: string | null
           sistema?: string | null
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
@@ -1464,6 +1467,10 @@ export type Database = {
     }
     Functions: {
       auto_encerrar_tarefas_antigas: { Args: never; Returns: number }
+      receber_pacote_homologacao: {
+        Args: { p_descricao: string | null; p_itens: Json; p_nome: string }
+        Returns: Json
+      }
       enqueue_notificacao: {
         Args: {
           _link?: string

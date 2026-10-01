@@ -73,7 +73,7 @@ export function WorkflowChamadosPanel({ chamados, tarefas, chamadosEncaminhados 
           <WorkflowStep icon={Inbox} label="A fazer" value={tAberta} tone="warning" to="/tarefas" />
           <WorkflowStep
             icon={Wrench}
-            label="Em desenvolvimento"
+            label="Stand-by"
             value={tDesenv}
             tone="primary"
             to="/tarefas"

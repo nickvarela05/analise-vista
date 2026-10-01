@@ -1,6 +1,8 @@
-// Novo fluxo de workflow para tarefas
+// Fluxo de workflow das tarefas (colunas do Kanban, nesta ordem).
+// "aberta" saiu em 01/10/2026: existia para trazer todas as tarefas do E-project, o que deixou
+// de ser feito quando o pacote passou a ser recebido pelo e-mail de homologação. O valor
+// continua no banco como status legado e é tratado como Stand-by.
 export const WORKFLOW = [
-  "aberta",
   "em_andamento",
   "homologacao",
   "aprovado",
@@ -16,6 +18,7 @@ export type WorkflowStatus = (typeof WORKFLOW)[number];
 // Status legados que ainda podem existir no banco mas que mapeamos
 export const ALL_STATUS = [
   ...WORKFLOW,
+  "aberta",
   "pendente",
   "concluida",
   "cancelada",
@@ -24,7 +27,7 @@ export const ALL_STATUS = [
 
 export const STATUS_LABEL: Record<string, string> = {
   aberta: "Aberta",
-  em_andamento: "Em desenvolvimento/Teste interno",
+  em_andamento: "Stand-by",
   pre_build: "Pré-build",
   homologacao: "Homologação",
   aprovado: "Aprovado",
@@ -40,7 +43,7 @@ export const STATUS_LABEL: Record<string, string> = {
 
 export const STATUS_DESCRIPTION: Record<string, string> = {
   aberta: "Aguardando início",
-  em_andamento: "Em execução",
+  em_andamento: "Em aguardo",
   pre_build: "Preparação para build",
   homologacao: "Validação em andamento",
   aprovado: "Aprovado para produção",
@@ -115,7 +118,7 @@ export type Prio = (typeof PRIO)[number];
 
 // Normaliza status legados para o Kanban
 export function normalizeStatus(s: string): WorkflowStatus {
-  if (s === "pendente") return "aberta";
+  if (s === "pendente" || s === "aberta") return "em_andamento";
   if (s === "concluida") return "producao";
   if (s === "encaminhada") return "homologacao";
   if (s === "cancelada") return "encerrada";

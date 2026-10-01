@@ -57,7 +57,7 @@ const initialForm: FormState = {
   titulo: "",
   descricao: "",
   prioridade: "media",
-  status: "aberta",
+  status: "em_andamento",
   data_prevista: "",
   responsaveis_ids: [],
   equipe_toda: false,
