@@ -30,7 +30,34 @@ function AlterarSenhaPage() {
       </div>
     );
   }
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session) {
+    // Link de redefinição inválido, vencido ou já usado: o Auth devolve para cá sem sessão.
+    // Antes isso caía direto no login, sem explicação.
+    if (recuperacao) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <KeyRound className="h-5 w-5" />
+                Link inválido ou já usado
+              </CardTitle>
+              <CardDescription>
+                Este link de redefinição de senha não vale mais. Ele só pode ser usado uma vez e vence
+                depois de um tempo. Peça um novo na tela de entrada, em “Esqueci minha senha”.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" onClick={() => navigate({ to: "/login" })}>
+                Voltar para a tela de entrada
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    return <Navigate to="/login" replace />;
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

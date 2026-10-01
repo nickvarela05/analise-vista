@@ -135,11 +135,21 @@ Deno.serve(async (req) => {
 
   const tipo = emailData.email_action_type;
   const { subject, html, text } = montarEmail(tipo, emailData);
-  const r = await sendEmailViaN8n({ to: user.email, subject, html, text });
-  if (!r.ok) {
-    console.error(`[auth-send-email] falha no n8n (${tipo}): ${r.status} ${r.body}`);
-    return erro(500, "falha ao enviar o e-mail");
-  }
-  console.log(`[auth-send-email] enviado: ${tipo}`);
+
+  // O Auth espera o hook por no máximo 5 s. Se passar disso, ele cancela o pedido e DESCARTA
+  // o token — mas o e-mail já em andamento sai mesmo assim, com um link que nunca vai valer
+  // ("One-time token not found"; caso real em 01/10/2026, quando o n8n levou ~7 s).
+  // Por isso respondemos na hora e enviamos em segundo plano.
+  const envio = sendEmailViaN8n({ to: user.email, subject, html, text })
+    .then((r) => {
+      if (r.ok) console.log(`[auth-send-email] enviado: ${tipo}`);
+      else console.error(`[auth-send-email] falha no n8n (${tipo}): ${r.status} ${r.body}`);
+    })
+    .catch((e) => console.error(`[auth-send-email] erro ao enviar (${tipo}):`, e));
+
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime;
+  if (runtime) runtime.waitUntil(envio);
+  else await envio;
+
   return new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } });
 });
