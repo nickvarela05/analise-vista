@@ -30,6 +30,12 @@ import {
   type LinhaImport,
 } from "@/lib/schemas/tarefa_import";
 import { taskDedupKey, extractTaskNumber } from "@/components/tarefas/lib/taskNumber";
+import {
+  parseEmailHomologacao,
+  tabelaHtmlParaTsv,
+  type ItemEmailHml,
+} from "@/components/tarefas/lib/emailHomologacao";
+import { fetchAllRows } from "@/lib/queries/fetch-all";
 
 const norm = (s: unknown) =>
   String(s ?? "")
@@ -81,6 +87,8 @@ export function ImportarTarefasDialog() {
   const [descricaoLote, setDescricaoLote] = React.useState("");
   const [existentes, setExistentes] = React.useState<Existente[]>([]);
   const [substituirIds, setSubstituirIds] = React.useState<Set<string>>(new Set());
+  const [textoEmail, setTextoEmail] = React.useState("");
+  const [criarFaltantes, setCriarFaltantes] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const reset = () => {
@@ -92,17 +100,62 @@ export function ImportarTarefasDialog() {
     setDescricaoLote("");
     setExistentes([]);
     setSubstituirIds(new Set());
+    setTextoEmail("");
+    setCriarFaltantes(false);
     if (inputRef.current) inputRef.current.value = "";
   };
 
   // Carrega existentes ao abrir para permitir checagem no momento do parse
   React.useEffect(() => {
     if (!open) return;
-    supabase
-      .from("todo")
-      .select("id, titulo, status")
-      .then(({ data }) => setExistentes(data ?? []));
+    // Paginado: com ~9.100 tarefas, uma consulta só devolvia 1.000 e a checagem de
+    // duplicidade deixava passar tarefas que já existiam.
+    fetchAllRows<Existente>((from, to) =>
+      supabase.from("todo").select("id, titulo, status").order("id").range(from, to),
+    )
+      .then(setExistentes)
+      .catch(() =>
+        setErros(["Não foi possível carregar as tarefas existentes para checar duplicidade."]),
+      );
   }, [open]);
+
+  // Tabela do e-mail de homologação: define quais tarefas da planilha entram no pacote.
+  const email = React.useMemo(() => parseEmailHomologacao(textoEmail), [textoEmail]);
+  const mapaEmail = React.useMemo(() => {
+    const m = new Map<string, ItemEmailHml>();
+    for (const i of email.itens) m.set(i.numero, i);
+    return m;
+  }, [email]);
+  const filtrarPeloEmail = forcarHomologacao && email.itens.length > 0;
+  const itemDoEmail = React.useCallback(
+    (titulo: string) => {
+      const n = extractTaskNumber(titulo);
+      return n ? mapaEmail.get(n) : undefined;
+    },
+    [mapaEmail],
+  );
+
+  // Tarefas do e-mail que não vieram na planilha (planilha exportada antes, por exemplo).
+  const faltantes = React.useMemo(() => {
+    if (!filtrarPeloEmail) return [];
+    const naPlanilha = new Set(linhas.map((l) => extractTaskNumber(l.titulo)));
+    return email.itens.filter((i) => !naPlanilha.has(i.numero));
+  }, [filtrarPeloEmail, linhas, email]);
+
+  // O que de fato entra: a planilha filtrada pelo e-mail e, se pedido, as faltantes
+  // montadas com o texto do próprio e-mail.
+  const linhasPacote = React.useMemo<LinhaImport[]>(() => {
+    if (!filtrarPeloEmail) return linhas;
+    const doEmail = linhas.filter((l) => itemDoEmail(l.titulo));
+    if (!criarFaltantes) return doEmail;
+    const extras: LinhaImport[] = faltantes.map((i) => ({
+      titulo: (i.tarefa ? `Tarefa ${i.numero} - ${i.tarefa}` : `Tarefa ${i.numero}`).slice(0, 200),
+      descricao: null,
+      status: "homologacao",
+      prioridade: "media",
+    }));
+    return [...doEmail, ...extras];
+  }, [filtrarPeloEmail, linhas, itemDoEmail, criarFaltantes, faltantes]);
 
   // Índice de existentes por chave de dedup (número → id/status/título)
   const mapaExistentes = React.useMemo(() => {
@@ -118,14 +171,30 @@ export function ImportarTarefasDialog() {
   const { novas, duplicadas } = React.useMemo(() => {
     const novasArr: LinhaImport[] = [];
     const dupArr: Duplicada[] = [];
-    for (const l of linhas) {
+    for (const l of linhasPacote) {
       const k = taskDedupKey(l.titulo);
       const ex = k ? mapaExistentes.get(k) : undefined;
       if (ex) dupArr.push({ linha: l, existente: ex });
       else novasArr.push(l);
     }
     return { novas: novasArr, duplicadas: dupArr };
-  }, [linhas, mapaExistentes]);
+  }, [linhasPacote, mapaExistentes]);
+
+  // Com o e-mail colado, as tarefas que já existem no Nexus fazem parte do pacote: entram
+  // marcadas para ir a Homologação (dá para desmarcar uma a uma).
+  React.useEffect(() => {
+    if (filtrarPeloEmail) setSubstituirIds(new Set(duplicadas.map((d) => d.existente.id)));
+  }, [filtrarPeloEmail, duplicadas]);
+
+  const dadosHml = (titulo: string) => {
+    const i = itemDoEmail(titulo);
+    return {
+      sistema: i?.sistema ?? null,
+      link_homologacao: i?.link ?? null,
+      observacao_homologacao: i?.observacao ?? null,
+      data_homologacao: i?.dataHml ?? null,
+    };
+  };
 
   const onFile = async (file: File) => {
     setArquivo(file.name);
@@ -217,7 +286,7 @@ export function ImportarTarefasDialog() {
   const limparSelecao = () => setSubstituirIds(new Set());
 
   const importar = async () => {
-    if (!user || linhas.length === 0) return;
+    if (!user || linhasPacote.length === 0) return;
     let loteData: { nome: string; descricao: string | null } | null = null;
     if (forcarHomologacao) {
       const parsedLote = loteImportSchema.safeParse({
@@ -271,6 +340,7 @@ export function ImportarTarefasDialog() {
         lote_importacao_id: loteId,
         origem_importacao: forcarHomologacao ? "homologacao" : null,
         em_teste: forcarHomologacao,
+        ...(filtrarPeloEmail ? dadosHml(l.titulo) : {}),
       }));
       const { error } = await supabase.from("todo").insert(payload);
       if (error) {
@@ -304,6 +374,23 @@ export function ImportarTarefasDialog() {
       totalAtualizadas += ids.length;
     }
 
+    // 3) Dados do e-mail (sistema, link, observação, data) nas tarefas que já existiam.
+    // Um update por tarefa, porque os valores diferem; só os campos que o e-mail trouxe.
+    if (filtrarPeloEmail) {
+      for (const d of substituicoes) {
+        const dados: Partial<ReturnType<typeof dadosHml>> = Object.fromEntries(
+          Object.entries(dadosHml(d.linha.titulo)).filter(([, v]) => v !== null),
+        );
+        if (Object.keys(dados).length === 0) continue;
+        const { error } = await supabase.from("todo").update(dados).eq("id", d.existente.id);
+        if (error) {
+          setImportando(false);
+          toast.error("Erro ao gravar os dados do e-mail", { description: error.message });
+          return;
+        }
+      }
+    }
+
     setImportando(false);
     const partes: string[] = [];
     if (novas.length) partes.push(`${novas.length} nova(s)`);
@@ -333,7 +420,7 @@ export function ImportarTarefasDialog() {
         <DialogHeader>
           <DialogTitle>Importar tarefas via Excel</DialogTitle>
           <DialogDescription>
-            Aceita arquivos .xls e .xlsx. Serão considerados apenas: Tarefa, Assunto, Status,
+            Aceita arquivos .xls e .xlsx. Da planilha são considerados: Tarefa, Assunto, Status,
             Prioridade e Descrição. A checagem de duplicidade usa o <span className="font-medium">número da tarefa</span>.
           </DialogDescription>
         </DialogHeader>
@@ -416,6 +503,76 @@ export function ImportarTarefasDialog() {
                     className="mt-1 text-sm"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="email-hml" className="text-xs">
+                    Tabela do e-mail de homologação (opcional)
+                  </Label>
+                  <Textarea
+                    id="email-hml"
+                    value={textoEmail}
+                    onChange={(e) => setTextoEmail(e.target.value)}
+                    onPaste={(e) => {
+                      // O Outlook copia a tabela também em HTML; dali dá para recuperar as
+                      // células mescladas (data e sistema que valem para várias linhas).
+                      const html = e.clipboardData.getData("text/html");
+                      const tsv = html ? tabelaHtmlParaTsv(html) : null;
+                      if (tsv) {
+                        e.preventDefault();
+                        setTextoEmail(tsv);
+                      }
+                    }}
+                    placeholder="Copie a tabela do e-mail e cole aqui. A planilha pode ser a consulta completa do E-project: só as tarefas do e-mail entram."
+                    rows={3}
+                    className="mt-1 font-mono text-[11px]"
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Com a tabela colada, não é preciso apagar linhas da planilha. Sistema, observação,
+                    link e data de homologação vão para o card de cada tarefa.
+                  </p>
+                  {textoEmail.trim() && email.itens.length === 0 && (
+                    <p className="mt-1 text-[11px] text-destructive">
+                      Não encontrei números de tarefa no texto colado.
+                    </p>
+                  )}
+                  {filtrarPeloEmail && (
+                    <div className="mt-2 space-y-1.5 rounded-md border bg-background/60 p-2 text-[11px]">
+                      <p>
+                        <span className="font-medium">{email.itens.length}</span> tarefa(s) no e-mail
+                        {linhas.length > 0 && (
+                          <>
+                            {" "}
+                            · <span className="font-medium">{email.itens.length - faltantes.length}</span>{" "}
+                            encontrada(s) na planilha de {linhas.length}
+                          </>
+                        )}
+                      </p>
+                      {linhas.length > 0 && faltantes.length > 0 && (
+                        <>
+                          <p className="text-warning">
+                            {faltantes.length} do e-mail não estão na planilha:{" "}
+                            <span className="font-mono">
+                              {faltantes.map((f) => `#${f.numero}`).join(", ")}
+                            </span>
+                          </p>
+                          <div className="flex items-start gap-2">
+                            <Checkbox
+                              id="criar-faltantes"
+                              checked={criarFaltantes}
+                              onCheckedChange={(v) => setCriarFaltantes(v === true)}
+                              className="mt-0.5"
+                            />
+                            <Label
+                              htmlFor="criar-faltantes"
+                              className="cursor-pointer text-[11px] font-normal"
+                            >
+                              Incluir essas também, com o texto do e-mail (sem a descrição do E-project)
+                            </Label>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -433,7 +590,17 @@ export function ImportarTarefasDialog() {
             </Alert>
           )}
 
-          {linhas.length > 0 && (
+          {linhas.length > 0 && filtrarPeloEmail && linhasPacote.length === 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Nenhuma tarefa do e-mail foi encontrada na planilha. Confira se a planilha é a consulta
+                certa do E-project.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {linhasPacote.length > 0 && (
             <>
               <div className="rounded-md border">
                 <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2 text-xs">
@@ -451,7 +618,14 @@ export function ImportarTarefasDialog() {
                             <td className="w-14 px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
                               {num ? `#${num}` : "—"}
                             </td>
-                            <td className="px-3 py-1.5">{l.titulo}</td>
+                            <td className="px-3 py-1.5">
+                              {l.titulo}
+                              {itemDoEmail(l.titulo)?.sistema && (
+                                <Badge variant="outline" className="ml-2 text-[10px]">
+                                  {itemDoEmail(l.titulo)!.sistema}
+                                </Badge>
+                              )}
+                            </td>
                             <td className="px-3 py-1.5 capitalize text-muted-foreground">
                               {forcarHomologacao ? "homologação" : l.status.replace("_", " ")}
                             </td>
@@ -462,7 +636,9 @@ export function ImportarTarefasDialog() {
                   </table>
                   {novas.length === 0 && (
                     <p className="px-3 py-3 text-xs text-muted-foreground">
-                      Nenhuma tarefa nova nesta planilha.
+                      {filtrarPeloEmail
+                        ? "Todas as tarefas do e-mail já existem no Nexus (veja abaixo)."
+                        : "Nenhuma tarefa nova nesta planilha."}
                     </p>
                   )}
                 </div>
@@ -472,8 +648,13 @@ export function ImportarTarefasDialog() {
                 <div className="rounded-md border border-warning/40 bg-warning/5">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warning/30 px-3 py-2 text-xs">
                     <span className="font-medium">
-                      Duplicadas encontradas ({duplicadas.length}) —{" "}
-                      <span className="text-warning">selecione as que devem ser substituídas</span>
+                      {filtrarPeloEmail ? "Já existem no Nexus" : "Duplicadas encontradas"} (
+                      {duplicadas.length}) —{" "}
+                      <span className="text-warning">
+                        {filtrarPeloEmail
+                          ? "as marcadas vão para Homologação neste lote"
+                          : "selecione as que devem ser substituídas"}
+                      </span>
                     </span>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={selecionarTodas}>
@@ -535,7 +716,7 @@ export function ImportarTarefasDialog() {
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={importando}>
             Cancelar
           </Button>
-          <Button onClick={importar} disabled={linhas.length === 0 || importando}>
+          <Button onClick={importar} disabled={linhasPacote.length === 0 || importando}>
             {importando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Importar {novas.length + substituirIds.size > 0 ? `(${novas.length + substituirIds.size})` : ""}
           </Button>

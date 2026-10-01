@@ -1130,6 +1130,10 @@ export type Database = {
           id: string
           lote_importacao_id: string | null
           origem_importacao: string | null
+          data_homologacao: string | null
+          link_homologacao: string | null
+          observacao_homologacao: string | null
+          sistema: string | null
           prioridade: Database["public"]["Enums"]["todo_prioridade"]
           responsaveis_ids: string[]
           responsavel_id: string | null
@@ -1149,6 +1153,10 @@ export type Database = {
           id?: string
           lote_importacao_id?: string | null
           origem_importacao?: string | null
+          data_homologacao?: string | null
+          link_homologacao?: string | null
+          observacao_homologacao?: string | null
+          sistema?: string | null
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
           responsaveis_ids?: string[]
           responsavel_id?: string | null
@@ -1168,6 +1176,10 @@ export type Database = {
           id?: string
           lote_importacao_id?: string | null
           origem_importacao?: string | null
+          data_homologacao?: string | null
+          link_homologacao?: string | null
+          observacao_homologacao?: string | null
+          sistema?: string | null
           prioridade?: Database["public"]["Enums"]["todo_prioridade"]
           responsaveis_ids?: string[]
           responsavel_id?: string | null
