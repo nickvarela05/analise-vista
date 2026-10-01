@@ -25,7 +25,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { AssigneeCombobox, type AssigneeOption } from "@/components/AssigneeCombobox";
-import { cn } from "@/lib/utils";
+import { cn, prioridadeLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { tarefaSchema } from "@/lib/schemas/tarefa";
 
@@ -133,7 +133,7 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PRIO.map((p) => (
-                      <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                      <SelectItem key={p} value={p} className="capitalize">{prioridadeLabel(p)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

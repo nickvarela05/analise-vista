@@ -127,6 +127,7 @@ function Portfolio() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={isLoading}
         eyebrow="Time de Análise de Requisitos"
         title="Portfólio da Equipe"
         description="Conheça o time, suas funções e os momentos que marcam nossa rotina."

@@ -378,6 +378,7 @@ function UnidadesPage() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={loading}
         eyebrow="Rede Municipal de Osasco"
         title="Unidades da Rede"
         description="Cadastro completo das unidades escolares e departamentos da Secretaria de Educação."

@@ -13,7 +13,7 @@
     "server": {
       "name": "nexus-mcp",
       "version": "0.1.0",
-      "title": "Nexus — Gestão Interna"
+      "title": "Nexus"
     },
     "tools": [
       {

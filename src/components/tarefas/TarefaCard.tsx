@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, prioridadeLabel } from "@/lib/utils";
 import { parseDateOnly } from "@/lib/date";
 import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 import type { StatusLogItem } from "@/components/tarefas/useTarefasData";
@@ -113,7 +113,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
         <Badge variant="outline" className={cn("h-5 px-1.5 text-[10px] font-semibold capitalize", PRIO_BADGE[prio])}>
-          {prio}
+          {prioridadeLabel(prio)}
         </Badge>
         {hasDemanda && (
           <Tooltip>

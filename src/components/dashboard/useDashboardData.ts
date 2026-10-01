@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
+import { fetchAllRows } from "@/lib/queries/fetch-all";
 import { listSolicitacoesRelatorios } from "@/lib/n8n-db.functions";
 import type {
   TarefaRow,
@@ -43,11 +44,10 @@ export function useDashboardData(userId: string | undefined | null) {
   const tarefas = useQuery<TarefaRow[]>({
     queryKey: qk.dash.tarefas(),
     staleTime: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("todo").select("*");
-      if (error) throw error;
-      return (data ?? []) as TarefaRow[];
-    },
+    queryFn: () =>
+      fetchAllRows<TarefaRow>((from, to) =>
+        supabase.from("todo").select("*").order("id").range(from, to),
+      ),
   });
 
   const reunioes = useQuery<ReuniaoRow[]>({
@@ -128,6 +128,7 @@ export function useDashboardData(userId: string | undefined | null) {
     demandas: demandas.data ?? [],
     solicitacoes: solicitacoes.data?.ok ? solicitacoes.data.rows : [],
     loading: {
+      demandas: demandas.isLoading,
       chamados: chamados.isLoading,
       tarefas: tarefas.isLoading,
       reunioes: reunioes.isLoading,

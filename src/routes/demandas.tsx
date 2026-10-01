@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
+import { cn, prioridadeLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
@@ -226,6 +226,7 @@ function Demandas() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={isLoading}
         eyebrow="Fluxo de demandas"
         title="Demandas"
         description="Solicitações recebidas pela equipe — internas, clientes e automações."
@@ -285,7 +286,7 @@ function Demandas() {
             <SelectContent>
               <SelectItem value="todas">Todas prioridades</SelectItem>
               {PRIORIDADE_OPTS.map((p) => (
-                <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                <SelectItem key={p} value={p} className="capitalize">{prioridadeLabel(p)}</SelectItem>
               ))}
             </SelectContent>
           </Select>

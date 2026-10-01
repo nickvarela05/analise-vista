@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import logoMark from "@/assets/logo-sisteplan-mark.png";
 import { useAuth } from "@/lib/auth-context";
-import { cn } from "@/lib/utils";
+import { cn, iniciais } from "@/lib/utils";
 
 type Tone = "primary" | "sky" | "emerald" | "violet" | "amber" | "rose" | "indigo" | "cyan";
 
@@ -158,7 +158,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div className="flex min-w-0 flex-col leading-tight">
               <span className="text-sm font-bold uppercase tracking-[0.22em] text-sidebar-foreground">
-                NexusGestão
+                Nexus
               </span>
               <span className="mt-0.5 flex items-center gap-1 text-[9.5px] uppercase tracking-[0.16em] text-sidebar-foreground/55">
                 <Sparkles className="h-2.5 w-2.5 text-emerald-400" />
@@ -268,7 +268,7 @@ export function AppSidebar() {
         {!collapsed && user && (
           <div className="mt-2 flex items-center gap-2 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/40 px-2.5 py-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-violet-500 text-[10px] font-bold uppercase text-primary-foreground">
-              {displayName.slice(0, 2)}
+              {iniciais(displayName)}
             </div>
             <div className="min-w-0 flex-1 leading-tight">
               <p className="truncate text-xs font-medium text-sidebar-foreground">{displayName}</p>

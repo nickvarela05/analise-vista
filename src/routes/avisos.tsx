@@ -294,6 +294,7 @@ function Avisos() {
   return (
     <div className="space-y-5">
       <PageHero
+        loading={isLoading}
         eyebrow="Comunicação interna"
         title="Avisos"
         description="Comunicados internos com prioridade, destinatários e leitura confirmada."

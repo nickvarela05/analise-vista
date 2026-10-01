@@ -5,6 +5,7 @@ import type { TarefaRow } from "@/lib/db-types";
 import type { CountsMap, ColabMini } from "@/components/tarefas/useTarefasData";
 import { parseDateOnly } from "@/lib/date";
 
+import { prioridadeLabel } from "@/lib/utils";
 interface Props {
   tarefas: TarefaRow[];
   colabs: ColabMini[];
@@ -51,7 +52,7 @@ export function TarefasLista({ tarefas, colabs, selectedIds, onToggleSelect, onO
               <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                 <span className="capitalize">{STATUS_LABEL[t.status] ?? t.status}</span>
                 <span>·</span>
-                <span className="capitalize">{t.prioridade}</span>
+                <span className="capitalize">{prioridadeLabel(t.prioridade)}</span>
                 {prazo && (
                   <>
                     <span>·</span>

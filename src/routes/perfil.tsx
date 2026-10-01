@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
 
+import { iniciais } from "@/lib/utils";
 export const Route = createFileRoute("/perfil")({
   component: PerfilRoute,
 });
@@ -61,7 +62,7 @@ function Perfil() {
   }
   if (!user) return <Navigate to="/login" replace />;
 
-  const initials = (nome || user.email || "DV").slice(0, 2).toUpperCase();
+  const initials = iniciais(nome || user.email) || "DV";
 
   const onUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchAllRows } from "@/lib/queries/fetch-all";
 import {
   startOfWeek,
   endOfWeek,
@@ -197,15 +198,13 @@ function Atividades() {
   // Reaproveita as mesmas queryKeys usadas pelo Dashboard (`qk.dash.*`)
   // para que Dashboard → Atividades compartilhe cache e evite refetch das
   // mesmas tabelas em telas irmãs.
-  const { data: tarefas = [] } = useQuery({
+  const { data: tarefas = [], isLoading: loadingTarefas } = useQuery({
     queryKey: qk.dash.tarefas(),
-    queryFn: async () => {
-      const { data, error } = await supabase.from("todo").select("*");
-      if (error) throw error;
-      return data ?? [];
-    },
+    // Paginado: sem isso o PostgREST devolve só 1.000 das ~9.100 tarefas.
+    queryFn: () =>
+      fetchAllRows((from, to) => supabase.from("todo").select("*").order("id").range(from, to)),
   });
-  const { data: demandas = [] } = useQuery({
+  const { data: demandas = [], isLoading: loadingDemandas } = useQuery({
     queryKey: qk.dash.demandas(),
     queryFn: async () => {
       const { data, error } = await supabase.from("demanda").select("*");
@@ -213,7 +212,7 @@ function Atividades() {
       return data ?? [];
     },
   });
-  const { data: reunioes = [] } = useQuery({
+  const { data: reunioes = [], isLoading: loadingReunioes } = useQuery({
     queryKey: qk.dash.reunioes(),
     queryFn: async () => {
       const { data, error } = await supabase.from("reuniao").select("*").order("data_reuniao");
@@ -391,6 +390,7 @@ function Atividades() {
   return (
     <div className="space-y-4">
       <PageHero
+        loading={loadingTarefas || loadingDemandas || loadingReunioes}
         icon={CalendarRange}
         tone="sky"
         eyebrow="Operação"

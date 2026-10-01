@@ -25,6 +25,8 @@ export type PageHeroProps = {
   stats?: StatPillProps[];
   /** Tailwind grid-cols utility for stats area; defaults to responsive 2/3/6 */
   statsGridClassName?: string;
+  /** Repassado aos indicadores: mostra marcador de carregamento em vez de "0". */
+  loading?: boolean;
 };
 
 export function PageHero({
@@ -36,6 +38,7 @@ export function PageHero({
   actions,
   stats,
   statsGridClassName,
+  loading,
 }: PageHeroProps) {
   const t = toneBg[tone];
   const hoje = React.useMemo(
@@ -73,7 +76,7 @@ export function PageHero({
               {description && (
                 <p className="mt-1 max-w-2xl text-xs text-muted-foreground sm:text-sm">{description}</p>
               )}
-              <p className="mt-0.5 text-[11px] capitalize text-muted-foreground/80">{hoje}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground/80 first-letter:uppercase">{hoje}</p>
             </div>
           </div>
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -87,7 +90,7 @@ export function PageHero({
             )}
           >
             {stats.map((s, i) => (
-              <StatPill key={i} {...s} />
+              <StatPill key={i} loading={loading} {...s} />
             ))}
           </div>
         )}

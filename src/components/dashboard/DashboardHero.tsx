@@ -40,11 +40,14 @@ export function DashboardHero({
   subtitle,
   pulse,
   actions,
+  loading,
 }: {
   nome?: string | null;
   subtitle?: string;
   pulse: PulseItem[];
   actions?: React.ReactNode;
+  /** Enquanto os dados carregam, os indicadores mostram um marcador em vez de "0". */
+  loading?: boolean;
 }) {
   const hoje = React.useMemo(
     () =>
@@ -75,12 +78,12 @@ export function DashboardHero({
                 Painel gerencial
               </p>
               <h1 className="mt-1 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                {saudacao()}{primeiroNome ? `, ${primeiroNome}` : ""}, Bem vindo ao Nexus
+                {saudacao()}{primeiroNome ? `, ${primeiroNome}` : ""}! Boas-vindas ao Nexus
               </h1>
               <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                 {subtitle ?? "Sua equipe de Análise de Requisitos em tempo real."}
               </p>
-              <p className="mt-0.5 text-[11px] capitalize text-muted-foreground/80">{hoje}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground/80 first-letter:uppercase">{hoje}</p>
             </div>
           </div>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -89,7 +92,7 @@ export function DashboardHero({
         {pulse.length > 0 && (
           <div className="mt-6 grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
             {pulse.map((p, i) => (
-              <PulseTile key={i} item={p} />
+              <PulseTile key={i} item={p} loading={loading} />
             ))}
           </div>
         )}
@@ -98,7 +101,7 @@ export function DashboardHero({
   );
 }
 
-function PulseTile({ item }: { item: PulseItem }) {
+function PulseTile({ item, loading }: { item: PulseItem; loading?: boolean }) {
   const Icon = item.icon;
   const t = pulseTone[item.tone];
   const inner = (
@@ -112,8 +115,12 @@ function PulseTile({ item }: { item: PulseItem }) {
           )}
         </div>
         <div className="mt-2 flex items-baseline gap-1.5">
-          <span className="text-2xl font-bold tabular-nums text-foreground">{item.value}</span>
-          {typeof item.trend === "number" && (
+          {loading ? (
+            <span className="my-1 h-5 w-10 animate-pulse rounded-md bg-muted-foreground/20" aria-label="Carregando" />
+          ) : (
+            <span className="text-2xl font-bold tabular-nums text-foreground">{item.value}</span>
+          )}
+          {!loading && typeof item.trend === "number" && (
             <span
               className={cn(
                 "inline-flex items-center gap-0.5 text-[10px] font-medium",

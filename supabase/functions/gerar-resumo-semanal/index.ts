@@ -1,8 +1,8 @@
-// Gera resumo semanal automático para cada usuário usando Lovable AI Gateway.
+// Gera resumo semanal automático para cada usuário usando a IA configurada em _shared/ai.ts.
 // Roda toda segunda às 7h. Salva em resumo_semanal e cria notificação in-app.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
-import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
+import { aiFetch, AI_API_KEY, resolveModel } from "../_shared/ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -122,36 +122,43 @@ Deno.serve(async (req) => {
     try {
       const escopo = escopoAtividade(u.user_id, u.colaborador_id);
       const escopoChamados = escopoAtividade(u.user_id, u.colaborador_id, false);
-      // métricas do usuário na semana
-      const [tarefas, demandas, chamados] = await Promise.all([
-        admin.from("todo").select("id, status, prioridade")
-          .or(escopo)
-          .gte("created_at", inicioISO).lt("created_at", fimISO),
-        admin.from("demanda").select("id, status, prioridade")
-          .or(escopo)
-          .gte("created_at", inicioISO).lt("created_at", fimISO),
-        admin.from("chamado_externo").select("id, status, prazo")
-          .or(escopoChamados)
-          .gte("created_at", inicioISO).lt("created_at", fimISO),
+      // Métricas do usuário na semana. Contagens feitas no banco (count exact + head): trazer
+      // as linhas esbarrava no limite de 1.000 linhas por consulta do Supabase e distorcia o
+      // resumo em semanas com importação em massa (ex.: 8.675 tarefas contadas como 1.000).
+      const contar = async (q: PromiseLike<{ count: number | null; error: unknown }>) => {
+        const { count, error } = await q;
+        if (error) throw error;
+        return count ?? 0;
+      };
+      const naSemana = (tabela: string, filtroEscopo: string) =>
+        admin.from(tabela).select("id", { count: "exact", head: true })
+          .or(filtroEscopo)
+          .gte("created_at", inicioISO).lt("created_at", fimISO);
+      const todo = () => naSemana("todo", escopo);
+      const demanda = () => naSemana("demanda", escopo);
+      const chamado = () => naSemana("chamado_externo", escopoChamados);
+
+      const [
+        tarefas_total, tarefas_concluidas, tarefas_urgentes,
+        demandas_total, demandas_em_andamento,
+        chamados_total, chamados_sla_estourado,
+      ] = await Promise.all([
+        contar(todo()),
+        contar(todo().in("status", ["concluida", "producao", "aprovado"])),
+        contar(todo().in("prioridade", ["urgente", "alta"])),
+        contar(demanda()),
+        contar(demanda().not("status", "in", "(concluida,cancelada)")),
+        contar(chamado()),
+        contar(chamado().lt("prazo", hoje.toISOString()).neq("status", "fechado")),
       ]);
-
-      if (tarefas.error) throw tarefas.error;
-      if (demandas.error) throw demandas.error;
-      if (chamados.error) throw chamados.error;
-
-      const t = tarefas.data ?? [], d = demandas.data ?? [], c = chamados.data ?? [];
       const metricas = {
-        tarefas_total: t.length,
-        tarefas_concluidas: t.filter((x) => ["concluida", "producao", "aprovado"].includes(x.status)).length,
-        tarefas_urgentes: t.filter((x) => ["urgente", "alta"].includes(x.prioridade)).length,
-        demandas_total: d.length,
-        demandas_em_andamento: d.filter((x) => x.status !== "concluida" && x.status !== "cancelada").length,
-        chamados_total: c.length,
-        chamados_sla_estourado: c.filter((x) => x.prazo && new Date(x.prazo) < hoje && x.status !== "fechado").length,
+        tarefas_total, tarefas_concluidas, tarefas_urgentes,
+        demandas_total, demandas_em_andamento,
+        chamados_total, chamados_sla_estourado,
       };
 
       // pula se não teve atividade
-      if (t.length === 0 && d.length === 0 && c.length === 0) continue;
+      if (tarefas_total === 0 && demandas_total === 0 && chamados_total === 0) continue;
 
       const taxaConclusao = metricas.tarefas_total > 0
         ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
@@ -176,7 +183,7 @@ Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (tr
         conteudo_md: texto,
         metricas,
         insights,
-        modelo: "google/gemini-2.5-flash",
+        modelo: resolveModel("google/gemini-2.5-flash"),
       }, { onConflict: "user_id,semana_inicio" });
       if (upsertError) throw upsertError;
 

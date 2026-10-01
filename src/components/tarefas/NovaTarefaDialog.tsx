@@ -32,6 +32,7 @@ import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
 import { tarefaSchema } from "@/lib/schemas/tarefa";
 
+import { prioridadeLabel } from "@/lib/utils";
 const normalizarTitulo = (s: string) =>
   s
     .toLowerCase()
@@ -248,7 +249,7 @@ export function NovaTarefaDialog({
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PRIO.map((p) => (
-                      <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                      <SelectItem key={p} value={p} className="capitalize">{prioridadeLabel(p)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
