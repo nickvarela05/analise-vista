@@ -54,9 +54,14 @@ CREATE TRIGGER trg_todo_numero_eproject
   BEFORE INSERT OR UPDATE OF titulo ON public.todo
   FOR EACH ROW EXECUTE FUNCTION public.todo_set_numero_eproject();
 
+-- Preenchimento das tarefas existentes com os gatilhos desligados: sem isso, o gatilho de
+-- updated_at marcaria as ~8.900 tarefas como alteradas hoje (distorce histórico e a regra de
+-- encerrar tarefas antigas), e o de notificação seria avaliado à toa.
+ALTER TABLE public.todo DISABLE TRIGGER USER;
 UPDATE public.todo
    SET numero_eproject = public.todo_numero_do_titulo(titulo)
  WHERE numero_eproject IS DISTINCT FROM public.todo_numero_do_titulo(titulo);
+ALTER TABLE public.todo ENABLE TRIGGER USER;
 
 CREATE UNIQUE INDEX IF NOT EXISTS todo_numero_eproject_unico
   ON public.todo (numero_eproject)
