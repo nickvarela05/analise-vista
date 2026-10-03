@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import { parseEmailHomologacao } from "../emailHomologacao";
 
@@ -74,5 +76,43 @@ describe("parseEmailHomologacao", () => {
     const r = parseEmailHomologacao("Salientamos a necessidade de manter a tarefa 9211 em stand-by.");
     expect(r.itens).toEqual([]);
     expect(r.ignoradas).toBe(1);
+  });
+});
+
+// Colagem real de 03/10/2026: a tabela chegou com uma célula por linha, sem tabulação.
+describe("parseEmailHomologacao — uma célula por linha", () => {
+  const texto = readFileSync(
+    fileURLToPath(new URL("./fixtures/email-uma-celula-por-linha.txt", import.meta.url)),
+    "utf8",
+  );
+  const { itens } = parseEmailHomologacao(texto);
+  const por = (n: string) => itens.find((i) => i.numero === n)!;
+
+  it("acha as 22 tarefas (23 linhas; a 9069 aparece duas vezes)", () => {
+    expect(itens).toHaveLength(22);
+  });
+
+  it("mantém sistema, título, link e data de cada tarefa", () => {
+    expect(por("9083")).toMatchObject({ sistema: "BI", dataHml: "2026-09-18" });
+    expect(por("9083").tarefa).toMatch(/^Verificar o motivo de demorar/);
+    expect(por("9361").link).toBe("https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9361/#/");
+    expect(por("9054")).toMatchObject({ sistema: "GED", tarefa: "Implementar Relatório de ALUNOS EVADIDOS POR SÉRIE" });
+    expect(por("9466")).toMatchObject({ sistema: "GED", dataHml: "2026-09-23" });
+    expect(por("9465")).toMatchObject({ sistema: "GRD", dataHml: "2026-09-23" });
+  });
+
+  it("não confunde o sistema da próxima linha com observação", () => {
+    expect(por("9083").observacao).toBeNull();
+    expect(por("9481").observacao).toBeNull();
+    expect(por("9481").sistema).toBe("App - Professor");
+  });
+
+  it("com dois links, guarda o primeiro e o segundo vai para a observação", () => {
+    expect(por("9428").link).toBe("https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-painel-vagas/#/");
+    expect(por("9428").observacao).toContain("ged-solicitacao-hml-painel-vagas");
+  });
+
+  it("junta os sistemas da 9069", () => {
+    expect(por("9069").sistema).toBe("GED / App - Aluno - Prof");
   });
 });
