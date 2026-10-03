@@ -3,6 +3,7 @@ import { format, differenceInCalendarDays, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical, History,
+  ExternalLink,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +124,29 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
               </Badge>
             </TooltipTrigger>
             <TooltipContent>Vinculada a uma demanda</TooltipContent>
+          </Tooltip>
+        )}
+        {tarefa.sistema && (
+          <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-muted-foreground">
+            {tarefa.sistema}
+          </Badge>
+        )}
+        {tarefa.link_homologacao && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={tarefa.link_homologacao}
+                target="_blank"
+                rel="noopener noreferrer"
+                // O card abre o painel ao clicar e pode ser arrastado; o link não deve disparar isso.
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="inline-flex h-5 items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300"
+              >
+                <ExternalLink className="h-3 w-3" /> Testar
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>Abrir o ambiente de homologação desta tarefa</TooltipContent>
           </Tooltip>
         )}
         {tarefa.origem_importacao === "homologacao" && (

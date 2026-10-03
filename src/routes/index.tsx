@@ -205,7 +205,7 @@ function Dashboard() {
           color: "var(--chart-3)",
         },
         {
-          name: "Em andamento",
+          name: "Stand-by",
           value: tarefas.filter((t) => t.status === "em_andamento").length,
           color: "var(--chart-5)",
         },

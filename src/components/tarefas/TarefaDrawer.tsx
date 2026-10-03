@@ -355,6 +355,47 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           }
         />
 
+        {/* Dados do e-mail de homologação (sistema, data, observação e link do ambiente) */}
+        {(tarefa.sistema || tarefa.link_homologacao || tarefa.observacao_homologacao || tarefa.data_homologacao) && (
+          <div className="mt-4 space-y-2 rounded-lg border border-sky-500/25 bg-sky-500/5 p-3 text-xs">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Homologação
+              </span>
+              {tarefa.sistema && (
+                <span>
+                  <span className="text-muted-foreground">Sistema:</span>{" "}
+                  <span className="font-medium">{tarefa.sistema}</span>
+                </span>
+              )}
+              {tarefa.data_homologacao && (
+                <span>
+                  <span className="text-muted-foreground">Disponível desde:</span>{" "}
+                  <span className="font-medium">
+                    {tarefa.data_homologacao.split("-").reverse().join("/")}
+                  </span>
+                </span>
+              )}
+            </div>
+            {tarefa.observacao_homologacao && (
+              <p>
+                <span className="text-muted-foreground">Observação do desenvolvimento:</span>{" "}
+                {tarefa.observacao_homologacao}
+              </p>
+            )}
+            {tarefa.link_homologacao && (
+              <a
+                href={tarefa.link_homologacao}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 break-all font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Abrir ambiente de homologação ↗
+              </a>
+            )}
+          </div>
+        )}
+
         {/* Painel rápido de edição */}
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
           <div className="space-y-1.5">
