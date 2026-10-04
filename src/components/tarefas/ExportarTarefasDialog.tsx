@@ -20,9 +20,7 @@ import type { TarefaRow } from "@/lib/db-types";
 import type { ColabMini, DemandaMini, LoteMini } from "./useTarefasData";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: "aberta", label: "Aberta" },
-  { value: "em_andamento", label: "Em desenvolvimento" },
-  { value: "teste_interno", label: "Teste interno" },
+  { value: "em_andamento", label: "Stand-by" },
   { value: "homologacao", label: "Homologação" },
   { value: "aprovado", label: "Aprovado" },
   { value: "aprovado_ressalvas", label: "Aprovado c/ ressalvas" },

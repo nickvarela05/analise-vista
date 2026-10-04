@@ -38,7 +38,7 @@ export default defineTool({
         descricao: descricao ?? null,
         prioridade: prioridade ?? "media",
         data_prevista: data_prevista ?? null,
-        status: "aberta",
+        status: "em_andamento",
         criado_por: userId,
         responsavel_id: userId,
         responsaveis_ids: [userId],

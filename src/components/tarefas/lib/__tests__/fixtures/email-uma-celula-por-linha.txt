@@ -1,0 +1,83 @@
+Data de hml
+Sistema
+Número
+Tarefa
+Observação
+Link
+18/09/2026
+BI
+9083
+Verificar o motivo de demorar o carregamento ao trocar os anos e não trazer os dados no PAINEL EDUCAÇÃO
+Maed
+9208
+Verificar mensagem no login do usuário MFEDUARDO, ao tentar acessar a tela de avaliação e encaminhamento.
+App - Aluno
+9453
+atualização fluxo recuperar senha app aluno
+GED
+9361
+Realizar adaptações na tela de "Relação Geral dos Inscritos na Remoção"
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9361/#/
+GED
+9054
+Implementar Relatório de ALUNOS EVADIDOS POR SÉRIE
+GED
+9464
+Verificar o motivo de não trazer todas as informações do GED para a ficha simplificada do funcionário
+GED
+9428
+Ajustar os campos "Outros cargos" conforme as ocupações indicadas.
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-painel-vagas/#/
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-solicitacao-hml-painel-vagas/#/
+GED
+9427
+Incluir regra nas transferências de colaboradores via Painel de Vagas
+GED
+9412
+Customizar a migração de afastamento quando criar uma nova lotação
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9412/
+GED
+8990
+Realizar melhorias na aba Controle de rendimento
+GED
+9350
+Incluir Docente e Especialidade no relatório de frequência mensal
+GED
+9376
+Realizar melhoria ao alterar a senha no GED, seguindo os critérios de senha forte
+GED
+9069
+Implementar funcionalidade de pedir avaliação dentro dos apps, implementar funcionalidade pedir feedback- app aluno/prof - colocar contato suporte dentro do app
+GED
+9390
+Customizar regra de exibição de cores dos registros da Prévia do quadro escolar - QE
+GED
+9362
+Incluir seleção de nível de suporte do aluno na associação de deficiência dos alunos com Autismo.
+GED
+9486
+Verificar o motivo de não permitir salvar a exoneração da prof 174520 - LILIAN CRISTINA VALENTIM ANDRADE DE OLIVEIRA
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9486/#/
+GED
+8869
+Implementação da tela Termo de Autorização de Imagem e Vídeo
+App - Aluno - Prof
+9069
+Implementar funcionalidade de pedir avaliação dentro dos apps, implementar funcionalidade pedir feedback- app aluno/prof - colocar contato suporte dentro do app
+App - Professor
+9377
+Melhoria ao alterar a senha no app
+App - Aluno
+9426
+Retirar número de telefone do app do aluno
+App - Professor
+9481
+Verificar o motivo de não permitir anexar documento para solicitar histórico
+23/09/2026
+novos
+GED
+9466
+Verificar consulta da matrícula de certidão de nascimento do aluno para permitir CERTIDÕES TRANSCRITAS
+GRD
+9465
+Ajustar relatório de lotação ativa - padronizar com os relatórios e consultas geradas na tarefa 8657 e 8677 no GRD (REL_LOT_ATIVA_COM_ATRIB)
