@@ -32,6 +32,7 @@ import {
 import { useTarefasData } from "@/components/tarefas/useTarefasData";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
 import { ReceberPacoteDialog } from "@/components/tarefas/ReceberPacoteDialog";
+import { FecharRodadaDialog } from "@/components/tarefas/FecharRodadaDialog";
 import { ExportarTarefasDialog } from "@/components/tarefas/ExportarTarefasDialog";
 import { TarefasDuplicadasDialog } from "@/components/tarefas/TarefasDuplicadasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
@@ -264,6 +265,7 @@ function Tarefas() {
           <div className="flex flex-wrap items-center gap-2">
             <TarefasDuplicadasDialog tarefas={tarefas} />
             <ReceberPacoteDialog />
+            <FecharRodadaDialog tarefas={tarefas} colabs={colabs} lotes={lotes} />
             <ExportarTarefasDialog
               todasTarefas={tarefas}
               tarefasFiltradas={filtered}
