@@ -1,9 +1,11 @@
+import * as React from "react";
 import { createRootRouteWithContext, HeadContent, Link, Outlet, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { ErrorFallback } from "@/components/ErrorFallback";
+import { recarregarPorAtualizacao } from "@/lib/stale-build";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -80,6 +82,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Aba aberta antes de uma publicação: o Vite avisa quando um arquivo de código não existe
+  // mais. Recarregar traz a versão nova, em vez de deixar a página ou o botão sem resposta.
+  React.useEffect(() => {
+    const onPreloadError = (e: Event) => {
+      if (recarregarPorAtualizacao()) e.preventDefault();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

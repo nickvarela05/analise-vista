@@ -32,7 +32,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
+import { isStaleChunkError, recarregarPorAtualizacao } from "@/lib/stale-build";
 import { buildBairroCanonMap } from "@/lib/bairros";
 import { toast } from "sonner";
 
@@ -195,6 +196,21 @@ function UnidadesPage() {
   };
 
   const exportarXLSX = async () => {
+    try {
+      await gerarXLSX();
+    } catch (e) {
+      // Antes, uma falha aqui era silenciosa: o botão simplesmente não fazia nada.
+      if (isStaleChunkError(e)) {
+        toast.info("O Nexus foi atualizado. Recarregando a página; exporte de novo em seguida.");
+        if (recarregarPorAtualizacao()) return;
+      }
+      toast.error("Não foi possível gerar o Excel", {
+        description: `${getErrorMessage(e)} A opção CSV do mesmo menu abre no Excel.`,
+      });
+    }
+  };
+
+  const gerarXLSX = async () => {
     const ExcelJS = (await import("exceljs")).default;
     const wb = new ExcelJS.Workbook();
     wb.creator = "Nexus";
