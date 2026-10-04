@@ -134,6 +134,9 @@ export function FecharRodadaDialog({
   const [assunto, setAssunto] = React.useState("");
   const [gravando, setGravando] = React.useState(false);
   const [confirmando, setConfirmando] = React.useState(false);
+  // Escolha do Nickolas (04/10/2026): manter a marca "em teste" por padrão, para as tarefas
+  // recém-enviadas não se misturarem com as que já estavam em Pré-build esperando produção.
+  const [tirarDeTeste, setTirarDeTeste] = React.useState(false);
   const [enviadas, setEnviadas] = React.useState<number | null>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
 
@@ -174,6 +177,7 @@ export function FecharRodadaDialog({
     setIntro(INTRO_PADRAO);
     setFecho(FECHO_PADRAO);
     setConfirmando(false);
+    setTirarDeTeste(false);
     setEnviadas(null);
   };
 
@@ -241,7 +245,7 @@ export function FecharRodadaDialog({
     const ids = linhas.map((l) => l.id);
     const { error } = await supabase
       .from("todo")
-      .update({ status: "pre_build", em_teste: false })
+      .update(tirarDeTeste ? { status: "pre_build", em_teste: false } : { status: "pre_build" })
       .in("id", ids);
     if (error) {
       setGravando(false);
@@ -475,7 +479,9 @@ export function FecharRodadaDialog({
           {passo === 3 && enviadas !== null && (
             <p className="flex items-center gap-2 text-sm font-medium">
               <CheckCircle2 className="h-5 w-5 text-success" />
-              {enviadas} tarefa(s) movida(s) para Pré-build. As observações ficaram salvas nos cards.
+              {enviadas} tarefa(s) movida(s) para Pré-build
+              {tirarDeTeste ? ", sem a marca “em teste”" : ", mantendo a marca “em teste”"}. As observações ficaram
+              salvas nos cards.
             </p>
           )}
         </div>
@@ -484,7 +490,21 @@ export function FecharRodadaDialog({
           <span className="text-xs text-muted-foreground">
             {passo < 3 && `${prontas.length} pronta(s) para enviar`}
             {passo === 3 && enviadas === null && !confirmando && "Envie o e-mail pelo Outlook antes de marcar como enviadas."}
-            {confirmando && `Confirma: ${linhas.length} tarefa(s) vão para Pré-build e saem de “em teste”.`}
+            {confirmando && (
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>Confirma: {linhas.length} tarefa(s) vão para Pré-build.</span>
+                <span className="flex items-center gap-1.5">
+                  <Checkbox
+                    id="rodada-tirar-teste"
+                    checked={tirarDeTeste}
+                    onCheckedChange={(v) => setTirarDeTeste(v === true)}
+                  />
+                  <Label htmlFor="rodada-tirar-teste" className="cursor-pointer text-xs font-normal">
+                    Tirar também a marca “em teste”
+                  </Label>
+                </span>
+              </span>
+            )}
           </span>
           <span className="flex flex-wrap gap-2">
             {passo === 1 && (
