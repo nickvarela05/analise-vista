@@ -27,19 +27,48 @@ async function getSystemPrompt(): Promise<string> {
   }
 }
 
+// Descrições dos campos: sem elas a IA devolvia o mínimo (pauta numa linha, um único próximo
+// passo), como relatado pelo Nickolas em 06/10/2026. Valem para transcrição de áudio e colada.
 const tool = {
   type: "function",
   function: {
     name: "extract_meeting_insights",
-    description: "Extrai insights estruturados de uma transcrição de reunião.",
+    description:
+      "Extrai os pontos da reunião. Cubra TODOS os assuntos discutidos, não só o primeiro ou o principal. " +
+      "A transcrição pode não indicar quem fala (ex.: transcrição do Gravador do iPhone) e ter erros de " +
+      "reconhecimento de voz: deduza pelo contexto e não invente.",
     parameters: {
       type: "object",
       properties: {
-        resumo: { type: "string" },
-        pauta: { type: "string" },
-        proximos_passos: { type: "string" },
-        decisoes: { type: "array", items: { type: "string" } },
-        participantes_detectados: { type: "array", items: { type: "string" } },
+        pauta: {
+          type: "string",
+          description:
+            "Lista dos assuntos tratados, na ordem em que apareceram, um por linha começando com '- '. " +
+            "Cada item com o tema e, em poucas palavras, o que se discutiu dele. Normalmente de 4 a 10 itens.",
+        },
+        resumo: {
+          type: "string",
+          description:
+            "Resumo em parágrafos curtos, um por assunto da pauta: contexto, problema ou necessidade, " +
+            "o que foi proposto e o que ficou definido ou em aberto. Inclua sistemas, telas, números, " +
+            "matrículas, prazos e nomes citados. Pode ser longo se a reunião foi longa.",
+        },
+        proximos_passos: {
+          type: "string",
+          description:
+            "Todas as ações combinadas, uma por linha começando com '- ', no formato " +
+            "'Responsável: ação (prazo)'. Omita prazo ou responsável quando não foram ditos; não invente.",
+        },
+        decisoes: {
+          type: "array",
+          items: { type: "string" },
+          description: "Cada decisão tomada, em uma frase. Não repita ações dos próximos passos.",
+        },
+        participantes_detectados: {
+          type: "array",
+          items: { type: "string" },
+          description: "Nomes de pessoas que participaram ou foram citadas como presentes, com o papel se dito.",
+        },
       },
       required: ["resumo", "pauta", "proximos_passos", "decisoes", "participantes_detectados"],
       additionalProperties: false,

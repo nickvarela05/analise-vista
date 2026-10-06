@@ -44,6 +44,13 @@ function formatBytes(bytes: number): string {
 
 /** Limite prático do Groq Whisper (abaixo dos 25 MB anunciados). */
 const GROQ_SAFE_BYTES = 18 * 1024 * 1024;
+/**
+ * Teto para mandar ao Groq um arquivo que não dá para dividir (MP4/M4A, OGG...). O plano
+ * gratuito aceita até 25 MB (doc do Groq, out/2026); fica uma folga para o envio multipart.
+ * Antes, todo arquivo não-MP3 acima de 18 MB ia direto ao Gemini, que recusa áudio inline
+ * nesse tamanho/formato ("INVALID_ARGUMENT", áudio de 19,6 MB do WhatsApp em 06/10/2026).
+ */
+const GROQ_MAX_BYTES = 24 * 1024 * 1024;
 
 class AudioTooLargeError extends Error {}
 
@@ -404,8 +411,16 @@ async function transcribeAudio(
     console.log(`[transcrever] ${formatBytes(audioBlob.size)} → tentando divisão em partes`);
     const chunked = await transcribeChunked(audioBlob, fileName, onProgress, resume);
     if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
-    console.log(`[transcrever] divisão indisponível → Gemini`);
-    return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini" };
+    // Não é MP3 (não dá para dividir): se cabe no limite do Groq, manda inteiro.
+    if (audioBlob.size <= GROQ_MAX_BYTES) {
+      console.log(`[transcrever] divisão indisponível → Groq com o arquivo inteiro`);
+      return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
+    }
+    throw new Error(
+      `O áudio tem ${formatBytes(audioBlob.size)} e não está em MP3, então não dá para dividir em partes ` +
+        `(o limite para enviar inteiro é ${formatBytes(GROQ_MAX_BYTES)}). Converta para MP3 ou cole a ` +
+        `transcrição do Gravador na reunião.`,
+    );
   }
   try {
     return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
