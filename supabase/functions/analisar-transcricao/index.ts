@@ -2,50 +2,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
-import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
+import { analisarReuniao } from "../_shared/analise-reuniao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-const DEFAULT_SYSTEM_PROMPT = `Você é um analista de reuniões. Receberá a transcrição de uma reunião em português. Extraia informações estruturadas, objetivas e profissionais. Não invente nada.`;
-
-async function getSystemPrompt(): Promise<string> {
-  try {
-    const { data } = await admin
-      .from("ia_prompt_config")
-      .select("prompt_sistema, instrucoes_extras, ativo")
-      .eq("chave", "analise_reuniao")
-      .maybeSingle();
-    if (!data || !data.ativo || !data.prompt_sistema?.trim()) return DEFAULT_SYSTEM_PROMPT;
-    const base = data.prompt_sistema.trim();
-    const extra = data.instrucoes_extras?.trim();
-    return extra ? `${base}\n\nContexto adicional:\n${extra}` : base;
-  } catch {
-    return DEFAULT_SYSTEM_PROMPT;
-  }
-}
-
-const tool = {
-  type: "function",
-  function: {
-    name: "extract_meeting_insights",
-    description: "Extrai insights estruturados de uma transcrição de reunião.",
-    parameters: {
-      type: "object",
-      properties: {
-        resumo: { type: "string" },
-        pauta: { type: "string" },
-        proximos_passos: { type: "string" },
-        decisoes: { type: "array", items: { type: "string" } },
-        participantes_detectados: { type: "array", items: { type: "string" } },
-      },
-      required: ["resumo", "pauta", "proximos_passos", "decisoes", "participantes_detectados"],
-      additionalProperties: false,
-    },
-  },
-};
 
 Deno.serve(async (req) => {
   const corsHeaders = corsFor(req);
@@ -54,7 +16,6 @@ Deno.serve(async (req) => {
   let reuniaoId: string | null = null;
   try {
     const user = await requireUser(req);
-    if (!AI_API_KEY) throw new Error("AI_API_KEY não configurada");
 
     const body = await req.json();
     reuniaoId = body.reuniao_id;
@@ -75,34 +36,7 @@ Deno.serve(async (req) => {
       .update({ transcricao_status: "processando", transcricao_erro: null })
       .eq("id", reuniaoId);
 
-    const res = await aiFetch({
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: await getSystemPrompt() },
-          {
-            role: "user",
-            content: `Analise:\n\n---\n${reu.transcricao.slice(0, 60000)}\n---`,
-          },
-        ],
-        tools: [tool],
-        tool_choice: { type: "function", function: { name: "extract_meeting_insights" } },
-      }),
-    });
-
-    if (res.status === 429) throw new Error("Limite de requisições à IA atingido");
-    if (res.status === 402) throw new Error("Cota do provedor de IA esgotada");
-    if (!res.ok) throw new Error(`IA (${res.status}): ${(await res.text()).slice(0, 300)}`);
-
-    const json = await res.json();
-    const call = json.choices?.[0]?.message?.tool_calls?.[0];
-    if (!call) throw new Error("IA não retornou análise estruturada");
-    const args = JSON.parse(call.function.arguments);
+    const args = await analisarReuniao(admin, reu.transcricao);
 
     await admin
       .from("reuniao")

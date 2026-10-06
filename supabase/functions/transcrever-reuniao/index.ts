@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
+import { analisarReuniao } from "../_shared/analise-reuniao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -44,6 +45,13 @@ function formatBytes(bytes: number): string {
 
 /** Limite prático do Groq Whisper (abaixo dos 25 MB anunciados). */
 const GROQ_SAFE_BYTES = 18 * 1024 * 1024;
+/**
+ * Teto para mandar ao Groq um arquivo que não dá para dividir (MP4/M4A, OGG...). O plano
+ * gratuito aceita até 25 MB (doc do Groq, out/2026); fica uma folga para o envio multipart.
+ * Antes, todo arquivo não-MP3 acima de 18 MB ia direto ao Gemini, que recusa áudio inline
+ * nesse tamanho/formato ("INVALID_ARGUMENT", áudio de 19,6 MB do WhatsApp em 06/10/2026).
+ */
+const GROQ_MAX_BYTES = 24 * 1024 * 1024;
 
 class AudioTooLargeError extends Error {}
 
@@ -404,8 +412,16 @@ async function transcribeAudio(
     console.log(`[transcrever] ${formatBytes(audioBlob.size)} → tentando divisão em partes`);
     const chunked = await transcribeChunked(audioBlob, fileName, onProgress, resume);
     if (chunked && chunked.text.trim()) return { ...chunked, engine: "groq-chunked" };
-    console.log(`[transcrever] divisão indisponível → Gemini`);
-    return { ...(await transcribeWithGemini(audioBlob, fileName)), engine: "gemini" };
+    // Não é MP3 (não dá para dividir): se cabe no limite do Groq, manda inteiro.
+    if (audioBlob.size <= GROQ_MAX_BYTES) {
+      console.log(`[transcrever] divisão indisponível → Groq com o arquivo inteiro`);
+      return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
+    }
+    throw new Error(
+      `O áudio tem ${formatBytes(audioBlob.size)} e não está em MP3, então não dá para dividir em partes ` +
+        `(o limite para enviar inteiro é ${formatBytes(GROQ_MAX_BYTES)}). Converta para MP3 ou cole a ` +
+        `transcrição do Gravador na reunião.`,
+    );
   }
   try {
     return { ...(await transcribeWithGroqRetry(audioBlob, fileName)), engine: "groq" };
@@ -466,102 +482,9 @@ async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Prom
 }
 ============================================================= */
 
-async function analyzeWithAI(transcricao: string): Promise<{
-  resumo: string;
-  pauta: string;
-  proximos_passos: string;
-  decisoes: string[];
-  participantes_detectados: string[];
-}> {
-  const systemPrompt = `Você é um analista de reuniões. Receberá a transcrição de uma reunião em português brasileiro, possivelmente com falantes identificados como "Falante 0", "Falante 1" etc. Extraia informações estruturadas e objetivas. Use linguagem profissional, frases curtas e claras. Nunca invente informações que não estejam na transcrição.`;
-
-  const tool = {
-    type: "function",
-    function: {
-      name: "extract_meeting_insights",
-      description: "Extrai insights estruturados de uma transcrição de reunião.",
-      parameters: {
-        type: "object",
-        properties: {
-          resumo: {
-            type: "string",
-            description:
-              "Resumo executivo de 3 a 6 frases sobre o que foi discutido e principais conclusões.",
-          },
-          pauta: {
-            type: "string",
-            description:
-              "Tópicos abordados em formato de lista markdown (- item). Inferir mesmo que não tenha sido formalizada.",
-          },
-          proximos_passos: {
-            type: "string",
-            description:
-              "Lista markdown (- item) das ações combinadas, com responsável entre parênteses quando identificado.",
-          },
-          decisoes: {
-            type: "array",
-            items: { type: "string" },
-            description:
-              "Decisões objetivas tomadas durante a reunião. Vazio se nenhuma decisão clara.",
-          },
-          participantes_detectados: {
-            type: "array",
-            items: { type: "string" },
-            description:
-              "Nomes de pessoas mencionadas como participantes/falantes. Apenas nomes próprios reais, não 'Falante 0'.",
-          },
-        },
-        required: [
-          "resumo",
-          "pauta",
-          "proximos_passos",
-          "decisoes",
-          "participantes_detectados",
-        ],
-        additionalProperties: false,
-      },
-    },
-  };
-
-  const res = await aiFetch({
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${AI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Analise a transcrição abaixo e chame a função extract_meeting_insights:\n\n---\n${transcricao.slice(0, 60000)}\n---`,
-        },
-      ],
-      tools: [tool],
-      tool_choice: { type: "function", function: { name: "extract_meeting_insights" } },
-    }),
-  });
-
-  if (res.status === 429) throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
-  if (res.status === 402) throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Lovable AI (${res.status}): ${t.slice(0, 300)}`);
-  }
-  const json = await res.json();
-  const call = json.choices?.[0]?.message?.tool_calls?.[0];
-  if (!call) throw new Error("IA não retornou análise estruturada");
-  const args = JSON.parse(call.function.arguments);
-  return {
-    resumo: args.resumo ?? "",
-    pauta: args.pauta ?? "",
-    proximos_passos: args.proximos_passos ?? "",
-    decisoes: Array.isArray(args.decisoes) ? args.decisoes : [],
-    participantes_detectados: Array.isArray(args.participantes_detectados)
-      ? args.participantes_detectados
-      : [],
-  };
+/** Mesma análise do texto colado (_shared/analise-reuniao.ts), com o contexto de Configurações → IA. */
+function analyzeWithAI(transcricao: string) {
+  return analisarReuniao(admin, transcricao);
 }
 
 /**
