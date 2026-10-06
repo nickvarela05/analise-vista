@@ -184,6 +184,10 @@ function Reunioes() {
   const [audioSize, setAudioSize] = React.useState<number | null>(null);
   const [audioMime, setAudioMime] = React.useState<string | null>(null);
   const [audioUploadedThisSession, setAudioUploadedThisSession] = React.useState(false);
+  // Transcrição colada à mão (ex.: "Copiar transcrição" do Gravador do iPhone), sem áudio.
+  const [transcricaoColada, setTranscricaoColada] = React.useState(false);
+  const [confirmApagarAudio, setConfirmApagarAudio] = React.useState(false);
+  const [apagandoAudio, setApagandoAudio] = React.useState(false);
   const [audioUrl, setAudioUrl] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [analyzing, setAnalyzing] = React.useState(false);
@@ -320,6 +324,7 @@ function Reunioes() {
     setAudioSize(null);
     setAudioMime(null);
     setAudioUploadedThisSession(false);
+    setTranscricaoColada(false);
   };
 
   const openCreate = () => {
@@ -396,6 +401,87 @@ function Reunioes() {
     setEditingId(inserted.id);
     qc.invalidateQueries({ queryKey: ["reunioes"] });
     return inserted.id;
+  };
+
+  /**
+   * Análise a partir da transcrição colada (Gravador do iPhone, 06/10/2026): grava o texto na
+   * reunião e chama só a análise da IA. Não usa áudio nem a transcrição do Groq.
+   */
+  const handleAnalisarTranscricaoColada = async () => {
+    if (!user) {
+      toast.error("Faça login para iniciar a análise");
+      return;
+    }
+    if (!form.titulo.trim()) {
+      toast.error("Informe um título antes de iniciar a análise");
+      return;
+    }
+    if (!form.transcricao.trim()) {
+      toast.error("Cole a transcrição antes de iniciar a análise");
+      return;
+    }
+    setAnalyzing(true);
+    try {
+      const rid = editingId ?? (await handleAutoSaveDraft());
+      if (!rid) return;
+      const { error: upErr } = await supabase
+        .from("reuniao")
+        .update({ transcricao: form.transcricao })
+        .eq("id", rid);
+      if (upErr) {
+        toast.error("Erro ao salvar a transcrição", { description: upErr.message });
+        return;
+      }
+      const { error: fnError } = await supabase.functions.invoke("analisar-transcricao", {
+        body: { reuniao_id: rid },
+      });
+      if (fnError) {
+        toast.error("Falha na análise por IA", { description: fnError.message });
+      } else {
+        setTranscricaoColada(false);
+        toast.success("Análise pronta", {
+          description: "Pauta, resumo e próximos passos foram preenchidos. Revise e salve.",
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["reunioes"] });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  /** Apaga o arquivo de áudio e mantém transcrição e análise. Irreversível. */
+  const handleApagarAudio = async () => {
+    if (!editingId || !audioPath) return;
+    setApagandoAudio(true);
+    try {
+      const { data: removidos, error } = await supabase.storage
+        .from("reuniao-audios")
+        .remove([audioPath]);
+      // Sem permissão, o Storage não dá erro: só devolve a lista vazia.
+      if (error || !removidos || removidos.length === 0) {
+        toast.error("Não foi possível apagar o áudio", {
+          description: error?.message ?? "Só gestores podem apagar áudios de reunião.",
+        });
+        return;
+      }
+      const { error: upErr } = await supabase
+        .from("reuniao")
+        .update({ audio_path: null, audio_size: null, audio_mime: null })
+        .eq("id", editingId);
+      if (upErr) {
+        toast.error("O áudio foi apagado, mas a reunião não foi atualizada", {
+          description: upErr.message,
+        });
+        return;
+      }
+      const mb = audioSize ? ` (${(audioSize / 1048576).toFixed(1)} MB liberados)` : "";
+      resetAudioState();
+      toast.success(`Áudio apagado${mb}. Transcrição e análise continuam na reunião.`);
+      qc.invalidateQueries({ queryKey: ["reunioes"] });
+    } finally {
+      setApagandoAudio(false);
+      setConfirmApagarAudio(false);
+    }
   };
 
   const handleEarlyAnalysis = async () => {
@@ -518,6 +604,16 @@ function Reunioes() {
       }
       savedId = inserted.id;
       toast.success("Reunião registrada");
+    }
+
+    // Transcrição colada nesta sessão e ainda não analisada: analisa ao salvar.
+    if (savedId && transcricaoColada && form.transcricao.trim() && !audioUploadedThisSession) {
+      supabase.functions
+        .invoke("analisar-transcricao", { body: { reuniao_id: savedId } })
+        .then(({ error }) => {
+          if (error) toast.error("Falha na análise por IA", { description: error.message });
+          else toast.info("✨ Analisando a transcrição com IA...", { description: "A reunião será atualizada automaticamente." });
+        });
     }
 
     // Se o áudio foi anexado nesta sessão e ainda não foi processado, dispara IA
@@ -1092,10 +1188,55 @@ function Reunioes() {
               />
             )}
 
+            {/* Alternativa ao áudio: colar a transcrição pronta (ex.: Gravador do iPhone). */}
+            {!audioPath && (
+              <div className="space-y-1.5 rounded-md border border-dashed p-3">
+                <Label htmlFor="reuniao-transcricao-colada" className="flex items-center gap-1.5">
+                  Ou cole a transcrição
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    (Gravador do iPhone: abra a gravação → transcrição → Copiar transcrição)
+                  </span>
+                </Label>
+                <Textarea
+                  id="reuniao-transcricao-colada"
+                  rows={6}
+                  className="min-h-[120px] resize-y font-mono text-xs"
+                  value={form.transcricao}
+                  onChange={(e) => {
+                    setForm({ ...form, transcricao: e.target.value });
+                    setTranscricaoColada(true);
+                  }}
+                  placeholder="Cole aqui o texto da reunião. Não precisa enviar o áudio: a IA gera pauta, resumo e próximos passos a partir do texto."
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Economiza espaço: o texto ocupa uma fração do áudio.
+                </p>
+              </div>
+            )}
+
+            {editingId && audioPath && (editingRow?.transcricao_status as any) !== "processando" && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs">
+                <span className="text-muted-foreground">
+                  {form.transcricao.trim()
+                    ? `A transcrição já está salva. O áudio${audioSize ? ` (${(audioSize / 1048576).toFixed(1)} MB)` : ""} pode ser apagado para liberar espaço.`
+                    : "O áudio ainda não foi transcrito. Apague só se não for precisar dele."}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
+                  onClick={() => setConfirmApagarAudio(true)}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Apagar áudio
+                </Button>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Pauta
-                {form.pauta && audioPath && (
+                {form.pauta && (audioPath || form.transcricao) && (
                   <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
                     <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
                   </Badge>
@@ -1106,7 +1247,7 @@ function Reunioes() {
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Resumo
-                {form.resumo && audioPath && (
+                {form.resumo && (audioPath || form.transcricao) && (
                   <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
                     <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
                   </Badge>
@@ -1117,7 +1258,7 @@ function Reunioes() {
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Próximos passos
-                {form.proximos_passos && audioPath && (
+                {form.proximos_passos && (audioPath || form.transcricao) && (
                   <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
                     <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
                   </Badge>
@@ -1130,7 +1271,7 @@ function Reunioes() {
                 onChange={(e) => setForm({ ...form, proximos_passos: e.target.value })}
               />
             </div>
-            {form.transcricao && (
+            {form.transcricao && audioPath && (
               <Accordion type="single" collapsible>
                 <AccordionItem value="transcricao" className="rounded-md border px-3">
                   <AccordionTrigger className="text-sm">
@@ -1153,17 +1294,17 @@ function Reunioes() {
                 variant="secondary"
                 disabled={
                   analyzing ||
-                  !audioPath ||
+                  (!audioPath && !form.transcricao.trim()) ||
                   (editingRow?.transcricao_status as any) === "processando"
                 }
-                onClick={handleEarlyAnalysis}
+                onClick={audioPath ? handleEarlyAnalysis : handleAnalisarTranscricaoColada}
               >
                 {analyzing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                Iniciar análise por IA
+                {audioPath ? "Iniciar análise por IA" : "Analisar transcrição com IA"}
               </Button>
               <div className="flex gap-2">
                 <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>
@@ -1468,6 +1609,35 @@ function Reunioes() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmar apagar só o áudio */}
+      <AlertDialog open={confirmApagarAudio} onOpenChange={(v) => !apagandoAudio && setConfirmApagarAudio(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar o áudio desta reunião?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O arquivo de áudio é apagado de vez e não pode ser recuperado. A reunião, a transcrição, a
+              pauta, o resumo e os próximos passos continuam salvos.
+              {!form.transcricao.trim() && " Atenção: este áudio ainda não foi transcrito."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={apagandoAudio}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                // Mantém o diálogo aberto até terminar; ele fecha no fim de handleApagarAudio.
+                e.preventDefault();
+                void handleApagarAudio();
+              }}
+              disabled={apagandoAudio}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {apagandoAudio && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Apagar áudio
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
