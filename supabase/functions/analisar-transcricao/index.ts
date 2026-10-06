@@ -2,79 +2,12 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsFor } from "../_shared/cors.ts";
 import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
-import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
+import { analisarReuniao } from "../_shared/analise-reuniao.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-const DEFAULT_SYSTEM_PROMPT = `Você é um analista de reuniões. Receberá a transcrição de uma reunião em português. Extraia informações estruturadas, objetivas e profissionais. Não invente nada.`;
-
-async function getSystemPrompt(): Promise<string> {
-  try {
-    const { data } = await admin
-      .from("ia_prompt_config")
-      .select("prompt_sistema, instrucoes_extras, ativo")
-      .eq("chave", "analise_reuniao")
-      .maybeSingle();
-    if (!data || !data.ativo || !data.prompt_sistema?.trim()) return DEFAULT_SYSTEM_PROMPT;
-    const base = data.prompt_sistema.trim();
-    const extra = data.instrucoes_extras?.trim();
-    return extra ? `${base}\n\nContexto adicional:\n${extra}` : base;
-  } catch {
-    return DEFAULT_SYSTEM_PROMPT;
-  }
-}
-
-// Descrições dos campos: sem elas a IA devolvia o mínimo (pauta numa linha, um único próximo
-// passo), como relatado pelo Nickolas em 06/10/2026. Valem para transcrição de áudio e colada.
-const tool = {
-  type: "function",
-  function: {
-    name: "extract_meeting_insights",
-    description:
-      "Extrai os pontos da reunião. Cubra TODOS os assuntos discutidos, não só o primeiro ou o principal. " +
-      "A transcrição pode não indicar quem fala (ex.: transcrição do Gravador do iPhone) e ter erros de " +
-      "reconhecimento de voz: deduza pelo contexto e não invente.",
-    parameters: {
-      type: "object",
-      properties: {
-        pauta: {
-          type: "string",
-          description:
-            "Lista dos assuntos tratados, na ordem em que apareceram, um por linha começando com '- '. " +
-            "Cada item com o tema e, em poucas palavras, o que se discutiu dele. Normalmente de 4 a 10 itens.",
-        },
-        resumo: {
-          type: "string",
-          description:
-            "Resumo em parágrafos curtos, um por assunto da pauta: contexto, problema ou necessidade, " +
-            "o que foi proposto e o que ficou definido ou em aberto. Inclua sistemas, telas, números, " +
-            "matrículas, prazos e nomes citados. Pode ser longo se a reunião foi longa.",
-        },
-        proximos_passos: {
-          type: "string",
-          description:
-            "Todas as ações combinadas, uma por linha começando com '- ', no formato " +
-            "'Responsável: ação (prazo)'. Omita prazo ou responsável quando não foram ditos; não invente.",
-        },
-        decisoes: {
-          type: "array",
-          items: { type: "string" },
-          description: "Cada decisão tomada, em uma frase. Não repita ações dos próximos passos.",
-        },
-        participantes_detectados: {
-          type: "array",
-          items: { type: "string" },
-          description: "Nomes de pessoas que participaram ou foram citadas como presentes, com o papel se dito.",
-        },
-      },
-      required: ["resumo", "pauta", "proximos_passos", "decisoes", "participantes_detectados"],
-      additionalProperties: false,
-    },
-  },
-};
 
 Deno.serve(async (req) => {
   const corsHeaders = corsFor(req);
@@ -83,7 +16,6 @@ Deno.serve(async (req) => {
   let reuniaoId: string | null = null;
   try {
     const user = await requireUser(req);
-    if (!AI_API_KEY) throw new Error("AI_API_KEY não configurada");
 
     const body = await req.json();
     reuniaoId = body.reuniao_id;
@@ -104,36 +36,7 @@ Deno.serve(async (req) => {
       .update({ transcricao_status: "processando", transcricao_erro: null })
       .eq("id", reuniaoId);
 
-    const res = await aiFetch({
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: await getSystemPrompt() },
-          {
-            role: "user",
-            // Antes cortava em 60 mil caracteres: numa reunião de 2 h (167 mil) a IA lia só o
-            // primeiro terço. 200 mil caracteres ≈ 50 mil tokens, bem dentro do contexto do Gemini.
-            content: `Analise:\n\n---\n${reu.transcricao.slice(0, 200000)}\n---`,
-          },
-        ],
-        tools: [tool],
-        tool_choice: { type: "function", function: { name: "extract_meeting_insights" } },
-      }),
-    });
-
-    if (res.status === 429) throw new Error("Limite de requisições à IA atingido");
-    if (res.status === 402) throw new Error("Cota do provedor de IA esgotada");
-    if (!res.ok) throw new Error(`IA (${res.status}): ${(await res.text()).slice(0, 300)}`);
-
-    const json = await res.json();
-    const call = json.choices?.[0]?.message?.tool_calls?.[0];
-    if (!call) throw new Error("IA não retornou análise estruturada");
-    const args = JSON.parse(call.function.arguments);
+    const args = await analisarReuniao(admin, reu.transcricao);
 
     await admin
       .from("reuniao")
