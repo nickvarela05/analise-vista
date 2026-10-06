@@ -116,7 +116,9 @@ Deno.serve(async (req) => {
           { role: "system", content: await getSystemPrompt() },
           {
             role: "user",
-            content: `Analise:\n\n---\n${reu.transcricao.slice(0, 60000)}\n---`,
+            // Antes cortava em 60 mil caracteres: numa reunião de 2 h (167 mil) a IA lia só o
+            // primeiro terço. 200 mil caracteres ≈ 50 mil tokens, bem dentro do contexto do Gemini.
+            content: `Analise:\n\n---\n${reu.transcricao.slice(0, 200000)}\n---`,
           },
         ],
         tools: [tool],
