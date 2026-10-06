@@ -4,7 +4,11 @@ const APP_ORIGINS = (Deno.env.get("APP_URL") ?? "")
   .map((u) => u.trim())
   .filter(Boolean)
   .map((u) => new URL(u).origin);
-const ALLOWED_ORIGIN_SUFFIXES: string[] = [];
+// Prévias da Cloudflare de cada branch/PR (Worker Previews): "https://<branch>-nexus.<conta>.workers.dev".
+// Sem isto, testar na prévia qualquer tela que chame uma função falhava com "Failed to send a
+// request to the Edge Function" (caso de 06/10/2026). O sufixo é do nosso Worker e da nossa conta,
+// então só cobre prévias deste projeto.
+const ALLOWED_ORIGIN_SUFFIXES: string[] = ["-nexus.nickvarela127.workers.dev"];
 const ALLOWED_ORIGIN_EXACT = new Set<string>([
   ...APP_ORIGINS,
   "http://localhost:3000",
@@ -16,7 +20,7 @@ export function corsFor(req: Request): Record<string, string> {
   const origin = req.headers.get("Origin") ?? "";
   const ok =
     ALLOWED_ORIGIN_EXACT.has(origin) ||
-    ALLOWED_ORIGIN_SUFFIXES.some((s) => origin.endsWith(s));
+    (origin.startsWith("https://") && ALLOWED_ORIGIN_SUFFIXES.some((s) => origin.endsWith(s)));
   return {
     "Access-Control-Allow-Origin": ok ? origin : "null",
     "Access-Control-Allow-Headers":
