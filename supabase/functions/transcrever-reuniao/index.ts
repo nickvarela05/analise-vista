@@ -236,6 +236,17 @@ const MP3_RATES: Record<number, number[]> = {
  * os limites de frame (sem reencode). `null` quando não parece um MP3 válido.
  */
 function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): Uint8Array[] | null {
+  // Outros contêineres (MP4/M4A, WAV, OGG, FLAC, WebM) não são MP3: os bytes comprimidos deles
+  // contêm sequências 0xFFEx por acaso e o laço abaixo "acharia" frames falsos. Foi o que
+  // aconteceu com o MP4 de 19,6 MB do WhatsApp em 06/10 (4 partes inválidas, "0 min").
+  const tag = String.fromCharCode(...bytes.subarray(0, 12));
+  if (
+    tag.slice(4, 8) === "ftyp" || tag.startsWith("RIFF") || tag.startsWith("OggS") ||
+    tag.startsWith("fLaC") || (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3)
+  ) {
+    return null;
+  }
+
   const parts: Uint8Array[] = [];
   let start = 0;
   let i = 0;
@@ -278,6 +289,12 @@ function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): U
       i++;
       continue;
     }
+    // Frame verdadeiro é seguido de outro cabeçalho (ou do fim do arquivo).
+    const next = i + frameLen;
+    if (next + 1 < bytes.length && (bytes[next] !== 0xff || (bytes[next + 1] & 0xe0) !== 0xe0)) {
+      i++;
+      continue;
+    }
     frames++;
     const frameSeconds = samples / rate;
 
@@ -292,7 +309,8 @@ function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): U
     i += frameLen;
   }
 
-  if (frames < 10) return null;
+  // Menos de 1 min de áudio em um arquivo grande: não é MP3 de verdade.
+  if (frames < 10 || totalSeconds < 60) return null;
   if (start < bytes.length) parts.push(bytes.subarray(start, bytes.length));
   console.log(`[transcrever] duração estimada: ${Math.round(totalSeconds / 60)} min`);
   return parts.filter((p) => p.length > 0);
