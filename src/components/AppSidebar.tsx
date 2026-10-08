@@ -50,6 +50,7 @@ type NavGroup = {
 
 // Menu reorganizado em 08/10/2026 pelo uso real (análise de uso, out/2026): a homologação
 // em cima, depois o dia a dia, a gestão e os cadastros consultados de vez em quando.
+// O grupo Gestão é só para gestor (decisão do Nickolas em 08/10/2026).
 const groups: NavGroup[] = [
   {
     label: "Homologação",
@@ -71,9 +72,9 @@ const groups: NavGroup[] = [
   {
     label: "Gestão",
     items: [
-      { title: "Painel da gestão", url: "/painel",   icon: LayoutDashboard, tone: "violet" },
-      { title: "Insights & IA",    url: "/insights", icon: Sparkles,        tone: "violet" },
-      { title: "Avisos",           url: "/avisos",   icon: Megaphone,       tone: "rose"   },
+      { title: "Painel da gestão", url: "/painel",   icon: LayoutDashboard, tone: "violet", requireGestor: true },
+      { title: "Insights & IA",    url: "/insights", icon: Sparkles,        tone: "violet", requireGestor: true },
+      { title: "Avisos",           url: "/avisos",   icon: Megaphone,       tone: "rose",   requireGestor: true },
       { title: "Equipe",           url: "/equipe",   icon: Users,           tone: "violet", requireGestor: true },
     ],
   },

@@ -254,37 +254,25 @@ export function FecharRodadaDialog({
     }
     const { data: perfil } = await supabase.from("profiles").select("nome").eq("user_id", user.id).maybeSingle();
     const autorNome = perfil?.nome ?? user.email ?? null;
-    const anterior = new Map(prontas.map((t) => [t.id, t.status]));
     const hoje = format(new Date(), "dd/MM/yyyy");
-    // Histórico e observações: complementares; se falharem, o status já foi movido.
-    const [hist, com] = await Promise.all([
-      supabase.from("todo_historico").insert(
-        ids.map((id) => ({
-          todo_id: id,
-          autor_id: user.id,
-          autor_nome: autorNome,
-          campo: "status",
-          valor_antigo: anterior.get(id) ?? null,
-          valor_novo: "pre_build",
-        })),
-      ),
-      (() => {
-        const comObs = linhas.filter((l) => l.observacao);
-        if (comObs.length === 0) return Promise.resolve({ error: null });
-        return supabase.from("todo_comentario").insert(
-          comObs.map((l) => ({
-            todo_id: l.id,
-            autor_id: user.id,
-            autor_nome: autorNome,
-            conteudo: `Observação do teste (enviada em ${hoje}): ${l.observacao}`,
-          })),
-        );
-      })(),
-    ]);
+    // O histórico de status é gravado pelo banco (gatilho trg_todo_registrar_status, 08/10/2026).
+    // A observação é complementar: se falhar, o status já foi movido.
+    const comObs = linhas.filter((l) => l.observacao);
+    const { error: erroObs } =
+      comObs.length === 0
+        ? { error: null }
+        : await supabase.from("todo_comentario").insert(
+            comObs.map((l) => ({
+              todo_id: l.id,
+              autor_id: user.id,
+              autor_nome: autorNome,
+              conteudo: `Observação do teste (enviada em ${hoje}): ${l.observacao}`,
+            })),
+          );
     setGravando(false);
-    if (hist.error || com.error) {
-      toast.warning("Tarefas movidas para Pré-build, mas o histórico ou as observações não foram salvos", {
-        description: (hist.error ?? com.error)?.message,
+    if (erroObs) {
+      toast.warning("Tarefas movidas para Pré-build, mas as observações não foram salvas", {
+        description: erroObs.message,
       });
     }
     setEnviadas(ids.length);

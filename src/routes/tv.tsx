@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CentralHomologacao } from "@/components/central/CentralHomologacao";
 import { PainelGestao } from "@/components/painel/PainelGestao";
 import { cn } from "@/lib/utils";
+import { SomenteGestor } from "@/components/SomenteGestor";
 
 /**
  * Modo TV (08/10/2026): substitui o antigo "Modo apresentação", que era uma cópia do Dashboard
@@ -29,7 +30,9 @@ const ATUALIZA_MS = 2 * 60_000;
 function TvRoute() {
   return (
     <AppLayout bare>
-      <ModoTv />
+      <SomenteGestor>
+        <ModoTv />
+      </SomenteGestor>
     </AppLayout>
   );
 }

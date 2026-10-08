@@ -178,7 +178,8 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   };
 
   const logHistorico = async (campo: string, antigo: any, novo: any) => {
-    if (!user) return;
+    // Status: o banco grava sozinho (gatilho trg_todo_registrar_status, 08/10/2026).
+    if (!user || campo === "status") return;
     await supabase.from("todo_historico").insert({
       todo_id: id,
       autor_id: user.id,

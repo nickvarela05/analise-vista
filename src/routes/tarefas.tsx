@@ -4,8 +4,8 @@ import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Loader2, LayoutGrid, List as ListIcon,
-  Activity, Archive, FlaskConical, CheckCircle2, Rocket,
-  CheckSquare, ChevronDown, FlaskRound,
+  FlaskConical, CheckCircle2, Rocket, PauseCircle, XCircle, Hourglass,
+  CheckSquare, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, isWithinInterval, addDays, startOfDay } from "date-fns";
@@ -37,7 +37,6 @@ import { ExportarTarefasDialog } from "@/components/tarefas/ExportarTarefasDialo
 import { TarefasDuplicadasDialog } from "@/components/tarefas/TarefasDuplicadasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
-import { registrarMudancaStatus } from "@/components/tarefas/lib/historico";
 import type { TarefaRow } from "@/lib/db-types";
 import { parseDateOnly } from "@/lib/date";
 
@@ -105,17 +104,20 @@ function Tarefas() {
     }
   }, [tarefas]); // eslint-disable-line
 
-  // KPIs com base no NOVO workflow. Cálculo em uma única passada (reduce)
-  // para evitar 6 .filter() sobre o array filtrado.
+  // Indicadores = etapas do fluxo de homologação (revisto em 08/10/2026). Saíram "Ativas",
+  // "Encerradas" (a tela não carrega as encerradas, então mostrava sempre 0) e "Em teste"
+  // (a marca continua no filtro "Em teste").
   const counts = React.useMemo(() => {
-    const acc = { ativas: 0, encerradas: 0, emTeste: 0, hml: 0, aprovado: 0, producao: 0 };
+    const acc = { standby: 0, hml: 0, aprovado: 0, ressalvas: 0, reprovado: 0, preBuild: 0, producao: 0 };
     for (const t of filtered) {
       const s = normalizeStatus(t.status);
-      if (s === "encerrada") acc.encerradas++; else acc.ativas++;
-      if (t.em_teste) acc.emTeste++;
-      if (s === "homologacao") acc.hml++;
-      if (s === "aprovado" || s === "aprovado_ressalvas") acc.aprovado++;
-      if (s === "producao") acc.producao++;
+      if (s === "em_andamento") acc.standby++;
+      else if (s === "homologacao") acc.hml++;
+      else if (s === "aprovado") acc.aprovado++;
+      else if (s === "aprovado_ressalvas") acc.ressalvas++;
+      else if (s === "reprovado") acc.reprovado++;
+      else if (s === "pre_build") acc.preBuild++;
+      else if (s === "producao") acc.producao++;
     }
     return acc;
   }, [filtered]);
@@ -156,23 +158,10 @@ function Tarefas() {
       status: status as TarefaRow["status"],
       concluida_em: status === "producao" ? new Date().toISOString() : null,
     };
-    const ok = await optimisticUpdate([id], patch, () =>
+    await optimisticUpdate([id], patch, () =>
       supabase.from("todo").update(patch).eq("id", id),
     );
-    if (!ok) return;
-    // Histórico em fire-and-forget — não bloqueia a UI.
-    if (user) {
-      supabase
-        .from("todo_historico")
-        .insert({
-          todo_id: id,
-          autor_id: user.id,
-          campo: "status",
-          valor_antigo: tarefa.status,
-          valor_novo: status,
-        })
-        .then(() => {});
-    }
+    // Histórico de status: gravado pelo banco (gatilho trg_todo_registrar_status, 08/10/2026).
   };
 
   const toggleSelect = (id: string, checked: boolean) => {
@@ -188,7 +177,6 @@ function Tarefas() {
 
   const bulkUpdateStatus = async (status: string) => {
     const ids = Array.from(selectedIds);
-    const anterior = new Map(tarefas.map((t) => [t.id, t.status]));
     const patch: Partial<TarefaRow> = {
       status: status as TarefaRow["status"],
       ...(status === "producao" ? { concluida_em: new Date().toISOString() } : {}),
@@ -199,14 +187,6 @@ function Tarefas() {
     if (ok) {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
-      if (user) {
-        const erro = await registrarMudancaStatus(
-          user,
-          ids.map((id) => ({ id, de: anterior.get(id) ?? null })),
-          status,
-        );
-        if (erro) toast.warning("Status alterado, mas o histórico não foi salvo", { description: erro.message });
-      }
     }
   };
 
@@ -287,12 +267,12 @@ function Tarefas() {
           </div>
         }
         stats={[
-          { icon: Activity,       label: "Ativas",        value: counts.ativas,    tone: "primary",     hint: "Não encerradas" },
-          { icon: Archive,        label: "Encerradas",    value: counts.encerradas, tone: "destructive", hint: "Sem ação prevista" },
-          { icon: FlaskRound,     label: "Em teste",      value: counts.emTeste,   tone: "amber",       hint: "Validação interna" },
-          { icon: FlaskConical,   label: "Homologação",   value: counts.hml,       tone: "sky",         hint: "Em validação" },
-          { icon: CheckCircle2,   label: "Aprovadas",     value: counts.aprovado,  tone: "emerald",     hint: "Prontas p/ subir" },
-          { icon: Rocket,         label: "Em produção",   value: counts.producao,  tone: "violet",      hint: "Entregues" },
+          { icon: PauseCircle,  label: "Stand-by",    value: counts.standby,   tone: "primary",     hint: "Em aguardo" },
+          { icon: FlaskConical, label: "Homologação", value: counts.hml,       tone: "sky",         hint: "A testar" },
+          { icon: CheckCircle2, label: "Aprovadas",   value: counts.aprovado + counts.ressalvas, tone: "emerald", hint: counts.ressalvas ? `${counts.ressalvas} com ressalvas` : "Prontas para enviar" },
+          { icon: XCircle,      label: "Reprovadas",  value: counts.reprovado, tone: "destructive", hint: "Aguardam correção" },
+          { icon: Hourglass,    label: "Pré-build",   value: counts.preBuild,  tone: "amber",       hint: "Enviadas, aguardando produção" },
+          { icon: Rocket,       label: "Produção",    value: counts.producao,  tone: "violet",      hint: "Subiram" },
         ]}
       />
 
