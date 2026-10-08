@@ -22,7 +22,6 @@ import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type { TarefaRow } from "@/lib/db-types";
-import { registrarMudancaStatus } from "@/components/tarefas/lib/historico";
 import type { Aguardando } from "./lib/central";
 
 /** Dias de espera a partir dos quais a tarefa chama atenção (a mediana medida em 01/10 era 7). */
@@ -106,19 +105,11 @@ export function AguardandoProducaoPanel({
       toast.error("Não foi possível marcar como em produção", { description: error.message });
       return;
     }
-    const erroHist = await registrarMudancaStatus(
-      user,
-      ids.map((id) => ({ id, de: "pre_build" })),
-      "producao",
-    );
+    // O histórico de cada tarefa é gravado pelo banco (gatilho trg_todo_registrar_status).
     setGravando(false);
     setConfirmando(false);
     setSel(new Set());
-    if (erroHist)
-      toast.warning("Tarefas em Produção, mas o histórico não foi salvo", {
-        description: erroHist.message,
-      });
-    else toast.success(`${ids.length} tarefa${ids.length === 1 ? "" : "s"} em Produção`);
+    toast.success(`${ids.length} tarefa${ids.length === 1 ? "" : "s"} em Produção`);
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
