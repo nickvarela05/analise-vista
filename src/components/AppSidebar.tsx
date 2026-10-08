@@ -6,6 +6,7 @@ import {
   Calendar,
   CalendarDays,
   CheckSquare,
+  ClipboardCheck,
   Megaphone,
   Users,
   Settings,
@@ -47,32 +48,40 @@ type NavGroup = {
   items: NavItem[];
 };
 
+// Menu reorganizado em 08/10/2026 pelo uso real (análise de uso, out/2026): a homologação
+// em cima, depois o dia a dia, a gestão e os cadastros consultados de vez em quando.
 const groups: NavGroup[] = [
   {
-    label: "Visão",
+    label: "Homologação",
     items: [
-      { title: "Dashboard",     url: "/",         icon: LayoutDashboard, tone: "primary" },
-      { title: "Insights & IA", url: "/insights", icon: Sparkles,        tone: "violet"  },
+      { title: "Central",  url: "/",        icon: ClipboardCheck, tone: "emerald" },
+      { title: "Tarefas",  url: "/tarefas", icon: CheckSquare,    tone: "emerald" },
     ],
   },
   {
     label: "Operação",
     items: [
       { title: "Relatórios",          url: "/relatorios", icon: FileBarChart, tone: "amber"   },
-      { title: "Atividades semanais", url: "/atividades", icon: CalendarRange,tone: "sky"     },
       { title: "Reuniões",            url: "/reunioes",   icon: Calendar,     tone: "indigo"  },
+      { title: "Atividades semanais", url: "/atividades", icon: CalendarRange,tone: "sky"     },
       { title: "Processos",           url: "/processos",  icon: CalendarDays, tone: "violet"  },
-      { title: "Tarefas",             url: "/tarefas",    icon: CheckSquare,  tone: "emerald" },
       { title: "Demandas",            url: "/demandas",   icon: Inbox,        tone: "cyan"    },
     ],
   },
   {
-    label: "Time",
+    label: "Gestão",
     items: [
-      { title: "Avisos",    url: "/avisos",    icon: Megaphone, tone: "rose" },
+      { title: "Painel da gestão", url: "/painel",   icon: LayoutDashboard, tone: "violet" },
+      { title: "Insights & IA",    url: "/insights", icon: Sparkles,        tone: "violet" },
+      { title: "Avisos",           url: "/avisos",   icon: Megaphone,       tone: "rose"   },
+      { title: "Equipe",           url: "/equipe",   icon: Users,           tone: "violet", requireGestor: true },
+    ],
+  },
+  {
+    label: "Cadastros",
+    items: [
       { title: "Portfólio", url: "/portfolio", icon: Briefcase, tone: "indigo" },
       { title: "Unidades",  url: "/unidades",  icon: Building2, tone: "emerald" },
-      { title: "Equipe",    url: "/equipe",    icon: Users,     tone: "violet", requireGestor: true },
     ],
   },
 ];

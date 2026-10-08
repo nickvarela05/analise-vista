@@ -37,6 +37,7 @@ import { ExportarTarefasDialog } from "@/components/tarefas/ExportarTarefasDialo
 import { TarefasDuplicadasDialog } from "@/components/tarefas/TarefasDuplicadasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
+import { registrarMudancaStatus } from "@/components/tarefas/lib/historico";
 import type { TarefaRow } from "@/lib/db-types";
 import { parseDateOnly } from "@/lib/date";
 
@@ -187,6 +188,7 @@ function Tarefas() {
 
   const bulkUpdateStatus = async (status: string) => {
     const ids = Array.from(selectedIds);
+    const anterior = new Map(tarefas.map((t) => [t.id, t.status]));
     const patch: Partial<TarefaRow> = {
       status: status as TarefaRow["status"],
       ...(status === "producao" ? { concluida_em: new Date().toISOString() } : {}),
@@ -197,6 +199,14 @@ function Tarefas() {
     if (ok) {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
+      if (user) {
+        const erro = await registrarMudancaStatus(
+          user,
+          ids.map((id) => ({ id, de: anterior.get(id) ?? null })),
+          status,
+        );
+        if (erro) toast.warning("Status alterado, mas o histórico não foi salvo", { description: erro.message });
+      }
     }
   };
 
