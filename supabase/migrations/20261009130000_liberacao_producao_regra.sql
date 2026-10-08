@@ -1,4 +1,4 @@
--- Liberação em produção, parte 2: a regra (aplicar só no merge do PR #15, depois da
+-- Liberação em produção, parte 2: a regra e um ajuste da confirmação (aplicar só no merge do PR #15, depois da
 -- aprovação do Nickolas na prévia). Ver a parte 1 para o contexto.
 --
 -- A partir daqui, a tarefa só entra em Produção com as três confirmações, por qualquer
@@ -43,3 +43,95 @@ CREATE TRIGGER trg_todo_regra_liberacao
   BEFORE UPDATE OF status ON public.todo
   FOR EACH ROW EXECUTE FUNCTION public.todo_regra_liberacao();
 
+-- 3. Confirmar duas vezes não regrava ----------------------------------------------------------
+-- No teste da prévia (08/10), a "Versão publicada" da 9408 foi confirmada duas vezes seguidas: a
+-- segunda regravava data e autor e duplicava o histórico. Agora só muda a tarefa cuja etapa
+-- ainda está no estado oposto, e o histórico registra só as que mudaram.
+CREATE OR REPLACE FUNCTION public.confirmar_liberacao(
+  p_ids uuid[],
+  p_etapa text,
+  p_marcar boolean DEFAULT true,
+  p_objetos text DEFAULT NULL,
+  p_dispensada boolean DEFAULT false
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+  v_autor text;
+  v_agora timestamptz := now();
+  v_rotulo text;
+  v_mudadas uuid[];
+  v_em_producao int := 0;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Sessão expirada. Entre de novo e repita.';
+  END IF;
+  SELECT nome INTO v_autor FROM public.profiles WHERE user_id = v_uid;
+  IF v_autor IS NULL THEN
+    RAISE EXCEPTION 'Usuário sem perfil no Nexus.';
+  END IF;
+  IF p_ids IS NULL OR array_length(p_ids, 1) IS NULL THEN
+    RAISE EXCEPTION 'Nenhuma tarefa selecionada.';
+  END IF;
+  IF p_etapa = 'acesso' AND p_marcar AND NOT p_dispensada AND COALESCE(btrim(p_objetos), '') = '' THEN
+    RAISE EXCEPTION 'Anote os objetos e grupos liberados, ou marque que a tarefa não precisa de liberação.';
+  END IF;
+
+  IF p_etapa = 'versao' THEN
+    v_rotulo := 'Versão publicada';
+    WITH m AS (
+      UPDATE public.todo SET
+        liberacao_versao_em = CASE WHEN p_marcar THEN v_agora END,
+        liberacao_versao_por = CASE WHEN p_marcar THEN v_autor END
+      WHERE id = ANY (p_ids) AND status IN ('pre_build', 'producao')
+        AND (liberacao_versao_em IS NULL) = p_marcar
+      RETURNING id)
+    SELECT array_agg(id) INTO v_mudadas FROM m;
+  ELSIF p_etapa = 'acesso' THEN
+    v_rotulo := CASE WHEN p_dispensada THEN 'Acessos: não precisa liberar' ELSE 'Acessos liberados' END;
+    WITH m AS (
+      UPDATE public.todo SET
+        liberacao_acesso_em = CASE WHEN p_marcar THEN v_agora END,
+        liberacao_acesso_por = CASE WHEN p_marcar THEN v_autor END,
+        liberacao_acesso_dispensada = p_marcar AND p_dispensada,
+        liberacao_objetos = CASE WHEN p_marcar AND NOT p_dispensada THEN btrim(p_objetos) END
+      WHERE id = ANY (p_ids) AND status IN ('pre_build', 'producao')
+        AND (liberacao_acesso_em IS NULL) = p_marcar
+      RETURNING id)
+    SELECT array_agg(id) INTO v_mudadas FROM m;
+  ELSIF p_etapa = 'validacao' THEN
+    v_rotulo := 'Validada em produção';
+    WITH m AS (
+      UPDATE public.todo SET
+        liberacao_validada_em = CASE WHEN p_marcar THEN v_agora END,
+        liberacao_validada_por = CASE WHEN p_marcar THEN v_autor END
+      WHERE id = ANY (p_ids) AND status IN ('pre_build', 'producao')
+        AND (liberacao_validada_em IS NULL) = p_marcar
+      RETURNING id)
+    SELECT array_agg(id) INTO v_mudadas FROM m;
+  ELSE
+    RAISE EXCEPTION 'Etapa desconhecida: %', p_etapa;
+  END IF;
+
+  INSERT INTO public.todo_historico (todo_id, autor_id, autor_nome, campo, valor_antigo, valor_novo)
+  SELECT id, v_uid, v_autor, 'liberacao',
+         CASE WHEN p_marcar THEN NULL ELSE v_rotulo END,
+         CASE WHEN p_marcar THEN v_rotulo || CASE WHEN p_etapa = 'acesso' AND NOT p_dispensada
+                                             THEN ': ' || btrim(p_objetos) ELSE '' END END
+    FROM unnest(COALESCE(v_mudadas, '{}')) AS id;
+
+  UPDATE public.todo SET status = 'producao', concluida_em = v_agora
+   WHERE id = ANY (p_ids)
+     AND status = 'pre_build'
+     AND liberacao_versao_em IS NOT NULL
+     AND liberacao_acesso_em IS NOT NULL
+     AND liberacao_validada_em IS NOT NULL;
+  GET DIAGNOSTICS v_em_producao = ROW_COUNT;
+
+  RETURN jsonb_build_object('atualizadas', COALESCE(array_length(v_mudadas, 1), 0), 'em_producao', v_em_producao);
+END;
+$$;

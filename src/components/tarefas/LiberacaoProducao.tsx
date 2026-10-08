@@ -38,7 +38,9 @@ export function LiberacaoProducao({ tarefa }: { tarefa: TarefaRow }) {
         dispensada: etapa === "acesso" ? dispensada : undefined,
       });
       if (r.em_producao > 0) toast.success("Liberação completa: a tarefa foi para Produção");
-      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+      // Segura o botão até a tarefa recarregada chegar. Sem isso, no teste de 08/10 o botão
+      // voltou antes da tela mostrar a confirmação e a etapa foi confirmada duas vezes.
+      await qc.invalidateQueries({ queryKey: qk.tarefas.all() });
     } catch (e) {
       toast.error("Não foi possível salvar", { description: (e as Error).message });
     } finally {
