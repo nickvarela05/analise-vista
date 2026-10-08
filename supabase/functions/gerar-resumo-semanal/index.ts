@@ -145,11 +145,13 @@ Deno.serve(async (req) => {
       ] = await Promise.all([
         contar(todo()),
         contar(todo().in("status", ["concluida", "producao", "aprovado"])),
-        contar(todo().in("prioridade", ["urgente", "alta"])),
+        // Só valores que existem nos tipos do banco: um valor inválido derruba a contagem inteira
+        // (foi o que zerou o resumo de 05/10: "urgente" em todo e "fechado" em chamado_externo).
+        contar(todo().eq("prioridade", "alta")),
         contar(demanda()),
         contar(demanda().not("status", "in", "(concluida,cancelada)")),
         contar(chamado()),
-        contar(chamado().lt("prazo", hoje.toISOString()).neq("status", "fechado")),
+        contar(chamado().lt("prazo", hoje.toISOString()).neq("status", "finalizado")),
       ]);
       const metricas = {
         tarefas_total, tarefas_concluidas, tarefas_urgentes,
@@ -199,7 +201,9 @@ Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (tr
 
       gerados++;
     } catch (e) {
-      console.error(`[resumo] user ${u.user_id}:`, e);
+      // Erro do PostgREST em consulta só de contagem (head) chega sem mensagem: registra o código.
+      const err = e as { message?: string; code?: string; details?: string; hint?: string };
+      console.error(`[resumo] user ${u.user_id}:`, err?.message || "(sem mensagem)", err?.code ?? "", err?.details ?? "", err?.hint ?? "");
       erros++;
     }
   }
