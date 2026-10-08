@@ -1131,6 +1131,14 @@ export type Database = {
           lote_importacao_id: string | null
           origem_importacao: string | null
           data_homologacao: string | null
+          liberacao_acesso_dispensada: boolean
+          liberacao_acesso_em: string | null
+          liberacao_acesso_por: string | null
+          liberacao_objetos: string | null
+          liberacao_validada_em: string | null
+          liberacao_validada_por: string | null
+          liberacao_versao_em: string | null
+          liberacao_versao_por: string | null
           link_homologacao: string | null
           numero_eproject: number | null
           observacao_homologacao: string | null
@@ -1155,6 +1163,14 @@ export type Database = {
           lote_importacao_id?: string | null
           origem_importacao?: string | null
           data_homologacao?: string | null
+          liberacao_acesso_dispensada?: boolean
+          liberacao_acesso_em?: string | null
+          liberacao_acesso_por?: string | null
+          liberacao_objetos?: string | null
+          liberacao_validada_em?: string | null
+          liberacao_validada_por?: string | null
+          liberacao_versao_em?: string | null
+          liberacao_versao_por?: string | null
           link_homologacao?: string | null
           numero_eproject?: number | null
           observacao_homologacao?: string | null
@@ -1179,6 +1195,14 @@ export type Database = {
           lote_importacao_id?: string | null
           origem_importacao?: string | null
           data_homologacao?: string | null
+          liberacao_acesso_dispensada?: boolean
+          liberacao_acesso_em?: string | null
+          liberacao_acesso_por?: string | null
+          liberacao_objetos?: string | null
+          liberacao_validada_em?: string | null
+          liberacao_validada_por?: string | null
+          liberacao_versao_em?: string | null
+          liberacao_versao_por?: string | null
           link_homologacao?: string | null
           numero_eproject?: number | null
           observacao_homologacao?: string | null
@@ -1467,6 +1491,16 @@ export type Database = {
     }
     Functions: {
       auto_encerrar_tarefas_antigas: { Args: never; Returns: number }
+      confirmar_liberacao: {
+        Args: {
+          p_dispensada?: boolean
+          p_etapa: string
+          p_ids: string[]
+          p_marcar?: boolean
+          p_objetos?: string
+        }
+        Returns: Json
+      }
       receber_pacote_homologacao: {
         Args: { p_descricao: string | null; p_itens: Json; p_nome: string }
         Returns: Json

@@ -23,7 +23,7 @@ export type LoteMini = { id: string; nome: string; tipo: string; total_tarefas: 
 
 // Colunas usadas pelo Kanban / Lista / filtros. Evita `select('*')` e reduz payload.
 const TAREFA_COLUMNS =
-  "id,titulo,descricao,status,prioridade,em_teste,equipe_toda,data_prevista,concluida_em,demanda_id,origem_importacao,lote_importacao_id,responsavel_id,responsaveis_ids,criado_por,created_at,updated_at,sistema,link_homologacao,observacao_homologacao,data_homologacao";
+  "id,titulo,descricao,status,prioridade,em_teste,equipe_toda,data_prevista,concluida_em,demanda_id,origem_importacao,lote_importacao_id,responsavel_id,responsaveis_ids,criado_por,created_at,updated_at,sistema,link_homologacao,observacao_homologacao,data_homologacao,numero_eproject,liberacao_versao_em,liberacao_versao_por,liberacao_acesso_em,liberacao_acesso_por,liberacao_acesso_dispensada,liberacao_objetos,liberacao_validada_em,liberacao_validada_por";
 
 /**
  * Centraliza as queries da página de Tarefas.

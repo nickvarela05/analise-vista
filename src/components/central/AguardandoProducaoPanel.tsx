@@ -17,15 +17,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type { TarefaRow } from "@/lib/db-types";
+import { confirmarLiberacao, faltaLiberacao } from "@/components/tarefas/lib/liberacao";
 import type { Aguardando } from "./lib/central";
 
 /** Dias de espera a partir dos quais a tarefa chama atenção (a mediana medida em 01/10 era 7). */
 const ALERTA_DIAS = 7;
+
+function FaltaBadge({ tarefa }: { tarefa: TarefaRow }) {
+  const falta = faltaLiberacao(tarefa);
+  if (falta.length === 0) return null;
+  return (
+    <span
+      className="hidden shrink-0 text-[11px] text-muted-foreground md:inline"
+      title="Etapas da liberação em produção que faltam"
+    >
+      falta: {falta.join(", ")}
+    </span>
+  );
+}
 
 function DiasBadge({ dias }: { dias: number | null }) {
   if (dias === null) {
@@ -57,7 +70,9 @@ function DiasBadge({ dias }: { dias: number | null }) {
 
 /**
  * Tarefas enviadas (Pré-build) que esperam o desenvolvimento subir para produção (E2).
- * Marcar "Subiu para produção" em lote grava o histórico de cada tarefa.
+ * Desde 09/10/2026 a tarefa só entra em Produção com as três confirmações da "Liberação em
+ * produção" (regra no banco). Aqui, em lote, só a primeira: "Versão publicada", porque a versão
+ * sobe para o pacote inteiro. Acessos e validação são confirmados na tarefa.
  */
 export function AguardandoProducaoPanel({
   itens,
@@ -92,25 +107,23 @@ export function AguardandoProducaoPanel({
       return next;
     });
 
-  const subir = async () => {
+  const versaoPublicada = async () => {
     if (!user || sel.size === 0) return;
     setGravando(true);
     const ids = [...sel];
-    const { error } = await supabase
-      .from("todo")
-      .update({ status: "producao", concluida_em: new Date().toISOString() })
-      .in("id", ids);
-    if (error) {
+    try {
+      await confirmarLiberacao(ids, "versao");
+      setConfirmando(false);
+      setSel(new Set());
+      toast.success(`Versão publicada em ${ids.length} tarefa${ids.length === 1 ? "" : "s"}`, {
+        description: "Falta liberar os acessos e validar em produção, em cada tarefa.",
+      });
+      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+    } catch (e) {
+      toast.error("Não foi possível confirmar a versão", { description: (e as Error).message });
+    } finally {
       setGravando(false);
-      toast.error("Não foi possível marcar como em produção", { description: error.message });
-      return;
     }
-    // O histórico de cada tarefa é gravado pelo banco (gatilho trg_todo_registrar_status).
-    setGravando(false);
-    setConfirmando(false);
-    setSel(new Set());
-    toast.success(`${ids.length} tarefa${ids.length === 1 ? "" : "s"} em Produção`);
-    qc.invalidateQueries({ queryKey: qk.tarefas.all() });
   };
 
   const comDias = itens.filter((i) => i.dias !== null);
@@ -119,7 +132,7 @@ export function AguardandoProducaoPanel({
   return (
     <Panel
       title="Aguardando produção"
-      hint="Tarefas em Pré-build: já enviadas, esperando o desenvolvimento subir a versão. Dias contados desde a entrada em Pré-build."
+      hint="Tarefas em Pré-build: enviadas e ainda sem liberação completa em produção (versão publicada, acessos liberados e validação). Clique na tarefa para confirmar as etapas. Dias contados desde a entrada em Pré-build."
       actions={
         !tv && itens.length > 0 ? (
           <Button
@@ -129,7 +142,7 @@ export function AguardandoProducaoPanel({
             onClick={() => setConfirmando(true)}
           >
             <Rocket className="h-3.5 w-3.5" />
-            Subiu para produção{sel.size > 0 ? ` (${sel.size})` : ""}
+            Versão publicada{sel.size > 0 ? ` (${sel.size})` : ""}
           </Button>
         ) : undefined
       }
@@ -186,6 +199,7 @@ export function AguardandoProducaoPanel({
                     {tarefa.sistema}
                   </Badge>
                 )}
+                <FaltaBadge tarefa={tarefa} />
                 <DiasBadge dias={dias} />
               </li>
             ))}
@@ -197,11 +211,12 @@ export function AguardandoProducaoPanel({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Marcar {sel.size} tarefa{sel.size === 1 ? "" : "s"} como em Produção?
+              Confirmar a versão publicada em {sel.size} tarefa{sel.size === 1 ? "" : "s"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Saem de Pré-build e vão para Produção, com a data de hoje como conclusão. A mudança
-              fica no histórico de cada tarefa e pode ser desfeita no Kanban.
+              Registra, com seu nome e a data de hoje, que o desenvolvimento subiu a versão. As
+              tarefas continuam em Pré-build até os acessos serem liberados e a validação em
+              produção ser confirmada em cada uma.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -210,11 +225,11 @@ export function AguardandoProducaoPanel({
               disabled={gravando}
               onClick={(e) => {
                 e.preventDefault();
-                void subir();
+                void versaoPublicada();
               }}
             >
               {gravando && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              Subiu para produção
+              Versão publicada
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
