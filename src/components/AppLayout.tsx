@@ -7,7 +7,10 @@ import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/lib/auth-context";
 import { BackgroundJobsIndicator } from "@/components/reunioes/BackgroundJobsIndicator";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+/**
+ * @param bare Sem menu e cabeçalho, só com as checagens de login (usado pelo Modo TV).
+ */
+export function AppLayout({ children, bare = false }: { children: React.ReactNode; bare?: boolean }) {
   const { session, loading, mustChangePassword } = useAuth();
   const location = useLocation();
 
@@ -29,6 +32,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (mustChangePassword && location.pathname !== "/alterar-senha") {
     return <Navigate to="/alterar-senha" replace />;
   }
+
+  if (bare) return <>{children}</>;
 
   return (
     <SidebarProvider>

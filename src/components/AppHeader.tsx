@@ -20,7 +20,9 @@ import { GlobalSearch, useGlobalSearchHotkey } from "@/components/GlobalSearch";
 import { cn, iniciais } from "@/lib/utils";
 
 const ROUTE_LABELS: Record<string, string> = {
-  "/": "Dashboard",
+  "/": "Central de Homologação",
+  "/painel": "Painel da gestão",
+  "/tv": "Modo TV",
   "/insights": "Insights & IA",
   "/relatorios": "Relatórios",
   "/atividades": "Atividades semanais",

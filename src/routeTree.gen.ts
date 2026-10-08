@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnidadesRouteImport } from './routes/unidades'
+import { Route as TvRouteImport } from './routes/tv'
 import { Route as TarefasRouteImport } from './routes/tarefas'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as ProcessosRouteImport } from './routes/processos'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InsightsRouteImport } from './routes/insights'
@@ -37,6 +39,11 @@ import { Route as ApiPublicHooksRetomarTranscricoesRouteImport } from './routes/
 const UnidadesRoute = UnidadesRouteImport.update({
   id: '/unidades',
   path: '/unidades',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TvRoute = TvRouteImport.update({
+  id: '/tv',
+  path: '/tv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TarefasRoute = TarefasRouteImport.update({
@@ -67,6 +74,11 @@ const PortfolioRoute = PortfolioRouteImport.update({
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -171,12 +183,14 @@ export interface FileRoutesByFullPath {
   '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
   '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
+  '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -197,12 +211,14 @@ export interface FileRoutesByTo {
   '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
   '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
+  '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -224,12 +240,14 @@ export interface FileRoutesById {
   '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
+  '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
   '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
   '/tarefas': typeof TarefasRoute
+  '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -252,12 +270,14 @@ export interface FileRouteTypes {
     | '/insights'
     | '/login'
     | '/mcp'
+    | '/painel'
     | '/perfil'
     | '/portfolio'
     | '/processos'
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
+    | '/tv'
     | '/unidades'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -278,12 +298,14 @@ export interface FileRouteTypes {
     | '/insights'
     | '/login'
     | '/mcp'
+    | '/painel'
     | '/perfil'
     | '/portfolio'
     | '/processos'
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
+    | '/tv'
     | '/unidades'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -304,12 +326,14 @@ export interface FileRouteTypes {
     | '/insights'
     | '/login'
     | '/mcp'
+    | '/painel'
     | '/perfil'
     | '/portfolio'
     | '/processos'
     | '/relatorios'
     | '/reunioes'
     | '/tarefas'
+    | '/tv'
     | '/unidades'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -331,12 +355,14 @@ export interface RootRouteChildren {
   InsightsRoute: typeof InsightsRoute
   LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
+  PainelRoute: typeof PainelRoute
   PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
   ProcessosRoute: typeof ProcessosRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
   TarefasRoute: typeof TarefasRoute
+  TvRoute: typeof TvRoute
   UnidadesRoute: typeof UnidadesRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -354,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/unidades'
       fullPath: '/unidades'
       preLoaderRoute: typeof UnidadesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv': {
+      id: '/tv'
+      path: '/tv'
+      fullPath: '/tv'
+      preLoaderRoute: typeof TvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tarefas': {
@@ -396,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -531,12 +571,14 @@ const rootRouteChildren: RootRouteChildren = {
   InsightsRoute: InsightsRoute,
   LoginRoute: LoginRoute,
   McpRoute: McpRoute,
+  PainelRoute: PainelRoute,
   PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,
   ProcessosRoute: ProcessosRoute,
   RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,
   TarefasRoute: TarefasRoute,
+  TvRoute: TvRoute,
   UnidadesRoute: UnidadesRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
