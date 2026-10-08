@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LiberacaoProducao } from "@/components/tarefas/LiberacaoProducao";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -396,6 +397,8 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             )}
           </div>
         )}
+
+        <LiberacaoProducao tarefa={tarefa} />
 
         {/* Painel rápido de edição */}
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
