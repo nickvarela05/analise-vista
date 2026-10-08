@@ -1,5 +1,5 @@
--- Liberação em produção, parte 2: a regra e um ajuste da confirmação (aplicar só no merge do PR #15, depois da
--- aprovação do Nickolas na prévia). Ver a parte 1 para o contexto.
+-- Liberação em produção, parte 2: a regra e um ajuste da confirmação (aplicada no merge do PR #15,
+-- com autorização do Nickolas em 09/10/2026). Ver a parte 1 para o contexto.
 --
 -- A partir daqui, a tarefa só entra em Produção com as três confirmações, por qualquer
 -- caminho (Kanban, lote, gaveta). Vale também para as 26 tarefas que estavam em Pré-build
