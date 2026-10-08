@@ -1,4 +1,4 @@
--- Liberação em produção (proposta do Nickolas em 08/10/2026, refinada pelo Claude).
+-- Liberação em produção, parte 1: estrutura (proposta do Nickolas em 08/10/2026, refinada pelo Claude).
 --
 -- Problema: depois que a versão sobe, é preciso liberar o acesso dos usuários em produção
 -- (objetos vinculados aos grupos de usuários, conforme "Versões do sistema" no GED e o
@@ -10,6 +10,10 @@
 --   3. Validada em produção.
 -- A tarefa só entra em Produção com as três, e entra sozinha quando a terceira é confirmada.
 -- Qualquer usuário do Nexus pode confirmar (decisão do Nickolas em 08/10/2026).
+
+-- Parte 1 de 2 (aplicada em 09/10/2026 com autorização do Nickolas, antes do teste da prévia):
+-- só cria colunas vazias e a função de confirmar; não muda nada no sistema em uso.
+-- A regra que bloqueia a entrada em Produção está na parte 2, aplicada só no merge.
 
 -- 1. Colunas -----------------------------------------------------------------------------------
 ALTER TABLE public.todo
@@ -27,45 +31,7 @@ COMMENT ON COLUMN public.todo.liberacao_objetos IS
 COMMENT ON COLUMN public.todo.liberacao_acesso_dispensada IS
   'A tarefa não cria objeto novo: não há acesso a liberar. Conta como confirmação de acesso.';
 
--- 2. Regra: só entra em Produção com as três confirmações ---------------------------------------
--- Vale para qualquer caminho (Kanban, mudança em lote, gaveta da tarefa). Ao voltar para
--- Homologação (nova rodada, nova versão), as confirmações são zeradas.
-CREATE OR REPLACE FUNCTION public.todo_regra_liberacao()
-RETURNS trigger
-LANGUAGE plpgsql
-SET search_path = public
-AS $$
-DECLARE
-  v_falta text[] := '{}';
-BEGIN
-  IF NEW.status = 'producao' AND OLD.status IS DISTINCT FROM 'producao' THEN
-    IF NEW.liberacao_versao_em IS NULL THEN v_falta := array_append(v_falta, 'versão publicada'); END IF;
-    IF NEW.liberacao_acesso_em IS NULL THEN v_falta := array_append(v_falta, 'acessos liberados'); END IF;
-    IF NEW.liberacao_validada_em IS NULL THEN v_falta := array_append(v_falta, 'validada em produção'); END IF;
-    IF array_length(v_falta, 1) > 0 THEN
-      RAISE EXCEPTION 'A tarefa % só vai para Produção depois de confirmar: %. Abra a tarefa e use "Liberação em produção".',
-        COALESCE(NEW.numero_eproject::text, left(NEW.titulo, 40)), array_to_string(v_falta, ', ')
-        USING ERRCODE = 'P0001';
-    END IF;
-  END IF;
-
-  IF NEW.status = 'homologacao' AND OLD.status IS DISTINCT FROM 'homologacao' THEN
-    NEW.liberacao_versao_em := NULL;  NEW.liberacao_versao_por := NULL;
-    NEW.liberacao_acesso_em := NULL;  NEW.liberacao_acesso_por := NULL;
-    NEW.liberacao_acesso_dispensada := false;
-    NEW.liberacao_objetos := NULL;
-    NEW.liberacao_validada_em := NULL; NEW.liberacao_validada_por := NULL;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS trg_todo_regra_liberacao ON public.todo;
-CREATE TRIGGER trg_todo_regra_liberacao
-  BEFORE UPDATE OF status ON public.todo
-  FOR EACH ROW EXECUTE FUNCTION public.todo_regra_liberacao();
-
--- 3. Confirmar (ou desfazer) uma etapa ---------------------------------------------------------
+-- 2. Confirmar (ou desfazer) uma etapa ---------------------------------------------------------
 -- SECURITY DEFINER porque qualquer usuário confirma, inclusive quem não é gestor nem
 -- responsável pela tarefa (a política de update de todo não deixaria). Mexe só nos campos de
 -- liberação e, ao completar as três etapas de uma tarefa em Pré-build, no status.
@@ -135,11 +101,12 @@ BEGIN
   INSERT INTO public.todo_historico (todo_id, autor_id, autor_nome, campo, valor_antigo, valor_novo)
   SELECT t.id, v_uid, v_autor, 'liberacao',
          CASE WHEN p_marcar THEN NULL ELSE v_rotulo END,
-         CASE WHEN p_marcar THEN v_rotulo || COALESCE(': ' || NULLIF(btrim(p_objetos), ''), '') END
+         CASE WHEN p_marcar THEN v_rotulo || CASE WHEN p_etapa = 'acesso' AND NOT p_dispensada
+                                             THEN ': ' || btrim(p_objetos) ELSE '' END END
     FROM public.todo t
    WHERE t.id = ANY (p_ids) AND t.status IN ('pre_build', 'producao');
 
-  -- Completou as três: vai para Produção (a regra do item 2 confere de novo).
+  -- Completou as três: vai para Produção (a regra da parte 2, quando aplicada, confere de novo).
   UPDATE public.todo SET status = 'producao', concluida_em = v_agora
    WHERE id = ANY (p_ids)
      AND status = 'pre_build'
