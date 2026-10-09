@@ -40,6 +40,9 @@ import {
 } from "./lib/central";
 import { useEntradasPreBuild } from "./useEntradasPreBuild";
 import { RodadaPanel } from "./RodadaPanel";
+import { DistribuirTestesDialog } from "./DistribuirTestesDialog";
+import { DesdeUltimaVisitaPanel } from "./DesdeUltimaVisitaPanel";
+import { useMudancas } from "./useMudancas";
 import { FilaPorPessoaPanel } from "./FilaPorPessoaPanel";
 import { AguardandoProducaoPanel } from "./AguardandoProducaoPanel";
 import { MeuDiaPanel } from "./MeuDiaPanel";
@@ -70,6 +73,8 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
   }, [tarefas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const meuColabId = perfil?.colaborador_id ?? null;
+  // No Modo TV não há "você": não registra visita nem mostra o que mudou.
+  const mudancas = useMudancas(tv ? undefined : user?.id, meuColabId);
   const meuNome = React.useMemo(
     () => colabs.find((c) => c.id === meuColabId)?.nome ?? null,
     [colabs, meuColabId],
@@ -199,6 +204,17 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
 
       <AvisosBanner avisos={avisosVigentes} onPreview={setPreview} />
 
+      {mudancas.dados && (
+        <DesdeUltimaVisitaPanel
+          dados={mudancas.dados}
+          onAbrir={(id) => {
+            const t = tarefas.find((x) => x.id === id);
+            if (t) setDrawer(t);
+          }}
+          onMarcarVisto={mudancas.marcarVisto}
+        />
+      )}
+
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RodadaPanel
@@ -207,6 +223,14 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
             nomeDe={nomeDe}
             onOpen={abrir}
             tv={tv}
+            actions={
+              tv ? undefined : (
+                <DistribuirTestesDialog
+                  aTestar={rodada.filter((t) => normalizeStatus(t.status) === "homologacao")}
+                  colabs={colabs}
+                />
+              )
+            }
           />
         </div>
         {tv ? (

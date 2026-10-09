@@ -32,7 +32,7 @@ const TAREFA_COLUMNS =
  *  - Não roda mais o UPDATE de auto-encerramento dentro do queryFn (movido para a RPC
  *    `auto_encerrar_tarefas_antigas`, chamada em background depois do primeiro render).
  *  - Projeta apenas as colunas usadas pelo card/lista.
- *  - Exclui tarefas encerradas do fetch principal (filtro de UI carrega sob demanda).
+ *  - Das encerradas, traz só as dos últimos 30 dias (coluna "Encerrada" do Kanban).
  *  - `placeholderData: keepPreviousData` evita spinner ao voltar para a rota.
  *  - Contagens (comentários/checklist/anexos) vêm de uma única RPC agregada.
  */
@@ -101,11 +101,16 @@ export function useTarefasData() {
       // Paginação manual para superar o limite padrão de 1000 linhas do PostgREST.
       const pageSize = 1000;
       const all: TarefaRow[] = [];
+      // Encerradas: só as dos últimos 30 dias (decisão do Nickolas em 09/10/2026), para a coluna
+      // "Encerrada" do Kanban mostrar o que acabou de sair do fluxo sem carregar as ~8.900
+      // antigas. A data é a da última alteração da tarefa: até 08/10 o encerramento não era
+      // registrado no histórico, então não há data de encerramento confiável para as antigas.
+      const desde30 = new Date(Date.now() - 30 * 86_400_000).toISOString();
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("todo")
           .select(TAREFA_COLUMNS)
-          .neq("status", "encerrada")
+          .or(`status.neq.encerrada,updated_at.gte.${desde30}`)
           .order("created_at", { ascending: false })
           .range(from, from + pageSize - 1);
         if (error) throw error;

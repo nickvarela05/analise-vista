@@ -84,6 +84,18 @@ export function NotificationBell() {
           });
         },
       )
+      // Atribuições em pacote somam na mesma notificação ("5 tarefas atribuídas a você", desde
+      // 09/10/2026): o sino atualiza a lista sem repetir o aviso na tela a cada tarefa.
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notificacao",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => qc.invalidateQueries({ queryKey: ["notificacoes", user.id] }),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
