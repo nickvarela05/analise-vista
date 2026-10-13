@@ -1,5 +1,5 @@
--- Fase 2 do layout, parte 2: uma notificação por pacote (T2 da análise de uso). Aplicar só no
--- merge, porque muda o comportamento do sistema em uso.
+-- Fase 2 do layout, parte 2: uma notificação por pacote (T2 da análise de uso). Aplicada no
+-- merge do PR #16, com autorização do Nickolas em 13/10/2026 (muda o comportamento do sistema).
 --
 -- Antes: cada tarefa atribuída gerava uma notificação. Ao receber ou distribuir um pacote, a
 -- pessoa ganhava 19 avisos iguais (em 01/10: 543 notificações "tarefa atribuída", nenhuma lida).
