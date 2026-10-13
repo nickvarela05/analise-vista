@@ -14,7 +14,10 @@ export function AppLayout({ children, bare = false }: { children: React.ReactNod
   const { session, loading, mustChangePassword } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const path = location.pathname || "/";
+  // Endereço pedido: lido do navegador, porque no primeiro carregamento o roteador ainda está
+  // na casca inicial ("/") e o ?redirect= saía vazio (visto na prévia em 13/10/2026).
+  const path =
+    (typeof window !== "undefined" ? window.location.pathname : location.pathname) || "/";
 
   // Desvio para o login ou para a troca de senha, uma vez só. Antes era um <Navigate> no render,
   // que a cada nova renderização disparava outra navegação: abrir uma página interna sem login
@@ -24,7 +27,7 @@ export function AppLayout({ children, bare = false }: { children: React.ReactNod
     : !session
       ? path === "/login" || path === "/"
         ? "/login"
-        : `/login?redirect=${encodeURIComponent(path)}`
+        : `/login?redirect=${encodeURIComponent(path + (typeof window !== "undefined" ? window.location.search : ""))}`
       : mustChangePassword && path !== "/alterar-senha"
         ? "/alterar-senha"
         : null;
