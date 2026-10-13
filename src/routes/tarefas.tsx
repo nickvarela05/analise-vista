@@ -37,6 +37,7 @@ import { ExportarTarefasDialog } from "@/components/tarefas/ExportarTarefasDialo
 import { TarefasDuplicadasDialog } from "@/components/tarefas/TarefasDuplicadasDialog";
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
+import { useObservacaoTeste } from "@/components/tarefas/useObservacaoTeste";
 import type { TarefaRow } from "@/lib/db-types";
 import { opcoesResponsavel } from "@/lib/domain/cargos";
 import { parseDateOnly } from "@/lib/date";
@@ -63,7 +64,9 @@ function Tarefas() {
   const [drawerTarefa, setDrawerTarefa] = React.useState<TarefaRow | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
-  const { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap } = useTarefasData();
+  const { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap, reprovacoesMap } =
+    useTarefasData();
+  const obs = useObservacaoTeste();
 
   // Filtro por responsável: os analistas e quem ainda tem tarefa atribuída (ex.: gestor com
   // tarefa antiga), para essas tarefas continuarem filtráveis.
@@ -162,6 +165,8 @@ function Tarefas() {
   const onDropStatus = async (id: string, status: string) => {
     const tarefa = tarefas.find((t) => t.id === id);
     if (!tarefa || tarefa.status === status) return;
+    const observacao = await obs.pedir(status);
+    if (observacao === null) return; // cancelou: o card volta para onde estava
     const patch: Partial<TarefaRow> = {
       status: status as TarefaRow["status"],
       concluida_em: status === "producao" ? new Date().toISOString() : null,
@@ -170,6 +175,7 @@ function Tarefas() {
       supabase.from("todo").update(patch).eq("id", id),
     );
     // Histórico de status: gravado pelo banco (gatilho trg_todo_registrar_status, 08/10/2026).
+    if (user) await obs.gravar(user, [id], status, observacao);
   };
 
   const toggleSelect = (id: string, checked: boolean) => {
@@ -185,6 +191,8 @@ function Tarefas() {
 
   const bulkUpdateStatus = async (status: string) => {
     const ids = Array.from(selectedIds);
+    const observacao = await obs.pedir(status, ids.length);
+    if (observacao === null) return;
     const patch: Partial<TarefaRow> = {
       status: status as TarefaRow["status"],
       ...(status === "producao" ? { concluida_em: new Date().toISOString() } : {}),
@@ -195,6 +203,7 @@ function Tarefas() {
     if (ok) {
       toast.success(`${ids.length} tarefa(s) atualizada(s)`);
       clearSelection();
+      if (user) await obs.gravar(user, ids, status, observacao);
     }
   };
 
@@ -353,6 +362,7 @@ function Tarefas() {
           onDropStatus={onDropStatus}
           countsMap={countsMap}
           statusLogMap={statusLogMap}
+          reprovacoesMap={reprovacoesMap}
         />
       ) : (
         <TarefasLista
@@ -367,6 +377,8 @@ function Tarefas() {
           countsMap={countsMap}
         />
       )}
+
+      {obs.dialogo}
 
       <TarefaDrawer
         tarefa={drawerTarefa}

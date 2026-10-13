@@ -20,6 +20,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LiberacaoProducao } from "@/components/tarefas/LiberacaoProducao";
+import { useObservacaoTeste } from "@/components/tarefas/useObservacaoTeste";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -54,6 +55,7 @@ interface Props {
 
 export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const { user } = useAuth();
+  const obs = useObservacaoTeste();
   const qc = useQueryClient();
   const { data: profile } = useQuery({
     queryKey: ["profile-self", user?.id],
@@ -208,6 +210,9 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
 
   const salvarEdicao = async () => {
     if (!dirty || !id) return;
+    const mudouStatus = draft.status !== tarefa.status;
+    const observacao = mudouStatus ? await obs.pedir(draft.status) : "";
+    if (observacao === null) return; // cancelou: nada é salvo
     setSalvando(true);
     const updates: any = {
       status: draft.status,
@@ -239,6 +244,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     for (const [campo, antigo, novo] of campos) {
       if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
     }
+    if (mudouStatus && user) await obs.gravar(user, [id], draft.status, observacao);
     toast.success("Tarefa atualizada");
     invalidate();
   };
@@ -754,6 +760,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             </ScrollArea>
           </TabsContent>
         </Tabs>
+        {obs.dialogo}
       </SheetContent>
     </Sheet>
   );

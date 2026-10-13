@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { format } from "date-fns";
-import { AlertTriangle, PackageOpen } from "lucide-react";
+import { AlertTriangle, PackageOpen, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/KpiTile";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ export function RodadaPanel({
   reprovadas,
   nomeDe,
   onOpen,
+  onRetestar,
   actions,
   tv = false,
 }: {
@@ -27,6 +29,8 @@ export function RodadaPanel({
   reprovadas: TarefaRow[];
   nomeDe: (t: TarefaRow) => string;
   onOpen: (t: TarefaRow) => void;
+  /** Reprovada corrigida pelo desenvolvimento: volta para Homologação (T4). */
+  onRetestar?: (t: TarefaRow) => void;
   actions?: ReactNode;
   tv?: boolean;
 }) {
@@ -116,14 +120,18 @@ export function RodadaPanel({
             Reprovadas: aguardam correção do desenvolvimento antes do envio
           </p>
           {reprovadas.map((t) => (
-            <button
+            <div
               key={t.id}
-              type="button"
-              onClick={() => onOpen(t)}
-              disabled={tv}
-              className="flex w-full items-center justify-between gap-2 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-left text-sm transition-colors hover:bg-rose-500/10 disabled:cursor-default"
+              className="flex w-full items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-sm"
             >
-              <span className="min-w-0 truncate">{t.titulo}</span>
+              <button
+                type="button"
+                onClick={() => onOpen(t)}
+                disabled={tv}
+                className="min-w-0 flex-1 truncate text-left hover:underline disabled:cursor-default disabled:no-underline"
+              >
+                {t.titulo}
+              </button>
               <span className="flex shrink-0 items-center gap-1.5">
                 {t.sistema && (
                   <Badge variant="outline" className="text-[10px]">
@@ -131,8 +139,20 @@ export function RodadaPanel({
                   </Badge>
                 )}
                 <span className="text-xs text-muted-foreground">{nomeDe(t)}</span>
+                {!tv && onRetestar && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 gap-1 border-rose-500/40 text-xs"
+                    title="O desenvolvimento corrigiu: volta para Homologação para testar de novo"
+                    onClick={() => onRetestar(t)}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Corrigida, retestar
+                  </Button>
+                )}
               </span>
-            </button>
+            </div>
           ))}
         </div>
       )}
