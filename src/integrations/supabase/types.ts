@@ -1501,6 +1501,10 @@ export type Database = {
         }
         Returns: Json
       }
+      registrar_visita_central: {
+        Args: { p_marcar_visto?: boolean }
+        Returns: string
+      }
       receber_pacote_homologacao: {
         Args: { p_descricao: string | null; p_itens: Json; p_nome: string }
         Returns: Json

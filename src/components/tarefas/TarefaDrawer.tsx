@@ -40,6 +40,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox } from "@/components/AssigneeCombobox";
+import { opcoesResponsavel } from "@/lib/domain/cargos";
 import { WORKFLOW, STATUS_LABEL, statusVariant, prioVariant, PRIO } from "./lib/workflow";
 import { DialogHero } from "@/components/shared/DialogHero";
 
@@ -467,7 +468,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Atribuir a</Label>
             <AssigneeCombobox
-              options={colabs}
+              options={opcoesResponsavel(colabs, tarefa.responsaveis_ids ?? [])}
               selectedIds={tarefa.responsaveis_ids ?? []}
               equipeToda={!!tarefa.equipe_toda}
               onChange={async (n) => {
