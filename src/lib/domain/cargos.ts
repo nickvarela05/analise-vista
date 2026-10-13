@@ -18,3 +18,24 @@ export function cargoElegivel(cargo: string | null | undefined): boolean {
   const estagiarioOk = c.includes("estagi") && c.includes("ti");
   return c.includes("analista") || c.includes("gestor") || estagiarioOk;
 }
+
+/**
+ * Pode receber tarefa (teste de homologação). Decisão do Nickolas em 13/10/2026: só os analistas
+ * de requisitos (hoje Nickolas, Hugo, Matheus e Felipe). Gestores e o estagiário usam o Nexus,
+ * mas não recebem tarefa nova; atribuições antigas deles continuam valendo e aparecendo.
+ */
+export function podeReceberTarefa(cargo: string | null | undefined): boolean {
+  return (cargo ?? "").toLowerCase().includes("analista");
+}
+
+/**
+ * Opções de responsável para uma tarefa: os analistas e, para não sumir da tela, quem já está
+ * atribuído mesmo sem ser analista.
+ */
+export function opcoesResponsavel<T extends { id: string; cargo: string | null }>(
+  colabs: readonly T[],
+  jaAtribuidos: readonly string[] = [],
+): T[] {
+  const atuais = new Set(jaAtribuidos);
+  return colabs.filter((c) => podeReceberTarefa(c.cargo) || atuais.has(c.id));
+}

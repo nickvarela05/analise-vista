@@ -22,6 +22,7 @@ import { normalizeStatus } from "@/components/tarefas/lib/workflow";
 import { isRelatorioPendente } from "@/lib/domain/relatorios";
 import { useAuth } from "@/lib/auth-context";
 import { isAtribuidoA } from "@/lib/domain/atividades";
+import { opcoesResponsavel } from "@/lib/domain/cargos";
 import {
   avisosAtivosQuery,
   meuProfileQuery,
@@ -227,7 +228,7 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
               tv ? undefined : (
                 <DistribuirTestesDialog
                   aTestar={rodada.filter((t) => normalizeStatus(t.status) === "homologacao")}
-                  colabs={colabs}
+                  colabs={opcoesResponsavel(colabs)}
                 />
               )
             }

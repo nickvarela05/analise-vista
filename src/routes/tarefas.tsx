@@ -38,6 +38,7 @@ import { TarefasDuplicadasDialog } from "@/components/tarefas/TarefasDuplicadasD
 import { TarefasBulkBar } from "@/components/tarefas/TarefasBulkBar";
 import { TarefasLista } from "@/components/tarefas/TarefasLista";
 import type { TarefaRow } from "@/lib/db-types";
+import { opcoesResponsavel } from "@/lib/domain/cargos";
 import { parseDateOnly } from "@/lib/date";
 
 export const Route = createFileRoute("/tarefas")({
@@ -63,6 +64,13 @@ function Tarefas() {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   const { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap } = useTarefasData();
+
+  // Filtro por responsável: os analistas e quem ainda tem tarefa atribuída (ex.: gestor com
+  // tarefa antiga), para essas tarefas continuarem filtráveis.
+  const colabsFiltro = React.useMemo(() => {
+    const atribuidos = new Set(tarefas.flatMap((t) => (t.responsaveis_ids ?? []) as string[]));
+    return opcoesResponsavel(colabs, [...atribuidos]);
+  }, [colabs, tarefas]);
 
   // Aplica filtros
   const filtered = React.useMemo(() => {
@@ -263,7 +271,7 @@ function Tarefas() {
               demandas={demandas}
               lotes={lotes}
             />
-            <NovaTarefaDialog colabs={colabs} demandas={demandas} />
+            <NovaTarefaDialog colabs={opcoesResponsavel(colabs)} demandas={demandas} />
           </div>
         }
         stats={[
@@ -277,7 +285,7 @@ function Tarefas() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/60 p-2 backdrop-blur">
-        <TarefaFilters value={filters} onChange={setFilters} colabs={colabs} lotes={lotes} />
+        <TarefaFilters value={filters} onChange={setFilters} colabs={colabsFiltro} lotes={lotes} />
 
         <div className="ml-auto flex items-center gap-2">
           <DropdownMenu>
