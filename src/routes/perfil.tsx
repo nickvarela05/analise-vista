@@ -3,7 +3,7 @@ import * as React from "react";
 import { Loader2, KeyRound, User as UserIcon, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,8 +131,14 @@ function Perfil() {
   };
 
   return (
-    <div className="max-w-2xl">
-      <PageHeader title="Meu perfil" description="Atualize suas informações pessoais." />
+    <div className="max-w-2xl space-y-5">
+      <PageHero
+        eyebrow="Conta"
+        title="Meu perfil"
+        description="Atualize suas informações pessoais."
+        icon={UserIcon}
+        tone="primary"
+      />
 
       <div className="space-y-4">
         <Card>

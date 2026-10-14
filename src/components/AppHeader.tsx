@@ -69,6 +69,9 @@ export function AppHeader() {
 
       <SidebarTrigger className="hover:bg-accent" />
 
+      {/* Celular: o caminho some, então mostra só o nome da página (M12 da auditoria visual). */}
+      <span className="min-w-0 truncate text-sm font-semibold text-foreground md:hidden">{pageLabel}</span>
+
       {/* Breadcrumb-ish current page */}
       <div className="hidden items-center gap-1.5 text-sm md:flex">
         <Sparkles className="h-3.5 w-3.5 text-primary/70" />

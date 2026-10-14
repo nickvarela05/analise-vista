@@ -29,6 +29,9 @@ const COL_TONE: Record<string, { wash: string; bar: string; pill: string; ring: 
   encerrada:          { wash: "from-zinc-500/15 via-zinc-500/5",     bar: "bg-zinc-400",    pill: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",       ring: "ring-zinc-500/40",   text: "text-zinc-700 dark:text-zinc-200" },
 };
 
+const LARGURA_MIN = 260;
+const POR_PAGINA = 20;
+
 export function TarefaKanban({
   tarefas,
   colabs,
@@ -41,6 +44,8 @@ export function TarefaKanban({
   reprovacoesMap = {},
 }: Props) {
   const [dragOver, setDragOver] = React.useState<string | null>(null);
+  // Cartões visíveis por coluna (G2 da auditoria visual): 20 de cada vez, com "Mostrar mais".
+  const [limite, setLimite] = React.useState<Record<string, number>>({});
 
   const grouped = React.useMemo(() => {
     const map: Record<string, any[]> = {};
@@ -54,13 +59,18 @@ export function TarefaKanban({
   }, [tarefas]);
 
   return (
+    // G2 da auditoria visual (set/2026): as colunas tinham ~116 px em 1440 px e a página passava
+    // de 25 mil px de altura. Agora cada coluna tem pelo menos 260 px (a faixa rola para o lado)
+    // e rola por dentro, mostrando 20 cartões por vez.
     <div className="w-full overflow-x-auto">
       <div
         className="grid gap-2.5 pb-4"
-        style={{ gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${WORKFLOW.length}, minmax(${LARGURA_MIN}px, 1fr))` }}
       >
         {WORKFLOW.map((status) => {
           const items = grouped[status] ?? [];
+          const visiveis = items.slice(0, limite[status] ?? POR_PAGINA);
+          const restantes = items.length - visiveis.length;
           const isOver = dragOver === status;
           const tone = COL_TONE[status] ?? COL_TONE.aberta;
           return (
@@ -103,14 +113,14 @@ export function TarefaKanban({
               </div>
 
               {/* Coluna */}
-              <div className="flex min-h-[140px] flex-col gap-2 p-2">
+              <div className="flex max-h-[calc(100vh-17rem)] min-h-[140px] flex-col gap-2 overflow-y-auto p-2">
                 {items.length === 0 ? (
                   <div className="flex h-24 flex-col items-center justify-center gap-1 rounded-md border border-dashed px-2 text-center text-[10px] text-muted-foreground/70">
                     <Inbox className="h-4 w-4 opacity-60" />
                     <span>Arraste aqui</span>
                   </div>
                 ) : (
-                  items.map((t) => (
+                  visiveis.map((t) => (
                     <div
                       key={t.id}
                       draggable
@@ -129,6 +139,17 @@ export function TarefaKanban({
                       />
                     </div>
                   ))
+                )}
+                {restantes > 0 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLimite((l) => ({ ...l, [status]: (l[status] ?? POR_PAGINA) + POR_PAGINA }))
+                    }
+                    className="rounded-md border border-dashed py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                  >
+                    Mostrar mais {Math.min(restantes, POR_PAGINA)} de {restantes}
+                  </button>
                 )}
               </div>
             </div>

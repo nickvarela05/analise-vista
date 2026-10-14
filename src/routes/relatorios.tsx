@@ -20,7 +20,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -165,9 +161,7 @@ function Relatorios() {
   const { data: inativos = [] } = useQuery({
     queryKey: qk.relatorios.inativos(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("relatorio_inativo")
-        .select("solicitacao_id");
+      const { data, error } = await supabase.from("relatorio_inativo").select("solicitacao_id");
       if (error) throw error;
       return (data ?? []).map((r) => r.solicitacao_id);
     },
@@ -267,16 +261,12 @@ function Relatorios() {
         const nome = (r.solicitante_nome ?? "").toLowerCase();
         const email = (r.solicitante_email ?? "").toLowerCase();
         const isGoogle =
-          nome === "google" ||
-          nome.includes("google") ||
-          /@(.*\.)?google\.com$/.test(email);
+          nome === "google" || nome.includes("google") || /@(.*\.)?google\.com$/.test(email);
         return {
           ...r,
           // "Enviado" e solicitantes Google são considerados inativos automaticamente.
           _inativo:
-            inativosSet.has(r.id) ||
-            (r.status ?? "").toLowerCase() === "enviado" ||
-            isGoogle,
+            inativosSet.has(r.id) || (r.status ?? "").toLowerCase() === "enviado" || isGoogle,
         };
       }),
     [data, inativosSet],
@@ -341,14 +331,10 @@ function Relatorios() {
     if (mostrarInativos) {
       // Grupos com o recebimento mais recente primeiro.
       const maisRecente = (items: RowExt[]) =>
-        items.reduce(
-          (acc, i) => (i.criado_em && i.criado_em > acc ? i.criado_em : acc),
-          "",
-        );
+        items.reduce((acc, i) => (i.criado_em && i.criado_em > acc ? i.criado_em : acc), "");
       return arr.sort(
         (a, b) =>
-          maisRecente(b.items).localeCompare(maisRecente(a.items)) ||
-          a.nome.localeCompare(b.nome),
+          maisRecente(b.items).localeCompare(maisRecente(a.items)) || a.nome.localeCompare(b.nome),
       );
     }
     return arr.sort((a, b) => b.ativos - a.ativos || a.nome.localeCompare(b.nome));
@@ -356,39 +342,44 @@ function Relatorios() {
 
   return (
     <div>
-      <PageHeader
-        title="Relatórios"
-        description="Solicitações de relatórios sincronizadas do banco externo (N8N)."
-        actions={
-          <>
-            <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
-              <Switch
-                id="mostrar-inativos"
-                checked={mostrarInativos}
-                onCheckedChange={setMostrarInativos}
+      <div className="mb-6">
+        <PageHero
+          eyebrow="Operação"
+          title="Relatórios"
+          description="Solicitações de relatórios que chegam pelo n8n."
+          icon={FileBarChart}
+          tone="amber"
+          actions={
+            <>
+              <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-1.5">
+                <Switch
+                  id="mostrar-inativos"
+                  checked={mostrarInativos}
+                  onCheckedChange={setMostrarInativos}
+                />
+                <Label htmlFor="mostrar-inativos" className="cursor-pointer text-xs">
+                  Mostrar inativas
+                </Label>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  qc.invalidateQueries({ queryKey: qk.relatorios.solicitacoes() });
+                  qc.invalidateQueries({ queryKey: qk.relatorios.inativos() });
+                }}
+                disabled={isFetching}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                Atualizar
+              </Button>
+              <NovoRelatorioDialog
+                categoriasExistentes={categorias.map((c) => c.nome)}
+                colaboradores={colaboradores}
               />
-              <Label htmlFor="mostrar-inativos" className="cursor-pointer text-xs">
-                Mostrar inativas
-              </Label>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                qc.invalidateQueries({ queryKey: qk.relatorios.solicitacoes() });
-                qc.invalidateQueries({ queryKey: qk.relatorios.inativos() });
-              }}
-              disabled={isFetching}
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-              Atualizar
-            </Button>
-            <NovoRelatorioDialog
-              categoriasExistentes={categorias.map((c) => c.nome)}
-              colaboradores={colaboradores}
-            />
-          </>
-        }
-      />
+            </>
+          }
+        />
+      </div>
 
       {/* Resumo por categoria — só conta ATIVAS. Categorias de solicitação ganham métricas extras. */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -412,7 +403,7 @@ function Relatorios() {
               onClick={() => setCategoria(c.nome)}
               className={`rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 ${
                 selected ? "border-primary bg-primary/5" : "border-border"
-              } ${isSolic ? "sm:col-span-2" : ""}`}
+              } ${isSolic ? "col-span-2" : ""}`}
             >
               {isSolic ? (
                 <div className="space-y-2">
@@ -512,9 +503,7 @@ function Relatorios() {
               colaboradores={colaboradores}
               categoriasDisponiveis={categoriasDisponiveis}
               expanded={expanded}
-              onToggleExpand={(id) =>
-                setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
-              }
+              onToggleExpand={(id) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))}
               onUpdate={(vars) => updateMut.mutate(vars)}
               onToggleAtivo={(id, ativarNovamente) =>
                 toggleAtivoMut.mutate({ solicitacaoId: id, ativarNovamente })
@@ -687,9 +676,7 @@ function SubGrupo({
 }
 
 function EmptyMini({ text }: { text: string }) {
-  return (
-    <Card className="p-4 text-center text-xs text-muted-foreground">{text}</Card>
-  );
+  return <Card className="p-4 text-center text-xs text-muted-foreground">{text}</Card>;
 }
 
 function RelatorioTable({
@@ -769,9 +756,7 @@ function RelatorioTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-0.5">
-                      <span
-                        className={cn("text-sm font-medium", r._inativo && "line-through")}
-                      >
+                      <span className={cn("text-sm font-medium", r._inativo && "line-through")}>
                         {r.solicitante_nome ?? "—"}
                       </span>
                       {r.solicitante_email && (
@@ -832,9 +817,7 @@ function RelatorioTable({
                           ? (r.status as string)
                           : "Pendente"
                       }
-                      onValueChange={(v) =>
-                        onUpdate({ id: r.id, status: v as StatusSolicitacao })
-                      }
+                      onValueChange={(v) => onUpdate({ id: r.id, status: v as StatusSolicitacao })}
                     >
                       <SelectTrigger className={`h-8 text-xs ${statusVariant(r.status)}`}>
                         <SelectValue />
@@ -948,10 +931,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
           </DetalheLinha>
           <DetalheLinha icon={<Mail className="h-3.5 w-3.5" />} label="E-mail">
             {row.solicitante_email ? (
-              <a
-                href={`mailto:${row.solicitante_email}`}
-                className="text-primary hover:underline"
-              >
+              <a href={`mailto:${row.solicitante_email}`} className="text-primary hover:underline">
                 {row.solicitante_email}
               </a>
             ) : (
@@ -963,9 +943,7 @@ function DetalhesEmail({ row }: { row: RowExt }) {
           </DetalheLinha>
           <DetalheLinha label="Categoria">{row.categoria ?? "—"}</DetalheLinha>
           <DetalheLinha label="Tipo base">{row.tipo_base ?? "—"}</DetalheLinha>
-          <DetalheLinha label="Prazo">
-            {fmtPrazo(row.prazo)}
-          </DetalheLinha>
+          <DetalheLinha label="Prazo">{fmtPrazo(row.prazo)}</DetalheLinha>
           <DetalheLinha label="Recebido em">
             {row.criado_em ? format(new Date(row.criado_em), "dd/MM/yyyy HH:mm") : "—"}
           </DetalheLinha>
