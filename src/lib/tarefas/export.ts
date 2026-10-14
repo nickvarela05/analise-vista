@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
@@ -36,22 +35,36 @@ export function buildRows(
   }));
 }
 
-export function exportToXlsx(
+/**
+ * Exporta as tarefas em Excel. Usa a exceljs (a mesma do Fechar rodada e de Unidades); a
+ * biblioteca xlsx 0.18.5 saiu em 14/10/2026 por vulnerabilidade de alta severidade
+ * (Avaliação Geral, item 5). Carregada só ao exportar.
+ */
+export async function exportToXlsx(
   tarefas: TarefaRow[],
   colabs: ExportColab[],
   lotes: ExportLote[],
   demandas: ExportDemanda[],
   filename: string,
 ) {
+  const ExcelJS = (await import("exceljs")).default;
   const rows = buildRows(tarefas, colabs, lotes, demandas);
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-  // Largura aproximada das colunas
-  const colWidths = Object.keys(rows[0] ?? {}).map((k) => ({
-    wch: Math.min(60, Math.max(k.length, ...rows.map((r) => String((r as Record<string, unknown>)[k] ?? "").length))),
-  }));
-  ws["!cols"] = colWidths;
-  XLSX.utils.book_append_sheet(wb, ws, "Tarefas");
+  const wb = new ExcelJS.Workbook();
+
+  const adicionarAba = (nome: string, linhas: Record<string, unknown>[]) => {
+    const ws = wb.addWorksheet(nome);
+    const chaves = Array.from(new Set(linhas.flatMap((r) => Object.keys(r))));
+    ws.columns = chaves.map((k) => ({
+      header: k,
+      key: k,
+      // Largura aproximada pelo maior texto da coluna, como antes.
+      width: Math.min(60, Math.max(k.length, ...linhas.map((r) => String(r[k] ?? "").length)) + 2),
+    }));
+    linhas.forEach((r) => ws.addRow(r));
+    ws.getRow(1).font = { bold: true };
+  };
+
+  adicionarAba("Tarefas", rows);
 
   // Aba resumo de lotes (se aplicável)
   const lotesUsados = Array.from(
@@ -72,11 +85,19 @@ export function exportToXlsx(
         ...porStatus,
       };
     });
-    const wsL = XLSX.utils.json_to_sheet(resumo);
-    XLSX.utils.book_append_sheet(wb, wsL, "Resumo por lote");
+    adicionarAba("Resumo por lote", resumo);
   }
 
-  XLSX.writeFile(wb, filename);
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // Ordem de exibição dos grupos no PDF

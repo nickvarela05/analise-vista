@@ -15,9 +15,13 @@ const isGoogleSolicitante = (r: Solicitacao) => {
   return nome.includes("google") || /@(.*\.)?google\.com$/.test(email);
 };
 
-/** Pendente e ativo: fora os inativados à mão e os do solicitante Google. */
+/**
+ * Pendente e ativo: fora os inativados à mão e os do solicitante Google.
+ * "Pendente de análise" (status que o n8n grava na entrada) também conta: até 14/10/2026 só a
+ * palavra exata "Pendente" contava, e a Central e o Painel ignoravam os que chegavam assim.
+ */
 export function isRelatorioPendente(r: Solicitacao, inativosIds: ReadonlySet<string>) {
-  if ((r.status ?? "").toLowerCase() !== "pendente") return false;
+  if (!(r.status ?? "").trim().toLowerCase().startsWith("pendente")) return false;
   if (r.id && inativosIds.has(r.id)) return false;
   return !isGoogleSolicitante(r);
 }
