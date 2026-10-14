@@ -566,3 +566,30 @@
   }
 }
 
+
+/* Barras de rolagem no tema (14/10/2026): as nativas apareciam brancas e largas no tema escuro,
+   sobretudo nas colunas do Kanban. Finas, com a cor do texto suave e trilho transparente; no
+   Chrome e no Edge recentes, scrollbar-color/scrollbar-width valem sobre o ::-webkit-scrollbar. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklab, var(--muted-foreground) 60%, transparent);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

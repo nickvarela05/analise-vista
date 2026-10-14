@@ -54,7 +54,9 @@ export function AppLayout({ children, bare = false }: { children: React.ReactNod
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           <AppHeader />
-          <main className="min-w-0 flex-1 p-3 sm:p-4 lg:p-6">{children}</main>
+          {/* overflow-x-clip: nada dentro da página empurra a tela para o lado no celular (sem
+              virar contêiner de rolagem, para não quebrar elementos fixos com sticky). */}
+          <main className="min-w-0 flex-1 overflow-x-clip p-3 sm:p-4 lg:p-6">{children}</main>
         </SidebarInset>
       </div>
       <BackgroundJobsIndicator />
