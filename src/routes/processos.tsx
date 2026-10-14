@@ -319,6 +319,8 @@ function diasParaInicio(p: Processo): number | null {
 function Processos() {
   const { role, user } = useAuth();
   const isGestor = role === "gestor";
+  // Desde 14/10/2026 a equipe toda cria e edita processos; excluir continua só com gestor.
+  const podeEditar = role !== null;
   const qc = useQueryClient();
 
   const anoAtual = new Date().getFullYear();
@@ -560,7 +562,7 @@ function Processos() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            {isGestor && processos.length === 0 && ano !== anoAtual - 1 && (
+            {podeEditar && processos.length === 0 && ano !== anoAtual - 1 && (
               <Button
                 variant="outline"
                 size="sm"
@@ -573,7 +575,7 @@ function Processos() {
                 Copiar de {ano - 1}
               </Button>
             )}
-            {isGestor && (
+            {podeEditar && (
               <Button onClick={abrirNovo} className="gap-1.5">
                 <Plus className="h-4 w-4" />
                 Novo processo
@@ -600,12 +602,12 @@ function Processos() {
           icon={CalendarDays}
           title="Nenhum processo cadastrado"
           description={
-            isGestor
+            podeEditar
               ? "Comece adicionando o primeiro processo do ano."
               : "Nenhum processo cadastrado para este ano ainda."
           }
           action={
-            isGestor ? (
+            podeEditar ? (
               <Button onClick={abrirNovo} className="gap-1.5">
                 <Plus className="h-4 w-4" />
                 Novo processo
@@ -676,7 +678,7 @@ function Processos() {
                       <CalendarioAnoGoogle
                         processos={processosFiltrados}
                         ano={ano}
-                        onEdit={isGestor ? abrirEdicao : undefined}
+                        onEdit={podeEditar ? abrirEdicao : undefined}
                       />
                       <LegendaProcessos processos={processosFiltrados} />
                     </div>
@@ -694,7 +696,7 @@ function Processos() {
                             vinculos={vincPorProcesso.get(p.id) ?? []}
                             tarefasMini={tarefasMini}
                             demandasMini={demandasMini}
-                            onEdit={isGestor ? () => abrirEdicao(p) : undefined}
+                            onEdit={podeEditar ? () => abrirEdicao(p) : undefined}
                             onDelete={isGestor ? () => setConfirmDel(p) : undefined}
                           />
                         ))
@@ -707,7 +709,7 @@ function Processos() {
                   <CalendarioAnoGoogle
                     processos={processosFiltrados}
                     ano={ano}
-                    onEdit={isGestor ? abrirEdicao : undefined}
+                    onEdit={podeEditar ? abrirEdicao : undefined}
                   />
                   <LegendaProcessos processos={processosFiltrados} />
                 </TabsContent>
@@ -721,7 +723,7 @@ function Processos() {
                       vinculos={vincPorProcesso.get(p.id) ?? []}
                       tarefasMini={tarefasMini}
                       demandasMini={demandasMini}
-                      onEdit={isGestor ? () => abrirEdicao(p) : undefined}
+                      onEdit={podeEditar ? () => abrirEdicao(p) : undefined}
                       onDelete={isGestor ? () => setConfirmDel(p) : undefined}
                     />
                   ))}
