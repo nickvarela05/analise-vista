@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import * as XLSX from "xlsx";
+import { paraCsv } from "@/lib/csv";
 import { AppLayout } from "@/components/AppLayout";
 import { PageHero } from "@/components/shared/PageHero";
 import { Button } from "@/components/ui/button";
@@ -188,8 +188,7 @@ function UnidadesPage() {
       Código: u.cod_unidade, Tipo: u.tipo, Unidade: u.nome,
       Zona: u.zona ?? "", Bairro: u.bairro ?? "", Endereço: u.endereco ?? "",
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const csv = XLSX.utils.sheet_to_csv(ws);
+    const csv = paraCsv(rows);
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
     triggerDownload(blob, `unidades-rede-${stamp()}.csv`);
     toast.success(`Exportado ${rows.length} unidade(s) em CSV`);

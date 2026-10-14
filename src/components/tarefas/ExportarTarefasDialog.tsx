@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
 import { exportToPdf, exportToXlsx } from "@/lib/tarefas/export";
 import type { TarefaRow } from "@/lib/db-types";
 import type { ColabMini, DemandaMini, LoteMini } from "./useTarefasData";
@@ -66,7 +67,7 @@ export function ExportarTarefasDialog({
     return todasTarefas.filter((t) => statusSel.includes(t.status));
   }, [escopo, tarefasFiltradas, todasTarefas, lotesSel, statusSel]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (tarefasParaExportar.length === 0) return;
     const data = format(new Date(), "yyyyMMdd-HHmm");
     const escopoLabel =
@@ -86,7 +87,12 @@ export function ExportarTarefasDialog({
         .join(", ")}`;
 
     if (formato === "xlsx") {
-      exportToXlsx(tarefasParaExportar, colabs, lotes, demandas, filename);
+      try {
+        await exportToXlsx(tarefasParaExportar, colabs, lotes, demandas, filename);
+      } catch (e) {
+        toast.error("Não foi possível gerar o Excel", { description: (e as Error).message });
+        return;
+      }
     } else {
       exportToPdf(tarefasParaExportar, colabs, lotes, demandas, filename, cabecalho);
     }
