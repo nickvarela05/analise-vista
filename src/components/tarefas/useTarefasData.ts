@@ -29,8 +29,6 @@ const TAREFA_COLUMNS =
  * Centraliza as queries da página de Tarefas.
  *
  * Otimizações:
- *  - Não roda mais o UPDATE de auto-encerramento dentro do queryFn (movido para a RPC
- *    `auto_encerrar_tarefas_antigas`, chamada em background depois do primeiro render).
  *  - Projeta apenas as colunas usadas pelo card/lista.
  *  - Das encerradas, traz só as dos últimos 30 dias (coluna "Encerrada" do Kanban).
  *  - `placeholderData: keepPreviousData` evita spinner ao voltar para a rota.
@@ -122,18 +120,10 @@ export function useTarefasData() {
     },
   });
 
-  // Auto-encerramento de tarefas com mais de 5 meses: dispara em background,
-  // sem bloquear o render inicial. A RPC só é chamada uma vez por sessão.
-  const autoEncerrouRef = React.useRef(false);
-  React.useEffect(() => {
-    if (autoEncerrouRef.current) return;
-    if (isLoading) return;
-    autoEncerrouRef.current = true;
-    // Fire-and-forget; falha silenciosa (não-crítico).
-    setTimeout(() => {
-      supabase.rpc("auto_encerrar_tarefas_antigas").then(() => {});
-    }, 1500);
-  }, [isLoading]);
+  // O "auto-encerramento" de tarefas com mais de 5 meses (RPC auto_encerrar_tarefas_antigas)
+  // era chamado daqui desde a Lovable, mas o usuário logado não tem permissão para executá-lo:
+  // falhava calado e nunca encerrou nada. Chamada removida em 13/10/2026 e função apagada do banco
+  // em 14/10/2026 (decisão do Nickolas: a tarefa termina em Produção, pela Liberação em produção).
 
   const { data: countsMap = {} } = useQuery<CountsMap>({
     queryKey: qk.tarefas.counts(),
@@ -190,5 +180,25 @@ export function useTarefasData() {
     },
   });
 
-  return { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap };
+  // Quantas vezes cada tarefa foi reprovada (T4): o card mostra "reprovada 2×" para quem
+  // retesta saber que a tarefa já voltou. Conta pelo histórico de status.
+  const { data: reprovacoesMap = {} } = useQuery<Record<string, number>>({
+    queryKey: ["tarefas", "reprovacoes"],
+    staleTime: 2 * 60_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("todo_historico")
+        .select("todo_id")
+        .eq("campo", "status")
+        .eq("valor_novo", "reprovado")
+        .limit(5000);
+      if (error) throw error;
+      const m: Record<string, number> = {};
+      for (const r of data ?? []) m[r.todo_id] = (m[r.todo_id] ?? 0) + 1;
+      return m;
+    },
+  });
+
+  return { colabs, demandas, tarefas, lotes, isLoading, countsMap, statusLogMap, reprovacoesMap };
 }

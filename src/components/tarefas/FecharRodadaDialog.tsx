@@ -24,6 +24,7 @@ import { cn, getErrorMessage } from "@/lib/utils";
 import { isStaleChunkError, recarregarPorAtualizacao } from "@/lib/stale-build";
 import type { TarefaRow } from "@/lib/db-types";
 import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
+import { ultimasObservacoes } from "@/components/tarefas/lib/observacaoTeste";
 import {
   STATUS_PRONTAS,
   STATUS_RODADA,
@@ -168,6 +169,20 @@ export function FecharRodadaDialog({
     // Começa com todos os lotes que têm alguma tarefa pronta.
     setLotesSel(new Set(opcoes.filter((o) => o.prontas > 0).map((o) => o.id)));
     setAssunto(`Situação após testes em homologação – ${format(new Date(), "dd/MM/yyyy")}`);
+    // Observações já registradas ao marcar "com ressalvas"/"reprovado" (desde 13/10/2026) entram
+    // preenchidas; o que a pessoa já digitou nesta janela não é sobrescrito.
+    const ids = naRodada.map((t) => t.id);
+    if (ids.length > 0) {
+      void supabase
+        .from("todo_comentario")
+        .select("todo_id, conteudo, created_at")
+        .in("todo_id", ids)
+        .like("conteudo", "Observação do teste (%")
+        .then(({ data }) => {
+          const salvas = ultimasObservacoes(data ?? []);
+          setObservacoes((atual) => ({ ...salvas, ...atual }));
+        });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

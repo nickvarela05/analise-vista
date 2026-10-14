@@ -1,6 +1,9 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { qk } from "@/lib/queries/keys";
 import {
   CheckCircle2,
   ClipboardCheck,
@@ -74,6 +77,22 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
   }, [tarefas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const meuColabId = perfil?.colaborador_id ?? null;
+
+  // T4: a reprovada corrigida volta para Homologação. O banco grava o histórico, e o card passa a
+  // mostrar "reprovada N×", para quem retesta saber que ela já voltou.
+  const qc = useQueryClient();
+  const retestar = React.useCallback(
+    async (t: TarefaRow) => {
+      const { error } = await supabase.from("todo").update({ status: "homologacao" }).eq("id", t.id);
+      if (error) {
+        toast.error("Não foi possível voltar para Homologação", { description: error.message });
+        return;
+      }
+      toast.success("De volta para Homologação, para retestar");
+      await qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+    },
+    [qc],
+  );
   // No Modo TV não há "você": não registra visita nem mostra o que mudou.
   const mudancas = useMudancas(tv ? undefined : user?.id, meuColabId);
   const meuNome = React.useMemo(
@@ -223,6 +242,7 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
             reprovadas={reprovadas}
             nomeDe={nomeDe}
             onOpen={abrir}
+            onRetestar={retestar}
             tv={tv}
             actions={
               tv ? undefined : (

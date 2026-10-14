@@ -1490,7 +1490,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      auto_encerrar_tarefas_antigas: { Args: never; Returns: number }
       confirmar_liberacao: {
         Args: {
           p_dispensada?: boolean

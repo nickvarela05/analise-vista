@@ -31,6 +31,8 @@ interface Props {
   counts: Counts;
   hasDemanda: boolean;
   statusLog?: StatusLogItem[];
+  /** Quantas vezes a tarefa já foi reprovada (histórico de status). */
+  reprovacoes?: number;
 }
 
 function statusLabel(s: string | null) {
@@ -50,7 +52,7 @@ const PRIO_BADGE: Record<string, string> = {
   baixa: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
 };
 
-function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda, statusLog = [] }: Props) {
+function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda, statusLog = [], reprovacoes = 0 }: Props) {
   const responsaveis = tarefa.equipe_toda
     ? colabs
     : colabs.filter((c) => (tarefa.responsaveis_ids ?? []).includes(c.id));
@@ -167,6 +169,16 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
               </Badge>
             </TooltipTrigger>
             <TooltipContent>Tarefa sinalizada como em teste</TooltipContent>
+          </Tooltip>
+        )}
+        {reprovacoes > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="h-5 border-rose-500/30 bg-rose-500/15 px-1.5 text-[10px] text-rose-700 dark:text-rose-300 hover:bg-rose-500/20">
+                reprovada {reprovacoes}×
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Já voltou do teste {reprovacoes === 1 ? "uma vez" : `${reprovacoes} vezes`}; a observação está nos comentários</TooltipContent>
           </Tooltip>
         )}
       </div>

@@ -13,6 +13,7 @@ interface Props {
   onDropStatus: (id: string, status: string) => void;
   countsMap: Record<string, { comentarios: number; checklistTotal: number; checklistDone: number; anexos: number }>;
   statusLogMap?: Record<string, { de: string | null; para: string | null; quando: string; autor: string | null }[]>;
+  reprovacoesMap?: Record<string, number>;
 }
 
 // Tom por coluna (gradiente do header + ring drag-over + pill do contador)
@@ -37,6 +38,7 @@ export function TarefaKanban({
   onDropStatus,
   countsMap,
   statusLogMap = {},
+  reprovacoesMap = {},
 }: Props) {
   const [dragOver, setDragOver] = React.useState<string | null>(null);
 
@@ -123,6 +125,7 @@ export function TarefaKanban({
                         counts={countsMap[t.id] ?? { comentarios: 0, checklistTotal: 0, checklistDone: 0, anexos: 0 }}
                         hasDemanda={!!t.demanda_id}
                         statusLog={statusLogMap[t.id]}
+                        reprovacoes={reprovacoesMap[t.id]}
                       />
                     </div>
                   ))
