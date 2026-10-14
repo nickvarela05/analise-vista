@@ -1,27 +1,14 @@
 /**
  * Google Calendar sync core logic (server-only).
  * Replica itens da tela Atividades Semanais (reuniões, tarefas, demandas, chamados)
- * em uma agenda Google compartilhada da equipe, via connector-gateway.
+ * em uma agenda Google compartilhada da equipe, via conta de serviço (google-auth.server).
  */
 import { createHash } from "node:crypto";
+import { googleCalendarFetch } from "@/lib/google-auth.server";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_calendar/calendar/v3";
 const TIMEZONE = "America/Sao_Paulo";
 
 type Fonte = "reuniao" | "tarefa" | "demanda" | "chamado";
-
-function gcalHeaders(): Record<string, string> {
-  const bearer = process.env.LOVABLE_API_KEY;
-  const key = process.env.GOOGLE_CALENDAR_API_KEY;
-  if (!bearer || !key) {
-    throw new Error("LOVABLE_API_KEY ou GOOGLE_CALENDAR_API_KEY não configurados.");
-  }
-  return {
-    Authorization: `Bearer ${bearer}`,
-    "X-Connection-Api-Key": key,
-    "Content-Type": "application/json",
-  };
-}
 
 function hashPayload(parts: Array<string | number | null | undefined>): string {
   return createHash("sha1").update(parts.map((p) => String(p ?? "")).join("|")).digest("hex");
@@ -94,16 +81,12 @@ function toGoogleEvent(fonte: Fonte, fonteId: string, p: EventPayload) {
   };
 }
 
-async function gcalRequest(
+function gcalRequest(
   method: "POST" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
 ): Promise<Response> {
-  return fetch(`${GATEWAY_URL}${path}`, {
-    method,
-    headers: gcalHeaders(),
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  return googleCalendarFetch(method, path, body);
 }
 
 export interface SyncResult {

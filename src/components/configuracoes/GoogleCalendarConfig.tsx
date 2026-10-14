@@ -9,17 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   getGoogleCalendarConfig,
   updateGoogleCalendarConfig,
   runGoogleCalendarSyncNow,
-  listGoogleCalendars,
+  checkGoogleCalendarAccess,
 } from "@/lib/google-calendar.functions";
 
 function formatDateTime(iso: string | null) {
@@ -40,12 +33,12 @@ export function GoogleCalendarConfig() {
   const getConfig = useServerFn(getGoogleCalendarConfig);
   const updateConfig = useServerFn(updateGoogleCalendarConfig);
   const runSync = useServerFn(runGoogleCalendarSyncNow);
-  const listCals = useServerFn(listGoogleCalendars);
+  const checkAccess = useServerFn(checkGoogleCalendarAccess);
 
   const cfgQuery = useQuery({ queryKey: ["gcal", "config"], queryFn: () => getConfig() });
-  const calsQuery = useQuery({
-    queryKey: ["gcal", "calendars"],
-    queryFn: () => listCals(),
+  const acessoQuery = useQuery({
+    queryKey: ["gcal", "acesso"],
+    queryFn: () => checkAccess(),
     retry: false,
   });
 
@@ -72,7 +65,7 @@ export function GoogleCalendarConfig() {
       }),
     onSuccess: () => {
       toast.success("Configuração salva.");
-      qc.invalidateQueries({ queryKey: ["gcal", "config"] });
+      qc.invalidateQueries({ queryKey: ["gcal"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao salvar."),
   });
@@ -132,32 +125,32 @@ export function GoogleCalendarConfig() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="gcal-id">Calendário de destino</Label>
-                {calsQuery.data && calsQuery.data.length > 0 ? (
-                  <Select value={calendarId} onValueChange={setCalendarId}>
-                    <SelectTrigger id="gcal-id">
-                      <SelectValue placeholder="Selecione um calendário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {calsQuery.data.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.summary} {c.primary && "(principal)"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="gcal-id"
-                    placeholder="primary ou id-do-calendario@group.calendar.google.com"
-                    value={calendarId}
-                    onChange={(e) => setCalendarId(e.target.value)}
-                  />
-                )}
-                {calsQuery.isError && (
-                  <p className="text-xs text-muted-foreground">
-                    Não foi possível listar seus calendários — informe o ID manualmente.
+                <Input
+                  id="gcal-id"
+                  placeholder="e-mail da agenda ou id@group.calendar.google.com"
+                  value={calendarId}
+                  onChange={(e) => setCalendarId(e.target.value)}
+                />
+                {acessoQuery.data?.ok ? (
+                  <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Acesso confirmado
+                    {acessoQuery.data.nome ? `: ${acessoQuery.data.nome}` : ""}.
                   </p>
-                )}
+                ) : acessoQuery.data ? (
+                  <p className="text-xs text-muted-foreground">
+                    {acessoQuery.data.erro}
+                    {acessoQuery.data.emailServico && (
+                      <>
+                        {" "}
+                        Compartilhe a agenda com{" "}
+                        <span className="font-mono break-all">
+                          {acessoQuery.data.emailServico}
+                        </span>{" "}
+                        ("Fazer alterações nos eventos") e salve de novo.
+                      </>
+                    )}
+                  </p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="gcal-dias">Horizonte de sincronização (dias)</Label>
@@ -167,7 +160,9 @@ export function GoogleCalendarConfig() {
                   min={1}
                   max={180}
                   value={dias}
-                  onChange={(e) => setDias(Math.max(1, Math.min(180, Number(e.target.value) || 30)))}
+                  onChange={(e) =>
+                    setDias(Math.max(1, Math.min(180, Number(e.target.value) || 30)))
+                  }
                 />
               </div>
             </div>
