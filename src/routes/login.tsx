@@ -12,12 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import logoUrl from "@/assets/logo-sisteplan-mark.png";
+import { NexusMark } from "@/components/NexusMark";
+import { mensagemSenha, REGRA_SENHA_TEXTO } from "@/lib/domain/senha";
 
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`flex items-center ${compact ? "gap-3" : "gap-4"}`}>
-      {/* Vitrine do logo: anel cromático + halo + monograma original preservado */}
+      {/* Vitrine do logo: anel cromático + halo + marca do Nexus */}
       <div className="relative">
         {/* Halo difuso */}
         <div
@@ -46,12 +47,8 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
         <div
           className={`relative ${compact ? "h-14 w-14" : "h-16 w-16"} grid place-items-center rounded-2xl bg-sidebar/80 ring-1 ring-white/10 backdrop-blur-sm shadow-[inset_0_1px_0_oklch(1_0_0/0.08),0_8px_30px_-8px_oklch(0.55_0.18_200/0.45)]`}
         >
-          <img
-            src={logoUrl}
-            alt="Nexus"
-            width={64}
-            height={64}
-            className={`${compact ? "h-9 w-9" : "h-10 w-10"} object-contain drop-shadow-[0_2px_8px_oklch(0.78_0.16_180/0.55)]`}
+          <NexusMark
+            className={`${compact ? "h-9 w-9" : "h-10 w-10"} drop-shadow-[0_2px_8px_oklch(0.78_0.16_180/0.55)]`}
           />
           {/* Brilho diagonal sutil */}
           <span
@@ -112,12 +109,18 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+// No login não se confere a regra nova: quem tem senha antiga, mais fraca, precisa conseguir
+// entrar para trocá-la (o Supabase avisa com "weak_password", tratado em onLogin).
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  password: z.string().min(1, "Informe a senha"),
 });
 
 const signupSchema = loginSchema.extend({
+  password: z.string().superRefine((s, ctx) => {
+    const problema = mensagemSenha(s);
+    if (problema) ctx.addIssue({ code: z.ZodIssueCode.custom, message: problema });
+  }),
   nome: z.string().min(2, "Informe seu nome").max(120),
   invite: z.string().min(8, "Informe o código de convite"),
 });
@@ -170,6 +173,21 @@ function LoginPage() {
     setLoading(false);
 
     if (error) {
+      // Senha válida, mas fora da regra nova (14/10/2026): se o Supabase abriu a sessão, leva
+      // direto para a troca; se não, orienta a usar "Esqueci minha senha".
+      const fraca = (error as { code?: string }).code === "weak_password" || /weak/i.test(error.name);
+      if (fraca) {
+        const { data: s } = await supabase.auth.getSession();
+        if (s.session) {
+          toast.warning("Sua senha precisa ser atualizada", { description: REGRA_SENHA_TEXTO });
+          void navigate({ to: "/alterar-senha", replace: true });
+          return;
+        }
+        toast.error("Sua senha não atende às regras novas", {
+          description: `${REGRA_SENHA_TEXTO} Use "Esqueci minha senha" para criar uma nova.`,
+        });
+        return;
+      }
       toast.error("Falha no login", {
         description: isNetworkError(error.message) ? NETWORK_HINT : error.message,
       });
