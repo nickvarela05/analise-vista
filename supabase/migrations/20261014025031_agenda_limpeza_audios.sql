@@ -1,6 +1,6 @@
 -- Agenda a limpeza dos áudios de reunião (função limpar-audios-reuniao), todo dia às 3h de
--- Brasília (6h UTC). APLICAR SÓ DEPOIS da confirmação do Nickolas sobre a primeira execução,
--- que apaga de uma vez os áudios antigos já transcritos (13 reuniões, ~150 MB, em 14/10/2026).
+-- Brasília (6h UTC). Aplicada em 14/10/2026 com confirmação do Nickolas ("ligue"), depois da
+-- primeira execução manual (13 áudios, 148 MB, transcrições preservadas).
 -- Mesmo padrão dos outros crons: segredo lido do Vault, sem chave em texto no comando.
 SELECT cron.schedule(
   'limpar-audios-reuniao',

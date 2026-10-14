@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { PageHeader } from "@/components/PageHeader";
+import { PageHero } from "@/components/shared/PageHero";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,9 +28,12 @@ function InsightsPage() {
   const { role } = useAuth();
   return (
     <div className="space-y-6">
-      <PageHeader
+      <PageHero
+        eyebrow="Gestão"
         title="Insights & IA"
         description="Resumos executivos gerados por IA para sua semana."
+        icon={Sparkles}
+        tone="violet"
       />
       <ResumoSemanal />
       {role === "gestor" && <ResumoPorFuncionario />}

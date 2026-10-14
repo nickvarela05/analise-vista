@@ -75,3 +75,9 @@ export function getErrorMessage(e: unknown, fallback = "Erro desconhecido"): str
   }
   return fallback;
 }
+
+/** Papel de acesso para exibir: "Gestor", "Analista" (no banco ficam em minúsculas). */
+export function papelLabel(role: string | null | undefined): string {
+  if (!role) return "—";
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}

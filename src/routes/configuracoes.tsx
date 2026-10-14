@@ -26,6 +26,7 @@ import { DestinatariosResumoDiario } from "@/components/notificacoes/Destinatari
 import { ConfiguracoesIA } from "@/components/notificacoes/ConfiguracoesIA";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHero } from "@/components/shared/PageHero";
+import { papelLabel } from "@/lib/utils";
 
 export const Route = createFileRoute("/configuracoes")({
   component: ConfigRoute,
@@ -64,7 +65,7 @@ function Configuracoes() {
         stats={[
           {
             label: "Papel",
-            value: role ?? "—",
+            value: papelLabel(role),
             icon: ShieldCheck,
             tone: "indigo",
           },
@@ -133,7 +134,7 @@ function Configuracoes() {
                       className="border-indigo-500/30 bg-indigo-500/10 capitalize text-indigo-700 dark:text-indigo-300"
                     >
                       <ShieldCheck className="mr-1 h-3 w-3" />
-                      {role ?? "—"}
+                      {papelLabel(role)}
                     </Badge>
                     <Badge variant="outline" className="text-[11px]">
                       Sessão ativa

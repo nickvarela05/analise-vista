@@ -83,14 +83,18 @@ export function PageHero({
         </div>
 
         {stats && stats.length > 0 && (
+          // M12 da auditoria visual: no celular, os indicadores viram uma faixa que rola para o
+          // lado, em vez de ocupar a tela inteira antes do conteúdo. Do tablet em diante, grade.
           <div
             className={cn(
-              "mt-6 grid gap-3",
-              statsGridClassName ?? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6",
+              "-mx-5 mt-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:mt-6 sm:grid sm:overflow-visible sm:px-0 sm:pb-0",
+              statsGridClassName ?? "sm:grid-cols-3 lg:grid-cols-6",
             )}
           >
             {stats.map((s, i) => (
-              <StatPill key={i} loading={loading} {...s} />
+              <div key={i} className="min-w-[9.5rem] shrink-0 snap-start sm:min-w-0">
+                <StatPill loading={loading} {...s} />
+              </div>
             ))}
           </div>
         )}
