@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.auth-send-email]
 verify_jwt = false
+
+[functions.limpar-audios-reuniao]
+verify_jwt = false

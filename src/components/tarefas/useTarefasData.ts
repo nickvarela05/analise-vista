@@ -122,8 +122,8 @@ export function useTarefasData() {
 
   // O "auto-encerramento" de tarefas com mais de 5 meses (RPC auto_encerrar_tarefas_antigas)
   // era chamado daqui desde a Lovable, mas o usuário logado não tem permissão para executá-lo:
-  // falhava calado e nunca encerrou nada. Chamada removida em 13/10/2026; a função continua no
-  // banco até o Nickolas decidir se a regra deve existir no fluxo novo.
+  // falhava calado e nunca encerrou nada. Chamada removida em 13/10/2026 e função apagada do banco
+  // em 14/10/2026 (decisão do Nickolas: a tarefa termina em Produção, pela Liberação em produção).
 
   const { data: countsMap = {} } = useQuery<CountsMap>({
     queryKey: qk.tarefas.counts(),
