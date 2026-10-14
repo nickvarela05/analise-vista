@@ -48,9 +48,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: "Nexus" },
-      { name: "description", content: "Demand Hub is a web application for managing requirements analysis team tasks and demands." },
-      { property: "og:description", content: "Demand Hub is a web application for managing requirements analysis team tasks and demands." },
-      { name: "twitter:description", content: "Demand Hub is a web application for managing requirements analysis team tasks and demands." },
+      {
+        name: "twitter:description",
+        content: "Sistema interno de gestão da equipe de Análise de Requisitos.",
+      },
       { property: "og:image", content: "/og-image.png" },
       { name: "twitter:image", content: "/og-image.png" },
       { name: "twitter:card", content: "summary_large_image" },

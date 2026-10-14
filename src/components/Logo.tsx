@@ -1,10 +1,10 @@
-import markUrl from "@/assets/logo-sisteplan-mark.png";
+import { NexusMark } from "@/components/NexusMark";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
   className?: string;
   /**
-   * mark  → só o ícone (cubos isométricos)
+   * mark  → só o ícone (o "N" do Nexus)
    * lockup → ícone + wordmark "Nexus"
    */
   variant?: "mark" | "lockup";
@@ -28,14 +28,7 @@ export function Logo({
   const s = sizes[size];
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <img
-        src={markUrl}
-        alt="Nexus"
-        className={cn(
-          s.mark,
-          "object-contain shrink-0 drop-shadow-[0_2px_6px_rgba(47,128,115,0.25)]",
-        )}
-      />
+      <NexusMark className={cn(s.mark, "drop-shadow-[0_2px_6px_rgba(47,128,115,0.25)]")} />
       {variant === "lockup" && (
         <span
           className={cn(

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
+import { mensagemSenha, REGRA_SENHA_TEXTO } from "@/lib/domain/senha";
 import * as React from "react";
 import { Loader2, KeyRound, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -61,8 +62,9 @@ function AlterarSenhaPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (novaSenha.length < 8) {
-      toast.error("A senha deve ter pelo menos 8 caracteres.");
+    const problema = mensagemSenha(novaSenha);
+    if (problema) {
+      toast.error(problema, { description: REGRA_SENHA_TEXTO });
       return;
     }
     if (novaSenha !== confirmar) {

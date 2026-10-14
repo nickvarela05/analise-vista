@@ -29,7 +29,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logoMark from "@/assets/logo-sisteplan-mark.png";
+import { NexusMark } from "@/components/NexusMark";
 import { useAuth } from "@/lib/auth-context";
 import { cn, iniciais } from "@/lib/utils";
 
@@ -155,11 +155,9 @@ export function AppSidebar() {
             )}
           >
             <div className="pointer-events-none absolute -inset-1 bg-gradient-to-tr from-emerald-500/0 via-emerald-500/15 to-teal-400/20 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
-            <img
-              src={logoMark}
-              alt=""
+            <NexusMark
               className={cn(
-                "relative object-contain drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]",
+                "relative drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]",
                 collapsed ? "h-6 w-6" : "h-7 w-7",
               )}
             />
