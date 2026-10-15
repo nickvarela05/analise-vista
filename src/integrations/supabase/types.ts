@@ -681,6 +681,30 @@ export type Database = {
         }
         Relationships: []
       }
+      google_oauth_conta: {
+        Row: {
+          conectado_em: string
+          conectado_por: string | null
+          email: string | null
+          id: boolean
+          refresh_token: string
+        }
+        Insert: {
+          conectado_em?: string
+          conectado_por?: string | null
+          email?: string | null
+          id?: boolean
+          refresh_token: string
+        }
+        Update: {
+          conectado_em?: string
+          conectado_por?: string | null
+          email?: string | null
+          id?: boolean
+          refresh_token?: string
+        }
+        Relationships: []
+      }
       ia_prompt_config: {
         Row: {
           ativo: boolean

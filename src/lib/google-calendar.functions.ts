@@ -68,27 +68,25 @@ export const runGoogleCalendarSyncNow = createServerFn({ method: "POST" })
     return await syncGoogleCalendar({ manual: true });
   });
 
-/**
- * Conta de serviço em uso e se ela alcança o calendário configurado. A conta de
- * serviço não "lista" agendas compartilhadas com ela, por isso a tela pede o ID
- * e mostra com qual e-mail compartilhar.
- */
+/** URL para o gestor autorizar a conta Google da equipe (fluxo OAuth). */
+export const startGoogleOAuth = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await ensureGestor(context.userId);
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { urlConsentimento } = await import("@/lib/google-auth.server");
+    return { url: await urlConsentimento(new URL(getRequest().url).origin, context.userId) };
+  });
+
+/** Conta Google conectada e se ela alcança o calendário configurado. */
 export const checkGoogleCalendarAccess = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await ensureGestor(context.userId);
-    const { contaServico, googleCalendarFetch } = await import("@/lib/google-auth.server");
-    let emailServico: string;
-    try {
-      emailServico = contaServico().client_email;
-    } catch (e) {
-      return {
-        emailServico: null,
-        ok: false,
-        nome: null,
-        erro: e instanceof Error ? e.message : String(e),
-      };
-    }
+    const { contaConectada, googleCalendarFetch } = await import("@/lib/google-auth.server");
+    const conta = await contaConectada();
+    if (!conta)
+      return { conta: null, ok: false, nome: null, erro: "Nenhuma conta Google conectada." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cfg } = await supabaseAdmin
       .from("google_calendar_config")
@@ -96,7 +94,7 @@ export const checkGoogleCalendarAccess = createServerFn({ method: "GET" })
       .eq("id", true)
       .maybeSingle();
     if (!cfg?.google_calendar_id) {
-      return { emailServico, ok: false, nome: null, erro: "Calendário não configurado." };
+      return { conta: conta.email, ok: false, nome: null, erro: "Calendário não configurado." };
     }
     try {
       const res = await googleCalendarFetch(
@@ -106,15 +104,15 @@ export const checkGoogleCalendarAccess = createServerFn({ method: "GET" })
       if (!res.ok) {
         const erro =
           res.status === 404
-            ? `O calendário não está compartilhado com ${emailServico}.`
+            ? `A conta ${conta.email ?? "conectada"} não tem acesso a esse calendário.`
             : `${res.status} ${await res.text()}`;
-        return { emailServico, ok: false, nome: null, erro };
+        return { conta: conta.email, ok: false, nome: null, erro };
       }
       const body = (await res.json()) as { summary?: string };
-      return { emailServico, ok: true, nome: body.summary ?? null, erro: null };
+      return { conta: conta.email, ok: true, nome: body.summary ?? null, erro: null };
     } catch (e) {
       return {
-        emailServico,
+        conta: conta.email,
         ok: false,
         nome: null,
         erro: e instanceof Error ? e.message : String(e),

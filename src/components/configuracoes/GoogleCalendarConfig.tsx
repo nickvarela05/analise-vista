@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Calendar, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar, RefreshCw, CheckCircle2, AlertCircle, Loader2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   updateGoogleCalendarConfig,
   runGoogleCalendarSyncNow,
   checkGoogleCalendarAccess,
+  startGoogleOAuth,
 } from "@/lib/google-calendar.functions";
 
 function formatDateTime(iso: string | null) {
@@ -34,6 +35,7 @@ export function GoogleCalendarConfig() {
   const updateConfig = useServerFn(updateGoogleCalendarConfig);
   const runSync = useServerFn(runGoogleCalendarSyncNow);
   const checkAccess = useServerFn(checkGoogleCalendarAccess);
+  const startOAuth = useServerFn(startGoogleOAuth);
 
   const cfgQuery = useQuery({ queryKey: ["gcal", "config"], queryFn: () => getConfig() });
   const acessoQuery = useQuery({
@@ -84,6 +86,26 @@ export function GoogleCalendarConfig() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha na sincronização."),
   });
+
+  const conectarMut = useMutation({
+    mutationFn: () => startOAuth(),
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao iniciar a conexão."),
+  });
+
+  // Resultado da volta do Google (?google=...), mostrado uma vez e tirado da URL.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resultado = params.get("google");
+    if (!resultado) return;
+    if (resultado.startsWith("erro")) toast.error(`Google Agenda: ${resultado}`);
+    else toast.success(`Google Agenda: ${resultado}.`);
+    params.delete("google");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, []);
 
   const cfg = cfgQuery.data;
   const isLoading = cfgQuery.isLoading;
@@ -136,20 +158,8 @@ export function GoogleCalendarConfig() {
                     <CheckCircle2 className="h-3.5 w-3.5" /> Acesso confirmado
                     {acessoQuery.data.nome ? `: ${acessoQuery.data.nome}` : ""}.
                   </p>
-                ) : acessoQuery.data ? (
-                  <p className="text-xs text-muted-foreground">
-                    {acessoQuery.data.erro}
-                    {acessoQuery.data.emailServico && (
-                      <>
-                        {" "}
-                        Compartilhe a agenda com{" "}
-                        <span className="font-mono break-all">
-                          {acessoQuery.data.emailServico}
-                        </span>{" "}
-                        ("Fazer alterações nos eventos") e salve de novo.
-                      </>
-                    )}
-                  </p>
+                ) : acessoQuery.data?.erro ? (
+                  <p className="text-xs text-muted-foreground">{acessoQuery.data.erro}</p>
                 ) : null}
               </div>
               <div className="space-y-2">
@@ -165,6 +175,31 @@ export function GoogleCalendarConfig() {
                   }
                 />
               </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3">
+              <div>
+                <p className="text-sm font-medium">Conta Google</p>
+                <p className="text-xs text-muted-foreground">
+                  {acessoQuery.data?.conta
+                    ? `Conectada: ${acessoQuery.data.conta}`
+                    : "Nenhuma conta conectada. Entre com a conta dona da agenda da equipe."}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => conectarMut.mutate()}
+                disabled={conectarMut.isPending}
+              >
+                {conectarMut.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Link2 className="h-3.5 w-3.5" />
+                )}
+                {acessoQuery.data?.conta ? "Reconectar" : "Conectar conta Google"}
+              </Button>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3">
