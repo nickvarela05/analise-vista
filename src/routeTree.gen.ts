@@ -30,6 +30,7 @@ import { Route as AlterarSenhaRouteImport } from './routes/alterar-senha'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as ApiPublicGoogleOauthCallbackRouteImport } from './routes/api/public/google-oauth-callback'
 import { Route as ApiAdminUsuariosRouteImport } from './routes/api.admin.usuarios'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -143,6 +144,12 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicGoogleOauthCallbackRoute =
+  ApiPublicGoogleOauthCallbackRouteImport.update({
+    id: '/api/public/google-oauth-callback',
+    path: '/api/public/google-oauth-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminUsuariosRoute = ApiAdminUsuariosRouteImport.update({
   id: '/api/admin/usuarios',
   path: '/api/admin/usuarios',
@@ -197,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
+  '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
   '/api/public/hooks/sync-google-calendar': typeof ApiPublicHooksSyncGoogleCalendarRoute
 }
@@ -225,6 +233,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
+  '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
   '/api/public/hooks/sync-google-calendar': typeof ApiPublicHooksSyncGoogleCalendarRoute
 }
@@ -254,6 +263,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
+  '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
   '/api/public/hooks/sync-google-calendar': typeof ApiPublicHooksSyncGoogleCalendarRoute
 }
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/usuarios'
+    | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
     | '/api/public/hooks/sync-google-calendar'
   fileRoutesByTo: FileRoutesByTo
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/usuarios'
+    | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
     | '/api/public/hooks/sync-google-calendar'
   id:
@@ -340,6 +352,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/admin/usuarios'
+    | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
     | '/api/public/hooks/sync-google-calendar'
   fileRoutesById: FileRoutesById
@@ -369,6 +382,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminUsuariosRoute: typeof ApiAdminUsuariosRoute
+  ApiPublicGoogleOauthCallbackRoute: typeof ApiPublicGoogleOauthCallbackRoute
   ApiPublicHooksRetomarTranscricoesRoute: typeof ApiPublicHooksRetomarTranscricoesRoute
   ApiPublicHooksSyncGoogleCalendarRoute: typeof ApiPublicHooksSyncGoogleCalendarRoute
 }
@@ -522,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/google-oauth-callback': {
+      id: '/api/public/google-oauth-callback'
+      path: '/api/public/google-oauth-callback'
+      fullPath: '/api/public/google-oauth-callback'
+      preLoaderRoute: typeof ApiPublicGoogleOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/usuarios': {
       id: '/api/admin/usuarios'
       path: '/api/admin/usuarios'
@@ -586,6 +607,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminUsuariosRoute: ApiAdminUsuariosRoute,
+  ApiPublicGoogleOauthCallbackRoute: ApiPublicGoogleOauthCallbackRoute,
   ApiPublicHooksRetomarTranscricoesRoute:
     ApiPublicHooksRetomarTranscricoesRoute,
   ApiPublicHooksSyncGoogleCalendarRoute: ApiPublicHooksSyncGoogleCalendarRoute,

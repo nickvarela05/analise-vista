@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Calendar, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Calendar, RefreshCw, CheckCircle2, AlertCircle, Loader2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   getGoogleCalendarConfig,
   updateGoogleCalendarConfig,
   runGoogleCalendarSyncNow,
-  listGoogleCalendars,
+  checkGoogleCalendarAccess,
+  startGoogleOAuth,
 } from "@/lib/google-calendar.functions";
 
 function formatDateTime(iso: string | null) {
@@ -40,12 +34,13 @@ export function GoogleCalendarConfig() {
   const getConfig = useServerFn(getGoogleCalendarConfig);
   const updateConfig = useServerFn(updateGoogleCalendarConfig);
   const runSync = useServerFn(runGoogleCalendarSyncNow);
-  const listCals = useServerFn(listGoogleCalendars);
+  const checkAccess = useServerFn(checkGoogleCalendarAccess);
+  const startOAuth = useServerFn(startGoogleOAuth);
 
   const cfgQuery = useQuery({ queryKey: ["gcal", "config"], queryFn: () => getConfig() });
-  const calsQuery = useQuery({
-    queryKey: ["gcal", "calendars"],
-    queryFn: () => listCals(),
+  const acessoQuery = useQuery({
+    queryKey: ["gcal", "acesso"],
+    queryFn: () => checkAccess(),
     retry: false,
   });
 
@@ -72,7 +67,7 @@ export function GoogleCalendarConfig() {
       }),
     onSuccess: () => {
       toast.success("Configuração salva.");
-      qc.invalidateQueries({ queryKey: ["gcal", "config"] });
+      qc.invalidateQueries({ queryKey: ["gcal"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao salvar."),
   });
@@ -91,6 +86,26 @@ export function GoogleCalendarConfig() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha na sincronização."),
   });
+
+  const conectarMut = useMutation({
+    mutationFn: () => startOAuth(),
+    onSuccess: ({ url }) => {
+      window.location.href = url;
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao iniciar a conexão."),
+  });
+
+  // Resultado da volta do Google (?google=...), mostrado uma vez e tirado da URL.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resultado = params.get("google");
+    if (!resultado) return;
+    if (resultado.startsWith("erro")) toast.error(`Google Agenda: ${resultado}`);
+    else toast.success(`Google Agenda: ${resultado}.`);
+    params.delete("google");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+  }, []);
 
   const cfg = cfgQuery.data;
   const isLoading = cfgQuery.isLoading;
@@ -132,32 +147,20 @@ export function GoogleCalendarConfig() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="gcal-id">Calendário de destino</Label>
-                {calsQuery.data && calsQuery.data.length > 0 ? (
-                  <Select value={calendarId} onValueChange={setCalendarId}>
-                    <SelectTrigger id="gcal-id">
-                      <SelectValue placeholder="Selecione um calendário" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {calsQuery.data.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.summary} {c.primary && "(principal)"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    id="gcal-id"
-                    placeholder="primary ou id-do-calendario@group.calendar.google.com"
-                    value={calendarId}
-                    onChange={(e) => setCalendarId(e.target.value)}
-                  />
-                )}
-                {calsQuery.isError && (
-                  <p className="text-xs text-muted-foreground">
-                    Não foi possível listar seus calendários — informe o ID manualmente.
+                <Input
+                  id="gcal-id"
+                  placeholder="e-mail da agenda ou id@group.calendar.google.com"
+                  value={calendarId}
+                  onChange={(e) => setCalendarId(e.target.value)}
+                />
+                {acessoQuery.data?.ok ? (
+                  <p className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Acesso confirmado
+                    {acessoQuery.data.nome ? `: ${acessoQuery.data.nome}` : ""}.
                   </p>
-                )}
+                ) : acessoQuery.data?.erro ? (
+                  <p className="text-xs text-muted-foreground">{acessoQuery.data.erro}</p>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="gcal-dias">Horizonte de sincronização (dias)</Label>
@@ -167,9 +170,36 @@ export function GoogleCalendarConfig() {
                   min={1}
                   max={180}
                   value={dias}
-                  onChange={(e) => setDias(Math.max(1, Math.min(180, Number(e.target.value) || 30)))}
+                  onChange={(e) =>
+                    setDias(Math.max(1, Math.min(180, Number(e.target.value) || 30)))
+                  }
                 />
               </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 p-3">
+              <div>
+                <p className="text-sm font-medium">Conta Google</p>
+                <p className="text-xs text-muted-foreground">
+                  {acessoQuery.data?.conta
+                    ? `Conectada: ${acessoQuery.data.conta}`
+                    : "Nenhuma conta conectada. Entre com a conta dona da agenda da equipe."}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => conectarMut.mutate()}
+                disabled={conectarMut.isPending}
+              >
+                {conectarMut.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Link2 className="h-3.5 w-3.5" />
+                )}
+                {acessoQuery.data?.conta ? "Reconectar" : "Conectar conta Google"}
+              </Button>
             </div>
 
             <div className="flex items-center justify-between rounded-xl border bg-muted/30 p-3">
