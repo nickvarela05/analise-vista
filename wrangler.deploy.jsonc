@@ -11,13 +11,16 @@
   // Navegações do navegador (Sec-Fetch-Mode: navigate) que não casam com um arquivo recebem
   // o index.html (shell do SPA) direto dos assets, sem invocar o Worker. Requisições que não
   // são navegação (fetch das rotas /api, /mcp, /.well-known) seguem para o Worker.
-  // Exceção: /api/* sempre passa pelo Worker, porque a volta do login do Google
-  // (/api/public/google-oauth-callback) é uma navegação e caía no 404 do SPA (16/10/2026).
+  // Exceção: estes caminhos sempre passam pelo Worker. /api/* porque a volta do login do
+  // Google (/api/public/google-oauth-callback) é uma navegação e caía no 404 do SPA. ATENÇÃO:
+  // com run_worker_first em lista, o que não está na lista e não é arquivo recebe o index.html
+  // mesmo sem ser navegação — só com "/api/*" as chamadas /_serverFn/ das telas quebraram
+  // ("Invariant failed", 16/10/2026). Toda rota de servidor precisa estar aqui.
   "assets": {
     "binding": "ASSETS",
     "directory": ".output/public",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/_serverFn/*", "/mcp", "/mcp/*", "/.mcp/*", "/.well-known/*"]
   },
   // Obrigatório para `wrangler preview` (prévias por branch/PR), mesmo vazio. Os secrets das
   // prévias ficam na "Preview base config" (`wrangler preview base-config secret put`), não aqui;
