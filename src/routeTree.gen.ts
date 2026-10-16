@@ -15,6 +15,7 @@ import { Route as TarefasRouteImport } from './routes/tarefas'
 import { Route as ReunioesRouteImport } from './routes/reunioes'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as ProcessosRouteImport } from './routes/processos'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PainelRouteImport } from './routes/painel'
@@ -65,6 +66,11 @@ const RelatoriosRoute = RelatoriosRouteImport.update({
 const ProcessosRoute = ProcessosRouteImport.update({
   id: '/processos',
   path: '/processos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortfolioRoute = PortfolioRouteImport.update({
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -222,6 +229,7 @@ export interface FileRoutesByTo {
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/processos': typeof ProcessosRoute
   '/relatorios': typeof RelatoriosRoute
   '/reunioes': typeof ReunioesRoute
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/painel'
     | '/perfil'
     | '/portfolio'
+    | '/privacidade'
     | '/processos'
     | '/relatorios'
     | '/reunioes'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/painel'
     | '/perfil'
     | '/portfolio'
+    | '/privacidade'
     | '/processos'
     | '/relatorios'
     | '/reunioes'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/painel'
     | '/perfil'
     | '/portfolio'
+    | '/privacidade'
     | '/processos'
     | '/relatorios'
     | '/reunioes'
@@ -371,6 +383,7 @@ export interface RootRouteChildren {
   PainelRoute: typeof PainelRoute
   PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   ProcessosRoute: typeof ProcessosRoute
   RelatoriosRoute: typeof RelatoriosRoute
   ReunioesRoute: typeof ReunioesRoute
@@ -429,6 +442,13 @@ declare module '@tanstack/react-router' {
       path: '/processos'
       fullPath: '/processos'
       preLoaderRoute: typeof ProcessosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portfolio': {
@@ -595,6 +615,7 @@ const rootRouteChildren: RootRouteChildren = {
   PainelRoute: PainelRoute,
   PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   ProcessosRoute: ProcessosRoute,
   RelatoriosRoute: RelatoriosRoute,
   ReunioesRoute: ReunioesRoute,
