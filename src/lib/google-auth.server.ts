@@ -19,11 +19,19 @@ const STATE_VALIDADE_MS = 10 * 60_000;
 let tokenCache: { token: string; expiraEm: number } | null = null;
 
 function clienteOAuth() {
-  const id = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const secret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  // trim: colar no terminal pode trazer quebra de linha junto com o valor.
+  const id = process.env.GOOGLE_OAUTH_CLIENT_ID?.trim();
+  const secret = process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
   if (!id || !secret) {
     throw new Error(
       "GOOGLE_OAUTH_CLIENT_ID ou GOOGLE_OAUTH_CLIENT_SECRET não configurados no Worker.",
+    );
+  }
+  // O ID do cliente não é segredo (vai na URL do Google); dá para diagnosticar.
+  if (!id.endsWith(".apps.googleusercontent.com")) {
+    throw new Error(
+      `GOOGLE_OAUTH_CLIENT_ID gravado parece incompleto (${id.length} caracteres); ` +
+        "o ID termina em .apps.googleusercontent.com.",
     );
   }
   return { id, secret };
