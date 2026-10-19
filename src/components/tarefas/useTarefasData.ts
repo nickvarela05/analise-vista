@@ -1,5 +1,10 @@
 import * as React from "react";
-import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  keepPreviousData,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import type { TarefaRow } from "@/lib/db-types";
@@ -19,11 +24,32 @@ export type StatusLogMap = Record<string, StatusLogItem[]>;
 
 export type ColabMini = { id: string; nome: string; cargo: string | null };
 export type DemandaMini = { id: string; titulo: string };
-export type LoteMini = { id: string; nome: string; tipo: string; total_tarefas: number; created_at: string };
+export type LoteMini = {
+  id: string;
+  nome: string;
+  tipo: string;
+  total_tarefas: number;
+  created_at: string;
+};
 
 // Colunas usadas pelo Kanban / Lista / filtros. Evita `select('*')` e reduz payload.
-const TAREFA_COLUMNS =
+export const TAREFA_COLUMNS =
   "id,titulo,descricao,status,prioridade,em_teste,equipe_toda,data_prevista,concluida_em,demanda_id,origem_importacao,lote_importacao_id,responsavel_id,responsaveis_ids,criado_por,created_at,updated_at,sistema,link_homologacao,observacao_homologacao,data_homologacao,numero_eproject,liberacao_versao_em,liberacao_versao_por,liberacao_acesso_em,liberacao_acesso_por,liberacao_acesso_dispensada,liberacao_objetos,liberacao_validada_em,liberacao_validada_por";
+
+/**
+ * Recarrega só estas tarefas e troca as linhas no cache da lista (Tarefas e Central usam a mesma
+ * chave). Depois de uma ação numa tarefa, a tela atualiza com uma consulta pequena em vez de
+ * esperar todas as consultas de Tarefas (antes: 2 a 3 s na Liberação em produção, 19/10/2026).
+ */
+export async function atualizarTarefasNoCache(qc: QueryClient, ids: string[]) {
+  if (ids.length === 0) return;
+  const { data, error } = await supabase.from("todo").select(TAREFA_COLUMNS).in("id", ids);
+  if (error) throw error;
+  const novas = new Map(((data ?? []) as TarefaRow[]).map((t) => [t.id, t]));
+  qc.setQueryData<TarefaRow[]>(qk.tarefas.all(), (lista) =>
+    lista?.map((t) => novas.get(t.id) ?? t),
+  );
+}
 
 /**
  * Centraliza as queries da página de Tarefas.
@@ -38,17 +64,25 @@ export function useTarefasData() {
   const qc = useQueryClient();
 
   // Realtime: qualquer alteração em `todo` feita por outro usuário atualiza o
-  // Kanban/Lista na hora, sem precisar de F5.
+  // Kanban/Lista na hora, sem precisar de F5. Uma ação gera 2 ou 3 eventos seguidos (a tarefa,
+  // o histórico, a mudança de status); eles viram uma recarga só, e sem cancelar a que já está
+  // em andamento — antes cada evento cancelava e recomeçava todas (19/10/2026).
   React.useEffect(() => {
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    const recarregar = () => {
+      clearTimeout(espera);
+      espera = setTimeout(() => {
+        // ["tarefas"] já cobre a lista, o histórico de status, as reprovações e a Central.
+        qc.invalidateQueries({ queryKey: qk.tarefas.all() }, { cancelRefetch: false });
+        qc.invalidateQueries({ queryKey: qk.tarefas.counts() }, { cancelRefetch: false });
+      }, 400);
+    };
     const ch = supabase
       .channel("tarefas-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "todo" }, () => {
-        qc.invalidateQueries({ queryKey: qk.tarefas.all() });
-        qc.invalidateQueries({ queryKey: ["tarefas", "status-log"] });
-        qc.invalidateQueries({ queryKey: qk.tarefas.counts() });
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "todo" }, recarregar)
       .subscribe();
     return () => {
+      clearTimeout(espera);
       supabase.removeChannel(ch);
     };
   }, [qc]);
