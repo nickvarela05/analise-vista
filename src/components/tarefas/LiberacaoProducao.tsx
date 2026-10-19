@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type { TarefaRow } from "@/lib/db-types";
 import { confirmarLiberacao, etapasLiberacao, type EtapaLiberacao } from "./lib/liberacao";
+import { atualizarTarefasNoCache } from "./useTarefasData";
 
 /**
  * Bloco "Liberação em produção" da tarefa (Pré-build e Produção): versão publicada, acessos
@@ -40,7 +40,8 @@ export function LiberacaoProducao({ tarefa }: { tarefa: TarefaRow }) {
       if (r.em_producao > 0) toast.success("Liberação completa: a tarefa foi para Produção");
       // Segura o botão até a tarefa recarregada chegar. Sem isso, no teste de 08/10 o botão
       // voltou antes da tela mostrar a confirmação e a etapa foi confirmada duas vezes.
-      await qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+      // Recarrega só esta tarefa; o resto da tela vem pelo realtime (19/10/2026).
+      await atualizarTarefasNoCache(qc, [tarefa.id]);
     } catch (e) {
       toast.error("Não foi possível salvar", { description: (e as Error).message });
     } finally {

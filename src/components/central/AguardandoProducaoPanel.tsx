@@ -18,10 +18,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/lib/auth-context";
-import { qk } from "@/lib/queries/keys";
 import { cn } from "@/lib/utils";
 import type { TarefaRow } from "@/lib/db-types";
 import { confirmarLiberacao, faltaLiberacao } from "@/components/tarefas/lib/liberacao";
+import { atualizarTarefasNoCache } from "@/components/tarefas/useTarefasData";
 import type { Aguardando } from "./lib/central";
 
 /** Dias de espera a partir dos quais a tarefa chama atenção (a mediana medida em 01/10 era 7). */
@@ -118,7 +118,7 @@ export function AguardandoProducaoPanel({
       toast.success(`Versão publicada em ${ids.length} tarefa${ids.length === 1 ? "" : "s"}`, {
         description: "Falta liberar os acessos e validar em produção, em cada tarefa.",
       });
-      qc.invalidateQueries({ queryKey: qk.tarefas.all() });
+      await atualizarTarefasNoCache(qc, ids);
     } catch (e) {
       toast.error("Não foi possível confirmar a versão", { description: (e as Error).message });
     } finally {
