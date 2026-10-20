@@ -24,6 +24,11 @@ import { relatoriosInativosQuery, solicitacoesRelatoriosQuery } from "@/lib/quer
 import { cn } from "@/lib/utils";
 import { mesmoNome } from "@/components/central/lib/central";
 import {
+  entradasPreBuild,
+  filaPreBuild,
+  INICIO_HISTORICO_COMPLETO,
+  liberadasPorSemana,
+  quemLibera,
   qualidadePorSistema,
   ritmoSemanal,
   SEM_SISTEMA,
@@ -82,6 +87,12 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
   const testadas8 = ritmo.reduce((s, w) => s + w.aprovado + w.ressalvas + w.reprovado, 0);
   const esperas = React.useMemo(() => temposDeEspera(eventos, subDays(new Date(), 56)), [eventos]);
   const qualidade = React.useMemo(() => qualidadePorSistema(eventos, 90), [eventos]);
+  const fila = React.useMemo(
+    () => filaPreBuild(tarefas, entradasPreBuild(eventos)),
+    [tarefas, eventos],
+  );
+  const liberadas = React.useMemo(() => liberadasPorSemana(eventos, 8), [eventos]);
+  const liberadores = React.useMemo(() => quemLibera(tarefas, subDays(new Date(), 56)), [tarefas]);
 
   const relatorios = React.useMemo(() => {
     const inat = new Set(inativos);
@@ -118,7 +129,7 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
         loading={isLoading || carregandoEventos}
         eyebrow="Gestão"
         title="Painel da gestão"
-        description="Ritmo da homologação, onde as tarefas esperam, qualidade por sistema, relatórios e carga da equipe."
+        description="Ritmo da homologação, onde as tarefas esperam, liberação em produção, qualidade por sistema, relatórios e carga da equipe."
         icon={Gauge}
         tone="violet"
         statsGridClassName="grid-cols-2 lg:grid-cols-4"
@@ -240,6 +251,103 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
               </p>
             )}
           </div>
+        </Panel>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Panel
+          title="Fila em Pré-build"
+          hint="Tarefas enviadas que ainda não foram para Produção, pela idade desde a entrada em Pré-build. As que entraram antes de 08/10/2026 não têm a data registrada e ficam separadas."
+        >
+          <p className="text-3xl font-semibold tabular-nums">{fila.total}</p>
+          <p className="mb-3 text-[11px] text-muted-foreground">
+            tarefa{fila.total === 1 ? "" : "s"} esperando produção
+          </p>
+          <ul className="space-y-2 text-sm">
+            {(
+              [
+                { chave: "mais14", rotulo: "Mais de 14 dias", cor: "bg-rose-500" },
+                { chave: "de8a14", rotulo: "8 a 14 dias", cor: "bg-amber-500" },
+                { chave: "ate7", rotulo: "Até 7 dias", cor: "bg-emerald-500" },
+                {
+                  chave: "semData",
+                  rotulo: `Antes de ${INICIO_HISTORICO_COMPLETO.slice(8, 10)}/${INICIO_HISTORICO_COMPLETO.slice(5, 7)} (sem data)`,
+                  cor: "bg-muted-foreground/40",
+                },
+              ] as const
+            ).map((f) => (
+              <li key={f.chave} className="flex items-center gap-2">
+                <span className="w-40 shrink-0 text-xs text-muted-foreground">{f.rotulo}</span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={cn("h-full", f.cor)}
+                    style={{
+                      width: `${fila.total ? (fila.faixas[f.chave] / fila.total) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="w-6 text-right text-xs tabular-nums">{fila.faixas[f.chave]}</span>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+
+        <Panel
+          title="Liberadas por semana"
+          hint="Tarefas que entraram em Produção em cada semana (segunda a domingo), pelo histórico de status."
+        >
+          <div className={tv ? "h-64" : "h-48"}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={liberadas} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="semana"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
+                <YAxis
+                  allowDecimals={false}
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  stroke="var(--muted-foreground)"
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  cursor={{ fill: "var(--muted)", opacity: 0.4 }}
+                />
+                <Bar
+                  dataKey="liberadas"
+                  name="Liberadas"
+                  fill="var(--primary)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={36}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+
+        <Panel
+          title="Quem libera (8 semanas)"
+          hint="Quem confirmou a validação em produção. Mostra se a liberação depende de uma pessoa só."
+        >
+          {liberadores.length === 0 ? (
+            <p className="py-6 text-center text-xs text-muted-foreground">
+              Nenhuma liberação no período.
+            </p>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {liberadores.map((p) => (
+                <li key={p.nome} className="flex justify-between border-b pb-1.5 last:border-0">
+                  <span>{p.nome}</span>
+                  <span className="tabular-nums text-muted-foreground">{p.liberadas}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
       </div>
 

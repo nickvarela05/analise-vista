@@ -170,3 +170,90 @@ export function formatarDias(d: number | null): string {
   const n = d.toFixed(1).replace(/\.0$/, "").replace(".", ",");
   return `${n} dia${n === "1" ? "" : "s"}`;
 }
+
+// ---------- Liberação em produção (20/10/2026) ----------
+// As três confirmações da Liberação são marcadas juntas, depois do fato (mediana de 5 s entre
+// elas, medida em 20/10/2026), então o tempo entre etapas não mede nada. O painel mostra a fila
+// em Pré-build, a idade dela, as liberações por semana e quem libera.
+
+/** Desde quando o histórico grava toda mudança de status, inclusive em lote. */
+export const INICIO_HISTORICO_COMPLETO = "2026-10-08";
+
+export type FaixaFila = "ate7" | "de8a14" | "mais14" | "semData";
+export type FilaPreBuild = { total: number; faixas: Record<FaixaFila, number> };
+
+/** Última entrada em Pré-build de cada tarefa, segundo o histórico. */
+export function entradasPreBuild(eventos: readonly EventoStatus[]): Record<string, string> {
+  const m: Record<string, string> = {};
+  for (const e of eventos) {
+    if (e.para === "pre_build" && (!m[e.todo_id] || e.em > m[e.todo_id])) m[e.todo_id] = e.em;
+  }
+  return m;
+}
+
+/**
+ * Tarefas em Pré-build por idade. Sem registro de entrada (entraram antes de 08/10/2026), a tarefa
+ * vai para "semData" em vez de ganhar uma idade inventada, como na Central.
+ */
+export function filaPreBuild(
+  tarefas: readonly { id: string; status: string }[],
+  entradas: Readonly<Record<string, string>>,
+  ref = new Date(),
+): FilaPreBuild {
+  const faixas: Record<FaixaFila, number> = { ate7: 0, de8a14: 0, mais14: 0, semData: 0 };
+  let total = 0;
+  for (const t of tarefas) {
+    if (t.status !== "pre_build") continue;
+    total++;
+    const iso = entradas[t.id];
+    if (!iso) {
+      faixas.semData++;
+      continue;
+    }
+    const dias = (ref.getTime() - new Date(iso).getTime()) / DIA;
+    if (dias > 14) faixas.mais14++;
+    else if (dias > 7) faixas.de8a14++;
+    else faixas.ate7++;
+  }
+  return { total, faixas };
+}
+
+export type SemanaLiberacao = { semana: string; liberadas: number };
+
+/** Tarefas que entraram em Produção por semana (segunda a domingo), das últimas `semanas`. */
+export function liberadasPorSemana(
+  eventos: readonly EventoStatus[],
+  semanas = 8,
+  ref = new Date(),
+): SemanaLiberacao[] {
+  const inicio = startOfWeek(addWeeks(ref, -(semanas - 1)), { weekStartsOn: 1 });
+  const out = Array.from({ length: semanas }, (_, i) => ({
+    semana: format(addWeeks(inicio, i), "dd/MM"),
+    liberadas: 0,
+  }));
+  for (const e of eventos) {
+    if (e.para !== "producao") continue;
+    const i = differenceInCalendarWeeks(new Date(e.em), inicio, { weekStartsOn: 1 });
+    if (i >= 0 && i < semanas) out[i].liberadas++;
+  }
+  return out;
+}
+
+/** Quem confirmou a validação em produção desde `desde`, de quem mais liberou para quem menos. */
+export function quemLibera(
+  tarefas: readonly {
+    liberacao_validada_por: string | null;
+    liberacao_validada_em: string | null;
+  }[],
+  desde: Date,
+): { nome: string; liberadas: number }[] {
+  const m = new Map<string, number>();
+  for (const t of tarefas) {
+    if (!t.liberacao_validada_por || !t.liberacao_validada_em) continue;
+    if (new Date(t.liberacao_validada_em) < desde) continue;
+    m.set(t.liberacao_validada_por, (m.get(t.liberacao_validada_por) ?? 0) + 1);
+  }
+  return [...m.entries()]
+    .map(([nome, liberadas]) => ({ nome, liberadas }))
+    .sort((a, b) => b.liberadas - a.liberadas || a.nome.localeCompare(b.nome));
+}
