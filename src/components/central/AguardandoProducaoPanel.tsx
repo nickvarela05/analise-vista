@@ -128,6 +128,8 @@ export function AguardandoProducaoPanel({
 
   const comDias = itens.filter((i) => i.dias !== null);
   const maisAntiga = comDias[0]?.dias ?? null;
+  // Selo para a fila esquecida (20/10/2026): o painel completo fica no Painel da gestão.
+  const antigas = comDias.filter((i) => (i.dias ?? 0) > 14).length;
 
   return (
     <Panel
@@ -167,7 +169,12 @@ export function AguardandoProducaoPanel({
               <span>{itens.length} tarefas</span>
             )}
             {maisAntiga !== null && (
-              <span>
+              <span className="flex items-center gap-2">
+                {antigas > 0 && (
+                  <Badge variant="destructive" className="text-[10px]">
+                    {antigas} há mais de 14 dias
+                  </Badge>
+                )}
                 mais antiga: {maisAntiga} dia{maisAntiga === 1 ? "" : "s"}
               </span>
             )}
