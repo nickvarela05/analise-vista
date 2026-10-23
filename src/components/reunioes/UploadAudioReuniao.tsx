@@ -203,7 +203,7 @@ export function UploadAudioReuniao({
   };
 
   return (
-    <div className="rounded-lg border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-info/5 p-4">
+    <div className="rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold">

@@ -72,7 +72,7 @@ const tipoConfig = {
     badge: "border-destructive/40 bg-destructive/10 text-destructive",
     iconBg: "bg-destructive/10 text-destructive",
     frame: "border-destructive/30",
-    gradient: "from-destructive via-destructive/70 to-amber-500",
+    gradient: "bg-destructive",
     chip: "bg-destructive/10 text-destructive ring-destructive/25",
     pulse: true,
   },
@@ -83,7 +83,7 @@ const tipoConfig = {
     badge: "border-amber-500/40 bg-amber-500/10 text-amber-600",
     iconBg: "bg-amber-500/10 text-amber-600",
     frame: "border-amber-500/30",
-    gradient: "from-amber-500 via-amber-400 to-orange-400",
+    gradient: "bg-amber-500",
     chip: "bg-amber-500/10 text-amber-700 ring-amber-500/25 dark:text-amber-300",
     pulse: false,
   },
@@ -94,7 +94,7 @@ const tipoConfig = {
     badge: "border-sky-500/40 bg-sky-500/10 text-sky-600",
     iconBg: "bg-sky-500/10 text-sky-600",
     frame: "border-sky-500/30",
-    gradient: "from-sky-500 via-sky-400 to-cyan-400",
+    gradient: "bg-sky-500",
     chip: "bg-sky-500/10 text-sky-700 ring-sky-500/25 dark:text-sky-300",
     pulse: false,
   },
@@ -132,7 +132,7 @@ function AvisoProcessoCard({
       )}
     >
       {/* Faixa superior em gradiente por urgência */}
-      <div className={cn("h-1.5 w-full bg-gradient-to-r", cfg.gradient)} />
+      <div className={cn("h-1 w-full", cfg.gradient)} />
 
       <div className="space-y-3 p-4 sm:p-5">
         {/* Cabeçalho */}

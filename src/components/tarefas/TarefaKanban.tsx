@@ -90,7 +90,7 @@ export function TarefaKanban({
               )}
             >
               {/* Header com gradient tonal */}
-              <div className={cn("relative overflow-hidden bg-gradient-to-b to-transparent px-3 py-2.5", tone.wash)}>
+              <div className={cn("relative overflow-hidden px-3 py-2.5")}>
                 <div className={cn("absolute left-0 top-0 h-full w-[3px]", tone.bar)} />
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">

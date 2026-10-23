@@ -147,17 +147,17 @@ function statusBadgeClass(s: string) {
 
 const REUNIAO_TONE: Record<string, { accent: string; statusBadge: string; dot: string }> = {
   agendada: {
-    accent: "from-sky-500/80 via-sky-500/40 to-transparent",
+    accent: "bg-sky-500/70",
     statusBadge: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
     dot: "bg-sky-500",
   },
   realizada: {
-    accent: "from-emerald-500/80 via-emerald-500/40 to-transparent",
+    accent: "bg-emerald-500/70",
     statusBadge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
     dot: "bg-emerald-500",
   },
   cancelada: {
-    accent: "from-rose-500/80 via-rose-500/40 to-transparent",
+    accent: "bg-rose-500/70",
     statusBadge: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
     dot: "bg-rose-500",
   },
@@ -767,7 +767,7 @@ function Reunioes() {
         actions={
           <Button
             onClick={openCreate}
-            className="gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/20 hover:from-violet-500/90 hover:to-fuchsia-500/90"
+            className="gap-2"
           >
             <Plus className="h-4 w-4" /> Nova reunião
           </Button>
@@ -897,13 +897,13 @@ function Reunioes() {
                 ) : (
                   <span
                     aria-hidden
-                    className={cn("absolute inset-x-0 top-0 h-1 bg-gradient-to-r", tone.accent)}
+                    className={cn("absolute inset-x-0 top-0 h-0.5", tone.accent)}
                   />
                 )}
                 {/* hover wash */}
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-br from-violet-500/0 to-fuchsia-500/0 opacity-0 transition-opacity group-hover:opacity-100 group-hover:from-violet-500/[0.04] group-hover:to-fuchsia-500/[0.04]"
+                  className="pointer-events-none absolute inset-0 bg-primary/[0.03] opacity-0 transition-opacity group-hover:opacity-100"
                 />
 
 
@@ -982,7 +982,7 @@ function Reunioes() {
                       className={cn(
                         "rounded-lg border p-2.5 text-xs leading-relaxed",
                         hasIA
-                          ? "border-violet-500/20 bg-gradient-to-br from-violet-500/[0.06] to-fuchsia-500/[0.04] text-foreground/80"
+                          ? "border-primary/20 bg-primary/5 text-foreground/80"
                           : "border-border/50 bg-muted/40 text-muted-foreground",
                       )}
                     >
@@ -1007,7 +1007,7 @@ function Reunioes() {
 
                   <div className="flex flex-wrap items-center gap-1">
                     {isProcessing && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500/15 to-fuchsia-500/15 px-2 py-0.5 text-[10px] font-medium text-violet-700 dark:text-violet-300">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
                         <span className="reuniao-processing-dot" />
                         {phaseLabel}
                       </span>

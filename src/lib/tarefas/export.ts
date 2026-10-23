@@ -1,5 +1,3 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import type { TarefaRow } from "@/lib/db-types";
 import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
@@ -114,7 +112,11 @@ const STATUS_ORDER: string[] = [
   "pendente",
 ];
 
-export function exportToPdf(
+/**
+ * O jspdf (cerca de 450 KB) só é baixado na hora de exportar; antes vinha junto com a tela de
+ * Tarefas, mesmo sem ninguém exportar (23/10/2026).
+ */
+export async function exportToPdf(
   tarefas: TarefaRow[],
   colabs: ExportColab[],
   lotes: ExportLote[],
@@ -122,6 +124,10 @@ export function exportToPdf(
   filename: string,
   cabecalho: string,
 ) {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
   const cols = ["Título", "Status", "Prioridade", "Responsáveis", "Prazo", "Lote", "Origem"];
 

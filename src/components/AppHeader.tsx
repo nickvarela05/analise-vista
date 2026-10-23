@@ -65,7 +65,7 @@ export function AppHeader() {
       )}
     >
       {/* subtle gradient accent */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
 
       <SidebarTrigger className="hover:bg-accent" />
 
@@ -139,7 +139,7 @@ export function AppHeader() {
             >
               <div className="relative">
                 <Avatar className="h-7 w-7 ring-2 ring-primary/20">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-violet-500 text-[11px] font-bold text-primary-foreground">
+                  <AvatarFallback className="bg-primary/15 text-[11px] font-semibold text-primary">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -160,7 +160,7 @@ export function AppHeader() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center gap-2.5">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-violet-500 text-xs font-bold text-primary-foreground">
+                  <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

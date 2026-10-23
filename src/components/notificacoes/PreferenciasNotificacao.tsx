@@ -91,7 +91,7 @@ export function PreferenciasNotificacao() {
   return (
     <Card className="overflow-hidden">
       {/* Header tonal */}
-      <div className="relative bg-gradient-to-br from-indigo-500/10 via-background to-background p-5">
+      <div className="relative p-5">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-indigo-500/15 blur-3xl" />
         <div className="relative flex items-start gap-3">
           <div className="rounded-2xl bg-indigo-500/15 p-2.5 text-indigo-600 ring-1 ring-indigo-500/25 dark:text-indigo-300">

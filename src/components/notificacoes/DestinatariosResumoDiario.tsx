@@ -91,7 +91,7 @@ export function DestinatariosResumoDiario() {
 
   return (
     <Card className="overflow-hidden">
-      <div className="relative bg-gradient-to-br from-violet-500/10 via-background to-background p-5">
+      <div className="relative p-5">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="relative flex items-start gap-3">
           <div className="rounded-2xl bg-violet-500/15 p-2.5 text-violet-600 ring-1 ring-violet-500/25 dark:text-violet-300">

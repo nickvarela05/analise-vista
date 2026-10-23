@@ -61,7 +61,9 @@ export function ExportarTarefasDialog({
     if (escopo === "filtrados") return tarefasFiltradas;
     if (escopo === "lotes") {
       if (lotesSel.length === 0) return [];
-      return todasTarefas.filter((t) => t.lote_importacao_id && lotesSel.includes(t.lote_importacao_id));
+      return todasTarefas.filter(
+        (t) => t.lote_importacao_id && lotesSel.includes(t.lote_importacao_id),
+      );
     }
     if (statusSel.length === 0) return [];
     return todasTarefas.filter((t) => statusSel.includes(t.status));
@@ -94,7 +96,12 @@ export function ExportarTarefasDialog({
         return;
       }
     } else {
-      exportToPdf(tarefasParaExportar, colabs, lotes, demandas, filename, cabecalho);
+      try {
+        await exportToPdf(tarefasParaExportar, colabs, lotes, demandas, filename, cabecalho);
+      } catch (e) {
+        toast.error("Não foi possível gerar o PDF", { description: (e as Error).message });
+        return;
+      }
     }
     setOpen(false);
   };
@@ -110,8 +117,8 @@ export function ExportarTarefasDialog({
         <DialogHeader>
           <DialogTitle>Exportar relatório de tarefas</DialogTitle>
           <DialogDescription>
-            Escolha o escopo e o formato. Inclui título, descrição, status, prioridade, responsáveis,
-            prazo, lote, origem e demanda vinculada.
+            Escolha o escopo e o formato. Inclui título, descrição, status, prioridade,
+            responsáveis, prazo, lote, origem e demanda vinculada.
           </DialogDescription>
         </DialogHeader>
 

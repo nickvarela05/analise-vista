@@ -42,25 +42,22 @@ export function DialogHero({
   return (
     <div
       className={cn(
-        "relative -mx-6 -mt-6 mb-2 overflow-hidden rounded-t-lg border-b bg-gradient-to-br via-background to-background px-6 py-5",
-        t.wash,
+        "relative -mx-6 -mt-6 mb-2 overflow-hidden rounded-t-lg border-b px-6 py-5",
         className,
       )}
     >
-      <div className={cn("pointer-events-none absolute -top-16 -right-12 h-44 w-44 rounded-full blur-3xl", t.glow1)} />
-      <div className={cn("pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full blur-3xl", t.glow2)} />
       <div className="relative flex items-start gap-3">
-        <div className={cn("rounded-xl p-2.5 ring-1", t.iconBg, t.iconText, t.ring)}>
+        <div className={cn("rounded-xl p-2.5", t.iconBg, t.iconText)}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
           {eyebrow && (
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               {eyebrow}
             </p>
           )}
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-lg font-semibold tracking-tight text-transparent sm:text-xl">
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
               {title}
             </h2>
             {ai && (

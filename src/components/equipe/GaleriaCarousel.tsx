@@ -117,7 +117,7 @@ export function GaleriaCarousel() {
       >
         <div className="grid gap-3 lg:grid-cols-[1fr_140px]">
           {/* Hero preview */}
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-muted/60 to-muted ring-1 ring-border/50">
+          <div className="group relative overflow-hidden rounded-xl bg-muted ring-1 ring-border/50">
             {/* Blurred backdrop preserves aspect without cropping */}
             <img
               key={`bg-${active.id}`}

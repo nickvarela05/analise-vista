@@ -116,11 +116,11 @@ function Configuracoes() {
         <TabsContent value="conta" className="space-y-4">
           {/* Identidade */}
           <Card className="overflow-hidden border-indigo-500/15">
-            <div className="relative bg-gradient-to-br from-indigo-500/10 via-background to-background p-5">
+            <div className="relative p-5">
               <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-indigo-500/15 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-20 -left-16 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl" />
               <div className="relative flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 text-base font-semibold text-indigo-700 ring-1 ring-indigo-500/30 dark:text-indigo-300">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-base font-semibold text-primary">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">

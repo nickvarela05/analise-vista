@@ -517,7 +517,7 @@ function Atividades() {
                 }
                 className={cn(
                   "group transition",
-                  isHoje && "ring-2 ring-sky-500/40 bg-gradient-to-br from-sky-500/5 to-transparent",
+                  isHoje && "ring-2 ring-primary/40 bg-primary/5",
                 )}
               >
                 <div className="min-h-[140px] space-y-2 sm:min-h-[180px]">

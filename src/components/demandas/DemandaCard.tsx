@@ -68,11 +68,11 @@ export function DemandaCard({
         className={cn(
           "absolute inset-y-0 left-0 w-[3px] rounded-l-xl",
           isCritica
-            ? "bg-gradient-to-b from-destructive to-rose-500"
+            ? "bg-destructive"
             : demanda.prioridade === "alta"
-              ? "bg-gradient-to-b from-amber-500 to-orange-500"
+              ? "bg-amber-500"
               : demanda.prioridade === "media"
-                ? "bg-gradient-to-b from-indigo-500 to-violet-500"
+                ? "bg-primary"
                 : "bg-muted-foreground/30",
         )}
       />
@@ -80,7 +80,7 @@ export function DemandaCard({
       {/* subtle hover wash */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-indigo-500/0 to-violet-500/0 opacity-0 transition-opacity group-hover:opacity-100 group-hover:from-indigo-500/[0.04] group-hover:to-violet-500/[0.04]"
+        className="pointer-events-none absolute inset-0 bg-primary/[0.03] opacity-0 transition-opacity group-hover:opacity-100"
       />
 
       <div className="relative space-y-2 pl-1">

@@ -28,7 +28,7 @@ export function DialogSection({
         variant === "default" && "bg-card/40",
         variant === "tinted" && "bg-muted/40",
         variant === "ai" &&
-          "border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-transparent",
+          "border-primary/20 bg-primary/5",
         className,
       )}
     >

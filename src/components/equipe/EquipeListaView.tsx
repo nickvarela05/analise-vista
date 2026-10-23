@@ -31,14 +31,14 @@ const LOCAIS: {
     icon: Building2,
     accent: "text-primary",
     ring: "ring-primary/20",
-    bg: "from-primary/10 via-primary/5 to-transparent",
+    bg: "bg-card",
   },
   {
     key: "rua",
     icon: MapPin,
     accent: "text-amber-600 dark:text-amber-400",
     ring: "ring-amber-500/20",
-    bg: "from-amber-500/10 via-amber-500/5 to-transparent",
+    bg: "bg-card",
   },
 ];
 
@@ -87,7 +87,7 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
         return (
           <section
             key={key}
-            className={`relative overflow-hidden rounded-2xl border bg-gradient-to-br ${bg}`}
+            className={`relative overflow-hidden rounded-2xl border ${bg}`}
           >
             <header className="flex items-center justify-between gap-2 border-b border-border/40 bg-background/40 px-5 py-3 backdrop-blur">
               <div className="flex items-center gap-2.5">
