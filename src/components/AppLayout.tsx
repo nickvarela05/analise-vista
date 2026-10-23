@@ -17,7 +17,7 @@ export function AppLayout({
   children: React.ReactNode;
   bare?: boolean;
 }) {
-  const { session, loading, mustChangePassword } = useAuth();
+  const { session, sessaoPronta, loading, mustChangePassword } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   // Endereço pedido: lido do navegador, porque no primeiro carregamento o roteador ainda está
@@ -28,13 +28,15 @@ export function AppLayout({
   // Desvio para o login ou para a troca de senha, uma vez só. Antes era um <Navigate> no render,
   // que a cada nova renderização disparava outra navegação: abrir uma página interna sem login
   // gerava 53 erros "React #185" (laço de atualização) e perdia o endereço pedido (13/10/2026).
-  const destino = loading
+  // A página monta assim que a sessão é lida; papel e troca de senha chegam em paralelo e, se
+  // for preciso trocar a senha, o desvio acontece logo depois (23/10/2026).
+  const destino = !sessaoPronta
     ? null
     : !session
       ? path === "/login" || path === "/"
         ? "/login"
         : `/login?redirect=${encodeURIComponent(path + (typeof window !== "undefined" ? window.location.search : ""))}`
-      : mustChangePassword && path !== "/alterar-senha"
+      : !loading && mustChangePassword && path !== "/alterar-senha"
         ? "/alterar-senha"
         : null;
   const desviouPara = React.useRef<string | null>(null);
@@ -45,7 +47,7 @@ export function AppLayout({
   }, [destino, navigate]);
 
   // Enquanto confere o login, mostra o esqueleto da página em vez da rodinha (23/10/2026).
-  if (loading || destino) return <EsqueletoPagina />;
+  if (!sessaoPronta || destino) return <EsqueletoPagina />;
 
   if (bare) return <>{children}</>;
 
