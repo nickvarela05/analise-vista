@@ -33,6 +33,30 @@ export const reunioesQuery = () =>
     },
   });
 
+/**
+ * Reuniões de hoje para a Central, só com as colunas do painel "Meu dia" (23/10/2026). Antes a
+ * Central baixava todas as reuniões com transcrição e resumo (cerca de 340 KB, 290 ms no banco)
+ * para mostrar as de hoje.
+ */
+export const reunioesDeHojeQuery = () =>
+  queryOptions({
+    queryKey: ["central", "reunioes-hoje"] as const,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const inicio = new Date();
+      inicio.setHours(0, 0, 0, 0);
+      const fim = new Date(inicio.getTime() + 86_400_000);
+      const { data, error } = await supabase
+        .from("reuniao")
+        .select("id, titulo, data_reuniao, status, responsavel_id, responsaveis_ids, equipe_toda")
+        .gte("data_reuniao", inicio.toISOString())
+        .lt("data_reuniao", fim.toISOString())
+        .order("data_reuniao");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 export const avisosAtivosQuery = () =>
   queryOptions({
     queryKey: qk.dash.avisos(),

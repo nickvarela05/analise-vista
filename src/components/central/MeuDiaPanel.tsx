@@ -63,7 +63,7 @@ export function MeuDiaPanel({
   vinculado: boolean;
   meusTestes: TarefaRow[];
   meusRelatorios: SolicitacaoRelatorio[];
-  minhasReunioes: ReuniaoRow[];
+  minhasReunioes: Pick<ReuniaoRow, "id" | "titulo" | "data_reuniao" | "status">[];
   onOpen: (t: TarefaRow) => void;
 }) {
   if (!vinculado) {

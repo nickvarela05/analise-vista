@@ -30,7 +30,7 @@ import {
   avisosAtivosQuery,
   meuProfileQuery,
   relatoriosInativosQuery,
-  reunioesQuery,
+  reunioesDeHojeQuery,
   solicitacoesRelatoriosQuery,
 } from "@/lib/queries/compartilhadas";
 import type { TarefaRow } from "@/lib/db-types";
@@ -63,7 +63,7 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
   const { tarefas, colabs, lotes, isLoading } = useTarefasData();
   const { data: perfil } = useQuery(meuProfileQuery(user?.id));
   const { data: avisos = [] } = useQuery(avisosAtivosQuery());
-  const { data: reunioes = [] } = useQuery({ ...reunioesQuery(), enabled: !tv });
+  const { data: reunioes = [] } = useQuery({ ...reunioesDeHojeQuery(), enabled: !tv });
   const { data: solicitacoes = [] } = useQuery({ ...solicitacoesRelatoriosQuery(), enabled: !tv });
   const { data: inativos = [] } = useQuery({ ...relatoriosInativosQuery(), enabled: !tv });
 
@@ -83,7 +83,10 @@ export function CentralHomologacao({ tv = false }: { tv?: boolean }) {
   const qc = useQueryClient();
   const retestar = React.useCallback(
     async (t: TarefaRow) => {
-      const { error } = await supabase.from("todo").update({ status: "homologacao" }).eq("id", t.id);
+      const { error } = await supabase
+        .from("todo")
+        .update({ status: "homologacao" })
+        .eq("id", t.id);
       if (error) {
         toast.error("Não foi possível voltar para Homologação", { description: error.message });
         return;

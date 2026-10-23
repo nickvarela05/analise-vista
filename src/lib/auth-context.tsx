@@ -9,7 +9,10 @@ interface AuthContextValue {
   user: User | null;
   role: AppRole | null;
   mustChangePassword: boolean;
+  /** Papel e troca de senha ainda carregando (menu de Gestão, telas só de gestor). */
   loading: boolean;
+  /** A sessão já foi lida (com ou sem login). As telas podem começar a buscar dados. */
+  sessaoPronta: boolean;
   signOut: () => Promise<void>;
   refreshMustChangePassword: () => Promise<void>;
 }
@@ -21,29 +24,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = React.useState<AppRole | null>(null);
   const [mustChangePassword, setMustChangePassword] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
+  const [sessaoPronta, setSessaoPronta] = React.useState(false);
 
+  // Uma consulta só para o papel (antes eram duas em sequência): gestor ganha de analista.
   const fetchRole = React.useCallback(async (userId: string) => {
-    const { data: gestor } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "gestor")
-      .maybeSingle();
-
-    if (gestor?.role === "gestor") {
-      setRole("gestor");
-      return "gestor" satisfies AppRole;
-    }
-
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .order("role", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    const nextRole = (data?.role as AppRole) ?? null;
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const papeis = (data ?? []).map((r) => r.role as AppRole);
+    const nextRole: AppRole | null = papeis.includes("gestor") ? "gestor" : (papeis[0] ?? null);
     setRole(nextRole);
     return nextRole;
   }, []);
@@ -77,6 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       lastToken = nextToken;
 
       setSession(newSession);
+      // A tela já pode montar e buscar os dados enquanto o papel carrega (23/10/2026): antes ela
+      // esperava papel e troca de senha, e só então começava a buscar a Central.
+      setSessaoPronta(true);
 
       if (newSession?.user) {
         const userChanged = lastUserId !== newSession.user.id;
@@ -107,7 +97,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void syncAuth(newSession, isInitial);
     });
 
-
     void supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (initialized) return; // onAuthStateChange já tratou
       initialized = true;
@@ -132,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role,
         mustChangePassword,
         loading,
+        sessaoPronta,
         signOut,
         refreshMustChangePassword,
       }}
