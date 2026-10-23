@@ -163,7 +163,16 @@ async function isAuthorized(req: Request): Promise<boolean> {
   }
 }
 
-async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
+/**
+ * Resumo do dia por pessoa (reformulado em 23/10/2026, a pedido do Nickolas):
+ *  - "Com você na rodada": tarefas em Homologação atribuídas à pessoa;
+ *  - alerta de tarefas da rodada sem responsável (para todos: qualquer pessoa da equipe distribui);
+ *  - "Aguardando produção": tarefas em Pré-build e há quanto tempo (para todos).
+ * `apenasUserId` envia só para essa pessoa, sem a trava de um por dia e com "[Teste]" no assunto.
+ */
+async function runResumoDiario(
+  opts: { forceIgnoreWeekday?: boolean; apenasUserId?: string | null } = {},
+) {
   const now = new Date();
 
   // Checa configuração de dias da semana (0=Dom .. 6=Sáb).
@@ -189,9 +198,12 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
   const fimSemanaISO = new Date(now.getTime() + 7 * 24 * 3600 * 1000).toISOString();
   const em14dias = new Date(now.getTime() + 14 * 24 * 3600 * 1000).toISOString().slice(0, 10);
 
-  const { data: users } = await admin
+  const teste = !!opts.apenasUserId;
+  let qUsers = admin
     .from("profiles")
     .select("user_id, email, nome, recebe_resumo_diario, colaborador_id");
+  if (teste) qUsers = qUsers.eq("user_id", opts.apenasUserId!);
+  const { data: users } = await qUsers;
 
   // idempotência: 1x por dia por usuário
   const { data: jaHoje } = await admin
@@ -199,7 +211,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
     .select("user_id")
     .gte("created_at", inicioDia)
     .like("subject", "☀️ Resumo do dia%");
-  const jaSet = new Set((jaHoje ?? []).map((r) => r.user_id));
+  const jaSet = new Set(teste ? [] : (jaHoje ?? []).map((r) => r.user_id));
 
   // Avisos ativos (globais para todos os usuários ativos)
   const { data: avisosAll } = await admin
@@ -228,17 +240,16 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       .gte("data_reuniao", inicioDia)
       .lte("data_reuniao", fimSemanaISO)
       .not("status", "in", "(realizada,cancelada)"),
-    // Tarefas em HOMOLOGAÇÃO (para bloco Agenda da semana).
+    // Rodada: todas as tarefas em Homologação.
     admin
       .from("todo")
-      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
-      .eq("status", "homologacao"),
-    // Tarefas EM TESTE — regra estrita: status = homologacao E em_teste = true.
-    admin
-      .from("todo")
-      .select("id, titulo, data_prevista, em_teste, status, responsavel_id, responsaveis_ids, equipe_toda")
+      .select(
+        "id, titulo, numero_eproject, sistema, data_prevista, status, responsavel_id, responsaveis_ids, equipe_toda",
+      )
       .eq("status", "homologacao")
-      .eq("em_teste", true),
+      .order("numero_eproject"),
+    // Aguardando produção: tarefas em Pré-build.
+    admin.from("todo").select("id, titulo, numero_eproject").eq("status", "pre_build"),
     admin
       .from("chamado_externo")
       .select(
@@ -263,8 +274,44 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
 
   const demAll = demR.data ?? [];
   const reuAll = reuR.data ?? [];
-  const tarAll = tarR.data ?? [];
-  const tarTesteAll = tarTesteR.data ?? [];
+  const rodadaAll = tarR.data ?? [];
+  const preBuildAll = tarTesteR.data ?? [];
+  const semResponsavel = rodadaAll.filter(
+    (t) => !t.equipe_toda && !t.responsavel_id && !(t.responsaveis_ids ?? []).length,
+  ).length;
+
+  // Idade de cada tarefa em Pré-build pela última entrada registrada no histórico. Antes de
+  // 08/10/2026 a mudança em lote não gravava histórico: essas ficam como "desde antes de 08/10".
+  const entradaPreBuild = new Map<string, string>();
+  if (preBuildAll.length) {
+    const { data: hist } = await admin
+      .from("todo_historico")
+      .select("todo_id, created_at")
+      .eq("campo", "status")
+      .eq("valor_novo", "pre_build")
+      .in("todo_id", preBuildAll.map((t) => t.id));
+    for (const h of hist ?? []) {
+      const atual = entradaPreBuild.get(h.todo_id);
+      if (!atual || h.created_at > atual) entradaPreBuild.set(h.todo_id, h.created_at);
+    }
+  }
+  const idadeDias = (id: string) => {
+    const e = entradaPreBuild.get(id);
+    return e ? Math.floor((now.getTime() - new Date(e).getTime()) / 86400000) : null;
+  };
+  const fila = { mais14: 0, de8a14: 0, ate7: 0, semData: 0 };
+  for (const t of preBuildAll) {
+    const d = idadeDias(t.id);
+    if (d === null) fila.semData++;
+    else if (d > 14) fila.mais14++;
+    else if (d > 7) fila.de8a14++;
+    else fila.ate7++;
+  }
+  const maisAntigas = preBuildAll
+    .map((t) => ({ t, d: idadeDias(t.id) }))
+    .filter((x) => x.d !== null)
+    .sort((a, b) => (b.d as number) - (a.d as number))
+    .slice(0, 3);
   const relAll = relR.data ?? [];
   const procAll = (procR.data ?? []) as Array<{
     id: string; nome: string; cor: string | null;
@@ -302,11 +349,15 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
 
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
-      // "Em teste" = status homologacao + em_teste=true (regra estrita).
-      const minhasTarefasTeste = tarTesteAll.filter(meu);
-      const testIds = new Set(minhasTarefasTeste.map((t) => t.id));
-      // "Agenda da semana" mostra homologação restante (sem duplicar em_teste).
-      const minhasTarefas = tarAll.filter((t) => meu(t) && !testIds.has(t.id));
+      // "Com você na rodada": Homologação atribuída à pessoa ("Equipe toda" não entra, senão
+      // todo mundo recebe a rodada inteira). As tarefas saíram de "Foco de hoje" e da agenda.
+      const minhaRodada = rodadaAll.filter(
+        (t) =>
+          !t.equipe_toda &&
+          !!colabId &&
+          (t.responsavel_id === colabId || (t.responsaveis_ids ?? []).includes(colabId)),
+      );
+      const minhasTarefas: Array<{ titulo: string; data_prevista: string | null }> = [];
       const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
@@ -325,8 +376,9 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       const total =
         minhasDemandas.length +
         minhasReunioes.length +
-        minhasTarefas.length +
-        minhasTarefasTeste.length +
+        minhaRodada.length +
+        (semResponsavel > 0 ? 1 : 0) +
+        preBuildAll.length +
         meusRelatorios.length +
         meusAvisos.length +
         meusProcessos.length +
@@ -391,12 +443,41 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
          <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${t.data_prevista ? fmtData(t.data_prevista) : "sem prazo"}</div>`,
         );
 
-      const renderTarefaTeste = (t: (typeof minhasTarefasTeste)[number]) =>
+      const renderRodada = (t: (typeof minhaRodada)[number]) =>
         card(
           "#f43f5e",
-          `${headRow(escapeHtml(t.titulo), t.data_prevista ? prazoBadge(t.data_prevista) : `<span style="background:#fce7f3;color:#9d174d;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.3px">EM TESTE</span>`)}
-         <div style="color:#6b7280;font-size:12px;margin-top:6px">🧪 Disponível para validação${t.data_prevista ? " &nbsp;·&nbsp; 📅 " + fmtData(t.data_prevista) : ""}</div>`,
+          `${headRow(escapeHtml(t.titulo), t.data_prevista ? prazoBadge(t.data_prevista) : "")}
+         ${t.sistema ? `<div style="color:#6b7280;font-size:12px;margin-top:6px">${escapeHtml(t.sistema)}</div>` : ""}`,
         );
+      const LIMITE_RODADA = 5;
+      const rodadaHtml =
+        minhaRodada.slice(0, LIMITE_RODADA).map(renderRodada).join("") +
+        (minhaRodada.length > LIMITE_RODADA
+          ? `<div style="color:#6b7280;font-size:12px">e mais ${minhaRodada.length - LIMITE_RODADA}…</div>`
+          : "");
+      const alertaSemResponsavel =
+        semResponsavel > 0
+          ? `<div style="margin:16px 0 0;padding:12px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;color:#92400e;font-size:13px">👤 <b>${semResponsavel} ${semResponsavel === 1 ? "tarefa da rodada está" : "tarefas da rodada estão"} sem responsável.</b> Distribua pela Central.</div>`
+          : "";
+      const chip = (txt: string, fundo: string, cor: string) =>
+        `<span style="display:inline-block;background:${fundo};color:${cor};font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;margin:0 6px 6px 0">${txt}</span>`;
+      const aguardandoHtml = preBuildAll.length
+        ? `<div>${[
+            fila.mais14 ? chip(`${fila.mais14} há mais de 14 dias`, "#fee2e2", "#991b1b") : "",
+            fila.de8a14 ? chip(`${fila.de8a14} de 8 a 14 dias`, "#fef3c7", "#92400e") : "",
+            fila.ate7 ? chip(`${fila.ate7} até 7 dias`, "#f3f4f6", "#374151") : "",
+            fila.semData ? chip(`${fila.semData} desde antes de 08/10`, "#f3f4f6", "#374151") : "",
+          ].join("")}</div>${
+            maisAntigas.length
+              ? `<div style="color:#6b7280;font-size:12px;margin-top:4px">Mais antigas: ${maisAntigas
+                  .map(
+                    (x) =>
+                      `${escapeHtml(String(x.t.numero_eproject ?? x.t.titulo))} (${x.d} dia${x.d === 1 ? "" : "s"})`,
+                  )
+                  .join(", ")}</div>`
+              : ""
+          }`
+        : "";
 
       const renderReuniao = (r: (typeof minhasReunioes)[number]) =>
         card(
@@ -492,7 +573,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
       const sectionHoje =
         totalHoje > 0
           ? `
-        <div style="margin:20px 0 8px;padding:18px;background:linear-gradient(135deg,#fef2f2 0%,#fff7ed 100%);border:1px solid #fecaca;border-radius:12px">
+        <div style="margin:20px 0 8px;padding:18px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px">
           <div style="font-size:11px;font-weight:700;color:#dc2626;letter-spacing:1.5px">🔥 FOCO DE HOJE</div>
           <div style="font-size:18px;font-weight:700;color:#7f1d1d;margin-top:4px">${totalHoje} ${totalHoje === 1 ? "item precisa" : "itens precisam"} da sua atenção</div>
           <div style="margin-top:14px">
@@ -505,7 +586,7 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
           </div>
         </div>`
           : `
-        <div style="margin:20px 0 8px;padding:20px;background:linear-gradient(135deg,#ecfdf5 0%,#f0fdfa 100%);border:1px solid #a7f3d0;border-radius:12px;text-align:center">
+        <div style="margin:20px 0 8px;padding:20px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;text-align:center">
           <div style="font-size:28px">✨</div>
           <div style="font-size:14px;font-weight:600;color:#065f46;margin-top:6px">Nenhum compromisso urgente para hoje</div>
           <div style="font-size:12px;color:#047857;margin-top:2px">Aproveite para adiantar as atividades da semana 👇</div>
@@ -532,33 +613,35 @@ async function runResumoDiario(opts: { forceIgnoreWeekday?: boolean } = {}) {
 
       const html = `<div style="background:#f3f4f6;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.06)">
-          <tr><td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:28px 28px 24px;color:#ffffff">
+          <tr><td style="background:#4f46e5;padding:28px 28px 24px;color:#ffffff">
             <div style="font-size:11px;font-weight:600;letter-spacing:2px;opacity:.85">${dataCap.toUpperCase()}</div>
             <h1 style="margin:6px 0 4px;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#ffffff">☀️ Bom dia, ${escapeHtml(primeiroNome)}!</h1>
-            <p style="margin:0;font-size:14px;opacity:.92">Seu resumo da semana — ${total} ${total === 1 ? "item" : "itens"} no radar</p>
+            <p style="margin:0;font-size:14px;opacity:.92">${minhaRodada.length} ${minhaRodada.length === 1 ? "tarefa" : "tarefas"} com você na rodada · ${preBuildAll.length} aguardando produção</p>
           </td></tr>
           <tr><td style="padding:8px 24px 28px">
             ${sectionHoje}
             ${bloco("Avisos da gestão", "📣", meusAvisos.length, meusAvisos.map(renderAviso).join(""))}
             ${bloco("Processos anuais próximos", "🗂️", meusProcessos.length, meusProcessos.sort((a,b) => (a.previsto_inicio ?? "").localeCompare(b.previsto_inicio ?? "")).map(renderProcesso).join(""))}
-            ${bloco("Tarefas em teste — aguardando validação", "🧪", minhasTarefasTeste.length, minhasTarefasTeste.map(renderTarefaTeste).join(""))}
+            ${bloco("Com você na rodada", "🧪", minhaRodada.length, rodadaHtml)}
+            ${alertaSemResponsavel}
+            ${bloco("Aguardando produção", "🚀", preBuildAll.length, aguardandoHtml)}
             ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
             ${bloco("Solicitações de relatório pendentes de envio", "📨", minhasSolicitacoes.length, minhasSolicitacoes.map(renderSolicitacao).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
             <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
-              <a href="${APP_URL}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px">Abrir painel completo →</a>
+              <a href="${APP_URL}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 28px;border-radius:8px">Abrir a Central →</a>
               <p style="color:#9ca3af;font-size:12px;margin:16px 0 0">Você recebe este resumo porque a opção está ativa. Ajuste em <i>Configurações → Notificações</i>.</p>
             </div>
           </td></tr>
         </table>
       </div>`;
 
-      const text = `Resumo semanal — ${total} item(ns).\nAvisos: ${meusAvisos.length} · Em teste: ${minhasTarefasTeste.length} · Relatórios: ${meusRelatorios.length} · Solicitações pendentes: ${minhasSolicitacoes.length} · Demandas: ${minhasDemandas.length} · Tarefas: ${minhasTarefas.length} · Reuniões: ${minhasReunioes.length}`;
+      const text = `Resumo do dia — ${total} item(ns).\nCom você na rodada: ${minhaRodada.length} · Sem responsável na rodada: ${semResponsavel} · Aguardando produção: ${preBuildAll.length} · Avisos: ${meusAvisos.length} · Relatórios: ${meusRelatorios.length} · Solicitações pendentes: ${minhasSolicitacoes.length} · Demandas: ${minhasDemandas.length} · Reuniões: ${minhasReunioes.length}`;
 
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
         recipient_email: u.email,
-        subject: `☀️ Resumo do dia — ${new Date().toLocaleDateString("pt-BR")}`,
+        subject: `${teste ? "[Teste] " : ""}☀️ Resumo do dia — ${new Date().toLocaleDateString("pt-BR")}`,
         body_html: html,
         body_text: text,
         status: "pending",
@@ -640,10 +723,12 @@ Deno.serve(async (req) => {
 
   let mode = "imediato";
   let force = false;
+  let apenasUserId: string | null = null;
   try {
     const b = await req.clone().json();
     mode = b?.mode ?? mode;
     force = b?.force === true;
+    apenasUserId = typeof b?.apenas_user_id === "string" ? b.apenas_user_id : null;
   } catch {
     /* noop */
   }
@@ -655,7 +740,7 @@ Deno.serve(async (req) => {
 
   // Background: roda sem bloquear a resposta
   const work = (async () => {
-    if (mode === "resumo_diario") await runResumoDiario({ forceIgnoreWeekday });
+    if (mode === "resumo_diario") await runResumoDiario({ forceIgnoreWeekday, apenasUserId });
     if (mode === "digest") await runDigest();
     await processarPendentes();
   })();
