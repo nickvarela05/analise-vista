@@ -15,91 +15,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NexusMark } from "@/components/NexusMark";
 import { mensagemSenha, REGRA_SENHA_TEXTO } from "@/lib/domain/senha";
 
+// Marca no visual "Grafite e menta" (23/10/2026): sem anel girando, halo, brilho nem texto em
+// degradê; o "N" num quadrado de menta suave e o nome com peso.
 function BrandMark({ compact = false }: { compact?: boolean }) {
   return (
-    <div className={`flex items-center ${compact ? "gap-3" : "gap-4"}`}>
-      {/* Vitrine do logo: anel cromático + halo + marca do Nexus */}
-      <div className="relative">
-        {/* Halo difuso */}
-        <div
-          aria-hidden
-          className="absolute -inset-3 rounded-2xl blur-2xl opacity-70"
-          style={{
-            background:
-              "conic-gradient(from 140deg, oklch(0.72 0.14 180 / 0.55), oklch(0.55 0.18 200 / 0.35), oklch(0.78 0.16 160 / 0.45), oklch(0.72 0.14 180 / 0.55))",
-          }}
-        />
-        {/* Anel cromático girando lentamente */}
-        <div
-          aria-hidden
-          className="absolute -inset-[3px] rounded-2xl animate-[spin_14s_linear_infinite]"
-          style={{
-            background:
-              "conic-gradient(from 0deg, oklch(0.78 0.16 160), oklch(0.55 0.18 210), oklch(0.85 0.12 180), oklch(0.78 0.16 160))",
-            WebkitMask:
-              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-            WebkitMaskComposite: "xor",
-            maskComposite: "exclude",
-            padding: 1.5,
-          }}
-        />
-        {/* Frame do monograma — fundo escuro vidro */}
-        <div
-          className={`relative ${compact ? "h-14 w-14" : "h-16 w-16"} grid place-items-center rounded-2xl bg-sidebar/80 ring-1 ring-white/10 backdrop-blur-sm shadow-[inset_0_1px_0_oklch(1_0_0/0.08),0_8px_30px_-8px_oklch(0.55_0.18_200/0.45)]`}
-        >
-          <NexusMark
-            className={`${compact ? "h-9 w-9" : "h-10 w-10"} drop-shadow-[0_2px_8px_oklch(0.78_0.16_180/0.55)]`}
-          />
-          {/* Brilho diagonal sutil */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(120deg,transparent_30%,oklch(1_0_0/0.18)_45%,transparent_60%)] opacity-60"
-          />
-        </div>
-        {/* Pontinho de status pulsando */}
-        <span
-          aria-hidden
-          className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-sidebar shadow-[0_0_12px_oklch(0.78_0.16_160/0.9)] animate-pulse"
-        />
+    <div className="flex items-center gap-3">
+      <div
+        className={`grid place-items-center rounded-2xl bg-primary/12 ${compact ? "h-11 w-11" : "h-12 w-12"}`}
+      >
+        <NexusMark className={compact ? "h-7 w-7" : "h-8 w-8"} />
       </div>
-
-      {/* Wordmark em camadas */}
-      <div className="leading-none">
-        <div className="flex items-baseline gap-1">
-          <span
-            className={`${compact ? "text-xl" : "text-2xl"} font-semibold tracking-[0.18em] text-sidebar-foreground`}
-            style={{
-              backgroundImage:
-                "linear-gradient(180deg, oklch(0.98 0.01 180) 0%, oklch(0.78 0.06 180) 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            NEX
-          </span>
-          <span
-            className={`${compact ? "text-xl" : "text-2xl"} font-light tracking-[0.18em]`}
-            style={{
-              backgroundImage:
-                "linear-gradient(180deg, oklch(0.85 0.14 180) 0%, oklch(0.55 0.18 210) 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            US
-          </span>
-        </div>
-        <div className="mt-1.5 flex items-center gap-2">
-          <span
-            aria-hidden
-            className="h-px w-6 bg-gradient-to-r from-transparent via-sidebar-foreground/60 to-sidebar-foreground/0"
-          />
-          <span className="text-[10px] uppercase tracking-[0.32em] text-sidebar-foreground/55">
-            Análise de Requisitos
-          </span>
-        </div>
+      <div className="leading-tight">
+        <p className={`${compact ? "text-lg" : "text-xl"} font-semibold tracking-tight`}>Nexus</p>
+        <p className="text-xs text-muted-foreground">Análise de requisitos</p>
       </div>
     </div>
   );
@@ -175,7 +103,8 @@ function LoginPage() {
     if (error) {
       // Senha válida, mas fora da regra nova (14/10/2026): se o Supabase abriu a sessão, leva
       // direto para a troca; se não, orienta a usar "Esqueci minha senha".
-      const fraca = (error as { code?: string }).code === "weak_password" || /weak/i.test(error.name);
+      const fraca =
+        (error as { code?: string }).code === "weak_password" || /weak/i.test(error.name);
       if (fraca) {
         const { data: s } = await supabase.auth.getSession();
         if (s.session) {
@@ -223,7 +152,8 @@ function LoginPage() {
     }
     // Mesma mensagem com ou sem conta cadastrada, para não revelar quais e-mails existem.
     toast.success("Verifique seu e-mail", {
-      description: "Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha.",
+      description:
+        "Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha.",
     });
   };
 
@@ -254,45 +184,42 @@ function LoginPage() {
     });
   };
 
-
   return (
     <div className="flex min-h-screen w-full">
       {/* Painel decorativo */}
-      <div className="relative hidden flex-1 overflow-hidden bg-sidebar lg:flex">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,oklch(0.6_0.09_180/0.25),transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,oklch(0.7_0.1_180/0.18),transparent_50%)]" />
-        <div className="relative z-10 flex flex-col justify-between p-12 text-sidebar-foreground">
+      <div className="relative m-3 hidden flex-1 overflow-hidden rounded-3xl border border-border/60 bg-card lg:flex">
+        {/* Um brilho de menta só, e uma trama de pontos bem leve para o fundo não ficar chapado. */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(700px_420px_at_0%_0%,color-mix(in_oklab,var(--primary)_14%,transparent),transparent_65%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(color-mix(in_oklab,var(--foreground)_14%,transparent)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
+        <div className="relative z-10 flex flex-col justify-between p-12">
           <BrandMark />
 
-
           <div className="max-w-md space-y-4">
-            <h2 className="text-3xl font-semibold leading-tight">
+            <h2 className="text-4xl font-semibold leading-[1.1] tracking-[-0.03em]">
               Centralize demandas, tarefas e reuniões da Análise de Requisitos.
             </h2>
-            <p className="text-sm text-sidebar-foreground/70">
-              Plataforma interna para acompanhar o trabalho da equipe — com integração pronta
-              para automações e fluxos via n8n.
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Plataforma interna para acompanhar o trabalho da equipe — com integração pronta para
+              automações e fluxos via n8n.
             </p>
           </div>
 
-          <p className="text-xs text-sidebar-foreground/50">
+          <p className="text-xs text-muted-foreground/70">
             © {new Date().getFullYear()} Nexus · Uso interno
           </p>
         </div>
       </div>
 
       {/* Form */}
-      <div className="flex flex-1 items-center justify-center bg-background p-6">
-        <Card className="w-full max-w-md border-border/60 shadow-lg">
+      <div className="flex flex-1 items-center justify-center p-6">
+        <Card className="animate-page-in w-full max-w-md rounded-3xl border-border/60 bg-card/80 shadow-none backdrop-blur-xl">
           <CardContent className="p-8">
             <div className="mb-6 flex justify-center lg:hidden">
               <BrandMark compact />
             </div>
 
-            <h1 className="text-xl font-semibold tracking-tight">Acessar plataforma</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Entre com seu e-mail corporativo.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-[-0.02em]">Acessar plataforma</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Entre com seu e-mail corporativo.</p>
 
             <Tabs defaultValue="login" className="mt-6">
               <TabsList className="grid w-full grid-cols-2">
@@ -376,7 +303,11 @@ function LoginPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="su-invite">Código de convite</Label>
-                    <Input id="su-invite" {...signupForm.register("invite")} placeholder="Cole aqui o código recebido do gestor" />
+                    <Input
+                      id="su-invite"
+                      {...signupForm.register("invite")}
+                      placeholder="Cole aqui o código recebido do gestor"
+                    />
                     {signupForm.formState.errors.invite && (
                       <p className="text-xs text-destructive">
                         {signupForm.formState.errors.invite.message}
@@ -392,7 +323,6 @@ function LoginPage() {
                 </form>
               </TabsContent>
             </Tabs>
-
           </CardContent>
         </Card>
       </div>

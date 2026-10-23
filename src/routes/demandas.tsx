@@ -46,6 +46,7 @@ import {
   describePrazo,
   type DemandaStatus,
 } from "@/components/demandas/lib/demanda-utils";
+import { EsqueletoKanban, EsqueletoLista } from "@/components/shared/Esqueletos";
 
 
 export const Route = createFileRoute("/demandas")({
@@ -352,9 +353,11 @@ function Demandas() {
 
       {/* Conteúdo */}
       {isLoading ? (
-        <div className="flex h-60 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        view === "kanban" ? (
+          <EsqueletoKanban colunas={4} />
+        ) : (
+          <EsqueletoLista linhas={8} />
+        )
       ) : demandas.length === 0 ? (
         <EmptyState title="Nenhuma demanda ainda" description="Clique em 'Nova demanda' para registrar a primeira." />
       ) : view === "kanban" ? (

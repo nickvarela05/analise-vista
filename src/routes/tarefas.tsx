@@ -41,6 +41,7 @@ import { useObservacaoTeste } from "@/components/tarefas/useObservacaoTeste";
 import type { TarefaRow } from "@/lib/db-types";
 import { opcoesResponsavel } from "@/lib/domain/cargos";
 import { parseDateOnly } from "@/lib/date";
+import { EsqueletoKanban, EsqueletoLista } from "@/components/shared/Esqueletos";
 
 export const Route = createFileRoute("/tarefas")({
   errorComponent: RouteErrorBoundary,
@@ -344,9 +345,11 @@ function Tarefas() {
       )}
 
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        view === "kanban" ? (
+          <EsqueletoKanban colunas={4} />
+        ) : (
+          <EsqueletoLista linhas={8} />
+        )
       ) : filtered.length === 0 ? (
         <EmptyState title="Nenhuma tarefa encontrada" description="Ajuste os filtros ou crie uma nova tarefa." />
       ) : view === "kanban" ? (
