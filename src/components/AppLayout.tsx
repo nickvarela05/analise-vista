@@ -1,11 +1,11 @@
 import * as React from "react";
-import { Loader2 } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/lib/auth-context";
 import { BackgroundJobsIndicator } from "@/components/reunioes/BackgroundJobsIndicator";
+import { EsqueletoPagina } from "@/components/shared/Esqueletos";
 
 /**
  * @param bare Sem menu e cabeçalho, só com as checagens de login (usado pelo Modo TV).
@@ -44,13 +44,8 @@ export function AppLayout({
     void navigate({ href: destino, replace: true });
   }, [destino, navigate]);
 
-  if (loading || destino) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  // Enquanto confere o login, mostra o esqueleto da página em vez da rodinha (23/10/2026).
+  if (loading || destino) return <EsqueletoPagina />;
 
   if (bare) return <>{children}</>;
 

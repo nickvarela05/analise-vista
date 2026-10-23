@@ -77,6 +77,7 @@ import { UploadAudioReuniao } from "@/components/reunioes/UploadAudioReuniao";
 import { TranscricaoFormatada } from "@/components/reunioes/TranscricaoFormatada";
 import { useUploadStore } from "@/lib/reuniao-upload-manager";
 import { DialogHero } from "@/components/shared/DialogHero";
+import { EsqueletoCartoes } from "@/components/shared/Esqueletos";
 import {
   Accordion,
   AccordionContent,
@@ -853,9 +854,7 @@ function Reunioes() {
 
 
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <EsqueletoCartoes quantidade={6} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CalIcon}

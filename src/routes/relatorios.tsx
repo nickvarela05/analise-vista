@@ -68,6 +68,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { NovoRelatorioDialog } from "@/components/relatorios/NovoRelatorioDialog";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 export const Route = createFileRoute("/relatorios")({
   errorComponent: RouteErrorBoundary,
@@ -471,11 +472,7 @@ function Relatorios() {
       </div>
 
       {isLoading ? (
-        <Card>
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        </Card>
+        <EsqueletoLista linhas={8} />
       ) : error || (data && !data.ok) ? (
         <Card>
           <div className="p-6 text-sm text-destructive">
