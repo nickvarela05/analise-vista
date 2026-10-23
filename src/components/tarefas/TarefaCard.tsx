@@ -195,7 +195,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
           </div>
           <div className="h-1 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all"
+              className="animate-grow-x h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all"
               style={{ width: `${checklistPct}%` }}
             />
           </div>

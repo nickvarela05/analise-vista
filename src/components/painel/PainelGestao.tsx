@@ -37,6 +37,7 @@ import {
   type Espera,
 } from "./lib/metricas";
 import { useEventosStatus } from "./usePainelData";
+import { Contagem } from "@/components/shared/Contagem";
 
 const tooltipStyle = {
   borderRadius: 10,
@@ -60,7 +61,9 @@ function NumeroEspera({
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {titulo}
       </p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums">{formatarDias(espera.medianaDias)}</p>
+      <p className="mt-1 text-3xl font-semibold tabular-nums">
+        <Contagem valor={formatarDias(espera.medianaDias)} />
+      </p>
       <p className="mt-1 text-[11px] text-muted-foreground">
         {explicacao} Mediana de {espera.amostra} {espera.amostra === 1 ? "caso" : "casos"} em 8
         semanas.
@@ -203,6 +206,8 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
                 <Bar
+                  animationDuration={800}
+                  animationEasing="ease-out"
                   dataKey="aprovado"
                   name="Aprovadas"
                   stackId="r"
@@ -210,6 +215,8 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
                   maxBarSize={36}
                 />
                 <Bar
+                  animationDuration={800}
+                  animationEasing="ease-out"
                   dataKey="ressalvas"
                   name="Com ressalvas"
                   stackId="r"
@@ -217,6 +224,8 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
                   maxBarSize={36}
                 />
                 <Bar
+                  animationDuration={800}
+                  animationEasing="ease-out"
                   dataKey="reprovado"
                   name="Reprovadas"
                   stackId="r"
@@ -259,7 +268,9 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
           title="Fila em Pré-build"
           hint="Tarefas enviadas que ainda não foram para Produção, pela idade desde a entrada em Pré-build. As que entraram antes de 08/10/2026 não têm a data registrada e ficam separadas."
         >
-          <p className="text-3xl font-semibold tabular-nums">{fila.total}</p>
+          <p className="text-3xl font-semibold tabular-nums">
+            <Contagem valor={fila.total} />
+          </p>
           <p className="mb-3 text-[11px] text-muted-foreground">
             tarefa{fila.total === 1 ? "" : "s"} esperando produção
           </p>
@@ -319,6 +330,8 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
                   cursor={{ fill: "var(--muted)", opacity: 0.4 }}
                 />
                 <Bar
+                  animationDuration={800}
+                  animationEasing="ease-out"
                   dataKey="liberadas"
                   name="Liberadas"
                   fill="var(--primary)"
@@ -433,7 +446,7 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
                     x.alerta && "text-amber-600 dark:text-amber-400",
                   )}
                 >
-                  {x.valor}
+                  <Contagem valor={x.valor} />
                 </dd>
               </div>
             ))}
@@ -462,11 +475,11 @@ export function PainelGestao({ tv = false, onModoTv }: { tv?: boolean; onModoTv?
                     </div>
                     <div className="flex h-2 overflow-hidden rounded-full bg-muted">
                       <div
-                        className="bg-sky-500"
+                        className="animate-grow-x bg-sky-500"
                         style={{ width: `${(p.testes / maxCarga) * 100}%` }}
                       />
                       <div
-                        className="bg-rose-500/70"
+                        className="animate-grow-x bg-rose-500/70"
                         style={{ width: `${(p.relatorios / maxCarga) * 100}%` }}
                       />
                     </div>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Contagem } from "@/components/shared/Contagem";
 
 export type StatTone =
   | "primary"
@@ -114,7 +115,7 @@ export function StatPill({
           </div>
         ) : (
           <div className="mt-2 text-[26px] font-semibold leading-8 tabular-nums tracking-[-0.03em] text-foreground">
-            {value}
+            <Contagem valor={value} />
           </div>
         )}
         <div className="text-xs font-medium text-muted-foreground">{label}</div>

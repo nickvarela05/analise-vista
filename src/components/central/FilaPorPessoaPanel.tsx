@@ -67,11 +67,11 @@ export function FilaPorPessoaPanel({
                 </div>
                 <div className="flex h-2 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="bg-emerald-500"
+                    className="animate-grow-x bg-emerald-500"
                     style={{ width: `${(p.testadas / total) * 100}%` }}
                   />
                   <div
-                    className={semDono ? "bg-amber-500/60" : "bg-sky-500/50"}
+                    className={`animate-grow-x ${semDono ? "bg-amber-500/60" : "bg-sky-500/50"}`}
                     style={{ width: `${(p.aTestar / total) * 100}%` }}
                   />
                 </div>

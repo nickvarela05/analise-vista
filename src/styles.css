@@ -705,8 +705,29 @@
 .animate-page-in {
   animation: page-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+/* Barras crescem do zero ao aparecer (23/10/2026). Só a animação de entrada: o valor final
+   vem da largura/transform inline, então o "to" implícito é o estado real da barra. */
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+.animate-grow-x {
+  transform-origin: left center;
+  animation: grow-x 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes progress-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+.animate-progress-in {
+  animation: progress-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 @media (prefers-reduced-motion: reduce) {
-  .animate-page-in {
+  .animate-page-in,
+  .animate-grow-x,
+  .animate-progress-in {
     animation: none;
   }
 }
