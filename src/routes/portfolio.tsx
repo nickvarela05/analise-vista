@@ -255,7 +255,7 @@ function ColaboradorCard({
       )}
     >
       {/* Cover */}
-      <div className="relative h-24 overflow-hidden bg-gradient-to-br from-violet-500/30 via-fuchsia-500/15 to-indigo-500/20">
+      <div className="relative h-24 overflow-hidden bg-primary/10">
         {c.foto_url && (
           <img
             src={c.foto_url}

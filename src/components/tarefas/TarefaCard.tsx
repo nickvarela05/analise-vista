@@ -41,9 +41,9 @@ function statusLabel(s: string | null) {
 }
 
 const PRIO_BAR: Record<string, string> = {
-  alta: "bg-gradient-to-b from-rose-500 to-rose-600",
-  media: "bg-gradient-to-b from-amber-400 to-amber-500",
-  baixa: "bg-gradient-to-b from-emerald-400 to-emerald-500",
+  alta: "bg-rose-500",
+  media: "bg-amber-500",
+  baixa: "bg-emerald-500",
 };
 
 const PRIO_BADGE: Record<string, string> = {
@@ -195,7 +195,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
           </div>
           <div className="h-1 overflow-hidden rounded-full bg-muted">
             <div
-              className="animate-grow-x h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all"
+              className="animate-grow-x h-full rounded-full bg-emerald-500 transition-all"
               style={{ width: `${checklistPct}%` }}
             />
           </div>
@@ -240,7 +240,7 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
             <Tooltip key={r.id}>
               <TooltipTrigger asChild>
                 <Avatar className="h-5 w-5 ring-2 ring-background">
-                  <AvatarFallback className="bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
+                  <AvatarFallback className="bg-emerald-500/15 text-[9px] font-semibold text-emerald-700 dark:text-emerald-300">
                     {r.nome
                       .split(" ")
                       .map((p) => p[0])

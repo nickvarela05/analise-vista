@@ -175,7 +175,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
         </SheetHeader>
 
         {/* Hero do colaborador (gradiente cyan) */}
-        <div className="relative overflow-hidden border-b bg-gradient-to-br from-cyan-500/15 via-background to-background px-6 py-5">
+        <div className="relative overflow-hidden border-b px-6 py-5">
           <div className="pointer-events-none absolute -top-16 -right-12 h-44 w-44 rounded-full bg-cyan-500/20 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-20 -left-12 h-44 w-44 rounded-full bg-sky-500/10 blur-3xl" />
           <div className="relative flex items-start gap-4">
@@ -225,7 +225,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Equipe · Colaborador
                   </p>
-                  <h3 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text text-xl font-semibold leading-tight tracking-tight text-transparent">
+                  <h3 className="text-xl font-semibold leading-tight tracking-tight text-foreground">
                     {colab.nome}
                   </h3>
                   <div className="flex flex-wrap items-center gap-1.5">

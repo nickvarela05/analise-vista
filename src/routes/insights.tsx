@@ -95,7 +95,7 @@ function ResumoPorFuncionario() {
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden border-violet-500/20 bg-gradient-to-br from-violet-500/10 via-background to-background">
+      <Card className="overflow-hidden border-primary/20">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-3">
             <div className="rounded-xl bg-violet-500/15 p-2.5 text-violet-600 dark:text-violet-400">
@@ -230,7 +230,7 @@ function ResumoSemanal() {
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background">
+      <Card className="overflow-hidden border-primary/20">
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="rounded-xl bg-primary/15 p-2.5 text-primary">
@@ -292,7 +292,7 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
   return (
     <Card className={cn("overflow-hidden", destaque && "ring-1 ring-primary/20 shadow-lg")}>
       {/* Header gradient */}
-      <div className="relative border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
+      <div className="relative border-b px-6 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary">
@@ -338,8 +338,7 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
               const Icon = meta.icon;
               return (
                 <div key={key} className={cn("relative overflow-hidden rounded-xl border bg-card p-3.5 transition-all hover:shadow-md")}>
-                  <div className={cn("absolute inset-0 bg-gradient-to-br opacity-60", meta.ring)} />
-                  <div className="relative">
+                    <div className="relative">
                     <Icon className={cn("h-4 w-4", meta.tone)} />
                     <div className="mt-2 text-2xl font-bold tabular-nums">{metricas[key]}</div>
                     <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{meta.label}</div>
@@ -361,7 +360,7 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
 
         {/* Insights destacados */}
         {r.insights && r.insights.length > 0 && (
-          <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
             <div className="mb-3 flex items-center gap-2">
               <Lightbulb className="h-4 w-4 text-primary" />
               <h4 className="text-sm font-semibold">Principais insights</h4>

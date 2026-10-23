@@ -1039,7 +1039,7 @@ function FaixaAgora({ processos, ano }: { processos: Processo[]; ano: number }) 
   if (emAndamento.length === 0) return null;
 
   return (
-    <div className="rounded-xl border bg-gradient-to-r from-primary/5 via-background to-background p-3">
+    <div className="rounded-xl border bg-card p-3">
       <div className="mb-2 flex items-center gap-2">
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />

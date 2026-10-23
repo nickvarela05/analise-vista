@@ -158,7 +158,7 @@ export function ConfiguracoesEmails() {
   return (
     <Card className="overflow-hidden">
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-sky-500/10 via-background to-background p-5">
+      <div className="relative p-5">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-sky-500/15 blur-3xl" />
         <div className="relative flex items-start gap-3">
           <div className="rounded-2xl bg-sky-500/15 p-2.5 text-sky-600 ring-1 ring-sky-500/25 dark:text-sky-300">

@@ -94,11 +94,11 @@ export function ConfiguracoesIA() {
   return (
     <Card className="overflow-hidden">
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-violet-500/10 via-background to-background p-5">
+      <div className="relative p-5">
         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-40 w-40 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <div className="relative flex items-start gap-3">
-          <div className="rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 p-2.5 text-violet-600 ring-1 ring-violet-500/25 dark:text-violet-300">
+          <div className="rounded-xl bg-primary/15 p-2.5 text-primary">
             <Sparkles className="h-4 w-4" />
           </div>
           <div className="flex-1">
@@ -198,7 +198,7 @@ export function ConfiguracoesIA() {
             <Button
               onClick={salvar}
               disabled={saving}
-              className="gap-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white hover:from-violet-700 hover:to-fuchsia-700"
+              className="gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar configuração

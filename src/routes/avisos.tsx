@@ -415,7 +415,7 @@ function Avisos() {
               items.length > 0 && (
                 <section key={titulo}>
                   <h2 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <span className="h-px flex-none w-4 bg-gradient-to-r from-amber-500/50 to-transparent" />
+                    <span className="h-px flex-none w-4 bg-border" />
                     {titulo}
                     <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-300">
                       {items.length}
