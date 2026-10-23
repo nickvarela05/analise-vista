@@ -10,7 +10,13 @@ import { BackgroundJobsIndicator } from "@/components/reunioes/BackgroundJobsInd
 /**
  * @param bare Sem menu e cabeçalho, só com as checagens de login (usado pelo Modo TV).
  */
-export function AppLayout({ children, bare = false }: { children: React.ReactNode; bare?: boolean }) {
+export function AppLayout({
+  children,
+  bare = false,
+}: {
+  children: React.ReactNode;
+  bare?: boolean;
+}) {
   const { session, loading, mustChangePassword } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,13 +56,15 @@ export function AppLayout({ children, bare = false }: { children: React.ReactNod
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-muted/30">
+      <div className="flex min-h-screen w-full">
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
           <AppHeader />
           {/* overflow-x-clip: nada dentro da página empurra a tela para o lado no celular (sem
               virar contêiner de rolagem, para não quebrar elementos fixos com sticky). */}
-          <main className="min-w-0 flex-1 overflow-x-clip p-3 sm:p-4 lg:p-6">{children}</main>
+          <main className="animate-page-in min-w-0 flex-1 overflow-x-clip p-3 sm:p-4 lg:p-6">
+            {children}
+          </main>
         </SidebarInset>
       </div>
       <BackgroundJobsIndicator />

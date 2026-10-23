@@ -1061,7 +1061,7 @@ function FaixaAgora({ processos, ano }: { processos: Processo[]; ano: number }) 
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={cn("h-full rounded-full transition-all", COR_BG[p.cor])}
+                className={cn("animate-grow-x h-full rounded-full transition-all", COR_BG[p.cor])}
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -1396,7 +1396,7 @@ function BentoDoMes({
                     </div>
                     <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className={cn("h-full rounded-full", COR_BG[p.cor])}
+                        className={cn("animate-grow-x h-full rounded-full", COR_BG[p.cor])}
                         style={{ width: `${pct}%` }}
                       />
                     </div>

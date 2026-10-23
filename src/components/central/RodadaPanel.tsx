@@ -74,7 +74,7 @@ export function RodadaPanel({
           resumo[s.chave] > 0 ? (
             <div
               key={s.chave}
-              className={s.cor}
+              className={cn("animate-grow-x", s.cor)}
               style={{ width: `${(resumo[s.chave] / resumo.total) * 100}%` }}
             />
           ) : null,

@@ -4,6 +4,7 @@ import { ArrowUpRight, Info, TrendingUp, TrendingDown, Minus } from "lucide-reac
 import type { LucideIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Contagem } from "@/components/shared/Contagem";
 
 export type KpiTone = "primary" | "success" | "warning" | "destructive" | "info";
 
@@ -67,7 +68,7 @@ function KpiTileImpl({
           {loading ? (
             <span className="kpi-value-skeleton" aria-hidden />
           ) : (
-            <span className="kpi-value">{value}</span>
+            <Contagem className="kpi-value" valor={value} />
           )}
           {trend && !loading && (
             <span

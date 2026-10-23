@@ -611,7 +611,7 @@ function TotalizadoresTipo({
                   <span className="text-[10px] text-muted-foreground">/ {pct}%</span>
                 </div>
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
-                  <div className={cn("h-full rounded-full transition-all", t.bar)} style={{ width: `${pct}%` }} />
+                  <div className={cn("animate-grow-x h-full rounded-full transition-all", t.bar)} style={{ width: `${pct}%` }} />
                 </div>
               </div>
             </div>

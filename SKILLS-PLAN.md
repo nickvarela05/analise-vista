@@ -51,3 +51,4 @@ Plano de trabalho a que este arquivo se amarra (vault, `05-Projetos/NEXUS/`):
 
 | Data | Fase | Plano dizia | Usado | Motivo |
 | --- | --- | --- | --- | --- |
+| 2026-10-23 | Visual (fase F) | `frontend-ui-engineering` | `redesign-existing-projects` (diagnóstico) + `ui-ux-pro-max` (estilo, paleta e fonte) | O pedido era só visual ("tirar a cara de front de IA"); essas duas cobrem diagnóstico e direção de design, e a `frontend-ui-engineering` foca construção de componentes |

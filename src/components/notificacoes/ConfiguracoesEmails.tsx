@@ -22,6 +22,7 @@ import {
   emailSendLogInsertSchema,
   dispatchDigestModeSchema,
 } from "@/lib/schemas/email";
+import { Contagem } from "@/components/shared/Contagem";
 
 export function ConfiguracoesEmails() {
   const { role, user } = useAuth();
@@ -323,7 +324,9 @@ function StatTile({
           {label}
         </span>
       </div>
-      <div className="mt-2 text-2xl font-semibold tabular-nums">{value}</div>
+      <div className="mt-2 text-2xl font-semibold tabular-nums">
+        <Contagem valor={value} />
+      </div>
     </div>
   );
 }
