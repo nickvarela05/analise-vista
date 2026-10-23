@@ -17,7 +17,7 @@ Sistema interno da equipe de homologação: tarefas, Central, liberação em pro
 5. Funções do Supabase são publicadas por uma GitHub Action no merge.
 
 ## Regras que já quebraram produção
-- **`run_worker_first`** (em `wrangler.deploy.jsonc`): navegações saem direto dos assets (SPA). Toda rota de servidor precisa estar na lista: `/api/*`, `/_serverFn/*`, `/mcp`, `/mcp/*`, `/.mcp/*`, `/.well-known/*`. Uma rota fora da lista recebe o `index.html` (incidente de 16/10/2026).
+- **`run_worker_first`** (em `wrangler.deploy.jsonc`): navegações saem direto dos assets (SPA). Toda rota de servidor precisa estar na lista: hoje `/api/*` e `/_serverFn/*` (o MCP da Lovable saiu em 23/10/2026). Uma rota fora da lista recebe o `index.html` (incidente de 16/10/2026).
 - **Banco:** mudança de estrutura ou de regra de acesso só com autorização explícita do Nickolas. Testar antes numa transação desfeita, simulando gestor e analista. Apagar dados de produção é decisão dele, comando por comando.
 - **Migrações:** aplicadas pelo MCP do Supabase (`apply_migration`). Depois, o arquivo em `supabase/migrations/` é renomeado para a versão aplicada (`select version from supabase_migrations.schema_migrations`).
 - **Papéis:** a equipe (quem tem linha em `user_roles`) faz o dia a dia; só gestor administra e exclui registros de outros (`is_equipe`, `has_role`).
