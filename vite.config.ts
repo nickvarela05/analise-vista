@@ -5,7 +5,6 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
-import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
 export default defineConfig({
   // Modo SPA: as páginas são montadas no navegador. O shell sai como index.html para que o
@@ -15,8 +14,5 @@ export default defineConfig({
   // encerrado com erro 1102.
   tanstackStart: {
     spa: { enabled: true, prerender: { outputPath: "/index" } },
-  },
-  vite: {
-    plugins: [mcpPlugin()],
   },
 });

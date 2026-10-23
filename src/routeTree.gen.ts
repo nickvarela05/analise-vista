@@ -19,7 +19,6 @@ import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PainelRouteImport } from './routes/painel'
-import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as EquipeRouteImport } from './routes/equipe'
@@ -29,12 +28,8 @@ import { Route as AvisosRouteImport } from './routes/avisos'
 import { Route as AtividadesRouteImport } from './routes/atividades'
 import { Route as AlterarSenhaRouteImport } from './routes/alterar-senha'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicGoogleOauthCallbackRouteImport } from './routes/api/public/google-oauth-callback'
 import { Route as ApiAdminUsuariosRouteImport } from './routes/api.admin.usuarios'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicHooksSyncGoogleCalendarRouteImport } from './routes/api/public/hooks/sync-google-calendar'
 import { Route as ApiPublicHooksRetomarTranscricoesRouteImport } from './routes/api/public/hooks/retomar-transcricoes'
 
@@ -88,11 +83,6 @@ const PainelRoute = PainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -138,18 +128,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicGoogleOauthCallbackRoute =
   ApiPublicGoogleOauthCallbackRouteImport.update({
     id: '/api/public/google-oauth-callback',
@@ -159,17 +137,6 @@ const ApiPublicGoogleOauthCallbackRoute =
 const ApiAdminUsuariosRoute = ApiAdminUsuariosRouteImport.update({
   id: '/api/admin/usuarios',
   path: '/api/admin/usuarios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksSyncGoogleCalendarRoute =
@@ -195,7 +162,6 @@ export interface FileRoutesByFullPath {
   '/equipe': typeof EquipeRoute
   '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
-  '/mcp': typeof McpRoute
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -206,10 +172,6 @@ export interface FileRoutesByFullPath {
   '/tarefas': typeof TarefasRoute
   '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
   '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
@@ -225,7 +187,6 @@ export interface FileRoutesByTo {
   '/equipe': typeof EquipeRoute
   '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
-  '/mcp': typeof McpRoute
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -236,10 +197,6 @@ export interface FileRoutesByTo {
   '/tarefas': typeof TarefasRoute
   '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
   '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
@@ -256,7 +213,6 @@ export interface FileRoutesById {
   '/equipe': typeof EquipeRoute
   '/insights': typeof InsightsRoute
   '/login': typeof LoginRoute
-  '/mcp': typeof McpRoute
   '/painel': typeof PainelRoute
   '/perfil': typeof PerfilRoute
   '/portfolio': typeof PortfolioRoute
@@ -267,10 +223,6 @@ export interface FileRoutesById {
   '/tarefas': typeof TarefasRoute
   '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
-  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
   '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
@@ -288,7 +240,6 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/insights'
     | '/login'
-    | '/mcp'
     | '/painel'
     | '/perfil'
     | '/portfolio'
@@ -299,10 +250,6 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/tv'
     | '/unidades'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
-    | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/api/admin/usuarios'
     | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
@@ -318,7 +265,6 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/insights'
     | '/login'
-    | '/mcp'
     | '/painel'
     | '/perfil'
     | '/portfolio'
@@ -329,10 +275,6 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/tv'
     | '/unidades'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
-    | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/api/admin/usuarios'
     | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
@@ -348,7 +290,6 @@ export interface FileRouteTypes {
     | '/equipe'
     | '/insights'
     | '/login'
-    | '/mcp'
     | '/painel'
     | '/perfil'
     | '/portfolio'
@@ -359,10 +300,6 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/tv'
     | '/unidades'
-    | '/.mcp/list-tools'
-    | '/.well-known/oauth-protected-resource'
-    | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/api/admin/usuarios'
     | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
@@ -379,7 +316,6 @@ export interface RootRouteChildren {
   EquipeRoute: typeof EquipeRoute
   InsightsRoute: typeof InsightsRoute
   LoginRoute: typeof LoginRoute
-  McpRoute: typeof McpRoute
   PainelRoute: typeof PainelRoute
   PerfilRoute: typeof PerfilRoute
   PortfolioRoute: typeof PortfolioRoute
@@ -390,10 +326,6 @@ export interface RootRouteChildren {
   TarefasRoute: typeof TarefasRoute
   TvRoute: typeof TvRoute
   UnidadesRoute: typeof UnidadesRoute
-  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
-  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
-  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAdminUsuariosRoute: typeof ApiAdminUsuariosRoute
   ApiPublicGoogleOauthCallbackRoute: typeof ApiPublicGoogleOauthCallbackRoute
   ApiPublicHooksRetomarTranscricoesRoute: typeof ApiPublicHooksRetomarTranscricoesRoute
@@ -472,13 +404,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -542,20 +467,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/google-oauth-callback': {
       id: '/api/public/google-oauth-callback'
       path: '/api/public/google-oauth-callback'
@@ -568,20 +479,6 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/usuarios'
       fullPath: '/api/admin/usuarios'
       preLoaderRoute: typeof ApiAdminUsuariosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/sync-google-calendar': {
@@ -611,7 +508,6 @@ const rootRouteChildren: RootRouteChildren = {
   EquipeRoute: EquipeRoute,
   InsightsRoute: InsightsRoute,
   LoginRoute: LoginRoute,
-  McpRoute: McpRoute,
   PainelRoute: PainelRoute,
   PerfilRoute: PerfilRoute,
   PortfolioRoute: PortfolioRoute,
@@ -622,11 +518,6 @@ const rootRouteChildren: RootRouteChildren = {
   TarefasRoute: TarefasRoute,
   TvRoute: TvRoute,
   UnidadesRoute: UnidadesRoute,
-  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
-  Char91DotwellKnownChar93OauthProtectedResourceRoute:
-    Char91DotwellKnownChar93OauthProtectedResourceRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
-  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAdminUsuariosRoute: ApiAdminUsuariosRoute,
   ApiPublicGoogleOauthCallbackRoute: ApiPublicGoogleOauthCallbackRoute,
   ApiPublicHooksRetomarTranscricoesRoute:
