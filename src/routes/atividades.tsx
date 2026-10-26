@@ -51,7 +51,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
-import { isAtribuidoA } from "@/lib/domain/atividades";
+import { isAtribuidoA, type AtribuivelRow } from "@/lib/domain/atividades";
 import { PreviewDialog, type PreviewItem } from "@/components/PreviewDialog";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 import { NovaTarefaDialog } from "@/components/tarefas/NovaTarefaDialog";
@@ -225,7 +225,10 @@ function Atividades() {
     [demandas],
   );
 
-  const isMine = React.useCallback((r: any) => isAtribuidoA(r, meuColabId), [meuColabId]);
+  const isMine = React.useCallback(
+    (r: AtribuivelRow) => isAtribuidoA(r, meuColabId),
+    [meuColabId],
+  );
 
   const colabById = React.useMemo(() => {
     const m = new Map<string, string>();
@@ -237,12 +240,12 @@ function Atividades() {
     const arr: Atividade[] = [];
     const tarefaConcluida = ["concluida", "producao", "cancelada", "reprovada"];
     const demandaConcluida = ["concluida", "cancelada"];
-    const filtroEscopo = (r: any) => {
+    const filtroEscopo = (r: AtribuivelRow) => {
       if (escopo === "equipe") return true;
       if (escopo === "minhas") return isMine(r);
       return isAtribuidoA(r, escopo);
     };
-    tarefas.filter(filtroEscopo).forEach((t: any) => {
+    tarefas.filter(filtroEscopo).forEach((t) => {
       const d = parseLocalDate(t.data_prevista);
       if (d && !tarefaConcluida.includes(t.status))
         arr.push({
@@ -257,7 +260,7 @@ function Atividades() {
           responsavel: t.responsavel_id ? (colabById.get(t.responsavel_id) ?? null) : null,
         });
     });
-    demandas.filter(filtroEscopo).forEach((d: any) => {
+    demandas.filter(filtroEscopo).forEach((d) => {
       const dt = parseLocalDate(d.prazo);
       if (dt && !demandaConcluida.includes(d.status))
         arr.push({
@@ -273,7 +276,7 @@ function Atividades() {
           responsavel: d.responsavel_id ? (colabById.get(d.responsavel_id) ?? null) : null,
         });
     });
-    reunioes.filter(filtroEscopo).forEach((r: any) => {
+    reunioes.filter(filtroEscopo).forEach((r) => {
       if (r.status !== "cancelada")
         arr.push({
           id: `r-${r.id}`,
@@ -648,7 +651,7 @@ function Atividades() {
 
       {/* Dialogs de criação rápida */}
       <NovaTarefaDialog
-        colabs={colaboradores as any}
+        colabs={colaboradores}
         demandas={demandasMini}
         open={novaTarefaOpen}
         onOpenChange={setNovaTarefaOpen}
@@ -658,7 +661,7 @@ function Atividades() {
       <DemandaDialog
         open={novaDemandaOpen}
         onOpenChange={setNovaDemandaOpen}
-        colabs={colaboradores as any}
+        colabs={colaboradores}
         userId={user?.id}
         initial={
           defaultData

@@ -21,6 +21,7 @@ import { cn, prioridadeLabel } from "@/lib/utils";
 import { parseDateOnly } from "@/lib/date";
 import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 import type { StatusLogItem } from "@/components/tarefas/useTarefasData";
+import type { TarefaRow } from "@/lib/db-types";
 
 interface Counts {
   comentarios: number;
@@ -30,7 +31,7 @@ interface Counts {
 }
 
 interface Props {
-  tarefa: any;
+  tarefa: TarefaRow;
   colabs: { id: string; nome: string }[];
   selected: boolean;
   onSelect: (checked: boolean) => void;
