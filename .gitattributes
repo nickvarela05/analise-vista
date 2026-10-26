@@ -1,0 +1,13 @@
+# Fim de linha LF em qualquer máquina, inclusive Windows com core.autocrlf=true (fase A2 do plano
+# de limpeza, 26/10/2026). Sem isto, o lint acusava dezenas de milhares de avisos de CRLF.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
