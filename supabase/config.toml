@@ -15,9 +15,6 @@ verify_jwt = false
 [functions.gerar-resumo-semanal]
 verify_jwt = false
 
-[functions.busca-natural]
-verify_jwt = true
-
 [functions.auth-send-email]
 verify_jwt = false
 

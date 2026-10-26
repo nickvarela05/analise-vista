@@ -4,7 +4,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
+    PostgrestVersion: "14.4";
   };
   public: {
     Tables: {
@@ -209,69 +209,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-      chat_rate_limit: {
-        Row: {
-          contagem: number;
-          janela_inicio: string;
-          telefone: string;
-        };
-        Insert: {
-          contagem?: number;
-          janela_inicio: string;
-          telefone: string;
-        };
-        Update: {
-          contagem?: number;
-          janela_inicio?: string;
-          telefone?: string;
-        };
-        Relationships: [];
-      };
-      chat_whatsapp_log: {
-        Row: {
-          created_at: string;
-          erro: string | null;
-          id: string;
-          latencia_ms: number | null;
-          pergunta: string;
-          resposta: string | null;
-          status: string;
-          telefone: string;
-          tokens_input: number | null;
-          tokens_output: number | null;
-          tools_chamadas: Json | null;
-          user_id: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          erro?: string | null;
-          id?: string;
-          latencia_ms?: number | null;
-          pergunta: string;
-          resposta?: string | null;
-          status?: string;
-          telefone: string;
-          tokens_input?: number | null;
-          tokens_output?: number | null;
-          tools_chamadas?: Json | null;
-          user_id?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          erro?: string | null;
-          id?: string;
-          latencia_ms?: number | null;
-          pergunta?: string;
-          resposta?: string | null;
-          status?: string;
-          telefone?: string;
-          tokens_input?: number | null;
-          tokens_output?: number | null;
-          tools_chamadas?: Json | null;
-          user_id?: string | null;
-        };
-        Relationships: [];
       };
       colaborador: {
         Row: {
@@ -930,6 +867,8 @@ export type Database = {
         Row: {
           avatar_url: string | null;
           cargo: string | null;
+          central_visita_anterior: string | null;
+          central_visita_atual: string | null;
           colaborador_id: string | null;
           created_at: string;
           email: string;
@@ -944,6 +883,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null;
           cargo?: string | null;
+          central_visita_anterior?: string | null;
+          central_visita_atual?: string | null;
           colaborador_id?: string | null;
           created_at?: string;
           email: string;
@@ -958,6 +899,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null;
           cargo?: string | null;
+          central_visita_anterior?: string | null;
+          central_visita_atual?: string | null;
           colaborador_id?: string | null;
           created_at?: string;
           email?: string;
@@ -1135,20 +1078,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      solicitacoes_relatorios: {
+        Row: {
+          categoria: string | null;
+          criado_em: string | null;
+          descricao: string | null;
+          detalhes_email: string | null;
+          email_id: string | null;
+          id: string;
+          justificativa_urgencia: string | null;
+          prazo: string | null;
+          responsavel: string | null;
+          solicitante_email: string | null;
+          solicitante_nome: string | null;
+          status: string | null;
+          tipo_base: string | null;
+          urgencia: string | null;
+        };
+        Insert: {
+          categoria?: string | null;
+          criado_em?: string | null;
+          descricao?: string | null;
+          detalhes_email?: string | null;
+          email_id?: string | null;
+          id?: string;
+          justificativa_urgencia?: string | null;
+          prazo?: string | null;
+          responsavel?: string | null;
+          solicitante_email?: string | null;
+          solicitante_nome?: string | null;
+          status?: string | null;
+          tipo_base?: string | null;
+          urgencia?: string | null;
+        };
+        Update: {
+          categoria?: string | null;
+          criado_em?: string | null;
+          descricao?: string | null;
+          detalhes_email?: string | null;
+          email_id?: string | null;
+          id?: string;
+          justificativa_urgencia?: string | null;
+          prazo?: string | null;
+          responsavel?: string | null;
+          solicitante_email?: string | null;
+          solicitante_nome?: string | null;
+          status?: string | null;
+          tipo_base?: string | null;
+          urgencia?: string | null;
+        };
+        Relationships: [];
+      };
       todo: {
         Row: {
           concluida_em: string | null;
           created_at: string;
           criado_por: string | null;
+          data_homologacao: string | null;
           data_prevista: string | null;
           demanda_id: string | null;
           descricao: string | null;
           em_teste: boolean;
           equipe_toda: boolean;
           id: string;
-          lote_importacao_id: string | null;
-          origem_importacao: string | null;
-          data_homologacao: string | null;
           liberacao_acesso_dispensada: boolean;
           liberacao_acesso_em: string | null;
           liberacao_acesso_por: string | null;
@@ -1158,12 +1150,14 @@ export type Database = {
           liberacao_versao_em: string | null;
           liberacao_versao_por: string | null;
           link_homologacao: string | null;
+          lote_importacao_id: string | null;
           numero_eproject: number | null;
           observacao_homologacao: string | null;
-          sistema: string | null;
+          origem_importacao: string | null;
           prioridade: Database["public"]["Enums"]["todo_prioridade"];
           responsaveis_ids: string[];
           responsavel_id: string | null;
+          sistema: string | null;
           status: Database["public"]["Enums"]["todo_status"];
           titulo: string;
           updated_at: string;
@@ -1172,15 +1166,13 @@ export type Database = {
           concluida_em?: string | null;
           created_at?: string;
           criado_por?: string | null;
+          data_homologacao?: string | null;
           data_prevista?: string | null;
           demanda_id?: string | null;
           descricao?: string | null;
           em_teste?: boolean;
           equipe_toda?: boolean;
           id?: string;
-          lote_importacao_id?: string | null;
-          origem_importacao?: string | null;
-          data_homologacao?: string | null;
           liberacao_acesso_dispensada?: boolean;
           liberacao_acesso_em?: string | null;
           liberacao_acesso_por?: string | null;
@@ -1190,12 +1182,14 @@ export type Database = {
           liberacao_versao_em?: string | null;
           liberacao_versao_por?: string | null;
           link_homologacao?: string | null;
+          lote_importacao_id?: string | null;
           numero_eproject?: number | null;
           observacao_homologacao?: string | null;
-          sistema?: string | null;
+          origem_importacao?: string | null;
           prioridade?: Database["public"]["Enums"]["todo_prioridade"];
           responsaveis_ids?: string[];
           responsavel_id?: string | null;
+          sistema?: string | null;
           status?: Database["public"]["Enums"]["todo_status"];
           titulo: string;
           updated_at?: string;
@@ -1204,15 +1198,13 @@ export type Database = {
           concluida_em?: string | null;
           created_at?: string;
           criado_por?: string | null;
+          data_homologacao?: string | null;
           data_prevista?: string | null;
           demanda_id?: string | null;
           descricao?: string | null;
           em_teste?: boolean;
           equipe_toda?: boolean;
           id?: string;
-          lote_importacao_id?: string | null;
-          origem_importacao?: string | null;
-          data_homologacao?: string | null;
           liberacao_acesso_dispensada?: boolean;
           liberacao_acesso_em?: string | null;
           liberacao_acesso_por?: string | null;
@@ -1222,12 +1214,14 @@ export type Database = {
           liberacao_versao_em?: string | null;
           liberacao_versao_por?: string | null;
           link_homologacao?: string | null;
+          lote_importacao_id?: string | null;
           numero_eproject?: number | null;
           observacao_homologacao?: string | null;
-          sistema?: string | null;
+          origem_importacao?: string | null;
           prioridade?: Database["public"]["Enums"]["todo_prioridade"];
           responsaveis_ids?: string[];
           responsavel_id?: string | null;
+          sistema?: string | null;
           status?: Database["public"]["Enums"]["todo_status"];
           titulo?: string;
           updated_at?: string;
@@ -1518,14 +1512,6 @@ export type Database = {
         };
         Returns: Json;
       };
-      registrar_visita_central: {
-        Args: { p_marcar_visto?: boolean };
-        Returns: string;
-      };
-      receber_pacote_homologacao: {
-        Args: { p_descricao: string | null; p_itens: Json; p_nome: string };
-        Returns: Json;
-      };
       enqueue_notificacao: {
         Args: {
           _link?: string;
@@ -1537,7 +1523,6 @@ export type Database = {
         };
         Returns: string;
       };
-      executar_busca_natural: { Args: { _sql: string }; Returns: Json };
       gerar_avisos_processos_proximos: { Args: never; Returns: number };
       gerar_notificacoes_prazo: { Args: never; Returns: undefined };
       get_tarefa_counts: {
@@ -1558,9 +1543,26 @@ export type Database = {
         Returns: boolean;
       };
       html_escape: { Args: { _t: string }; Returns: string };
-      limpar_atribuicoes_finalizadas: { Args: never; Returns: Json };
+      is_equipe: { Args: { _user_id: string }; Returns: boolean };
       marcar_transcricoes_travadas: { Args: never; Returns: number };
+      nomes_responsaveis: {
+        Args: { _equipe: boolean; _ids: string[]; _unico: string };
+        Returns: string;
+      };
+      notificar_atribuicao: {
+        Args: { p_destino: string; p_tarefa_id: string; p_titulo: string };
+        Returns: undefined;
+      };
       notify_processo_proximo: { Args: never; Returns: undefined };
+      receber_pacote_homologacao: {
+        Args: { p_descricao: string; p_itens: Json; p_nome: string };
+        Returns: Json;
+      };
+      registrar_visita_central: {
+        Args: { p_marcar_visto?: boolean };
+        Returns: string;
+      };
+      todo_numero_do_titulo: { Args: { p_titulo: string }; Returns: number };
     };
     Enums: {
       app_role: "gestor" | "analista";

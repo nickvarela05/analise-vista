@@ -192,7 +192,8 @@ export function ReceberPacoteDialog() {
 
     const { data, error } = await supabase.rpc("receber_pacote_homologacao", {
       p_nome: nomeLote,
-      p_descricao: descricao || null,
+      // O gerador de tipos marca todo argumento de função como obrigatório; o banco aceita null.
+      p_descricao: (descricao || null) as string,
       p_itens: itens,
     });
     setGravando(false);
