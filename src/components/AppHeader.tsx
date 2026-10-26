@@ -70,13 +70,12 @@ export function AppHeader() {
     <header
       data-app-header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/70 px-3 sm:gap-3 sm:px-4",
+        // Pílula flutuante em todos os temas (26/10/2026, pedido do Nickolas: o formato do Vidro
+        // vira o padrão; as cores continuam de cada tema).
+        "sticky top-2.5 z-30 mx-2 mt-2.5 flex h-14 items-center gap-2 rounded-full border border-border/70 px-3 shadow-md sm:mx-3 sm:gap-3 sm:px-4",
         "bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/55",
       )}
     >
-      {/* subtle gradient accent */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-border" />
-
       <SidebarTrigger className="hover:bg-accent" />
 
       {/* Celular: o caminho some, então mostra só o nome da página (M12 da auditoria visual). */}
