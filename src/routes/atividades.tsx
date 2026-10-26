@@ -146,19 +146,13 @@ function Atividades() {
   const inicio = React.useMemo(
     () =>
       startOfDay(
-        periodo === "semana"
-          ? startOfWeek(cursor, { weekStartsOn: 1 })
-          : startOfMonth(cursor),
+        periodo === "semana" ? startOfWeek(cursor, { weekStartsOn: 1 }) : startOfMonth(cursor),
       ),
     [cursor, periodo],
   );
   const fim = React.useMemo(
     () =>
-      endOfDay(
-        periodo === "semana"
-          ? endOfWeek(cursor, { weekStartsOn: 1 })
-          : endOfMonth(cursor),
-      ),
+      endOfDay(periodo === "semana" ? endOfWeek(cursor, { weekStartsOn: 1 }) : endOfMonth(cursor)),
     [cursor, periodo],
   );
 
@@ -223,14 +217,15 @@ function Atividades() {
 
   // Lista mínima de demandas para o select da nova tarefa
   const demandasMini = React.useMemo(
-    () => (demandas as Array<{ id: string; titulo: string }>).map((d) => ({ id: d.id, titulo: d.titulo })),
+    () =>
+      (demandas as Array<{ id: string; titulo: string }>).map((d) => ({
+        id: d.id,
+        titulo: d.titulo,
+      })),
     [demandas],
   );
 
-  const isMine = React.useCallback(
-    (r: any) => isAtribuidoA(r, meuColabId),
-    [meuColabId],
-  );
+  const isMine = React.useCallback((r: any) => isAtribuidoA(r, meuColabId), [meuColabId]);
 
   const colabById = React.useMemo(() => {
     const m = new Map<string, string>();
@@ -259,7 +254,7 @@ function Atividades() {
           prioridade: t.prioridade,
           status: t.status,
           descricao: t.descricao,
-          responsavel: t.responsavel_id ? colabById.get(t.responsavel_id) ?? null : null,
+          responsavel: t.responsavel_id ? (colabById.get(t.responsavel_id) ?? null) : null,
         });
     });
     demandas.filter(filtroEscopo).forEach((d: any) => {
@@ -275,7 +270,7 @@ function Atividades() {
           status: d.status,
           descricao: d.descricao,
           tags: d.tags,
-          responsavel: d.responsavel_id ? colabById.get(d.responsavel_id) ?? null : null,
+          responsavel: d.responsavel_id ? (colabById.get(d.responsavel_id) ?? null) : null,
         });
     });
     reunioes.filter(filtroEscopo).forEach((r: any) => {
@@ -288,17 +283,14 @@ function Atividades() {
           data: new Date(r.data_reuniao),
           status: r.status,
           descricao: r.pauta,
-          responsavel: r.responsavel_id ? colabById.get(r.responsavel_id) ?? null : null,
+          responsavel: r.responsavel_id ? (colabById.get(r.responsavel_id) ?? null) : null,
         });
     });
     return arr;
   }, [tarefas, demandas, reunioes, escopo, isMine, colabById]);
 
   const noPeriodo = todas.filter(
-    (a) =>
-      a.data >= inicio &&
-      a.data <= fim &&
-      (tipoFiltro === "todos" || a.tipo === tipoFiltro),
+    (a) => a.data >= inicio && a.data <= fim && (tipoFiltro === "todos" || a.tipo === tipoFiltro),
   );
 
   const navPrev = () =>
@@ -421,10 +413,14 @@ function Atividades() {
                 Colaborador
               </label>
               <Select value={escopo} onValueChange={setEscopo}>
-                <SelectTrigger className="w-44 sm:w-52"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-44 sm:w-52">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent className="max-h-96">
                   <SelectItem value="equipe">Toda a equipe</SelectItem>
-                  <SelectItem value="minhas" disabled={!meuColabId}>Minhas atribuições</SelectItem>
+                  <SelectItem value="minhas" disabled={!meuColabId}>
+                    Minhas atribuições
+                  </SelectItem>
                   {colabsAgrupados.grupos.map((g) =>
                     g.items.length > 0 ? (
                       <div key={g.label}>
@@ -433,7 +429,9 @@ function Atividades() {
                           {g.label}
                         </div>
                         {g.items.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                          </SelectItem>
                         ))}
                       </div>
                     ) : null,
@@ -445,7 +443,9 @@ function Atividades() {
                         Outros
                       </div>
                       {colabsAgrupados.outros.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                        </SelectItem>
                       ))}
                     </div>
                   )}
@@ -457,7 +457,9 @@ function Atividades() {
                 Tipo
               </label>
               <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-                <SelectTrigger className="w-32 sm:w-36"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-32 sm:w-36">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="tarefa">Tarefas</SelectItem>
@@ -471,7 +473,9 @@ function Atividades() {
                 Período
               </label>
               <Select value={periodo} onValueChange={(v) => setPeriodo(v as Periodo)}>
-                <SelectTrigger className="w-28 sm:w-32"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-28 sm:w-32">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="semana">Semana</SelectItem>
                   <SelectItem value="mes">Mês</SelectItem>
@@ -480,19 +484,34 @@ function Atividades() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={navPrev} className="hover:border-sky-500/40 hover:text-sky-600">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={navPrev}
+              className="hover:border-sky-500/40 hover:text-sky-600"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" onClick={hoje} className="hover:border-sky-500/40 hover:text-sky-600">
+            <Button
+              variant="outline"
+              onClick={hoje}
+              className="hover:border-sky-500/40 hover:text-sky-600"
+            >
               Hoje
             </Button>
-            <Button variant="outline" size="icon" onClick={navNext} className="hover:border-sky-500/40 hover:text-sky-600">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={navNext}
+              className="hover:border-sky-500/40 hover:text-sky-600"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
             <div className="ml-2 hidden items-center gap-1.5 rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs font-medium sm:flex">
               <CalendarRange className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
               <span>
-                {format(inicio, "dd 'de' MMM", { locale: ptBR })} – {format(fim, "dd 'de' MMM yyyy", { locale: ptBR })}
+                {format(inicio, "dd 'de' MMM", { locale: ptBR })} –{" "}
+                {format(fim, "dd 'de' MMM yyyy", { locale: ptBR })}
               </span>
             </div>
           </div>
@@ -508,17 +527,16 @@ function Atividades() {
               <PanelCard
                 key={dia.toISOString()}
                 title={
-                  <div className="flex items-center justify-between gap-2 group">
-                    <span className={cn(isHoje && "text-sky-700 dark:text-sky-300")}>
-                      {format(dia, "EEE dd/MM", { locale: ptBR })}
-                    </span>
-                    <QuickAdd data={dia} />
-                  </div> as unknown as string
+                  (
+                    <div className="flex items-center justify-between gap-2 group">
+                      <span className={cn(isHoje && "text-sky-700 dark:text-sky-300")}>
+                        {format(dia, "EEE dd/MM", { locale: ptBR })}
+                      </span>
+                      <QuickAdd data={dia} />
+                    </div>
+                  ) as unknown as string
                 }
-                className={cn(
-                  "group transition",
-                  isHoje && "ring-2 ring-primary/40 bg-primary/5",
-                )}
+                className={cn("group transition", isHoje && "ring-2 ring-primary/40 bg-primary/5")}
               >
                 <div className="min-h-[140px] space-y-2 sm:min-h-[180px]">
                   {doDia.length === 0 ? (
@@ -531,7 +549,9 @@ function Atividades() {
                         onClick={() => abrirDetalhe(a)}
                         className={`w-full text-left rounded-md border p-2 text-xs transition hover:brightness-110 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 ${tipoColor[a.tipo]}`}
                       >
-                        <Badge variant="outline" className="mb-1 text-[9px] uppercase">{a.tipo}</Badge>
+                        <Badge variant="outline" className="mb-1 text-[9px] uppercase">
+                          {a.tipo}
+                        </Badge>
                         <p className="font-medium leading-tight">{a.titulo}</p>
                         {a.tipo === "reuniao" && (
                           <p className="mt-0.5 text-[10px] opacity-80">{format(a.data, "HH:mm")}</p>
@@ -549,7 +569,10 @@ function Atividades() {
           <div className="-mx-2 overflow-x-auto px-2">
             <div className="grid min-w-[640px] grid-cols-7 gap-2">
               {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => (
-                <div key={d} className="px-2 py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground">
+                <div
+                  key={d}
+                  className="px-2 py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground"
+                >
                   {d}
                 </div>
               ))}
@@ -571,7 +594,9 @@ function Atividades() {
                     )}
                   >
                     <div className="mb-1 flex items-center justify-between">
-                      <span className={`text-[10px] font-semibold ${noMes ? "" : "text-muted-foreground"}`}>
+                      <span
+                        className={`text-[10px] font-semibold ${noMes ? "" : "text-muted-foreground"}`}
+                      >
                         {format(dia, "dd")}
                       </span>
                       <div className="flex items-center gap-1">
@@ -605,10 +630,18 @@ function Atividades() {
       )}
 
       <div className="mt-2 flex flex-wrap items-center gap-3 rounded-lg border bg-card/40 px-3 py-2 text-xs text-muted-foreground backdrop-blur">
-        <span className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground/70">Legenda</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-info" /> Tarefa</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-warning" /> Demanda</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Reunião</span>
+        <span className="font-medium uppercase tracking-wide text-[10px] text-muted-foreground/70">
+          Legenda
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-info" /> Tarefa
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-warning" /> Demanda
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-primary" /> Reunião
+        </span>
       </div>
 
       <PreviewDialog item={preview} open={previewOpen} onOpenChange={setPreviewOpen} />

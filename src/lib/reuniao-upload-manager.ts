@@ -13,13 +13,7 @@ import { formatBytes, getErrorMessage } from "@/lib/utils";
 import { MAX_UPLOAD_BYTES } from "@/constants/upload";
 import { logger } from "@/lib/logger";
 
-export type JobPhase =
-  | "compressing"
-  | "uploading"
-  | "triggering"
-  | "done"
-  | "error"
-  | "canceled";
+export type JobPhase = "compressing" | "uploading" | "triggering" | "done" | "error" | "canceled";
 
 export interface UploadJob {
   reuniaoId: string;
@@ -71,12 +65,19 @@ export const useUploadStore = create<State & Actions>((set, get) => ({
     const j = get().jobs[id];
     if (!j) return;
     // Dispara abort para interromper laços que checam o signal (encode/upload).
-    try { j.abort.abort(); } catch { /* noop */ }
+    try {
+      j.abort.abort();
+    } catch {
+      /* noop */
+    }
     // Marca como cancelado e remove rapidamente — operações síncronas
     // (decodeAudioData, ffmpeg.exec) não atendem ao signal no meio do
     // trabalho, mas a UI não pode ficar presa esperando.
     set((s) => ({
-      jobs: { ...s.jobs, [id]: { ...(s.jobs[id] as UploadJob), phase: "canceled", finishedAt: Date.now() } },
+      jobs: {
+        ...s.jobs,
+        [id]: { ...(s.jobs[id] as UploadJob), phase: "canceled", finishedAt: Date.now() },
+      },
     }));
     setTimeout(() => {
       set((s) => {
@@ -87,14 +88,17 @@ export const useUploadStore = create<State & Actions>((set, get) => ({
   },
 }));
 
-
 export interface StartJobOpts {
   reuniaoId: string;
   userId: string;
   titulo: string;
   file: File;
   /** Callback chamada após upload concluído (para atualizar form). */
-  onUploaded?: (info: { audio_path: string; audio_size: number; audio_mime: string }) => void | Promise<void>;
+  onUploaded?: (info: {
+    audio_path: string;
+    audio_size: number;
+    audio_mime: string;
+  }) => void | Promise<void>;
 }
 
 /**
@@ -130,7 +134,6 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
 
       if (abort.signal.aborted) throw new Error("CANCELED");
 
-
       // === Upload ===
       useUploadStore.getState().upsert(reuniaoId, { phase: "uploading", progress: 10 });
       const safeName = finalFile.name.replace(/[^\w.\-]+/g, "_");
@@ -157,7 +160,11 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
         })
         .eq("id", reuniaoId);
 
-      await onUploaded?.({ audio_path: path, audio_size: finalFile.size, audio_mime: normalizedType });
+      await onUploaded?.({
+        audio_path: path,
+        audio_size: finalFile.size,
+        audio_mime: normalizedType,
+      });
 
       // === Trigger IA ===
       useUploadStore.getState().upsert(reuniaoId, { phase: "triggering", progress: 0 });
@@ -209,7 +216,5 @@ export function useUploadJob(reuniaoId: string | null | undefined): UploadJob | 
 /** Há algum job em andamento? (para beforeunload) */
 export function hasActiveJobs(): boolean {
   const jobs = useUploadStore.getState().jobs;
-  return Object.values(jobs).some(
-    (j) => j.phase === "compressing" || j.phase === "uploading",
-  );
+  return Object.values(jobs).some((j) => j.phase === "compressing" || j.phase === "uploading");
 }

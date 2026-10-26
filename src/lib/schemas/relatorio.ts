@@ -35,11 +35,7 @@ export const relatorioSchema = z.object({
   urgencia: z.enum(URGENCIAS),
   prazo: z.preprocess(
     emptyToNull,
-    z
-      .string()
-      .regex(DATE_RE, "Prazo inválido")
-      .refine(isRealDate, "Prazo inexistente")
-      .nullable(),
+    z.string().regex(DATE_RE, "Prazo inválido").refine(isRealDate, "Prazo inexistente").nullable(),
   ),
   responsavel: z.preprocess(
     emptyToNull,

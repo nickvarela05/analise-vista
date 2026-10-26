@@ -48,7 +48,6 @@ import {
 } from "@/components/demandas/lib/demanda-utils";
 import { EsqueletoKanban, EsqueletoLista } from "@/components/shared/Esqueletos";
 
-
 export const Route = createFileRoute("/demandas")({
   errorComponent: RouteErrorBoundary,
   component: DemandasRoute,
@@ -145,7 +144,8 @@ function Demandas() {
     const s = search.trim().toLowerCase();
     return demandas.filter((d: any) => {
       if (s) {
-        const haystack = `${d.titulo} ${d.descricao ?? ""} ${d.solicitante ?? ""} ${(d.tags ?? []).join(" ")}`.toLowerCase();
+        const haystack =
+          `${d.titulo} ${d.descricao ?? ""} ${d.solicitante ?? ""} ${(d.tags ?? []).join(" ")}`.toLowerCase();
         if (!haystack.includes(s)) return false;
       }
       if (prioFilter !== "todas" && d.prioridade !== prioFilter) return false;
@@ -220,7 +220,10 @@ function Demandas() {
   };
 
   const detail = React.useMemo(
-    () => filtered.find((d: any) => d.id === detailId) ?? demandas.find((d: any) => d.id === detailId) ?? null,
+    () =>
+      filtered.find((d: any) => d.id === detailId) ??
+      demandas.find((d: any) => d.id === detailId) ??
+      null,
     [detailId, filtered, demandas],
   );
 
@@ -235,7 +238,10 @@ function Demandas() {
         tone="indigo"
         actions={
           <Button
-            onClick={() => { setEditing(null); setOpenCreate(true); }}
+            onClick={() => {
+              setEditing(null);
+              setOpenCreate(true);
+            }}
             className="gap-2"
           >
             <Plus className="h-4 w-4" /> Nova demanda
@@ -283,41 +289,67 @@ function Demandas() {
             />
           </div>
           <Select value={prioFilter} onValueChange={setPrioFilter}>
-            <SelectTrigger className="h-9 w-[140px] sm:w-36"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[140px] sm:w-36">
+              <SelectValue placeholder="Prioridade" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todas">Todas prioridades</SelectItem>
               {PRIORIDADE_OPTS.map((p) => (
-                <SelectItem key={p} value={p} className="capitalize">{prioridadeLabel(p)}</SelectItem>
+                <SelectItem key={p} value={p} className="capitalize">
+                  {prioridadeLabel(p)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={respFilter} onValueChange={setRespFilter}>
-            <SelectTrigger className="h-9 w-[160px] sm:w-44"><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-[160px] sm:w-44">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos responsáveis</SelectItem>
               <SelectItem value="__equipe__">Equipe toda</SelectItem>
               <SelectItem value="__sem__">Sem responsável</SelectItem>
               {colabs.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                <SelectItem key={c.id} value={c.id}>
+                  {c.nome}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Tabs value={prazoFilter} onValueChange={(v) => setPrazoFilter(v as PrazoFilter)} className="w-full sm:w-auto">
+          <Tabs
+            value={prazoFilter}
+            onValueChange={(v) => setPrazoFilter(v as PrazoFilter)}
+            className="w-full sm:w-auto"
+          >
             <TabsList className="h-9 w-full overflow-x-auto sm:w-auto">
-              <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
-              <TabsTrigger value="atrasadas" className="text-xs">Atrasadas</TabsTrigger>
-              <TabsTrigger value="hoje" className="text-xs">Hoje</TabsTrigger>
-              <TabsTrigger value="semana" className="text-xs">7 dias</TabsTrigger>
-              <TabsTrigger value="sem_prazo" className="text-xs">Sem prazo</TabsTrigger>
+              <TabsTrigger value="todos" className="text-xs">
+                Todos
+              </TabsTrigger>
+              <TabsTrigger value="atrasadas" className="text-xs">
+                Atrasadas
+              </TabsTrigger>
+              <TabsTrigger value="hoje" className="text-xs">
+                Hoje
+              </TabsTrigger>
+              <TabsTrigger value="semana" className="text-xs">
+                7 dias
+              </TabsTrigger>
+              <TabsTrigger value="sem_prazo" className="text-xs">
+                Sem prazo
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           {view === "lista" && (
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-9 w-[160px] sm:w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-9 w-[160px] sm:w-44">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os status</SelectItem>
                 {STATUS_OPTS.map((s) => (
-                  <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -350,7 +382,6 @@ function Demandas() {
         </div>
       </div>
 
-
       {/* Conteúdo */}
       {isLoading ? (
         view === "kanban" ? (
@@ -359,7 +390,10 @@ function Demandas() {
           <EsqueletoLista linhas={8} />
         )
       ) : demandas.length === 0 ? (
-        <EmptyState title="Nenhuma demanda ainda" description="Clique em 'Nova demanda' para registrar a primeira." />
+        <EmptyState
+          title="Nenhuma demanda ainda"
+          description="Clique em 'Nova demanda' para registrar a primeira."
+        />
       ) : view === "kanban" ? (
         <KanbanView
           demandas={filtered}
@@ -383,7 +417,10 @@ function Demandas() {
       {/* Diálogos */}
       <DemandaDialog
         open={openCreate}
-        onOpenChange={(v) => { setOpenCreate(v); if (!v) setEditing(null); }}
+        onOpenChange={(v) => {
+          setOpenCreate(v);
+          if (!v) setEditing(null);
+        }}
         initial={editing}
         colabs={colabs}
         userId={user?.id}
@@ -446,67 +483,82 @@ function KanbanView({
   return (
     <div className="-mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0">
       <div className="grid min-w-[900px] grid-cols-6 gap-3 lg:min-w-0 xl:grid-cols-6">
-      {KANBAN_STATUS.map((status) => {
-        const items = grouped[status] ?? [];
-        const isOver = overCol === status;
-        const tone = COL_TONE[status];
-        return (
-          <div
-            key={status}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setOverCol(status);
-            }}
-            onDragLeave={() => setOverCol(null)}
-            onDrop={() => onDropTo(status)}
-            className={cn(
-              "flex flex-col rounded-xl border bg-card/60 p-2 backdrop-blur transition-all",
-              isOver && `ring-2 ring-offset-1 ring-offset-background ${tone.ring} bg-card/80`,
-            )}
-          >
-            <div className={cn("mb-2 flex items-center justify-between rounded-lg px-2 py-1.5", tone.headerBg)}>
-              <div className="flex items-center gap-1.5">
-                <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
-                <h3 className={cn("text-[11px] font-semibold uppercase tracking-wide", tone.text)}>
-                  {STATUS_LABEL[status]}
-                </h3>
-              </div>
-              <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums", tone.badge)}>
-                {items.length}
-              </span>
-            </div>
-            <div className="flex flex-1 flex-col gap-2 min-h-[80px]">
-              {items.length === 0 ? (
-                <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">
-                  Solte aqui
-                </p>
-              ) : (
-                items.map((d) => (
-                  <DemandaCard
-                    key={d.id}
-                    demanda={d}
-                    options={colabs}
-                    todoCount={tarefaCounts[d.id]}
-                    onClick={() => onCardClick(d.id)}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = "move";
-                      onDragStart(d.id);
-                    }}
-                    compact
-                  />
-                ))
+        {KANBAN_STATUS.map((status) => {
+          const items = grouped[status] ?? [];
+          const isOver = overCol === status;
+          const tone = COL_TONE[status];
+          return (
+            <div
+              key={status}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOverCol(status);
+              }}
+              onDragLeave={() => setOverCol(null)}
+              onDrop={() => onDropTo(status)}
+              className={cn(
+                "flex flex-col rounded-xl border bg-card/60 p-2 backdrop-blur transition-all",
+                isOver && `ring-2 ring-offset-1 ring-offset-background ${tone.ring} bg-card/80`,
               )}
+            >
+              <div
+                className={cn(
+                  "mb-2 flex items-center justify-between rounded-lg px-2 py-1.5",
+                  tone.headerBg,
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+                  <h3
+                    className={cn("text-[11px] font-semibold uppercase tracking-wide", tone.text)}
+                  >
+                    {STATUS_LABEL[status]}
+                  </h3>
+                </div>
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                    tone.badge,
+                  )}
+                >
+                  {items.length}
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col gap-2 min-h-[80px]">
+                {items.length === 0 ? (
+                  <p className="px-1 py-6 text-center text-[11px] text-muted-foreground/60">
+                    Solte aqui
+                  </p>
+                ) : (
+                  items.map((d) => (
+                    <DemandaCard
+                      key={d.id}
+                      demanda={d}
+                      options={colabs}
+                      todoCount={tarefaCounts[d.id]}
+                      onClick={() => onCardClick(d.id)}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        onDragStart(d.id);
+                      }}
+                      compact
+                    />
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-const COL_TONE: Record<string, { headerBg: string; text: string; dot: string; badge: string; ring: string }> = {
+const COL_TONE: Record<
+  string,
+  { headerBg: string; text: string; dot: string; badge: string; ring: string }
+> = {
   aberta: {
     headerBg: "bg-sky-500/10",
     text: "text-sky-700 dark:text-sky-300",
@@ -551,7 +603,6 @@ const COL_TONE: Record<string, { headerBg: string; text: string; dot: string; ba
   },
 };
 
-
 function ListaView({
   demandas,
   colabs,
@@ -565,10 +616,7 @@ function ListaView({
 }) {
   if (demandas.length === 0) {
     return (
-      <EmptyState
-        title="Nada encontrado"
-        description="Ajuste os filtros para ver mais demandas."
-      />
+      <EmptyState title="Nada encontrado" description="Ajuste os filtros para ver mais demandas." />
     );
   }
   return (

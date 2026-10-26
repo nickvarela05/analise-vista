@@ -23,7 +23,15 @@ describe("parseEmailHomologacao", () => {
   const por = (n: string) => itens.find((i) => i.numero === n)!;
 
   it("lê uma tarefa por número e ignora saudação e cabeçalho", () => {
-    expect(itens.map((i) => i.numero)).toEqual(["9083", "9208", "9361", "9069", "9382", "8763", "9473"]);
+    expect(itens.map((i) => i.numero)).toEqual([
+      "9083",
+      "9208",
+      "9361",
+      "9069",
+      "9382",
+      "8763",
+      "9473",
+    ]);
     expect(ignoradas).toBe(2);
   });
 
@@ -40,9 +48,13 @@ describe("parseEmailHomologacao", () => {
   });
 
   it("separa link, tarefa e observação pelo conteúdo, não pela posição", () => {
-    expect(por("9361").link).toBe("https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9361/#/");
+    expect(por("9361").link).toBe(
+      "https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9361/#/",
+    );
     expect(por("9361").observacao).toBeNull();
-    expect(por("9473").observacao).toBe("Verificação da rotina e verificado que o registro é antigo");
+    expect(por("9473").observacao).toBe(
+      "Verificação da rotina e verificado que o registro é antigo",
+    );
     expect(por("9473").link).toBeNull();
     expect(por("9083").tarefa).toContain("Verificar o motivo de demorar");
   });
@@ -52,7 +64,9 @@ describe("parseEmailHomologacao", () => {
   });
 
   it("aceita coluna a mais e ordem diferente", () => {
-    const r = parseEmailHomologacao("GED\tJoão\t9412\tCustomizar a migração\thttps://x.gov.br/ged-hml-9412/\t18/09/2026");
+    const r = parseEmailHomologacao(
+      "GED\tJoão\t9412\tCustomizar a migração\thttps://x.gov.br/ged-hml-9412/\t18/09/2026",
+    );
     expect(r.itens[0]).toMatchObject({
       numero: "9412",
       tarefa: "Customizar a migração",
@@ -63,7 +77,9 @@ describe("parseEmailHomologacao", () => {
   });
 
   it("não repete o texto de uma célula que ocupa duas colunas", () => {
-    const r = parseEmailHomologacao("28/09/2026	GED	9473	Validar ficha AF	Verificação da rotina	Verificação da rotina");
+    const r = parseEmailHomologacao(
+      "28/09/2026	GED	9473	Validar ficha AF	Verificação da rotina	Verificação da rotina",
+    );
     expect(r.itens[0].observacao).toBe("Verificação da rotina");
   });
 
@@ -73,7 +89,9 @@ describe("parseEmailHomologacao", () => {
   });
 
   it("não cria tarefa a partir de frase solta com número", () => {
-    const r = parseEmailHomologacao("Salientamos a necessidade de manter a tarefa 9211 em stand-by.");
+    const r = parseEmailHomologacao(
+      "Salientamos a necessidade de manter a tarefa 9211 em stand-by.",
+    );
     expect(r.itens).toEqual([]);
     expect(r.ignoradas).toBe(1);
   });
@@ -95,8 +113,13 @@ describe("parseEmailHomologacao — uma célula por linha", () => {
   it("mantém sistema, título, link e data de cada tarefa", () => {
     expect(por("9083")).toMatchObject({ sistema: "BI", dataHml: "2026-09-18" });
     expect(por("9083").tarefa).toMatch(/^Verificar o motivo de demorar/);
-    expect(por("9361").link).toBe("https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9361/#/");
-    expect(por("9054")).toMatchObject({ sistema: "GED", tarefa: "Implementar Relatório de ALUNOS EVADIDOS POR SÉRIE" });
+    expect(por("9361").link).toBe(
+      "https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9361/#/",
+    );
+    expect(por("9054")).toMatchObject({
+      sistema: "GED",
+      tarefa: "Implementar Relatório de ALUNOS EVADIDOS POR SÉRIE",
+    });
     expect(por("9466")).toMatchObject({ sistema: "GED", dataHml: "2026-09-23" });
     expect(por("9465")).toMatchObject({ sistema: "GRD", dataHml: "2026-09-23" });
   });
@@ -108,7 +131,9 @@ describe("parseEmailHomologacao — uma célula por linha", () => {
   });
 
   it("com dois links, guarda o primeiro e o segundo vai para a observação", () => {
-    expect(por("9428").link).toBe("https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-painel-vagas/#/");
+    expect(por("9428").link).toBe(
+      "https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-painel-vagas/#/",
+    );
     expect(por("9428").observacao).toContain("ged-solicitacao-hml-painel-vagas");
   });
 

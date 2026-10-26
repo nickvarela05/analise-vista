@@ -132,7 +132,6 @@ export function CriarUsuarioDialog({
             </div>
           </DialogSection>
 
-
           <DialogSection title="Acesso e vínculo" icon={Shield} variant="tinted">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
@@ -175,7 +174,6 @@ export function CriarUsuarioDialog({
                       toast.success("Dados do colaborador preenchidos", {
                         description: "Nome foi migrado automaticamente.",
                       });
-
                     } else {
                       setForm({ ...form, colaborador_id: v });
                     }

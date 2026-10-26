@@ -16,12 +16,7 @@ import {
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { qk } from "@/lib/queries/keys";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,9 +102,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     let foto_url = colab.foto_url;
     if (foto) {
       const path = `team/${Date.now()}-${foto.name}`;
-      const { error: upErr } = await supabase.storage
-        .from("colaborador-fotos")
-        .upload(path, foto);
+      const { error: upErr } = await supabase.storage.from("colaborador-fotos").upload(path, foto);
       if (upErr) {
         setSaving(false);
         toast.error("Erro no upload", { description: upErr.message });
@@ -130,7 +123,6 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     setEditing(false);
     qc.invalidateQueries({ queryKey: qk.equipe() });
   };
-
 
   const desativar = async () => {
     if (!confirm("Desativar este colaborador?")) return;
@@ -164,8 +156,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
     else qc.invalidateQueries({ queryKey: qk.equipe() });
   };
 
-  const LocalIcon =
-    (colab.local_trabalho ?? "escritorio") === "rua" ? MapPin : Building2;
+  const LocalIcon = (colab.local_trabalho ?? "escritorio") === "rua" ? MapPin : Building2;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -205,17 +196,13 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                   />
                   <Select
                     value={form.local_trabalho}
-                    onValueChange={(v) =>
-                      setForm({ ...form, local_trabalho: v as LocalTrabalho })
-                    }
+                    onValueChange={(v) => setForm({ ...form, local_trabalho: v as LocalTrabalho })}
                   >
                     <SelectTrigger className="h-8">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="escritorio">
-                        {LOCAL_TRABALHO_LABEL.escritorio}
-                      </SelectItem>
+                      <SelectItem value="escritorio">{LOCAL_TRABALHO_LABEL.escritorio}</SelectItem>
                       <SelectItem value="rua">{LOCAL_TRABALHO_LABEL.rua}</SelectItem>
                     </SelectContent>
                   </Select>
@@ -300,9 +287,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
 
         <Tabs defaultValue="horario" className="mt-4 px-6 pb-6">
           <TabsList
-            className={cn(
-              "grid w-full grid-cols-4 bg-card/60 backdrop-blur ring-1 ring-border",
-            )}
+            className={cn("grid w-full grid-cols-4 bg-card/60 backdrop-blur ring-1 ring-border")}
           >
             <TabsTrigger
               value="horario"
@@ -325,10 +310,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
               <Plane className="mr-1 h-3.5 w-3.5" />
               Férias
             </TabsTrigger>
-            <TabsTrigger
-              value="bio"
-              className="data-[state=active]:text-primary"
-            >
+            <TabsTrigger value="bio" className="data-[state=active]:text-primary">
               <UserIcon className="mr-1 h-3.5 w-3.5" />
               Bio
             </TabsTrigger>
@@ -363,12 +345,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                 ))}
               </div>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              onClick={() => setOpenH(true)}
-            >
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setOpenH(true)}>
               <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar horário
             </Button>
             <HorarioDialog
@@ -403,9 +380,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                           </span>
                         )}
                       </div>
-                      {e.observacao && (
-                        <p className="text-muted-foreground">{e.observacao}</p>
-                      )}
+                      {e.observacao && <p className="text-muted-foreground">{e.observacao}</p>}
                     </div>
                     <Button
                       variant="ghost"
@@ -455,12 +430,7 @@ export function ColaboradorDrawer({ colab, open, onOpenChange }: Props) {
                 ))}
               </div>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full"
-              onClick={() => setOpenF(true)}
-            >
+            <Button size="sm" variant="outline" className="w-full" onClick={() => setOpenF(true)}>
               <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar período
             </Button>
             <FeriasDialog

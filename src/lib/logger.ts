@@ -4,7 +4,8 @@
  * encaminhar a um sink remoto (Sentry, etc.) sem tocar nos call-sites.
  */
 const isDev =
-  (typeof import.meta !== "undefined" && (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true) ||
+  (typeof import.meta !== "undefined" &&
+    (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true) ||
   (typeof process !== "undefined" && process.env?.NODE_ENV !== "production");
 
 type LogArgs = readonly unknown[];

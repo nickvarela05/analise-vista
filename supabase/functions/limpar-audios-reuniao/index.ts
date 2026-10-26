@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
   if (!autorizado(req)) return json({ error: "Forbidden" }, 403);
 
   const corpo = await req.json().catch(() => ({}));
-  const dias = Number.isFinite(corpo?.dias) && corpo.dias >= 7 ? Math.floor(corpo.dias) : DIAS_PADRAO;
+  const dias =
+    Number.isFinite(corpo?.dias) && corpo.dias >= 7 ? Math.floor(corpo.dias) : DIAS_PADRAO;
   const simular = corpo?.simular === true;
   const limite = new Date(Date.now() - dias * 86_400_000).toISOString();
 
@@ -70,10 +71,13 @@ Deno.serve(async (req) => {
       .from("reuniao")
       .update({ audio_path: null, audio_size: null, audio_mime: null })
       .eq("id", r.id);
-    if (errUpd) falhas.push(`${r.titulo} (arquivo apagado, reunião não atualizada): ${errUpd.message}`);
+    if (errUpd)
+      falhas.push(`${r.titulo} (arquivo apagado, reunião não atualizada): ${errUpd.message}`);
     else apagados++;
   }
 
-  console.log(`[limpar-audios] ${apagados} áudio(s) apagado(s), ~${totalMb} MB; falhas: ${falhas.length}`);
+  console.log(
+    `[limpar-audios] ${apagados} áudio(s) apagado(s), ~${totalMb} MB; falhas: ${falhas.length}`,
+  );
   return json({ dias, apagados, total_mb: totalMb, falhas, reunioes: resumo });
 });

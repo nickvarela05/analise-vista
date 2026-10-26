@@ -3,9 +3,17 @@ import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Loader2, LayoutGrid, List as ListIcon,
-  FlaskConical, CheckCircle2, Rocket, PauseCircle, XCircle, Hourglass,
-  CheckSquare, ChevronDown,
+  Loader2,
+  LayoutGrid,
+  List as ListIcon,
+  FlaskConical,
+  CheckCircle2,
+  Rocket,
+  PauseCircle,
+  XCircle,
+  Hourglass,
+  CheckSquare,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPast, isToday, isWithinInterval, addDays, startOfDay } from "date-fns";
@@ -18,7 +26,11 @@ import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { TarefaKanban } from "@/components/tarefas/TarefaKanban";
 import { TarefaDrawer } from "@/components/tarefas/TarefaDrawer";
-import { TarefaFilters, initialFilters, type TarefaFiltersState } from "@/components/tarefas/TarefaFilters";
+import {
+  TarefaFilters,
+  initialFilters,
+  type TarefaFiltersState,
+} from "@/components/tarefas/TarefaFilters";
 import { normalizeStatus, WORKFLOW, STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,7 +93,8 @@ function Tarefas() {
     const today = startOfDay(new Date());
     const week = addDays(today, 7);
     return tarefas.filter((t) => {
-      if (filters.search && !t.titulo.toLowerCase().includes(filters.search.toLowerCase())) return false;
+      if (filters.search && !t.titulo.toLowerCase().includes(filters.search.toLowerCase()))
+        return false;
       if (filters.prioridades.length && !filters.prioridades.includes(t.prioridade)) return false;
       if (filters.responsaveis.length) {
         const ids = (t.responsaveis_ids ?? []) as string[];
@@ -92,16 +105,22 @@ function Tarefas() {
       if (filters.emTeste && !t.em_teste) return false;
       if (filters.origem === "homologacao" && t.origem_importacao !== "homologacao") return false;
       if (filters.origem === "manual" && t.origem_importacao) return false;
-      if (filters.lotes.length && (!t.lote_importacao_id || !filters.lotes.includes(t.lote_importacao_id))) return false;
+      if (
+        filters.lotes.length &&
+        (!t.lote_importacao_id || !filters.lotes.includes(t.lote_importacao_id))
+      )
+        return false;
       if (filters.prazo !== "todos") {
         const prazo = parseDateOnly(t.data_prevista);
         if (filters.prazo === "sem_prazo" && prazo) return false;
         if (filters.prazo !== "sem_prazo" && !prazo) return false;
         if (prazo) {
           const finalizada = ["producao", "aprovado"].includes(t.status);
-          if (filters.prazo === "atrasadas" && (!isPast(prazo) || isToday(prazo) || finalizada)) return false;
+          if (filters.prazo === "atrasadas" && (!isPast(prazo) || isToday(prazo) || finalizada))
+            return false;
           if (filters.prazo === "hoje" && !isToday(prazo)) return false;
-          if (filters.prazo === "semana" && !isWithinInterval(prazo, { start: today, end: week })) return false;
+          if (filters.prazo === "semana" && !isWithinInterval(prazo, { start: today, end: week }))
+            return false;
         }
       }
       return true;
@@ -120,7 +139,15 @@ function Tarefas() {
   // "Encerradas" (a tela não carrega as encerradas, então mostrava sempre 0) e "Em teste"
   // (a marca continua no filtro "Em teste").
   const counts = React.useMemo(() => {
-    const acc = { standby: 0, hml: 0, aprovado: 0, ressalvas: 0, reprovado: 0, preBuild: 0, producao: 0 };
+    const acc = {
+      standby: 0,
+      hml: 0,
+      aprovado: 0,
+      ressalvas: 0,
+      reprovado: 0,
+      preBuild: 0,
+      producao: 0,
+    };
     for (const t of filtered) {
       const s = normalizeStatus(t.status);
       if (s === "em_andamento") acc.standby++;
@@ -172,9 +199,7 @@ function Tarefas() {
       status: status as TarefaRow["status"],
       concluida_em: status === "producao" ? new Date().toISOString() : null,
     };
-    await optimisticUpdate([id], patch, () =>
-      supabase.from("todo").update(patch).eq("id", id),
-    );
+    await optimisticUpdate([id], patch, () => supabase.from("todo").update(patch).eq("id", id));
     // Histórico de status: gravado pelo banco (gatilho trg_todo_registrar_status, 08/10/2026).
     if (user) await obs.gravar(user, [id], status, observacao);
   };
@@ -238,7 +263,11 @@ function Tarefas() {
     const key = qk.tarefas.all();
     const previous = qc.getQueryData<TarefaRow[]>(key);
     const idSet = new Set(ids);
-    if (previous) qc.setQueryData<TarefaRow[]>(key, previous.filter((t) => !idSet.has(t.id)));
+    if (previous)
+      qc.setQueryData<TarefaRow[]>(
+        key,
+        previous.filter((t) => !idSet.has(t.id)),
+      );
     const { error } = await supabase.from("todo").delete().in("id", ids);
     if (error) {
       if (previous) qc.setQueryData(key, previous);
@@ -285,12 +314,48 @@ function Tarefas() {
           </div>
         }
         stats={[
-          { icon: PauseCircle,  label: "Stand-by",    value: counts.standby,   tone: "primary",     hint: "Em aguardo" },
-          { icon: FlaskConical, label: "Homologação", value: counts.hml,       tone: "sky",         hint: "A testar" },
-          { icon: CheckCircle2, label: "Aprovadas",   value: counts.aprovado + counts.ressalvas, tone: "emerald", hint: counts.ressalvas ? `${counts.ressalvas} com ressalvas` : "Prontas para enviar" },
-          { icon: XCircle,      label: "Reprovadas",  value: counts.reprovado, tone: "destructive", hint: "Aguardam correção" },
-          { icon: Hourglass,    label: "Pré-build",   value: counts.preBuild,  tone: "amber",       hint: "Enviadas, aguardando produção" },
-          { icon: Rocket,       label: "Produção",    value: counts.producao,  tone: "violet",      hint: "Subiram" },
+          {
+            icon: PauseCircle,
+            label: "Stand-by",
+            value: counts.standby,
+            tone: "primary",
+            hint: "Em aguardo",
+          },
+          {
+            icon: FlaskConical,
+            label: "Homologação",
+            value: counts.hml,
+            tone: "sky",
+            hint: "A testar",
+          },
+          {
+            icon: CheckCircle2,
+            label: "Aprovadas",
+            value: counts.aprovado + counts.ressalvas,
+            tone: "emerald",
+            hint: counts.ressalvas ? `${counts.ressalvas} com ressalvas` : "Prontas para enviar",
+          },
+          {
+            icon: XCircle,
+            label: "Reprovadas",
+            value: counts.reprovado,
+            tone: "destructive",
+            hint: "Aguardam correção",
+          },
+          {
+            icon: Hourglass,
+            label: "Pré-build",
+            value: counts.preBuild,
+            tone: "amber",
+            hint: "Enviadas, aguardando produção",
+          },
+          {
+            icon: Rocket,
+            label: "Produção",
+            value: counts.producao,
+            tone: "violet",
+            hint: "Subiram",
+          },
         ]}
       />
 
@@ -301,11 +366,14 @@ function Tarefas() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline" className="h-9">
-                <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Selecionar <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Selecionar{" "}
+                <ChevronDown className="ml-1 h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={selectAll}>Selecionar todas ({filtered.length})</DropdownMenuItem>
+              <DropdownMenuItem onClick={selectAll}>
+                Selecionar todas ({filtered.length})
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={clearSelection}>Limpar seleção</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Por status</DropdownMenuLabel>
@@ -322,11 +390,19 @@ function Tarefas() {
 
           <Tabs value={view} onValueChange={(v) => setView(v as "kanban" | "lista")}>
             <TabsList className="h-9 bg-muted/60">
-              <TabsTrigger value="kanban" className="text-xs data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300">
-                <LayoutGrid className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Kanban</span>
+              <TabsTrigger
+                value="kanban"
+                className="text-xs data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300"
+              >
+                <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />{" "}
+                <span className="hidden sm:inline">Kanban</span>
               </TabsTrigger>
-              <TabsTrigger value="lista" className="text-xs data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300">
-                <ListIcon className="mr-1.5 h-3.5 w-3.5" /> <span className="hidden sm:inline">Lista</span>
+              <TabsTrigger
+                value="lista"
+                className="text-xs data-[state=active]:bg-emerald-500/15 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-300"
+              >
+                <ListIcon className="mr-1.5 h-3.5 w-3.5" />{" "}
+                <span className="hidden sm:inline">Lista</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -351,7 +427,10 @@ function Tarefas() {
           <EsqueletoLista linhas={8} />
         )
       ) : filtered.length === 0 ? (
-        <EmptyState title="Nenhuma tarefa encontrada" description="Ajuste os filtros ou crie uma nova tarefa." />
+        <EmptyState
+          title="Nenhuma tarefa encontrada"
+          description="Ajuste os filtros ou crie uma nova tarefa."
+        />
       ) : view === "kanban" ? (
         <TarefaKanban
           tarefas={filtered}

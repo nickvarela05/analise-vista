@@ -4,12 +4,32 @@ import { AppLayout } from "@/components/AppLayout";
 import { PageHero } from "@/components/shared/PageHero";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Sparkles, Loader2, AlertCircle, Calendar, RefreshCw,
-  TrendingUp, TrendingDown, CheckCircle2, AlertTriangle, Flame, Lightbulb,
-  ListChecks, Inbox, Clock, Target, ArrowRight, UserSearch,
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  Calendar,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  CheckCircle2,
+  AlertTriangle,
+  Flame,
+  Lightbulb,
+  ListChecks,
+  Inbox,
+  Clock,
+  Target,
+  ArrowRight,
+  UserSearch,
 } from "lucide-react";
 import { cn, getErrorMessage } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +62,9 @@ function InsightsPage() {
 }
 
 function ResumoPorFuncionario() {
-  const [funcionarios, setFuncionarios] = React.useState<Array<{ user_id: string; nome: string; cargo: string | null; avatar_url: string | null }>>([]);
+  const [funcionarios, setFuncionarios] = React.useState<
+    Array<{ user_id: string; nome: string; cargo: string | null; avatar_url: string | null }>
+  >([]);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [resumos, setResumos] = React.useState<any[]>([]);
   const [activeIdx, setActiveIdx] = React.useState(0);
@@ -54,15 +76,37 @@ function ResumoPorFuncionario() {
     (async () => {
       setLoadingList(true);
       const { data: roles, error: rolesErr } = await supabase
-        .from("user_roles").select("user_id, role").in("role", ["analista", "gestor"]);
-      if (rolesErr) { setErro(rolesErr.message); setLoadingList(false); return; }
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["analista", "gestor"]);
+      if (rolesErr) {
+        setErro(rolesErr.message);
+        setLoadingList(false);
+        return;
+      }
       const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
-      if (ids.length === 0) { setFuncionarios([]); setLoadingList(false); return; }
+      if (ids.length === 0) {
+        setFuncionarios([]);
+        setLoadingList(false);
+        return;
+      }
       const { data: profs, error: pErr } = await supabase
-        .from("profiles").select("user_id, nome, cargo, avatar_url").in("user_id", ids);
-      if (pErr) { setErro(pErr.message); setLoadingList(false); return; }
+        .from("profiles")
+        .select("user_id, nome, cargo, avatar_url")
+        .in("user_id", ids);
+      if (pErr) {
+        setErro(pErr.message);
+        setLoadingList(false);
+        return;
+      }
       // Whitelist: apenas os analistas relevantes para o resumo gerencial.
-      const ALLOWED = ["felipe pino", "hugo figueiredo", "matheus nogueira", "nickolas", "pietro clissa"];
+      const ALLOWED = [
+        "felipe pino",
+        "hugo figueiredo",
+        "matheus nogueira",
+        "nickolas",
+        "pietro clissa",
+      ];
       const list = (profs ?? [])
         .filter((p: any) => {
           const n = (p.nome ?? "").toLowerCase();
@@ -76,14 +120,25 @@ function ResumoPorFuncionario() {
   }, []);
 
   React.useEffect(() => {
-    if (!selectedId) { setResumos([]); return; }
+    if (!selectedId) {
+      setResumos([]);
+      return;
+    }
     (async () => {
       setLoadingResumos(true);
       setErro(null);
       const { data, error } = await supabase
-        .from("resumo_semanal").select("*").eq("user_id", selectedId)
-        .order("semana_inicio", { ascending: false }).limit(12);
-      if (error) { setErro(error.message); setResumos([]); setLoadingResumos(false); return; }
+        .from("resumo_semanal")
+        .select("*")
+        .eq("user_id", selectedId)
+        .order("semana_inicio", { ascending: false })
+        .limit(12);
+      if (error) {
+        setErro(error.message);
+        setResumos([]);
+        setLoadingResumos(false);
+        return;
+      }
       setResumos(data ?? []);
       setActiveIdx(0);
       setLoadingResumos(false);
@@ -104,19 +159,33 @@ function ResumoPorFuncionario() {
             <div>
               <CardTitle className="text-lg">Resumo semanal do funcionário</CardTitle>
               <CardDescription className="mt-1">
-                Visão gerencial: selecione um analista ou estagiário de TI para ver o resumo individual.
+                Visão gerencial: selecione um analista ou estagiário de TI para ver o resumo
+                individual.
               </CardDescription>
             </div>
           </div>
           <div className="w-full md:w-72">
-            <Select value={selectedId ?? undefined} onValueChange={(v) => setSelectedId(v)} disabled={loadingList || funcionarios.length === 0}>
+            <Select
+              value={selectedId ?? undefined}
+              onValueChange={(v) => setSelectedId(v)}
+              disabled={loadingList || funcionarios.length === 0}
+            >
               <SelectTrigger>
-                <SelectValue placeholder={loadingList ? "Carregando…" : funcionarios.length === 0 ? "Nenhum analista cadastrado" : "Selecionar funcionário"} />
+                <SelectValue
+                  placeholder={
+                    loadingList
+                      ? "Carregando…"
+                      : funcionarios.length === 0
+                        ? "Nenhum analista cadastrado"
+                        : "Selecionar funcionário"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {funcionarios.map((f) => (
                   <SelectItem key={f.user_id} value={f.user_id}>
-                    {f.nome}{f.cargo ? ` — ${f.cargo}` : ""}
+                    {f.nome}
+                    {f.cargo ? ` — ${f.cargo}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -126,23 +195,47 @@ function ResumoPorFuncionario() {
       </Card>
 
       {!selectedId ? (
-        <Card><CardContent className="p-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400">
-            <UserSearch className="h-6 w-6" />
-          </div>
-          <p className="text-sm font-medium">Selecione um funcionário</p>
-          <p className="mt-1 text-xs text-muted-foreground">Escolha um analista/estagiário acima para visualizar o resumo semanal individual.</p>
-        </CardContent></Card>
+        <Card>
+          <CardContent className="p-10 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400">
+              <UserSearch className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-medium">Selecione um funcionário</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Escolha um analista/estagiário acima para visualizar o resumo semanal individual.
+            </p>
+          </CardContent>
+        </Card>
       ) : loadingResumos ? (
-        <Card><CardContent className="p-6"><div className="flex items-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Carregando resumos…</div></CardContent></Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando resumos…
+            </div>
+          </CardContent>
+        </Card>
       ) : erro ? (
-        <Card><CardContent className="p-6"><div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{erro}</span></div></CardContent></Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{erro}</span>
+            </div>
+          </CardContent>
+        </Card>
       ) : resumos.length === 0 ? (
-        <Card><CardContent className="p-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground"><Sparkles className="h-6 w-6" /></div>
-          <p className="text-sm font-medium">Nenhum resumo gerado ainda para este colaborador</p>
-          <p className="mt-1 text-xs text-muted-foreground">Os resumos são gerados automaticamente toda segunda-feira às 7h.</p>
-        </CardContent></Card>
+        <Card>
+          <CardContent className="p-10 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-medium">Nenhum resumo gerado ainda para este colaborador</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Os resumos são gerados automaticamente toda segunda-feira às 7h.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
           <Card>
@@ -150,7 +243,14 @@ function ResumoPorFuncionario() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-11 w-11 ring-2 ring-violet-500/30">
                   <AvatarImage src={selecionado?.avatar_url ?? undefined} alt={selecionado?.nome} />
-                  <AvatarFallback>{(selecionado?.nome ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>
+                    {(selecionado?.nome ?? "?")
+                      .split(" ")
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="text-sm font-semibold leading-tight">{selecionado?.nome}</div>
@@ -166,7 +266,8 @@ function ResumoPorFuncionario() {
                     <SelectContent>
                       {resumos.map((r, i) => (
                         <SelectItem key={r.id} value={String(i)}>
-                          {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} – {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
+                          {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} –{" "}
+                          {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
                           {i === 0 ? " (mais recente)" : ""}
                         </SelectItem>
                       ))}
@@ -208,7 +309,9 @@ function ResumoSemanal() {
     setLoading(false);
   }
 
-  React.useEffect(() => { carregar(); }, []);
+  React.useEffect(() => {
+    carregar();
+  }, []);
 
   async function gerarAgora() {
     setGerando(true);
@@ -216,9 +319,13 @@ function ResumoSemanal() {
       const { data, error } = await supabase.functions.invoke("gerar-resumo-semanal");
       if (error) throw error;
       if ((data?.gerados ?? 0) > 0) {
-        toast.success("Resumo gerado", { description: `${data.gerados} resumo${data.gerados === 1 ? "" : "s"} atualizado${data.gerados === 1 ? "" : "s"}.` });
+        toast.success("Resumo gerado", {
+          description: `${data.gerados} resumo${data.gerados === 1 ? "" : "s"} atualizado${data.gerados === 1 ? "" : "s"}.`,
+        });
       } else {
-        toast.info("Nenhum resumo novo", { description: "Não foram encontradas atividades na semana anterior para resumir." });
+        toast.info("Nenhum resumo novo", {
+          description: "Não foram encontradas atividades na semana anterior para resumir.",
+        });
       }
       await carregar();
     } catch (e: unknown) {
@@ -245,7 +352,11 @@ function ResumoSemanal() {
           </div>
           {role === "gestor" && (
             <Button size="sm" onClick={gerarAgora} disabled={gerando} className="shrink-0">
-              {gerando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              {gerando ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
               {gerando ? "Gerando…" : "Gerar agora"}
             </Button>
           )}
@@ -253,39 +364,102 @@ function ResumoSemanal() {
       </Card>
 
       {loading ? (
-        <Card><CardContent className="p-6"><div className="flex items-center gap-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Carregando resumos…</div></CardContent></Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando resumos…
+            </div>
+          </CardContent>
+        </Card>
       ) : erro ? (
-        <Card><CardContent className="p-6"><div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{erro}</span></div></CardContent></Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{erro}</span>
+            </div>
+          </CardContent>
+        </Card>
       ) : resumos.length === 0 ? (
-        <Card><CardContent className="p-10 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"><Sparkles className="h-6 w-6" /></div>
-          <p className="text-sm font-medium">Nenhum resumo ainda</p>
-          <p className="mt-1 text-xs text-muted-foreground">{role === "gestor" ? "Clique em \"Gerar agora\" para criar o primeiro." : "O resumo será gerado automaticamente na próxima segunda-feira."}</p>
-        </CardContent></Card>
+        <Card>
+          <CardContent className="p-10 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-medium">Nenhum resumo ainda</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {role === "gestor"
+                ? 'Clique em "Gerar agora" para criar o primeiro.'
+                : "O resumo será gerado automaticamente na próxima segunda-feira."}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-6">
-          {resumos.map((r, idx) => <ResumoCard key={r.id} resumo={r} destaque={idx === 0} />)}
+          {resumos.map((r, idx) => (
+            <ResumoCard key={r.id} resumo={r} destaque={idx === 0} />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-const METRIC_META: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; tone: string; ring: string }> = {
-  tarefas_total:           { label: "Tarefas criadas",   icon: ListChecks,  tone: "text-sky-600 dark:text-sky-400",       ring: "from-sky-500/20 to-transparent" },
-  tarefas_concluidas:      { label: "Concluídas",        icon: CheckCircle2,tone: "text-emerald-600 dark:text-emerald-400", ring: "from-emerald-500/20 to-transparent" },
-  tarefas_urgentes:        { label: "Urgentes",          icon: Flame,       tone: "text-orange-600 dark:text-orange-400", ring: "from-orange-500/20 to-transparent" },
-  demandas_total:          { label: "Demandas novas",    icon: Inbox,       tone: "text-violet-600 dark:text-violet-400", ring: "from-violet-500/20 to-transparent" },
-  demandas_em_andamento:   { label: "Em andamento",      icon: Clock,       tone: "text-indigo-600 dark:text-indigo-400", ring: "from-indigo-500/20 to-transparent" },
-  chamados_total:          { label: "Chamados",          icon: Target,      tone: "text-cyan-600 dark:text-cyan-400",     ring: "from-cyan-500/20 to-transparent" },
-  chamados_sla_estourado:  { label: "SLA estourado",     icon: AlertTriangle, tone: "text-red-600 dark:text-red-400",     ring: "from-red-500/20 to-transparent" },
+const METRIC_META: Record<
+  string,
+  { label: string; icon: React.ComponentType<{ className?: string }>; tone: string; ring: string }
+> = {
+  tarefas_total: {
+    label: "Tarefas criadas",
+    icon: ListChecks,
+    tone: "text-sky-600 dark:text-sky-400",
+    ring: "from-sky-500/20 to-transparent",
+  },
+  tarefas_concluidas: {
+    label: "Concluídas",
+    icon: CheckCircle2,
+    tone: "text-emerald-600 dark:text-emerald-400",
+    ring: "from-emerald-500/20 to-transparent",
+  },
+  tarefas_urgentes: {
+    label: "Urgentes",
+    icon: Flame,
+    tone: "text-orange-600 dark:text-orange-400",
+    ring: "from-orange-500/20 to-transparent",
+  },
+  demandas_total: {
+    label: "Demandas novas",
+    icon: Inbox,
+    tone: "text-violet-600 dark:text-violet-400",
+    ring: "from-violet-500/20 to-transparent",
+  },
+  demandas_em_andamento: {
+    label: "Em andamento",
+    icon: Clock,
+    tone: "text-indigo-600 dark:text-indigo-400",
+    ring: "from-indigo-500/20 to-transparent",
+  },
+  chamados_total: {
+    label: "Chamados",
+    icon: Target,
+    tone: "text-cyan-600 dark:text-cyan-400",
+    ring: "from-cyan-500/20 to-transparent",
+  },
+  chamados_sla_estourado: {
+    label: "SLA estourado",
+    icon: AlertTriangle,
+    tone: "text-red-600 dark:text-red-400",
+    ring: "from-red-500/20 to-transparent",
+  },
 };
 
 function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }) {
   const metricas = (r.metricas ?? {}) as Record<string, number>;
-  const taxaConclusao = metricas.tarefas_total > 0
-    ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
-    : null;
+  const taxaConclusao =
+    metricas.tarefas_total > 0
+      ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
+      : null;
 
   const sections = parseMarkdownSections(r.conteudo_md ?? "");
 
@@ -297,7 +471,8 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-medium text-primary">
               <Calendar className="h-3 w-3" />
-              {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} – {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
+              {new Date(r.semana_inicio).toLocaleDateString("pt-BR")} –{" "}
+              {new Date(r.semana_fim).toLocaleDateString("pt-BR")}
             </span>
             {destaque && (
               <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
@@ -314,15 +489,26 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
           <div className="mt-4 flex items-center gap-3">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight">{taxaConclusao}%</span>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">conclusão</span>
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                conclusão
+              </span>
             </div>
             <div className="ml-2 inline-flex items-center gap-1 rounded-full bg-background/80 px-2.5 py-1 text-xs font-medium">
               {taxaConclusao >= 70 ? (
-                <><TrendingUp className="h-3 w-3 text-emerald-500" /><span className="text-emerald-700 dark:text-emerald-400">Acima da meta</span></>
+                <>
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <span className="text-emerald-700 dark:text-emerald-400">Acima da meta</span>
+                </>
               ) : taxaConclusao >= 40 ? (
-                <><TrendingUp className="h-3 w-3 text-amber-500" /><span className="text-amber-700 dark:text-amber-400">No ritmo</span></>
+                <>
+                  <TrendingUp className="h-3 w-3 text-amber-500" />
+                  <span className="text-amber-700 dark:text-amber-400">No ritmo</span>
+                </>
               ) : (
-                <><TrendingDown className="h-3 w-3 text-red-500" /><span className="text-red-700 dark:text-red-400">Atenção</span></>
+                <>
+                  <TrendingDown className="h-3 w-3 text-red-500" />
+                  <span className="text-red-700 dark:text-red-400">Atenção</span>
+                </>
               )}
             </div>
           </div>
@@ -337,11 +523,18 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
               if (metricas[key] === undefined) return null;
               const Icon = meta.icon;
               return (
-                <div key={key} className={cn("relative overflow-hidden rounded-xl border bg-card p-3.5 transition-all hover:shadow-md")}>
-                    <div className="relative">
+                <div
+                  key={key}
+                  className={cn(
+                    "relative overflow-hidden rounded-xl border bg-card p-3.5 transition-all hover:shadow-md",
+                  )}
+                >
+                  <div className="relative">
                     <Icon className={cn("h-4 w-4", meta.tone)} />
                     <div className="mt-2 text-2xl font-bold tabular-nums">{metricas[key]}</div>
-                    <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{meta.label}</div>
+                    <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      {meta.label}
+                    </div>
                   </div>
                 </div>
               );
@@ -380,7 +573,12 @@ function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }
   );
 }
 
-type MdSection = { title: string; tone: "destaque" | "atencao" | "recomendacao" | "default"; items: string[]; paragraphs: string[] };
+type MdSection = {
+  title: string;
+  tone: "destaque" | "atencao" | "recomendacao" | "default";
+  items: string[];
+  paragraphs: string[];
+};
 
 function parseMarkdownSections(md: string): MdSection[] {
   if (!md) return [];
@@ -394,10 +592,13 @@ function parseMarkdownSections(md: string): MdSection[] {
       if (cur) sections.push(cur);
       const title = h[1].replace(/[*_`]/g, "").trim();
       const low = title.toLowerCase();
-      const tone: MdSection["tone"] =
-        /(destaque|conquista|highlight|win)/.test(low) ? "destaque" :
-        /(aten|risc|alerta|atras|bloque)/.test(low) ? "atencao" :
-        /(recomend|próxim|sugest|ação|action)/.test(low) ? "recomendacao" : "default";
+      const tone: MdSection["tone"] = /(destaque|conquista|highlight|win)/.test(low)
+        ? "destaque"
+        : /(aten|risc|alerta|atras|bloque)/.test(low)
+          ? "atencao"
+          : /(recomend|próxim|sugest|ação|action)/.test(low)
+            ? "recomendacao"
+            : "default";
       cur = { title, tone, items: [], paragraphs: [] };
       continue;
     }
@@ -415,10 +616,18 @@ function parseMarkdownSections(md: string): MdSection[] {
 
 function SectionBlock({ section }: { section: MdSection }) {
   const palette = {
-    destaque:      { icon: TrendingUp,    cls: "border-emerald-500/30 bg-emerald-500/5", iconCls: "text-emerald-600 dark:text-emerald-400" },
-    atencao:       { icon: AlertTriangle, cls: "border-amber-500/30 bg-amber-500/5",     iconCls: "text-amber-600 dark:text-amber-400" },
-    recomendacao:  { icon: Target,        cls: "border-primary/30 bg-primary/5",         iconCls: "text-primary" },
-    default:       { icon: Sparkles,      cls: "border-border bg-muted/30",              iconCls: "text-muted-foreground" },
+    destaque: {
+      icon: TrendingUp,
+      cls: "border-emerald-500/30 bg-emerald-500/5",
+      iconCls: "text-emerald-600 dark:text-emerald-400",
+    },
+    atencao: {
+      icon: AlertTriangle,
+      cls: "border-amber-500/30 bg-amber-500/5",
+      iconCls: "text-amber-600 dark:text-amber-400",
+    },
+    recomendacao: { icon: Target, cls: "border-primary/30 bg-primary/5", iconCls: "text-primary" },
+    default: { icon: Sparkles, cls: "border-border bg-muted/30", iconCls: "text-muted-foreground" },
   }[section.tone];
   const Icon = palette.icon;
 
@@ -429,13 +638,23 @@ function SectionBlock({ section }: { section: MdSection }) {
         <h4 className="text-sm font-semibold leading-none">{section.title}</h4>
       </div>
       {section.paragraphs.map((p, i) => (
-        <p key={i} className="mb-2 text-sm leading-relaxed text-foreground/85">{renderInline(p)}</p>
+        <p key={i} className="mb-2 text-sm leading-relaxed text-foreground/85">
+          {renderInline(p)}
+        </p>
       ))}
       {section.items.length > 0 && (
         <ul className="space-y-1.5">
           {section.items.map((it, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-foreground/85">
-              <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", palette.iconCls.replace("text-", "bg-"))} />
+            <li
+              key={i}
+              className="flex items-start gap-2 text-sm leading-relaxed text-foreground/85"
+            >
+              <span
+                className={cn(
+                  "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                  palette.iconCls.replace("text-", "bg-"),
+                )}
+              />
               <span>{renderInline(it)}</span>
             </li>
           ))}
@@ -449,8 +668,12 @@ function renderInline(text: string): React.ReactNode {
   // **bold** parsing
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((p, i) =>
-    /^\*\*[^*]+\*\*$/.test(p)
-      ? <strong key={i} className="font-semibold text-foreground">{p.slice(2, -2)}</strong>
-      : <React.Fragment key={i}>{p}</React.Fragment>
+    /^\*\*[^*]+\*\*$/.test(p) ? (
+      <strong key={i} className="font-semibold text-foreground">
+        {p.slice(2, -2)}
+      </strong>
+    ) : (
+      <React.Fragment key={i}>{p}</React.Fragment>
+    ),
   );
 }

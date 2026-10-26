@@ -28,7 +28,8 @@ export const audioFileSchema = z
     message: "Arquivo acima de 25 MB. Reduza, comprima ou divida antes de enviar.",
   })
   .refine(isAcceptedAudio, {
-    message: "Arquivo não é um áudio válido. Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
+    message:
+      "Arquivo não é um áudio válido. Formatos aceitos: MP3, M4A, WAV, WebM, OGG, MP4, AAC, FLAC.",
   });
 
 /** Metadados que acompanham o job de upload. */
@@ -40,9 +41,7 @@ export const audioUploadMetaSchema = z.object({
 
 export type AudioUploadMeta = z.infer<typeof audioUploadMetaSchema>;
 
-export type ParseAudioResult =
-  | { ok: true; file: File }
-  | { ok: false, error: string };
+export type ParseAudioResult = { ok: true; file: File } | { ok: false; error: string };
 
 /** Executa `audioFileSchema.safeParse` e devolve mensagem pronta para toast. */
 export function parseAudioFile(file: File): ParseAudioResult {

@@ -1,5 +1,15 @@
 import * as React from "react";
-import { Loader2, Wand2, Upload, CheckCircle2, AlertCircle, X, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import {
+  Loader2,
+  Wand2,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+} from "lucide-react";
 import { useUploadStore, type UploadJob } from "@/lib/reuniao-upload-manager";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -32,9 +42,7 @@ export function BackgroundJobsIndicator() {
   // Avisa antes de fechar a aba se houver jobs em andamento
   React.useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      const active = list.some(
-        (j) => j.phase === "compressing" || j.phase === "uploading",
-      );
+      const active = list.some((j) => j.phase === "compressing" || j.phase === "uploading");
       if (active) {
         e.preventDefault();
         e.returnValue = "";

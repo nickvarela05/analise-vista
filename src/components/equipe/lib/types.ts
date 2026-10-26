@@ -63,12 +63,7 @@ export const EVENTO_LABEL: Record<EventoTipo, string> = {
   ferias_avulso: "Férias (1 dia)",
 };
 
-export type StatusKey =
-  | "trabalhando"
-  | "almoco"
-  | "ferias"
-  | "evento"
-  | "fora";
+export type StatusKey = "trabalhando" | "almoco" | "ferias" | "evento" | "fora";
 
 export const STATUS_LABEL: Record<StatusKey, string> = {
   trabalhando: "Trabalhando",

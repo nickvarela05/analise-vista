@@ -13,10 +13,7 @@ export const tarefaSchema = z
       .max(200, "Título deve ter no máximo 200 caracteres"),
     descricao: z.preprocess(
       emptyToNull,
-      z
-        .string()
-        .max(5000, "Descrição deve ter no máximo 5000 caracteres")
-        .nullable(),
+      z.string().max(5000, "Descrição deve ter no máximo 5000 caracteres").nullable(),
     ),
     prioridade: z.enum(PRIO),
     status: z.enum(WORKFLOW),

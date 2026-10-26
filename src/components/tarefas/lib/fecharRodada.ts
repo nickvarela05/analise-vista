@@ -10,7 +10,12 @@ import { extractTaskNumber } from "@/components/tarefas/lib/taskNumber";
 import { STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 
 /** Status em que a tarefa está "na rodada" (em teste). */
-export const STATUS_RODADA = ["homologacao", "aprovado", "aprovado_ressalvas", "reprovado"] as const;
+export const STATUS_RODADA = [
+  "homologacao",
+  "aprovado",
+  "aprovado_ressalvas",
+  "reprovado",
+] as const;
 /** Prontas para envio. Reprovada só existe durante o teste e é corrigida antes do envio. */
 export const STATUS_PRONTAS = ["aprovado", "aprovado_ressalvas"] as const;
 
@@ -41,10 +46,12 @@ export type LinhaEnvio = {
 
 /** "Tarefa 9083 - Verificar…" -> "Verificar…" (o número vai em coluna própria). */
 export function tituloSemNumero(titulo: string): string {
-  return titulo
-    .replace(/^\s*(?:tarefa|task)\s*[:#-]?\s*\d{2,}\s*[-–:]?\s*/i, "")
-    .replace(/^\s*#?\d{2,}\s*[-–:]\s*/, "")
-    .trim() || titulo.trim();
+  return (
+    titulo
+      .replace(/^\s*(?:tarefa|task)\s*[:#-]?\s*\d{2,}\s*[-–:]?\s*/i, "")
+      .replace(/^\s*#?\d{2,}\s*[-–:]\s*/, "")
+      .trim() || titulo.trim()
+  );
 }
 
 function dataBr(iso: string | null): string {
@@ -66,7 +73,10 @@ export function montarLinhas(
   const ordem = (s: string) => (s === "aprovado" ? 0 : s === "aprovado_ressalvas" ? 1 : 2);
   return tarefas
     .map((t) => {
-      const ids = new Set<string>([...(t.responsaveis_ids ?? []), ...(t.responsavel_id ? [t.responsavel_id] : [])]);
+      const ids = new Set<string>([
+        ...(t.responsaveis_ids ?? []),
+        ...(t.responsavel_id ? [t.responsavel_id] : []),
+      ]);
       const responsaveis = t.equipe_toda
         ? "Equipe toda"
         : Array.from(ids)
@@ -90,7 +100,10 @@ export function montarLinhas(
 }
 
 function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
 }
 
 /**
@@ -98,7 +111,8 @@ function esc(s: string): string {
  * colar). Uma tabela por grupo de status, como os grupos do relatório em PDF de antes.
  */
 export function montarHtmlEmail(intro: string, linhas: LinhaEnvio[], fecho: string): string {
-  const th = "background:#1f2937;color:#ffffff;text-align:left;padding:6px 8px;border:1px solid #1f2937;font-size:12px";
+  const th =
+    "background:#1f2937;color:#ffffff;text-align:left;padding:6px 8px;border:1px solid #1f2937;font-size:12px";
   const td = "padding:6px 8px;border:1px solid #d1d5db;font-size:12px;vertical-align:top";
   const grupos = [
     { status: "aprovado", titulo: "Aprovadas" },
@@ -161,7 +175,11 @@ export function montarTextoEmail(intro: string, linhas: LinhaEnvio[], fecho: str
     if (itens.length === 0) continue;
     partes.push(`${titulo} (${itens.length})`);
     for (const l of itens) {
-      const extra = [l.sistema, l.responsaveis && `teste: ${l.responsaveis}`, l.observacao && `obs.: ${l.observacao}`]
+      const extra = [
+        l.sistema,
+        l.responsaveis && `teste: ${l.responsaveis}`,
+        l.observacao && `obs.: ${l.observacao}`,
+      ]
         .filter(Boolean)
         .join(" · ");
       partes.push(`- ${l.numero} ${l.tarefa}${extra ? ` (${extra})` : ""}`);

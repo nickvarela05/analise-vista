@@ -101,9 +101,7 @@ export function HorarioDialog({
                 <Input
                   type="time"
                   value={form.expediente_inicio}
-                  onChange={(e) =>
-                    setForm({ ...form, expediente_inicio: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, expediente_inicio: e.target.value })}
                   className="focus-visible:ring-cyan-500/40"
                 />
               </div>
@@ -112,9 +110,7 @@ export function HorarioDialog({
                 <Input
                   type="time"
                   value={form.expediente_fim}
-                  onChange={(e) =>
-                    setForm({ ...form, expediente_fim: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, expediente_fim: e.target.value })}
                   className="focus-visible:ring-cyan-500/40"
                 />
               </div>

@@ -33,7 +33,11 @@ export async function assertReuniaoAccess(
   reuniaoId: string,
 ): Promise<void> {
   const [{ data: r }, { data: roles }] = await Promise.all([
-    admin.from("reuniao").select("criado_por,responsavel_id,responsaveis_ids,equipe_toda").eq("id", reuniaoId).single(),
+    admin
+      .from("reuniao")
+      .select("criado_por,responsavel_id,responsaveis_ids,equipe_toda")
+      .eq("id", reuniaoId)
+      .single(),
     admin.from("user_roles").select("role").eq("user_id", userId).eq("role", "gestor"),
   ]);
   const isGestor = (roles ?? []).length > 0;

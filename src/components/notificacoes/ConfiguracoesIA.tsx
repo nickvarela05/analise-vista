@@ -9,10 +9,7 @@ import { Loader2, Save, RotateCcw, Sparkles, Wand2, BookOpen } from "lucide-reac
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import {
-  iaPromptConfigSchema,
-  IA_CHAVE_ANALISE_REUNIAO,
-} from "@/lib/schemas/configuracoes";
+import { iaPromptConfigSchema, IA_CHAVE_ANALISE_REUNIAO } from "@/lib/schemas/configuracoes";
 
 const CHAVE = IA_CHAVE_ANALISE_REUNIAO;
 const DEFAULT_PROMPT =
@@ -162,14 +159,15 @@ export function ConfiguracoesIA() {
             placeholder="Ex.: Você é um analista de reuniões..."
             className="resize-y focus-visible:ring-violet-500/40"
           />
-          <p className="text-xs text-muted-foreground">
-            Define o papel e o estilo geral da IA.
-          </p>
+          <p className="text-xs text-muted-foreground">Define o papel e o estilo geral da IA.</p>
         </div>
 
         {/* Instruções extras */}
         <div className="space-y-2 rounded-xl border bg-card/60 p-4">
-          <Label htmlFor="instrucoes-extras" className="flex items-center gap-2 text-sm font-medium">
+          <Label
+            htmlFor="instrucoes-extras"
+            className="flex items-center gap-2 text-sm font-medium"
+          >
             <BookOpen className="h-3.5 w-3.5 text-fuchsia-500" />
             Instruções extras
             <Badge variant="outline" className="ml-1 text-[10px] font-normal">
@@ -195,11 +193,7 @@ export function ConfiguracoesIA() {
             <Button variant="outline" onClick={restaurar} disabled={saving} className="gap-2">
               <RotateCcw className="h-4 w-4" /> Restaurar padrão
             </Button>
-            <Button
-              onClick={salvar}
-              disabled={saving}
-              className="gap-2"
-            >
+            <Button onClick={salvar} disabled={saving} className="gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salvar configuração
             </Button>

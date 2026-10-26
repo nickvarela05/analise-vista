@@ -17,6 +17,8 @@ describe("isRelatorioPendente", () => {
   it("não conta enviados, inativados nem os do Google", () => {
     expect(isRelatorioPendente(r("Enviado"), new Set())).toBe(false);
     expect(isRelatorioPendente(r("Pendente"), new Set(["1"]))).toBe(false);
-    expect(isRelatorioPendente(r("Pendente", { solicitante_nome: "Google" }), new Set())).toBe(false);
+    expect(isRelatorioPendente(r("Pendente", { solicitante_nome: "Google" }), new Set())).toBe(
+      false,
+    );
   });
 });

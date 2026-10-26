@@ -27,8 +27,7 @@ export function DialogSection({
         "rounded-xl border p-4",
         variant === "default" && "bg-card/40",
         variant === "tinted" && "bg-muted/40",
-        variant === "ai" &&
-          "border-primary/20 bg-primary/5",
+        variant === "ai" && "border-primary/20 bg-primary/5",
         className,
       )}
     >

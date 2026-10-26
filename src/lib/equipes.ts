@@ -29,7 +29,11 @@ export const EQUIPES: { label: string; nomes: string[] }[] = [
 ];
 
 const norm = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
 export function agruparColaboradoresPorEquipe<T extends ColabMin>(
   colaboradores: T[],

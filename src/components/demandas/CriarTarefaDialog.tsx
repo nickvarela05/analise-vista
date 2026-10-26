@@ -49,7 +49,14 @@ interface Props {
 
 const PRIO = ["baixa", "media", "alta"] as const;
 
-export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId, onCreated }: Props) {
+export function CriarTarefaDialog({
+  open,
+  onOpenChange,
+  demanda,
+  colabs,
+  userId,
+  onCreated,
+}: Props) {
   const [titulo, setTitulo] = React.useState("");
   const [descricao, setDescricao] = React.useState("");
   const [prioridade, setPrioridade] = React.useState<(typeof PRIO)[number]>("media");
@@ -62,7 +69,8 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
     if (open && demanda) {
       setTitulo(demanda.titulo);
       setDescricao(demanda.descricao ?? "");
-      const dp = demanda.prioridade === "critica" ? "alta" : (demanda.prioridade as (typeof PRIO)[number]);
+      const dp =
+        demanda.prioridade === "critica" ? "alta" : (demanda.prioridade as (typeof PRIO)[number]);
       setPrioridade(PRIO.includes(dp) ? dp : "media");
       setPrazo(demanda.prazo ?? null);
       setResponsaveis(demanda.responsaveis_ids ?? []);
@@ -131,11 +139,18 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Prioridade</Label>
-                <Select value={prioridade} onValueChange={(v) => setPrioridade(v as (typeof PRIO)[number])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={prioridade}
+                  onValueChange={(v) => setPrioridade(v as (typeof PRIO)[number])}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PRIO.map((p) => (
-                      <SelectItem key={p} value={p} className="capitalize">{prioridadeLabel(p)}</SelectItem>
+                      <SelectItem key={p} value={p} className="capitalize">
+                        {prioridadeLabel(p)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -147,7 +162,10 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
                     <Button
                       type="button"
                       variant="outline"
-                      className={cn("w-full justify-start text-left font-normal", !prazo && "text-muted-foreground")}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !prazo && "text-muted-foreground",
+                      )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {prazo ? format(new Date(prazo + "T00:00:00"), "dd/MM/yyyy") : "Sem data"}
@@ -183,7 +201,9 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
           </DialogSection>
 
           <DialogFooter className="-mx-6 -mb-6 mt-2 border-t bg-card/60 px-6 py-3 backdrop-blur">
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={saving}>
               <Plus className="mr-1.5 h-4 w-4" />
               {saving ? "Criando..." : "Criar tarefa"}

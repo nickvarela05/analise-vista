@@ -13,7 +13,9 @@ export function getAdminClient(): SupabaseClient<Database> {
 }
 
 /** Verifica o JWT do header Authorization e garante que o usuário é gestor. */
-export async function requireGestor(request: Request): Promise<{ userId: string; admin: SupabaseClient<Database> }> {
+export async function requireGestor(
+  request: Request,
+): Promise<{ userId: string; admin: SupabaseClient<Database> }> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     throw new Response("Unauthorized", { status: 401 });

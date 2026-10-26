@@ -27,13 +27,55 @@ const EVENTOS: {
   icon: LucideIcon;
   tone: string;
 }[] = [
-  { id: "tarefa_atribuida", label: "Tarefa atribuída", desc: "Quando alguém te coloca como responsável.", icon: CheckSquare, tone: "text-primary bg-primary/10 ring-primary/20" },
-  { id: "tarefa_comentario", label: "Comentário em tarefa", desc: "Novos comentários em tarefas suas.", icon: MessageSquare, tone: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400" },
-  { id: "tarefa_prazo", label: "Prazo de tarefa", desc: "Aviso 24h antes do prazo.", icon: Clock, tone: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400" },
-  { id: "demanda_atribuida", label: "Demanda atribuída", desc: "Nova demanda sob sua responsabilidade.", icon: Briefcase, tone: "text-indigo-600 bg-indigo-500/10 ring-indigo-500/20 dark:text-indigo-400" },
-  { id: "demanda_urgente", label: "Demanda urgente", desc: "Demandas marcadas como urgentes.", icon: AlertTriangle, tone: "text-rose-600 bg-rose-500/10 ring-rose-500/20 dark:text-rose-400" },
-  { id: "chamado_sla", label: "SLA de chamado externo", desc: "Quando o SLA está prestes a estourar.", icon: Timer, tone: "text-orange-600 bg-orange-500/10 ring-orange-500/20 dark:text-orange-400" },
-  { id: "aviso_critico", label: "Avisos críticos", desc: "Avisos de gestor classificados como críticos.", icon: Megaphone, tone: "text-destructive bg-destructive/10 ring-destructive/25" },
+  {
+    id: "tarefa_atribuida",
+    label: "Tarefa atribuída",
+    desc: "Quando alguém te coloca como responsável.",
+    icon: CheckSquare,
+    tone: "text-primary bg-primary/10 ring-primary/20",
+  },
+  {
+    id: "tarefa_comentario",
+    label: "Comentário em tarefa",
+    desc: "Novos comentários em tarefas suas.",
+    icon: MessageSquare,
+    tone: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+  },
+  {
+    id: "tarefa_prazo",
+    label: "Prazo de tarefa",
+    desc: "Aviso 24h antes do prazo.",
+    icon: Clock,
+    tone: "text-amber-600 bg-amber-500/10 ring-amber-500/20 dark:text-amber-400",
+  },
+  {
+    id: "demanda_atribuida",
+    label: "Demanda atribuída",
+    desc: "Nova demanda sob sua responsabilidade.",
+    icon: Briefcase,
+    tone: "text-indigo-600 bg-indigo-500/10 ring-indigo-500/20 dark:text-indigo-400",
+  },
+  {
+    id: "demanda_urgente",
+    label: "Demanda urgente",
+    desc: "Demandas marcadas como urgentes.",
+    icon: AlertTriangle,
+    tone: "text-rose-600 bg-rose-500/10 ring-rose-500/20 dark:text-rose-400",
+  },
+  {
+    id: "chamado_sla",
+    label: "SLA de chamado externo",
+    desc: "Quando o SLA está prestes a estourar.",
+    icon: Timer,
+    tone: "text-orange-600 bg-orange-500/10 ring-orange-500/20 dark:text-orange-400",
+  },
+  {
+    id: "aviso_critico",
+    label: "Avisos críticos",
+    desc: "Avisos de gestor classificados como críticos.",
+    icon: Megaphone,
+    tone: "text-destructive bg-destructive/10 ring-destructive/25",
+  },
 ];
 
 interface Pref {

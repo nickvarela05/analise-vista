@@ -47,9 +47,7 @@ function agrupar(tarefas: TarefaRow[]): Grupo[] {
   const grupos: Grupo[] = [];
   for (const [chave, arr] of mapa.entries()) {
     if (arr.length < 2) continue;
-    arr.sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
+    arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     grupos.push({
       chave,
       numero: extractTaskNumber(arr[0].titulo),
@@ -66,11 +64,7 @@ async function deleteInChunks(ids: string[]): Promise<{ deleted: number; error: 
   let deleted = 0;
   for (let i = 0; i < ids.length; i += chunkSize) {
     const slice = ids.slice(i, i + chunkSize);
-    const { data, error } = await supabase
-      .from("todo")
-      .delete()
-      .in("id", slice)
-      .select("id");
+    const { data, error } = await supabase.from("todo").delete().in("id", slice).select("id");
     if (error) return { deleted, error: error.message };
     deleted += (data ?? []).length;
   }
@@ -135,11 +129,7 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
   const excluir = async (id: string) => {
     if (!confirm("Excluir esta tarefa duplicada?")) return;
     setBusy(id);
-    const { data, error } = await supabase
-      .from("todo")
-      .delete()
-      .eq("id", id)
-      .select("id");
+    const { data, error } = await supabase.from("todo").delete().eq("id", id).select("id");
     setBusy(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
     if (!data || data.length === 0) {
@@ -154,7 +144,10 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
   const excluirSelecionadas = async () => {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
-    if (!confirm(`Excluir ${ids.length} tarefa(s) selecionada(s)? Esta ação não pode ser desfeita.`)) return;
+    if (
+      !confirm(`Excluir ${ids.length} tarefa(s) selecionada(s)? Esta ação não pode ser desfeita.`)
+    )
+      return;
     setBulkBusy(true);
     const { deleted, error } = await deleteInChunks(ids);
     setBulkBusy(false);
@@ -178,9 +171,12 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
   const manterMaisRecente = async (g: Grupo) => {
     if (g.tarefas.length < 2) return;
     const [manter, ...remover] = g.tarefas;
-    if (!confirm(
-      `Manter a versão mais recente (${format(new Date(manter.created_at), "dd/MM/yyyy")}) e excluir ${remover.length} duplicata(s)?`,
-    )) return;
+    if (
+      !confirm(
+        `Manter a versão mais recente (${format(new Date(manter.created_at), "dd/MM/yyyy")}) e excluir ${remover.length} duplicata(s)?`,
+      )
+    )
+      return;
     setBusy(g.chave);
     const { deleted, error } = await deleteInChunks(remover.map((t) => t.id));
     setBusy(null);
@@ -210,8 +206,9 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
             Tarefas duplicadas
           </DialogTitle>
           <DialogDescription>
-            Agrupadas pelo <span className="font-medium">número da tarefa</span> (ex.: “Tarefa 12345”).
-            Selecione várias e exclua de uma vez, ou use “Manter mais recente” em cada grupo.
+            Agrupadas pelo <span className="font-medium">número da tarefa</span> (ex.: “Tarefa
+            12345”). Selecione várias e exclua de uma vez, ou use “Manter mais recente” em cada
+            grupo.
           </DialogDescription>
         </DialogHeader>
 
@@ -311,10 +308,7 @@ export function TarefasDuplicadasDialog({ tarefas }: { tarefas: TarefaRow[] }) {
                     </div>
                     <ul className="divide-y">
                       {g.tarefas.map((t, i) => (
-                        <li
-                          key={t.id}
-                          className="flex flex-wrap items-center gap-2 px-3 py-2"
-                        >
+                        <li key={t.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
                           <Checkbox
                             checked={selected.has(t.id)}
                             onCheckedChange={() => toggle(t.id)}

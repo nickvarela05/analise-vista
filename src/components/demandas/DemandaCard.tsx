@@ -5,12 +5,7 @@ import { Calendar, ListChecks, MessageSquare, Tag, AlertCircle } from "lucide-re
 import { Badge } from "@/components/ui/badge";
 import { AssigneeBadges, type AssigneeOption } from "@/components/AssigneeCombobox";
 import { cn, prioridadeLabel } from "@/lib/utils";
-import {
-  describePrazo,
-  prazoBadgeClass,
-  prioridadeBadgeClass,
-} from "./lib/demanda-utils";
-
+import { describePrazo, prazoBadgeClass, prioridadeBadgeClass } from "./lib/demanda-utils";
 
 interface DemandaCardProps {
   demanda: {
@@ -102,7 +97,10 @@ export function DemandaCard({
 
         <div className="flex flex-wrap items-center gap-1.5">
           {!isCritica && (
-            <Badge variant="outline" className={cn("capitalize text-[10px]", prioridadeBadgeClass(demanda.prioridade))}>
+            <Badge
+              variant="outline"
+              className={cn("capitalize text-[10px]", prioridadeBadgeClass(demanda.prioridade))}
+            >
               {prioridadeLabel(demanda.prioridade)}
             </Badge>
           )}
@@ -159,7 +157,10 @@ export function DemandaCard({
               </span>
             )}
             {demanda.solicitante && (
-              <span className="flex max-w-[80px] items-center gap-0.5 truncate" title={demanda.solicitante}>
+              <span
+                className="flex max-w-[80px] items-center gap-0.5 truncate"
+                title={demanda.solicitante}
+              >
                 <MessageSquare className="h-3 w-3" />
                 {demanda.solicitante}
               </span>
@@ -173,4 +174,3 @@ export function DemandaCard({
     </button>
   );
 }
-

@@ -6,9 +6,7 @@ import {
 } from "@/components/demandas/lib/demanda-utils";
 import { emptyToNull, isRealDate } from "./_helpers";
 
-const nullableTrimmed = (max: number) =>
-  z.preprocess(emptyToNull, z.string().max(max).nullable());
-
+const nullableTrimmed = (max: number) => z.preprocess(emptyToNull, z.string().max(max).nullable());
 
 export const demandaSchema = z
   .object({
@@ -27,7 +25,7 @@ export const demandaSchema = z
     equipe_toda: z.boolean().default(false),
     prazo: z
       .preprocess(
-        (v) => (typeof v === "string" && v.trim() === "" ? null : v ?? null),
+        (v) => (typeof v === "string" && v.trim() === "" ? null : (v ?? null)),
         z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida")

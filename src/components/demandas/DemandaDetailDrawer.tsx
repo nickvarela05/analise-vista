@@ -160,10 +160,16 @@ export function DemandaDetailDrawer({
             title={demanda.titulo}
             chips={
               <>
-                <Badge variant="outline" className={cn("capitalize", prioridadeBadgeClass(demanda.prioridade))}>
+                <Badge
+                  variant="outline"
+                  className={cn("capitalize", prioridadeBadgeClass(demanda.prioridade))}
+                >
                   {prioridadeLabel(demanda.prioridade)}
                 </Badge>
-                <Badge variant="outline" className={cn("capitalize", statusBadgeClass(demanda.status))}>
+                <Badge
+                  variant="outline"
+                  className={cn("capitalize", statusBadgeClass(demanda.status))}
+                >
                   {STATUS_LABEL[demanda.status as DemandaStatus] ?? demanda.status}
                 </Badge>
                 <Badge variant="outline" className="capitalize text-muted-foreground">
@@ -205,11 +211,18 @@ export function DemandaDetailDrawer({
             <div className="grid grid-cols-1 gap-4 rounded-lg border bg-muted/20 p-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Status</label>
-                <Select value={demanda.status} onValueChange={(v) => updateStatus(v as DemandaStatus)}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <Select
+                  value={demanda.status}
+                  onValueChange={(v) => updateStatus(v as DemandaStatus)}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {STATUS_OPTS.map((s) => (
-                      <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {STATUS_LABEL[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -241,20 +254,26 @@ export function DemandaDetailDrawer({
             <section className="grid grid-cols-2 gap-3 text-xs">
               {demanda.solicitante && (
                 <div>
-                  <p className="font-semibold uppercase tracking-wide text-muted-foreground">Solicitante</p>
+                  <p className="font-semibold uppercase tracking-wide text-muted-foreground">
+                    Solicitante
+                  </p>
                   <p className="mt-0.5 flex items-center gap-1 text-foreground">
                     <User className="h-3 w-3" /> {demanda.solicitante}
                   </p>
                 </div>
               )}
               <div>
-                <p className="font-semibold uppercase tracking-wide text-muted-foreground">Criada em</p>
+                <p className="font-semibold uppercase tracking-wide text-muted-foreground">
+                  Criada em
+                </p>
                 <p className="mt-0.5 text-foreground">
                   {format(new Date(demanda.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </p>
               </div>
               <div>
-                <p className="font-semibold uppercase tracking-wide text-muted-foreground">Última atualização</p>
+                <p className="font-semibold uppercase tracking-wide text-muted-foreground">
+                  Última atualização
+                </p>
                 <p className="mt-0.5 text-foreground">
                   {format(new Date(demanda.updated_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </p>
@@ -264,10 +283,15 @@ export function DemandaDetailDrawer({
             {/* Tags */}
             {demanda.tags && demanda.tags.length > 0 && (
               <section className="space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tags</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Tags
+                </h4>
                 <div className="flex flex-wrap gap-1">
                   {demanda.tags.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    <span
+                      key={t}
+                      className="inline-flex items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                    >
                       <Tag className="h-3 w-3" /> {t}
                     </span>
                   ))}
@@ -285,7 +309,9 @@ export function DemandaDetailDrawer({
                   Tarefas vinculadas ({tarefas.length})
                 </h4>
                 <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
-                  <Link to="/tarefas">Ver todas <ExternalLink className="ml-1 h-3 w-3" /></Link>
+                  <Link to="/tarefas">
+                    Ver todas <ExternalLink className="ml-1 h-3 w-3" />
+                  </Link>
                 </Button>
               </div>
               {tarefas.length === 0 ? (
@@ -300,7 +326,9 @@ export function DemandaDetailDrawer({
                       className="flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2"
                     >
                       <span className="truncate text-sm">{t.titulo}</span>
-                      <Badge variant="outline" className="capitalize text-[10px]">{t.status.replace(/_/g, " ")}</Badge>
+                      <Badge variant="outline" className="capitalize text-[10px]">
+                        {t.status.replace(/_/g, " ")}
+                      </Badge>
                     </li>
                   ))}
                 </ul>
@@ -315,7 +343,8 @@ export function DemandaDetailDrawer({
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir demanda?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. As tarefas vinculadas continuarão existindo, mas perderão a referência.
+              Esta ação não pode ser desfeita. As tarefas vinculadas continuarão existindo, mas
+              perderão a referência.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

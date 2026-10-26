@@ -19,10 +19,7 @@ export interface AtribuivelRow {
  * Quando `colabId` é nulo (usuário sem vínculo de colaborador),
  * apenas itens marcados como `equipe_toda` retornam `true`.
  */
-export function isAtribuidoA(
-  row: AtribuivelRow,
-  colabId: string | null | undefined,
-): boolean {
+export function isAtribuidoA(row: AtribuivelRow, colabId: string | null | undefined): boolean {
   if (row.equipe_toda) return true;
   if (!colabId) return false;
   const ids = row.responsaveis_ids ?? [];
@@ -33,10 +30,7 @@ export function isAtribuidoA(
 /**
  * Conta quantas linhas estão atribuídas ao colaborador.
  */
-export function contarAtribuicoes(
-  rows: ReadonlyArray<AtribuivelRow>,
-  colabId: string,
-): number {
+export function contarAtribuicoes(rows: ReadonlyArray<AtribuivelRow>, colabId: string): number {
   let n = 0;
   for (const r of rows) if (isAtribuidoA(r, colabId)) n++;
   return n;
@@ -78,13 +72,7 @@ export function isAtrasado(v: string | Date | null | undefined): boolean {
 }
 
 /** Status considerado "encerrado" para tarefas. */
-const TAREFA_ENCERRADAS = new Set([
-  "encerrada",
-  "concluida",
-  "producao",
-  "reprovada",
-  "cancelada",
-]);
+const TAREFA_ENCERRADAS = new Set(["encerrada", "concluida", "producao", "reprovada", "cancelada"]);
 
 export function isTarefaAtiva(t: {
   status?: string | null;
@@ -96,10 +84,7 @@ export function isTarefaAtiva(t: {
 }
 
 const DEMANDA_ENCERRADAS = new Set(["concluida", "cancelada"]);
-export function isDemandaAtiva(d: {
-  status?: string | null;
-  prazo?: string | null;
-}): boolean {
+export function isDemandaAtiva(d: { status?: string | null; prazo?: string | null }): boolean {
   const s = (d.status ?? "").toLowerCase();
   if (DEMANDA_ENCERRADAS.has(s)) return false;
   return !isAtrasado(d.prazo);

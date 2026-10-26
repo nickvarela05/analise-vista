@@ -28,7 +28,7 @@ export function useUsuariosAdmin() {
   );
 
   const withBusy = React.useCallback(
-    async <T,>(userId: string, label: string, fn: () => Promise<T>): Promise<T | null> => {
+    async <T>(userId: string, label: string, fn: () => Promise<T>): Promise<T | null> => {
       setBusyId(userId);
       try {
         return await fn();
@@ -46,9 +46,7 @@ export function useUsuariosAdmin() {
     async (u: UsuarioRow) => {
       if (!u.email) return;
       if (
-        !confirm(
-          `Gerar nova senha temporária para ${u.email}? A senha atual deixará de funcionar.`,
-        )
+        !confirm(`Gerar nova senha temporária para ${u.email}? A senha atual deixará de funcionar.`)
       )
         return;
       const r = await withBusy(u.user_id, "Erro", () =>

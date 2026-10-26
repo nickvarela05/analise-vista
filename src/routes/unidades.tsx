@@ -1,14 +1,37 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import {
-  Building2, MapPin, School, Layers, Search, X, Download, FileSpreadsheet,
-  FileText, Filter, LayoutGrid, List, Hash, Map as MapIcon, Compass, Sparkles, Briefcase,
-  ChevronRight, Users2, Loader2, Pencil, Save,
+  Building2,
+  MapPin,
+  School,
+  Layers,
+  Search,
+  X,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Filter,
+  LayoutGrid,
+  List,
+  Hash,
+  Map as MapIcon,
+  Compass,
+  Sparkles,
+  Briefcase,
+  ChevronRight,
+  Users2,
+  Loader2,
+  Pencil,
+  Save,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { paraCsv } from "@/lib/csv";
 import { AppLayout } from "@/components/AppLayout";
@@ -17,17 +40,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Popover, PopoverContent, PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
 } from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -61,29 +95,82 @@ type Unidade = {
 };
 
 const TIPO_TONE: Record<string, { bg: string; text: string; bar: string; ring: string }> = {
-  CRECHE:            { bg: "bg-rose-500/10",    text: "text-rose-600 dark:text-rose-400",       bar: "bg-rose-500",    ring: "ring-rose-500/20" },
-  EMEI:              { bg: "bg-amber-500/10",   text: "text-amber-600 dark:text-amber-400",     bar: "bg-amber-500",   ring: "ring-amber-500/20" },
-  EMEF:              { bg: "bg-sky-500/10",     text: "text-sky-600 dark:text-sky-400",         bar: "bg-sky-500",     ring: "ring-sky-500/20" },
-  "EMEF - INTEGRAL": { bg: "bg-indigo-500/10",  text: "text-indigo-600 dark:text-indigo-400",   bar: "bg-indigo-500",  ring: "ring-indigo-500/20" },
-  EMEIEF:            { bg: "bg-violet-500/10",  text: "text-violet-600 dark:text-violet-400",   bar: "bg-violet-500",  ring: "ring-violet-500/20" },
-  CEMEI:             { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500", ring: "ring-emerald-500/20" },
-  CEMEIEF:           { bg: "bg-teal-500/10",    text: "text-teal-600 dark:text-teal-400",       bar: "bg-teal-500",    ring: "ring-teal-500/20" },
-  "ESCOLA PARCEIRA": { bg: "bg-cyan-500/10",    text: "text-cyan-600 dark:text-cyan-400",       bar: "bg-cyan-500",    ring: "ring-cyan-500/20" },
-  ESPECIAL:          { bg: "bg-fuchsia-500/10", text: "text-fuchsia-600 dark:text-fuchsia-400", bar: "bg-fuchsia-500", ring: "ring-fuchsia-500/20" },
+  CRECHE: {
+    bg: "bg-rose-500/10",
+    text: "text-rose-600 dark:text-rose-400",
+    bar: "bg-rose-500",
+    ring: "ring-rose-500/20",
+  },
+  EMEI: {
+    bg: "bg-amber-500/10",
+    text: "text-amber-600 dark:text-amber-400",
+    bar: "bg-amber-500",
+    ring: "ring-amber-500/20",
+  },
+  EMEF: {
+    bg: "bg-sky-500/10",
+    text: "text-sky-600 dark:text-sky-400",
+    bar: "bg-sky-500",
+    ring: "ring-sky-500/20",
+  },
+  "EMEF - INTEGRAL": {
+    bg: "bg-indigo-500/10",
+    text: "text-indigo-600 dark:text-indigo-400",
+    bar: "bg-indigo-500",
+    ring: "ring-indigo-500/20",
+  },
+  EMEIEF: {
+    bg: "bg-violet-500/10",
+    text: "text-violet-600 dark:text-violet-400",
+    bar: "bg-violet-500",
+    ring: "ring-violet-500/20",
+  },
+  CEMEI: {
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-600 dark:text-emerald-400",
+    bar: "bg-emerald-500",
+    ring: "ring-emerald-500/20",
+  },
+  CEMEIEF: {
+    bg: "bg-teal-500/10",
+    text: "text-teal-600 dark:text-teal-400",
+    bar: "bg-teal-500",
+    ring: "ring-teal-500/20",
+  },
+  "ESCOLA PARCEIRA": {
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-600 dark:text-cyan-400",
+    bar: "bg-cyan-500",
+    ring: "ring-cyan-500/20",
+  },
+  ESPECIAL: {
+    bg: "bg-fuchsia-500/10",
+    text: "text-fuchsia-600 dark:text-fuchsia-400",
+    bar: "bg-fuchsia-500",
+    ring: "ring-fuchsia-500/20",
+  },
 };
 
 const tipoTone = (t: string) =>
-  TIPO_TONE[t] ?? { bg: "bg-muted", text: "text-foreground", bar: "bg-muted-foreground", ring: "ring-border" };
+  TIPO_TONE[t] ?? {
+    bg: "bg-muted",
+    text: "text-foreground",
+    bar: "bg-muted-foreground",
+    ring: "ring-border",
+  };
 
 const ZONA_TONE: Record<string, string> = {
-  SUL:    "bg-sky-500/10 text-sky-700 dark:text-sky-300 ring-sky-500/30",
-  NORTE:  "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-indigo-500/30",
+  SUL: "bg-sky-500/10 text-sky-700 dark:text-sky-300 ring-sky-500/30",
+  NORTE: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 ring-indigo-500/30",
   CENTRO: "bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-amber-500/30",
-  NI:     "bg-muted text-muted-foreground ring-border",
+  NI: "bg-muted text-muted-foreground ring-border",
 };
 
 const norm = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Página
@@ -114,7 +201,7 @@ function UnidadesPage() {
         const canonMap = buildBairroCanonMap(raw.map((u) => u.bairro));
         const unified = raw.map((u) => ({
           ...u,
-          bairro: u.bairro ? canonMap.get(u.bairro.trim()) ?? u.bairro : u.bairro,
+          bairro: u.bairro ? (canonMap.get(u.bairro.trim()) ?? u.bairro) : u.bairro,
         }));
         setUnidades(unified);
       }
@@ -128,8 +215,9 @@ function UnidadesPage() {
   );
   const bairrosUnicos = React.useMemo(
     () =>
-      Array.from(new Set(unidades.map((u) => u.bairro ?? "").filter(Boolean)))
-        .sort((a, b) => a.localeCompare(b, "pt-BR")),
+      Array.from(new Set(unidades.map((u) => u.bairro ?? "").filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b, "pt-BR"),
+      ),
     [unidades],
   );
   const zonasUnicas = React.useMemo(
@@ -167,7 +255,9 @@ function UnidadesPage() {
 
   const totaisPorTipo = React.useMemo(() => {
     const m: Record<string, number> = {};
-    unidades.forEach((u) => { m[u.tipo] = (m[u.tipo] ?? 0) + 1; });
+    unidades.forEach((u) => {
+      m[u.tipo] = (m[u.tipo] ?? 0) + 1;
+    });
     return Object.entries(m)
       .map(([tipo, count]) => ({ tipo, count }))
       .sort((a, b) => b.count - a.count);
@@ -178,15 +268,22 @@ function UnidadesPage() {
   const visiveisDept = filtradas.filter((u) => isEspecial(u.tipo)).length;
 
   const limparFiltros = () => {
-    setBusca(""); setTipos([]); setBairros([]); setZona("__all__");
+    setBusca("");
+    setTipos([]);
+    setBairros([]);
+    setZona("__all__");
   };
   const hasFiltros = busca || tipos.length || bairros.length || zona !== "__all__";
 
   // Exportação
   const exportarCSV = () => {
     const rows = filtradas.map((u) => ({
-      Código: u.cod_unidade, Tipo: u.tipo, Unidade: u.nome,
-      Zona: u.zona ?? "", Bairro: u.bairro ?? "", Endereço: u.endereco ?? "",
+      Código: u.cod_unidade,
+      Tipo: u.tipo,
+      Unidade: u.nome,
+      Zona: u.zona ?? "",
+      Bairro: u.bairro ?? "",
+      Endereço: u.endereco ?? "",
     }));
     const csv = paraCsv(rows);
     const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
@@ -216,11 +313,11 @@ function UnidadesPage() {
     wb.created = new Date();
 
     // Paleta inspirada no modelo (verde #00B050) + tons complementares
-    const COLOR_TITLE_BG = "FF00B050";   // verde título
+    const COLOR_TITLE_BG = "FF00B050"; // verde título
     const COLOR_TITLE_FG = "FFFFFFFF";
-    const COLOR_HEADER_BG = "FF064E2E";  // verde escuro p/ cabeçalhos
+    const COLOR_HEADER_BG = "FF064E2E"; // verde escuro p/ cabeçalhos
     const COLOR_HEADER_FG = "FFFFFFFF";
-    const COLOR_ZEBRA = "FFF1F8F4";      // verde-claro alternado
+    const COLOR_ZEBRA = "FFF1F8F4"; // verde-claro alternado
     const COLOR_TOTAL_BG = "FFD8F0DF";
 
     const border = {
@@ -283,7 +380,11 @@ function UnidadesPage() {
           const c = r.getCell(i + 1);
           c.value = val;
           c.font = { name: "Calibri", size: 11, color: { argb: "FF1F2937" } };
-          c.alignment = { vertical: "middle", horizontal: typeof val === "number" ? "right" : "left", wrapText: true };
+          c.alignment = {
+            vertical: "middle",
+            horizontal: typeof val === "number" ? "right" : "left",
+            wrapText: true,
+          };
           c.border = border;
           if (idx % 2 === 1) {
             c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: COLOR_ZEBRA } };
@@ -314,10 +415,7 @@ function UnidadesPage() {
       // Larguras automáticas (heurística simples)
       headers.forEach((h, i) => {
         const col = ws.getColumn(i + 1);
-        const maxLen = Math.max(
-          h.length,
-          ...data.map((r) => String(r[i] ?? "").length),
-        );
+        const maxLen = Math.max(h.length, ...data.map((r) => String(r[i] ?? "").length));
         col.width = Math.min(Math.max(maxLen + 4, 12), 50);
       });
 
@@ -331,7 +429,12 @@ function UnidadesPage() {
     // ── Aba Unidades
     const unidadesHeaders = ["Código", "Tipo", "Unidade", "Zona", "Bairro", "Endereço"];
     const unidadesData = filtradas.map((u) => [
-      u.cod_unidade, u.tipo, u.nome, u.zona ?? "", u.bairro ?? "", u.endereco ?? "",
+      u.cod_unidade,
+      u.tipo,
+      u.nome,
+      u.zona ?? "",
+      u.bairro ?? "",
+      u.endereco ?? "",
     ]);
     buildSheet("Unidades", "Unidades da Rede", unidadesHeaders, unidadesData);
 
@@ -351,34 +454,48 @@ function UnidadesPage() {
 
     // ── Por Tipo
     const tipoCount: Record<string, number> = {};
-    filtradas.forEach((u) => { tipoCount[u.tipo] = (tipoCount[u.tipo] ?? 0) + 1; });
+    filtradas.forEach((u) => {
+      tipoCount[u.tipo] = (tipoCount[u.tipo] ?? 0) + 1;
+    });
     buildSheet(
       "Por Tipo",
       "Distribuição por Tipo",
       ["Tipo", "Quantidade"],
-      Object.entries(tipoCount).sort((a, b) => b[1] - a[1]).map(([t, q]) => [t, q]),
+      Object.entries(tipoCount)
+        .sort((a, b) => b[1] - a[1])
+        .map(([t, q]) => [t, q]),
       "Total",
     );
 
     // ── Por Zona
     const zonaCount: Record<string, number> = {};
-    filtradas.forEach((u) => { const k = u.zona ?? "—"; zonaCount[k] = (zonaCount[k] ?? 0) + 1; });
+    filtradas.forEach((u) => {
+      const k = u.zona ?? "—";
+      zonaCount[k] = (zonaCount[k] ?? 0) + 1;
+    });
     buildSheet(
       "Por Zona",
       "Distribuição por Zona",
       ["Zona", "Quantidade"],
-      Object.entries(zonaCount).sort((a, b) => b[1] - a[1]).map(([z, q]) => [z, q]),
+      Object.entries(zonaCount)
+        .sort((a, b) => b[1] - a[1])
+        .map(([z, q]) => [z, q]),
       "Total",
     );
 
     // ── Por Bairro
     const bairroCount: Record<string, number> = {};
-    filtradas.forEach((u) => { const k = u.bairro ?? "—"; bairroCount[k] = (bairroCount[k] ?? 0) + 1; });
+    filtradas.forEach((u) => {
+      const k = u.bairro ?? "—";
+      bairroCount[k] = (bairroCount[k] ?? 0) + 1;
+    });
     buildSheet(
       "Por Bairro",
       "Distribuição por Bairro",
       ["Bairro", "Quantidade"],
-      Object.entries(bairroCount).sort((a, b) => b[1] - a[1]).map(([b, q]) => [b, q]),
+      Object.entries(bairroCount)
+        .sort((a, b) => b[1] - a[1])
+        .map(([b, q]) => [b, q]),
       "Total",
     );
 
@@ -424,12 +541,39 @@ function UnidadesPage() {
           </DropdownMenu>
         }
         stats={[
-          { icon: School,    label: "Escolas",        value: loading ? "—" : totalEscolas,       tone: "emerald", hint: "ESPECIAL não conta" },
-          { icon: Compass,   label: "Zona Sul",       value: loading ? "—" : porZonaGeral.SUL ?? 0,    tone: "sky" },
-          { icon: Compass,   label: "Zona Norte",     value: loading ? "—" : porZonaGeral.NORTE ?? 0,  tone: "indigo" },
-          { icon: Compass,   label: "Centro",         value: loading ? "—" : porZonaGeral.CENTRO ?? 0, tone: "amber" },
-          { icon: MapPin,    label: "Bairros",        value: loading ? "—" : totalBairros,             tone: "violet" },
-          { icon: Briefcase, label: "Departamentos",  value: loading ? "—" : totalDepartamentos,       tone: "rose", hint: "Tipo ESPECIAL" },
+          {
+            icon: School,
+            label: "Escolas",
+            value: loading ? "—" : totalEscolas,
+            tone: "emerald",
+            hint: "ESPECIAL não conta",
+          },
+          {
+            icon: Compass,
+            label: "Zona Sul",
+            value: loading ? "—" : (porZonaGeral.SUL ?? 0),
+            tone: "sky",
+          },
+          {
+            icon: Compass,
+            label: "Zona Norte",
+            value: loading ? "—" : (porZonaGeral.NORTE ?? 0),
+            tone: "indigo",
+          },
+          {
+            icon: Compass,
+            label: "Centro",
+            value: loading ? "—" : (porZonaGeral.CENTRO ?? 0),
+            tone: "amber",
+          },
+          { icon: MapPin, label: "Bairros", value: loading ? "—" : totalBairros, tone: "violet" },
+          {
+            icon: Briefcase,
+            label: "Departamentos",
+            value: loading ? "—" : totalDepartamentos,
+            tone: "rose",
+            hint: "Tipo ESPECIAL",
+          },
         ]}
       />
 
@@ -513,8 +657,8 @@ function UnidadesPage() {
         <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           <span>
-            Mostrando{" "}
-            <strong className="tabular-nums text-foreground">{visiveisGeral}</strong> escolas
+            Mostrando <strong className="tabular-nums text-foreground">{visiveisGeral}</strong>{" "}
+            escolas
             {visiveisDept > 0 && (
               <>
                 {" "}
@@ -556,7 +700,9 @@ function UnidadesPage() {
 // Subcomponentes
 
 function TotalizadoresTipo({
-  data, total, loading,
+  data,
+  total,
+  loading,
 }: {
   data: Array<{ tipo: string; count: number }>;
   total: number;
@@ -597,11 +743,16 @@ function TotalizadoresTipo({
               <div className={cn("absolute left-0 top-0 h-full w-1", t.bar)} />
               <div className="pl-1.5">
                 <div className="flex items-center justify-between gap-1">
-                  <span className={cn("text-[10px] font-semibold uppercase tracking-wider", t.text)}>
+                  <span
+                    className={cn("text-[10px] font-semibold uppercase tracking-wider", t.text)}
+                  >
                     {tipo}
                   </span>
                   {isEsp && (
-                    <Badge variant="outline" className="h-4 border-fuchsia-500/40 bg-fuchsia-500/10 px-1 text-[8.5px] font-medium text-fuchsia-600 dark:text-fuchsia-400">
+                    <Badge
+                      variant="outline"
+                      className="h-4 border-fuchsia-500/40 bg-fuchsia-500/10 px-1 text-[8.5px] font-medium text-fuchsia-600 dark:text-fuchsia-400"
+                    >
                       dept.
                     </Badge>
                   )}
@@ -611,7 +762,10 @@ function TotalizadoresTipo({
                   <span className="text-[10px] text-muted-foreground">/ {pct}%</span>
                 </div>
                 <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted">
-                  <div className={cn("animate-grow-x h-full rounded-full transition-all", t.bar)} style={{ width: `${pct}%` }} />
+                  <div
+                    className={cn("animate-grow-x h-full rounded-full transition-all", t.bar)}
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -623,7 +777,11 @@ function TotalizadoresTipo({
 }
 
 function MultiSelectCombobox({
-  label, icon: Icon, options, values, onChange,
+  label,
+  icon: Icon,
+  options,
+  values,
+  onChange,
 }: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -664,7 +822,9 @@ function MultiSelectCombobox({
                     <span
                       className={cn(
                         "flex h-4 w-4 items-center justify-center rounded border",
-                        checked ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                        checked
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input",
                       )}
                     >
                       {checked && <span className="text-[10px]">✓</span>}
@@ -677,7 +837,12 @@ function MultiSelectCombobox({
           </CommandList>
           {values.length > 0 && (
             <div className="border-t p-2">
-              <Button variant="ghost" size="sm" className="w-full justify-center text-xs" onClick={() => onChange([])}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-center text-xs"
+                onClick={() => onChange([])}
+              >
                 Limpar seleção
               </Button>
             </div>
@@ -689,8 +854,14 @@ function MultiSelectCombobox({
 }
 
 function ZonaSelect({
-  zonas, value, onChange,
-}: { zonas: string[]; value: string; onChange: (v: string) => void }) {
+  zonas,
+  value,
+  onChange,
+}: {
+  zonas: string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const [open, setOpen] = React.useState(false);
   const label = value === "__all__" ? "Todas as zonas" : value;
   return (
@@ -707,7 +878,10 @@ function ZonaSelect({
             "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs hover:bg-accent",
             value === "__all__" && "bg-accent font-medium",
           )}
-          onClick={() => { onChange("__all__"); setOpen(false); }}
+          onClick={() => {
+            onChange("__all__");
+            setOpen(false);
+          }}
         >
           Todas as zonas
         </button>
@@ -718,10 +892,19 @@ function ZonaSelect({
               "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs hover:bg-accent",
               value === z && "bg-accent font-medium",
             )}
-            onClick={() => { onChange(z); setOpen(false); }}
+            onClick={() => {
+              onChange(z);
+              setOpen(false);
+            }}
           >
             <span>{z}</span>
-            <span className={cn("h-2 w-2 rounded-full", (ZONA_TONE[z] ?? "").split(" ").find((x) => x.startsWith("bg-")) ?? "bg-muted-foreground")} />
+            <span
+              className={cn(
+                "h-2 w-2 rounded-full",
+                (ZONA_TONE[z] ?? "").split(" ").find((x) => x.startsWith("bg-")) ??
+                  "bg-muted-foreground",
+              )}
+            />
           </button>
         ))}
       </PopoverContent>
@@ -744,13 +927,13 @@ function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () 
   );
 }
 
-function UnidadesTabela({
-  data, onSelect,
-}: { data: Unidade[]; onSelect: (u: Unidade) => void }) {
+function UnidadesTabela({ data, onSelect }: { data: Unidade[]; onSelect: (u: Unidade) => void }) {
   const [pagina, setPagina] = React.useState(1);
   const porPagina = 50;
   const totalPag = Math.max(1, Math.ceil(data.length / porPagina));
-  React.useEffect(() => { setPagina(1); }, [data]);
+  React.useEffect(() => {
+    setPagina(1);
+  }, [data]);
   const slice = data.slice((pagina - 1) * porPagina, pagina * porPagina);
 
   return (
@@ -784,7 +967,14 @@ function UnidadesTabela({
                     </span>
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider ring-1", t.bg, t.text, t.ring)}>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider ring-1",
+                        t.bg,
+                        t.text,
+                        t.ring,
+                      )}
+                    >
                       <span className={cn("h-1.5 w-1.5 rounded-full", t.bar)} />
                       {u.tipo}
                     </span>
@@ -794,13 +984,22 @@ function UnidadesTabela({
                   </td>
                   <td className="hidden px-3 py-2.5 md:table-cell">
                     {u.zona && (
-                      <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1", ZONA_TONE[u.zona] ?? ZONA_TONE.NI)}>
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
+                          ZONA_TONE[u.zona] ?? ZONA_TONE.NI,
+                        )}
+                      >
                         {u.zona}
                       </span>
                     )}
                   </td>
-                  <td className="hidden px-3 py-2.5 text-xs text-muted-foreground lg:table-cell">{u.bairro}</td>
-                  <td className="hidden max-w-md truncate px-3 py-2.5 text-xs text-muted-foreground xl:table-cell">{u.endereco}</td>
+                  <td className="hidden px-3 py-2.5 text-xs text-muted-foreground lg:table-cell">
+                    {u.bairro}
+                  </td>
+                  <td className="hidden max-w-md truncate px-3 py-2.5 text-xs text-muted-foreground xl:table-cell">
+                    {u.endereco}
+                  </td>
                   <td className="pr-3 text-muted-foreground/50 group-hover:text-foreground">
                     <ChevronRight className="h-4 w-4" />
                   </td>
@@ -814,11 +1013,26 @@ function UnidadesTabela({
       {totalPag > 1 && (
         <div className="flex items-center justify-between border-t bg-muted/30 px-3 py-2 text-xs">
           <span className="text-muted-foreground">
-            Página <strong className="tabular-nums">{pagina}</strong> de <strong className="tabular-nums">{totalPag}</strong>
+            Página <strong className="tabular-nums">{pagina}</strong> de{" "}
+            <strong className="tabular-nums">{totalPag}</strong>
           </span>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={pagina === 1} onClick={() => setPagina(pagina - 1)}>Anterior</Button>
-            <Button variant="outline" size="sm" disabled={pagina === totalPag} onClick={() => setPagina(pagina + 1)}>Próxima</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagina === 1}
+              onClick={() => setPagina(pagina - 1)}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagina === totalPag}
+              onClick={() => setPagina(pagina + 1)}
+            >
+              Próxima
+            </Button>
           </div>
         </div>
       )}
@@ -826,9 +1040,7 @@ function UnidadesTabela({
   );
 }
 
-function UnidadesCards({
-  data, onSelect,
-}: { data: Unidade[]; onSelect: (u: Unidade) => void }) {
+function UnidadesCards({ data, onSelect }: { data: Unidade[]; onSelect: (u: Unidade) => void }) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {data.map((u) => {
@@ -846,7 +1058,14 @@ function UnidadesCards({
             <div className={cn("absolute left-0 top-0 h-full w-1.5", t.bar)} />
             <div className="pl-1.5">
               <div className="flex items-start justify-between gap-2">
-                <span className={cn("inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1", t.bg, t.text, t.ring)}>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ring-1",
+                    t.bg,
+                    t.text,
+                    t.ring,
+                  )}
+                >
                   {u.tipo}
                 </span>
                 <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
@@ -865,7 +1084,9 @@ function UnidadesCards({
                 )}
               </div>
               {u.endereco && (
-                <p className="mt-1 line-clamp-2 text-[10.5px] text-muted-foreground/80">{u.endereco}</p>
+                <p className="mt-1 line-clamp-2 text-[10.5px] text-muted-foreground/80">
+                  {u.endereco}
+                </p>
               )}
             </div>
           </button>
@@ -876,7 +1097,11 @@ function UnidadesCards({
 }
 
 function UnidadeDrawer({
-  unidade, onOpenChange, onSaved, tiposExistentes, zonasExistentes,
+  unidade,
+  onOpenChange,
+  onSaved,
+  tiposExistentes,
+  zonasExistentes,
 }: {
   unidade: Unidade | null;
   onOpenChange: (open: boolean) => void;
@@ -937,7 +1162,14 @@ function UnidadeDrawer({
     <Sheet open onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <SheetHeader className="text-left">
-          <div className={cn("inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider ring-1", t.bg, t.text, t.ring)}>
+          <div
+            className={cn(
+              "inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider ring-1",
+              t.bg,
+              t.text,
+              t.ring,
+            )}
+          >
             <span className={cn("h-1.5 w-1.5 rounded-full", t.bar)} />
             {form.tipo}
           </div>
@@ -949,14 +1181,25 @@ function UnidadeDrawer({
               </SheetDescription>
             </div>
             {!editing ? (
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setEditing(true)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5"
+                onClick={() => setEditing(true)}
+              >
                 <Pencil className="h-3.5 w-3.5" /> Editar
               </Button>
             ) : (
               <div className="flex gap-1.5">
-                <Button size="sm" variant="ghost" onClick={cancelar} disabled={saving}>Cancelar</Button>
+                <Button size="sm" variant="ghost" onClick={cancelar} disabled={saving}>
+                  Cancelar
+                </Button>
                 <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={saving}>
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  {saving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Save className="h-3.5 w-3.5" />
+                  )}
                   Salvar
                 </Button>
               </div>
@@ -969,50 +1212,96 @@ function UnidadeDrawer({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Código</Label>
-                  <Input value={form.cod_unidade} onChange={(e) => setForm({ ...form, cod_unidade: e.target.value })} />
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Código
+                  </Label>
+                  <Input
+                    value={form.cod_unidade}
+                    onChange={(e) => setForm({ ...form, cod_unidade: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Tipo</Label>
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Tipo
+                  </Label>
                   <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {tiposExistentes.map((tp) => <SelectItem key={tp} value={tp}>{tp}</SelectItem>)}
+                      {tiposExistentes.map((tp) => (
+                        <SelectItem key={tp} value={tp}>
+                          {tp}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Nome</Label>
-                <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Nome
+                </Label>
+                <Input
+                  value={form.nome}
+                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Zona</Label>
-                  <Select value={form.zona ?? "__none__"} onValueChange={(v) => setForm({ ...form, zona: v === "__none__" ? null : v })}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Zona
+                  </Label>
+                  <Select
+                    value={form.zona ?? "__none__"}
+                    onValueChange={(v) => setForm({ ...form, zona: v === "__none__" ? null : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">—</SelectItem>
-                      {zonasExistentes.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
-                      {["SUL","NORTE","CENTRO","NI"].filter((z) => !zonasExistentes.includes(z)).map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                      {zonasExistentes.map((z) => (
+                        <SelectItem key={z} value={z}>
+                          {z}
+                        </SelectItem>
+                      ))}
+                      {["SUL", "NORTE", "CENTRO", "NI"]
+                        .filter((z) => !zonasExistentes.includes(z))
+                        .map((z) => (
+                          <SelectItem key={z} value={z}>
+                            {z}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Bairro</Label>
-                  <Input value={form.bairro ?? ""} onChange={(e) => setForm({ ...form, bairro: e.target.value })} />
+                  <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                    Bairro
+                  </Label>
+                  <Input
+                    value={form.bairro ?? ""}
+                    onChange={(e) => setForm({ ...form, bairro: e.target.value })}
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Endereço</Label>
-                <Textarea rows={3} value={form.endereco ?? ""} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Endereço
+                </Label>
+                <Textarea
+                  rows={3}
+                  value={form.endereco ?? ""}
+                  onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+                />
               </div>
             </div>
           ) : (
             <>
               <InfoRow icon={Compass} label="Zona" value={unidade.zona ?? "—"} />
               <InfoRow icon={MapIcon} label="Bairro" value={unidade.bairro ?? "—"} />
-              <InfoRow icon={MapPin}  label="Endereço" value={unidade.endereco ?? "—"} multiline />
+              <InfoRow icon={MapPin} label="Endereço" value={unidade.endereco ?? "—"} multiline />
             </>
           )}
 
@@ -1032,16 +1321,28 @@ function UnidadeDrawer({
 }
 
 function InfoRow({
-  icon: Icon, label, value, multiline,
-}: { icon: React.ComponentType<{ className?: string }>; label: string; value: string; multiline?: boolean }) {
+  icon: Icon,
+  label,
+  value,
+  multiline,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) {
   return (
     <div className="flex items-start gap-3 rounded-lg border bg-card/40 p-3">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted">
         <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-        <div className={cn("mt-0.5 text-sm text-foreground", !multiline && "truncate")}>{value}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </div>
+        <div className={cn("mt-0.5 text-sm text-foreground", !multiline && "truncate")}>
+          {value}
+        </div>
       </div>
     </div>
   );
@@ -1050,7 +1351,9 @@ function InfoRow({
 function ListaSkeleton() {
   return (
     <div className="space-y-2">
-      {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <Skeleton key={i} className="h-14 rounded-xl" />
+      ))}
     </div>
   );
 }
@@ -1067,7 +1370,11 @@ function EmptyResultado({ onLimpar, hasFiltros }: { onLimpar: () => void; hasFil
           ? "Tente ajustar os filtros ou limpar a busca para ver outros resultados."
           : "Ainda não há unidades cadastradas na rede."}
       </p>
-      {hasFiltros && <Button size="sm" variant="outline" onClick={onLimpar}>Limpar filtros</Button>}
+      {hasFiltros && (
+        <Button size="sm" variant="outline" onClick={onLimpar}>
+          Limpar filtros
+        </Button>
+      )}
     </div>
   );
 }
@@ -1084,9 +1391,12 @@ function stamp() {
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // referenced to keep tree-shake-happy import (Loader2 used by AppLayout indirectly)

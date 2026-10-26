@@ -107,9 +107,7 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
     }
     setUploading(true);
     const path = `galeria/equipe/${Date.now()}-${file.name}`;
-    const { error: upErr } = await supabase.storage
-      .from("colaborador-fotos")
-      .upload(path, file);
+    const { error: upErr } = await supabase.storage.from("colaborador-fotos").upload(path, file);
     if (upErr) {
       setUploading(false);
       toast.error("Erro no upload", { description: upErr.message });
@@ -314,7 +312,13 @@ function SortableFoto({
               }
             }}
           />
-          <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={salvar}>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 shrink-0"
+            onClick={salvar}
+          >
             <Check className="h-3.5 w-3.5" />
           </Button>
           <Button

@@ -96,7 +96,8 @@ export function PreviewDialog({ item, open, onOpenChange }: PreviewDialogProps) 
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4 text-primary" />
               <span>
-                {item.dataLabel ?? "Data"}: <span className="font-medium text-foreground">{dataFmt}</span>
+                {item.dataLabel ?? "Data"}:{" "}
+                <span className="font-medium text-foreground">{dataFmt}</span>
               </span>
             </div>
           )}

@@ -23,9 +23,8 @@ export function corsFor(req: Request): Record<string, string> {
     (origin.startsWith("https://") && ALLOWED_ORIGIN_SUFFIXES.some((s) => origin.endsWith(s)));
   return {
     "Access-Control-Allow-Origin": ok ? origin : "null",
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Vary": "Origin",
+    Vary: "Origin",
   };
 }

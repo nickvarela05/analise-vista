@@ -114,10 +114,7 @@ function Portfolio() {
     [data],
   );
 
-  const comFoto = React.useMemo(
-    () => data.filter((c) => !!c.foto_url).length,
-    [data],
-  );
+  const comFoto = React.useMemo(() => data.filter((c) => !!c.foto_url).length, [data]);
 
   const comBio = React.useMemo(
     () => data.filter((c) => !!c.bio && c.bio.trim().length > 0).length,
@@ -312,24 +309,19 @@ function ColaboradorCard({
             </Badge>
           )}
         </div>
-        {c.bio && (
-          <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{c.bio}</p>
-        )}
+        {c.bio && <p className="mt-3 line-clamp-3 text-sm text-muted-foreground">{c.bio}</p>}
       </CardContent>
 
       {canManage && (
         <>
-          <EditarColaboradorDialog
-            colaborador={c}
-            open={editOpen}
-            onOpenChange={setEditOpen}
-          />
+          <EditarColaboradorDialog colaborador={c} open={editOpen} onOpenChange={setEditOpen} />
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Excluir colaborador?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. {c.nome} será removido permanentemente do portfólio.
+                  Esta ação não pode ser desfeita. {c.nome} será removido permanentemente do
+                  portfólio.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -409,9 +401,7 @@ function EditarColaboradorDialog({
     let foto_url = colaborador.foto_url;
     if (foto) {
       const path = `team/${Date.now()}-${foto.name}`;
-      const { error: upErr } = await supabase.storage
-        .from("colaborador-fotos")
-        .upload(path, foto);
+      const { error: upErr } = await supabase.storage.from("colaborador-fotos").upload(path, foto);
       if (upErr) {
         setSalvando(false);
         toast.error("Erro no upload", { description: upErr.message });

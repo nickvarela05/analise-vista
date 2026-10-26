@@ -44,8 +44,8 @@ function AlterarSenhaPage() {
                 Link inválido ou já usado
               </CardTitle>
               <CardDescription>
-                Este link de redefinição de senha não vale mais. Ele só pode ser usado uma vez e vence
-                depois de um tempo. Peça um novo na tela de entrada, em “Esqueci minha senha”.
+                Este link de redefinição de senha não vale mais. Ele só pode ser usado uma vez e
+                vence depois de um tempo. Peça um novo na tela de entrada, em “Esqueci minha senha”.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -98,7 +98,11 @@ function AlterarSenhaPage() {
             <KeyRound className="h-5 w-5" />
           </div>
           <CardTitle>
-            {recuperacao ? "Redefinir senha" : mustChangePassword ? "Defina sua nova senha" : "Alterar senha"}
+            {recuperacao
+              ? "Redefinir senha"
+              : mustChangePassword
+                ? "Defina sua nova senha"
+                : "Alterar senha"}
           </CardTitle>
           <CardDescription>
             {recuperacao

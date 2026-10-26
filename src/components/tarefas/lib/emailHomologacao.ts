@@ -102,8 +102,7 @@ function adicionar(porNumero: Map<string, ItemEmailHml>, item: ItemEmailHml) {
 }
 
 const CABECALHOS = new Set(["data de hml", "sistema", "numero", "tarefa", "observacao", "link"]);
-const semAcento = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+const semAcento = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
 /**
  * Tabela colada como texto puro, uma célula por linha (visto em 03/10/2026). A ordem é a da

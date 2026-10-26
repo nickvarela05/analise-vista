@@ -71,7 +71,13 @@ async function carregarSolicitacoesPendentes(): Promise<SolicitacaoPendente[]> {
 }
 
 function buildDigestHtml(
-  rows: Array<{ titulo: string; mensagem: string | null; tipo: string; created_at: string; link: string | null }>,
+  rows: Array<{
+    titulo: string;
+    mensagem: string | null;
+    tipo: string;
+    created_at: string;
+    link: string | null;
+  }>,
 ) {
   const items = rows
     .map(
@@ -92,7 +98,10 @@ function buildDigestHtml(
 }
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
 }
 
 async function sendViaN8n(payload: {
@@ -127,7 +136,9 @@ async function sendViaN8n(payload: {
     ) {
       explicitFailure = true;
     }
-  } catch { /* body não-JSON: aceita 2xx */ }
+  } catch {
+    /* body não-JSON: aceita 2xx */
+  }
   return {
     ok: res.ok && !explicitFailure,
     status: res.status,
@@ -265,7 +276,9 @@ async function runResumoDiario(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin as any)
       .from("processo_anual")
-      .select("id, nome, cor, previsto_inicio, previsto_fim, status, responsaveis_ids, equipe_toda, alerta_dias_antes")
+      .select(
+        "id, nome, cor, previsto_inicio, previsto_fim, status, responsaveis_ids, equipe_toda, alerta_dias_antes",
+      )
       .in("status", ["planejado", "em_andamento", "atrasado"])
       .not("previsto_inicio", "is", null)
       .lte("previsto_inicio", em14dias)
@@ -289,7 +302,10 @@ async function runResumoDiario(
       .select("todo_id, created_at")
       .eq("campo", "status")
       .eq("valor_novo", "pre_build")
-      .in("todo_id", preBuildAll.map((t) => t.id));
+      .in(
+        "todo_id",
+        preBuildAll.map((t) => t.id),
+      );
     for (const h of hist ?? []) {
       const atual = entradaPreBuild.get(h.todo_id);
       if (!atual || h.created_at > atual) entradaPreBuild.set(h.todo_id, h.created_at);
@@ -314,12 +330,19 @@ async function runResumoDiario(
     .slice(0, 3);
   const relAll = relR.data ?? [];
   const procAll = (procR.data ?? []) as Array<{
-    id: string; nome: string; cor: string | null;
-    previsto_inicio: string | null; previsto_fim: string | null;
-    status: string; responsaveis_ids: string[] | null; equipe_toda: boolean | null;
+    id: string;
+    nome: string;
+    cor: string | null;
+    previsto_inicio: string | null;
+    previsto_fim: string | null;
+    status: string;
+    responsaveis_ids: string[] | null;
+    equipe_toda: boolean | null;
     alerta_dias_antes: number | null;
   }>;
-  const prefOff = new Set((prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id));
+  const prefOff = new Set(
+    (prefR.data ?? []).filter((p) => p.ativo === false).map((p) => p.user_id),
+  );
 
   // Solicitações de relatório pendentes de envio (base do workflow n8n).
   const solicitacoesPendentes = await carregarSolicitacoesPendentes();
@@ -339,13 +362,17 @@ async function runResumoDiario(
         equipe_toda?: boolean | null;
       }) =>
         r.equipe_toda === true ||
-        (!!colabId && (r.responsavel_id === colabId || (r.responsaveis_ids ?? []).includes(colabId)));
+        (!!colabId &&
+          (r.responsavel_id === colabId || (r.responsaveis_ids ?? []).includes(colabId)));
       // chamado_externo (relatórios) usa user_id nos campos de responsável
       const meuChamado = (r: {
         responsavel_id?: string | null;
         responsaveis_ids?: string[] | null;
         equipe_toda?: boolean | null;
-      }) => r.equipe_toda === true || r.responsavel_id === u.user_id || (r.responsaveis_ids ?? []).includes(u.user_id);
+      }) =>
+        r.equipe_toda === true ||
+        r.responsavel_id === u.user_id ||
+        (r.responsaveis_ids ?? []).includes(u.user_id);
 
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
@@ -390,7 +417,8 @@ async function runResumoDiario(
         const dt = new Date(d.length <= 10 ? `${d}T00:00:00` : d);
         return dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
       };
-      const fmtHora = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const fmtHora = (d: string) =>
+        new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const diasAte = (d: string | null | undefined) => {
         if (!d) return null;
         const dt = new Date(d.length <= 10 ? `${d}T00:00:00` : d);
@@ -407,8 +435,15 @@ async function runResumoDiario(
         return `<span style="background:#e5e7eb;color:#374151;font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px">em ${n}d</span>`;
       };
 
-      type Item = { prazo?: string | null; data_prevista?: string | null; data_reuniao?: string | null };
-      const partition = <T extends Item>(arr: T[], key: "prazo" | "data_prevista" | "data_reuniao") => {
+      type Item = {
+        prazo?: string | null;
+        data_prevista?: string | null;
+        data_reuniao?: string | null;
+      };
+      const partition = <T extends Item>(
+        arr: T[],
+        key: "prazo" | "data_prevista" | "data_reuniao",
+      ) => {
         const hojeArr: T[] = [],
           semanaArr: T[] = [];
         for (const it of arr) {
@@ -520,8 +555,6 @@ async function runResumoDiario(
         );
       };
 
-
-
       const renderAviso = (a: (typeof meusAvisos)[number]) =>
         card(
           "#a855f7",
@@ -556,7 +589,6 @@ async function runResumoDiario(
          <div style="color:#6b7280;font-size:12px;margin-top:6px">📅 ${periodo}</div>`,
         );
       };
-
 
       const bloco = (titulo: string, icone: string, count: number, items: string) =>
         count === 0
@@ -607,7 +639,11 @@ async function runResumoDiario(
           .join("");
       const semanaCount = reuP.semanaArr.length + demP.semanaArr.length + tarP.semanaArr.length;
 
-      const dataExtenso = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+      const dataExtenso = new Date().toLocaleDateString("pt-BR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+      });
       const dataCap = dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1);
       const primeiroNome = (u.nome ?? "").split(" ")[0] || "";
 
@@ -621,7 +657,15 @@ async function runResumoDiario(
           <tr><td style="padding:8px 24px 28px">
             ${sectionHoje}
             ${bloco("Avisos da gestão", "📣", meusAvisos.length, meusAvisos.map(renderAviso).join(""))}
-            ${bloco("Processos anuais próximos", "🗂️", meusProcessos.length, meusProcessos.sort((a,b) => (a.previsto_inicio ?? "").localeCompare(b.previsto_inicio ?? "")).map(renderProcesso).join(""))}
+            ${bloco(
+              "Processos anuais próximos",
+              "🗂️",
+              meusProcessos.length,
+              meusProcessos
+                .sort((a, b) => (a.previsto_inicio ?? "").localeCompare(b.previsto_inicio ?? ""))
+                .map(renderProcesso)
+                .join(""),
+            )}
             ${bloco("Com você na rodada", "🧪", minhaRodada.length, rodadaHtml)}
             ${alertaSemResponsavel}
             ${bloco("Aguardando produção", "🚀", preBuildAll.length, aguardandoHtml)}
@@ -774,7 +818,9 @@ async function runDigest() {
         .select("evento, ativo")
         .eq("user_id", u.user_id)
         .eq("canal", "email");
-      const desativados = new Set((prefs ?? []).filter((p) => p.ativo === false).map((p) => p.evento));
+      const desativados = new Set(
+        (prefs ?? []).filter((p) => p.ativo === false).map((p) => p.evento),
+      );
       const filtradas = notifs.filter((n) => !desativados.has(n.tipo));
       if (filtradas.length === 0) return;
       const { data: jaEnviados } = await admin
@@ -788,7 +834,9 @@ async function runDigest() {
       if (novos.length === 0) return;
       const subject = `📋 ${novos.length} notificação${novos.length > 1 ? "ões" : ""} — ${new Date().toLocaleDateString("pt-BR")}`;
       const html = buildDigestHtml(novos);
-      const text = novos.map((n) => `• ${n.titulo}${n.mensagem ? " — " + n.mensagem : ""}`).join("\n");
+      const text = novos
+        .map((n) => `• ${n.titulo}${n.mensagem ? " — " + n.mensagem : ""}`)
+        .join("\n");
       await admin.from("email_send_log").insert({
         user_id: u.user_id,
         recipient_email: u.email,

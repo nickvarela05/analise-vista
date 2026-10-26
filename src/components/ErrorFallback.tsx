@@ -27,8 +27,7 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
 
   const message = error?.message || "Erro desconhecido ao carregar a página.";
   const stack = error?.stack;
-  const isDev =
-    typeof import.meta !== "undefined" && (import.meta as any)?.env?.DEV;
+  const isDev = typeof import.meta !== "undefined" && (import.meta as any)?.env?.DEV;
 
   return (
     <div className="flex min-h-[60vh] w-full items-center justify-center bg-background p-4 sm:p-6">
@@ -43,8 +42,8 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
             </CardTitle>
           </div>
           <p className="text-sm text-muted-foreground">
-            Não foi possível renderizar o conteúdo. Você pode tentar recarregar
-            esta rota ou voltar à tela inicial.
+            Não foi possível renderizar o conteúdo. Você pode tentar recarregar esta rota ou voltar
+            à tela inicial.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -52,9 +51,7 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Causa
             </p>
-            <p className="mt-1 break-words text-sm font-medium text-foreground">
-              {message}
-            </p>
+            <p className="mt-1 break-words text-sm font-medium text-foreground">{message}</p>
           </div>
 
           {stack && isDev && (

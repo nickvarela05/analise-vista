@@ -16,7 +16,14 @@ interface Props {
 }
 
 /** Visualização em lista compacta (alternativa ao kanban). */
-export function TarefasLista({ tarefas, colabs, selectedIds, onToggleSelect, onOpen, countsMap }: Props) {
+export function TarefasLista({
+  tarefas,
+  colabs,
+  selectedIds,
+  onToggleSelect,
+  onOpen,
+  countsMap,
+}: Props) {
   return (
     <Card className="divide-y">
       {tarefas.map((t) => {
@@ -26,7 +33,12 @@ export function TarefasLista({ tarefas, colabs, selectedIds, onToggleSelect, onO
         const prazo = parseDateOnly(t.data_prevista);
         const atrasada =
           prazo && isPast(prazo) && !isToday(prazo) && !["producao", "aprovado"].includes(t.status);
-        const c = countsMap[t.id] ?? { comentarios: 0, checklistTotal: 0, checklistDone: 0, anexos: 0 };
+        const c = countsMap[t.id] ?? {
+          comentarios: 0,
+          checklistTotal: 0,
+          checklistDone: 0,
+          anexos: 0,
+        };
         return (
           <div
             key={t.id}

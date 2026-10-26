@@ -11,22 +11,85 @@ interface Props {
   onToggleSelect: (id: string, checked: boolean) => void;
   onOpen: (tarefa: any) => void;
   onDropStatus: (id: string, status: string) => void;
-  countsMap: Record<string, { comentarios: number; checklistTotal: number; checklistDone: number; anexos: number }>;
-  statusLogMap?: Record<string, { de: string | null; para: string | null; quando: string; autor: string | null }[]>;
+  countsMap: Record<
+    string,
+    { comentarios: number; checklistTotal: number; checklistDone: number; anexos: number }
+  >;
+  statusLogMap?: Record<
+    string,
+    { de: string | null; para: string | null; quando: string; autor: string | null }[]
+  >;
   reprovacoesMap?: Record<string, number>;
 }
 
 // Tom por coluna (gradiente do header + ring drag-over + pill do contador)
-const COL_TONE: Record<string, { wash: string; bar: string; pill: string; ring: string; text: string }> = {
-  aberta:             { wash: "from-slate-500/15 via-slate-500/5",   bar: "bg-slate-400",   pill: "bg-slate-500/15 text-slate-700 dark:text-slate-300",   ring: "ring-slate-400/40",  text: "text-slate-700 dark:text-slate-200" },
-  em_andamento:       { wash: "from-primary/20 via-primary/5",       bar: "bg-primary",     pill: "bg-primary/15 text-primary",                            ring: "ring-primary/40",    text: "text-primary" },
-  pre_build:          { wash: "from-indigo-500/20 via-indigo-500/5", bar: "bg-indigo-500",  pill: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300", ring: "ring-indigo-500/40", text: "text-indigo-700 dark:text-indigo-300" },
-  homologacao:        { wash: "from-sky-500/20 via-sky-500/5",       bar: "bg-sky-500",     pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",          ring: "ring-sky-500/40",    text: "text-sky-700 dark:text-sky-300" },
-  aprovado:           { wash: "from-emerald-500/20 via-emerald-500/5", bar: "bg-emerald-500", pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300", ring: "ring-emerald-500/40", text: "text-emerald-700 dark:text-emerald-300" },
-  aprovado_ressalvas: { wash: "from-amber-500/20 via-amber-500/5",   bar: "bg-amber-500",   pill: "bg-amber-500/15 text-amber-700 dark:text-amber-300",    ring: "ring-amber-500/40",  text: "text-amber-700 dark:text-amber-300" },
-  reprovado:          { wash: "from-rose-500/20 via-rose-500/5",     bar: "bg-rose-500",    pill: "bg-rose-500/15 text-rose-700 dark:text-rose-300",       ring: "ring-rose-500/40",   text: "text-rose-700 dark:text-rose-300" },
-  producao:           { wash: "from-violet-500/20 via-violet-500/5", bar: "bg-violet-500",  pill: "bg-violet-500/15 text-violet-700 dark:text-violet-300", ring: "ring-violet-500/40", text: "text-violet-700 dark:text-violet-300" },
-  encerrada:          { wash: "from-zinc-500/15 via-zinc-500/5",     bar: "bg-zinc-400",    pill: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",       ring: "ring-zinc-500/40",   text: "text-zinc-700 dark:text-zinc-200" },
+const COL_TONE: Record<
+  string,
+  { wash: string; bar: string; pill: string; ring: string; text: string }
+> = {
+  aberta: {
+    wash: "from-slate-500/15 via-slate-500/5",
+    bar: "bg-slate-400",
+    pill: "bg-slate-500/15 text-slate-700 dark:text-slate-300",
+    ring: "ring-slate-400/40",
+    text: "text-slate-700 dark:text-slate-200",
+  },
+  em_andamento: {
+    wash: "from-primary/20 via-primary/5",
+    bar: "bg-primary",
+    pill: "bg-primary/15 text-primary",
+    ring: "ring-primary/40",
+    text: "text-primary",
+  },
+  pre_build: {
+    wash: "from-indigo-500/20 via-indigo-500/5",
+    bar: "bg-indigo-500",
+    pill: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+    ring: "ring-indigo-500/40",
+    text: "text-indigo-700 dark:text-indigo-300",
+  },
+  homologacao: {
+    wash: "from-sky-500/20 via-sky-500/5",
+    bar: "bg-sky-500",
+    pill: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    ring: "ring-sky-500/40",
+    text: "text-sky-700 dark:text-sky-300",
+  },
+  aprovado: {
+    wash: "from-emerald-500/20 via-emerald-500/5",
+    bar: "bg-emerald-500",
+    pill: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    ring: "ring-emerald-500/40",
+    text: "text-emerald-700 dark:text-emerald-300",
+  },
+  aprovado_ressalvas: {
+    wash: "from-amber-500/20 via-amber-500/5",
+    bar: "bg-amber-500",
+    pill: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    ring: "ring-amber-500/40",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+  reprovado: {
+    wash: "from-rose-500/20 via-rose-500/5",
+    bar: "bg-rose-500",
+    pill: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    ring: "ring-rose-500/40",
+    text: "text-rose-700 dark:text-rose-300",
+  },
+  producao: {
+    wash: "from-violet-500/20 via-violet-500/5",
+    bar: "bg-violet-500",
+    pill: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+    ring: "ring-violet-500/40",
+    text: "text-violet-700 dark:text-violet-300",
+  },
+  encerrada: {
+    wash: "from-zinc-500/15 via-zinc-500/5",
+    bar: "bg-zinc-400",
+    pill: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",
+    ring: "ring-zinc-500/40",
+    text: "text-zinc-700 dark:text-zinc-200",
+  },
 };
 
 const LARGURA_MIN = 260;
@@ -76,7 +139,10 @@ export function TarefaKanban({
           return (
             <div
               key={status}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(status); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(status);
+              }}
               onDragLeave={() => setDragOver(null)}
               onDrop={(e) => {
                 e.preventDefault();
@@ -94,7 +160,12 @@ export function TarefaKanban({
                 <div className={cn("absolute left-0 top-0 h-full w-[3px]", tone.bar)} />
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <h3 className={cn("truncate text-[11px] font-bold uppercase tracking-[0.08em]", tone.text)}>
+                    <h3
+                      className={cn(
+                        "truncate text-[11px] font-bold uppercase tracking-[0.08em]",
+                        tone.text,
+                      )}
+                    >
                       {STATUS_LABEL[status]}
                     </h3>
                     <p className="truncate text-[10px] text-muted-foreground">
@@ -132,7 +203,14 @@ export function TarefaKanban({
                         selected={selectedIds.has(t.id)}
                         onSelect={(c: boolean) => onToggleSelect(t.id, c)}
                         onOpen={() => onOpen(t)}
-                        counts={countsMap[t.id] ?? { comentarios: 0, checklistTotal: 0, checklistDone: 0, anexos: 0 }}
+                        counts={
+                          countsMap[t.id] ?? {
+                            comentarios: 0,
+                            checklistTotal: 0,
+                            checklistDone: 0,
+                            anexos: 0,
+                          }
+                        }
                         hasDemanda={!!t.demanda_id}
                         statusLog={statusLogMap[t.id]}
                         reprovacoes={reprovacoesMap[t.id]}

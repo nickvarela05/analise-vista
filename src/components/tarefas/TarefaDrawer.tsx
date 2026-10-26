@@ -96,7 +96,15 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       em_teste: tarefa?.em_teste ?? false,
       descricao: tarefa?.descricao ?? "",
     });
-  }, [tarefa?.id, tarefa?.status, tarefa?.prioridade, tarefa?.data_prevista, tarefa?.demanda_id, tarefa?.em_teste, tarefa?.descricao]);
+  }, [
+    tarefa?.id,
+    tarefa?.status,
+    tarefa?.prioridade,
+    tarefa?.data_prevista,
+    tarefa?.demanda_id,
+    tarefa?.em_teste,
+    tarefa?.descricao,
+  ]);
 
   const dirty =
     draft.status !== (tarefa?.status ?? "") ||
@@ -109,7 +117,10 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const { data: demandas = [] } = useQuery({
     queryKey: ["dem-list-mini"],
     queryFn: async () => {
-      const { data } = await supabase.from("demanda").select("id, titulo").order("created_at", { ascending: false });
+      const { data } = await supabase
+        .from("demanda")
+        .select("id, titulo")
+        .order("created_at", { ascending: false });
       return data ?? [];
     },
   });
@@ -334,7 +345,8 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   };
 
   const checklistDone = checklist.filter((c) => c.concluido).length;
-  const checklistPct = checklist.length > 0 ? Math.round((checklistDone / checklist.length) * 100) : 0;
+  const checklistPct =
+    checklist.length > 0 ? Math.round((checklistDone / checklist.length) * 100) : 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -365,7 +377,10 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
         />
 
         {/* Dados do e-mail de homologação (sistema, data, observação e link do ambiente) */}
-        {(tarefa.sistema || tarefa.link_homologacao || tarefa.observacao_homologacao || tarefa.data_homologacao) && (
+        {(tarefa.sistema ||
+          tarefa.link_homologacao ||
+          tarefa.observacao_homologacao ||
+          tarefa.data_homologacao) && (
           <div className="mt-4 space-y-2 rounded-lg border border-sky-500/25 bg-sky-500/5 p-3 text-xs">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -411,7 +426,10 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
         <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">Status</Label>
-            <Select value={draft.status} onValueChange={(v) => setDraft((d) => ({ ...d, status: v }))}>
+            <Select
+              value={draft.status}
+              onValueChange={(v) => setDraft((d) => ({ ...d, status: v }))}
+            >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -426,7 +444,10 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Prioridade</Label>
-            <Select value={draft.prioridade} onValueChange={(v) => setDraft((d) => ({ ...d, prioridade: v }))}>
+            <Select
+              value={draft.prioridade}
+              onValueChange={(v) => setDraft((d) => ({ ...d, prioridade: v }))}
+            >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -454,7 +475,9 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             <Label className="text-xs">Demanda vinculada</Label>
             <Select
               value={draft.demanda_id ?? "none"}
-              onValueChange={(v) => setDraft((d) => ({ ...d, demanda_id: v === "none" ? null : v }))}
+              onValueChange={(v) =>
+                setDraft((d) => ({ ...d, demanda_id: v === "none" ? null : v }))
+              }
             >
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue placeholder="Nenhuma" />
@@ -518,7 +541,9 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             <span className="flex items-center gap-1.5 text-xs font-medium">
               <FlaskConical className="h-3.5 w-3.5 text-info" />
               Em teste
-              <span className="text-muted-foreground font-normal">— tarefa sob teste/validação</span>
+              <span className="text-muted-foreground font-normal">
+                — tarefa sob teste/validação
+              </span>
             </span>
           </label>
           <div className="flex justify-end gap-2 sm:col-span-2">
@@ -580,7 +605,9 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           <TabsContent value="comentarios" className="mt-3 space-y-3">
             <ScrollArea className="h-64 rounded-md border p-2">
               {comentarios.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">Nenhum comentário ainda.</p>
+                <p className="py-8 text-center text-xs text-muted-foreground">
+                  Nenhum comentário ainda.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {comentarios.map((c) => (
@@ -636,12 +663,17 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
             )}
             <div className="space-y-1.5">
               {checklist.map((item) => (
-                <div key={item.id} className="group flex items-center gap-2 rounded-md border px-2 py-1.5">
+                <div
+                  key={item.id}
+                  className="group flex items-center gap-2 rounded-md border px-2 py-1.5"
+                >
                   <Checkbox
                     checked={item.concluido}
                     onCheckedChange={(v) => toggleChecklist(item.id, !!v)}
                   />
-                  <span className={`flex-1 text-xs ${item.concluido ? "text-muted-foreground line-through" : ""}`}>
+                  <span
+                    className={`flex-1 text-xs ${item.concluido ? "text-muted-foreground line-through" : ""}`}
+                  >
                     {item.texto}
                   </span>
                   <Button
@@ -678,12 +710,16 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                 </p>
               ) : (
                 anexos.map((a) => (
-                  <div key={a.id} className="group flex items-center gap-2 rounded-md border px-2 py-1.5">
+                  <div
+                    key={a.id}
+                    className="group flex items-center gap-2 rounded-md border px-2 py-1.5"
+                  >
                     <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium">{a.nome_arquivo}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {a.autor_nome} · {format(new Date(a.created_at), "dd/MM HH:mm", { locale: ptBR })}
+                        {a.autor_nome} ·{" "}
+                        {format(new Date(a.created_at), "dd/MM HH:mm", { locale: ptBR })}
                         {a.tamanho_bytes ? ` · ${(a.tamanho_bytes / 1024).toFixed(0)} KB` : ""}
                       </p>
                     </div>
@@ -730,7 +766,9 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
           <TabsContent value="historico" className="mt-3">
             <ScrollArea className="h-64 rounded-md border p-2">
               {historico.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">Sem alterações registradas.</p>
+                <p className="py-8 text-center text-xs text-muted-foreground">
+                  Sem alterações registradas.
+                </p>
               ) : (
                 <div className="space-y-2">
                   {historico.map((h) => (
