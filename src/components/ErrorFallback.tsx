@@ -27,7 +27,7 @@ export function ErrorFallback({ error, reset }: ErrorFallbackProps) {
 
   const message = error?.message || "Erro desconhecido ao carregar a página.";
   const stack = error?.stack;
-  const isDev = typeof import.meta !== "undefined" && (import.meta as any)?.env?.DEV;
+  const isDev = import.meta.env.DEV;
 
   return (
     <div className="flex min-h-[60vh] w-full items-center justify-center bg-background p-4 sm:p-6">

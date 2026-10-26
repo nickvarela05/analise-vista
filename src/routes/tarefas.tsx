@@ -26,11 +26,8 @@ import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
 import { TarefaKanban } from "@/components/tarefas/TarefaKanban";
 import { TarefaDrawer } from "@/components/tarefas/TarefaDrawer";
-import {
-  TarefaFilters,
-  initialFilters,
-  type TarefaFiltersState,
-} from "@/components/tarefas/TarefaFilters";
+import { TarefaFilters, type TarefaFiltersState } from "@/components/tarefas/TarefaFilters";
+import { initialFilters } from "@/components/tarefas/lib/filtrosIniciais";
 import { normalizeStatus, WORKFLOW, STATUS_LABEL } from "@/components/tarefas/lib/workflow";
 import { Button } from "@/components/ui/button";
 import {

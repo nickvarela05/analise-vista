@@ -1057,11 +1057,11 @@ function BentoDoMes({
   }, [ano]);
 
   const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-  const inicioMes = new Date(ano, mes, 1);
-  const fimMes = new Date(ano, mes, diasNoMes);
 
   // Barras que aparecem no mês (previsto OU real cruza o mês)
   const barras = React.useMemo(() => {
+    const inicioMes = new Date(ano, mes, 1);
+    const fimMes = new Date(ano, mes, diasNoMes);
     return processos
       .map((p) => {
         const pi = parseISODate(p.previsto_inicio);

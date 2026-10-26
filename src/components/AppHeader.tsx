@@ -25,7 +25,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/lib/theme-provider";
 import { useAuth } from "@/lib/auth-context";
-import { GlobalSearch, useGlobalSearchHotkey } from "@/components/GlobalSearch";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { useGlobalSearchHotkey } from "@/hooks/use-global-search-hotkey";
 import { cn, iniciais } from "@/lib/utils";
 
 const ROUTE_LABELS: Record<string, string> = {

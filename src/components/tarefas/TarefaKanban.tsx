@@ -3,13 +3,14 @@ import { Inbox } from "lucide-react";
 import { TarefaCard } from "./TarefaCard";
 import { WORKFLOW, STATUS_LABEL, STATUS_DESCRIPTION, normalizeStatus } from "./lib/workflow";
 import { cn } from "@/lib/utils";
+import type { TarefaRow } from "@/lib/db-types";
 
 interface Props {
-  tarefas: any[];
+  tarefas: TarefaRow[];
   colabs: { id: string; nome: string }[];
   selectedIds: Set<string>;
   onToggleSelect: (id: string, checked: boolean) => void;
-  onOpen: (tarefa: any) => void;
+  onOpen: (tarefa: TarefaRow) => void;
   onDropStatus: (id: string, status: string) => void;
   countsMap: Record<
     string,
@@ -111,7 +112,7 @@ export function TarefaKanban({
   const [limite, setLimite] = React.useState<Record<string, number>>({});
 
   const grouped = React.useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map: Record<string, TarefaRow[]> = {};
     WORKFLOW.forEach((s) => (map[s] = []));
     tarefas.forEach((t) => {
       const s = normalizeStatus(t.status);

@@ -35,6 +35,9 @@ import { cn, getErrorMessage } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
+
+type ResumoSemanalRow = Tables<"resumo_semanal">;
 
 export const Route = createFileRoute("/insights")({
   component: () => (
@@ -66,7 +69,7 @@ function ResumoPorFuncionario() {
     Array<{ user_id: string; nome: string; cargo: string | null; avatar_url: string | null }>
   >([]);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
-  const [resumos, setResumos] = React.useState<any[]>([]);
+  const [resumos, setResumos] = React.useState<ResumoSemanalRow[]>([]);
   const [activeIdx, setActiveIdx] = React.useState(0);
   const [loadingList, setLoadingList] = React.useState(true);
   const [loadingResumos, setLoadingResumos] = React.useState(false);
@@ -84,7 +87,7 @@ function ResumoPorFuncionario() {
         setLoadingList(false);
         return;
       }
-      const ids = Array.from(new Set((roles ?? []).map((r: any) => r.user_id)));
+      const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
       if (ids.length === 0) {
         setFuncionarios([]);
         setLoadingList(false);
@@ -108,13 +111,13 @@ function ResumoPorFuncionario() {
         "pietro clissa",
       ];
       const list = (profs ?? [])
-        .filter((p: any) => {
+        .filter((p) => {
           const n = (p.nome ?? "").toLowerCase();
           return ALLOWED.some((a) => n.includes(a));
         })
         .slice()
-        .sort((a: any, b: any) => (a.nome ?? "").localeCompare(b.nome ?? ""));
-      setFuncionarios(list as any);
+        .sort((a, b) => (a.nome ?? "").localeCompare(b.nome ?? ""));
+      setFuncionarios(list);
       setLoadingList(false);
     })();
   }, []);
@@ -286,7 +289,7 @@ function ResumoPorFuncionario() {
 
 function ResumoSemanal() {
   const { role } = useAuth();
-  const [resumos, setResumos] = React.useState<any[]>([]);
+  const [resumos, setResumos] = React.useState<ResumoSemanalRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [gerando, setGerando] = React.useState(false);
   const [erro, setErro] = React.useState<string | null>(null);
@@ -454,7 +457,7 @@ const METRIC_META: Record<
   },
 };
 
-function ResumoCard({ resumo: r, destaque }: { resumo: any; destaque?: boolean }) {
+function ResumoCard({ resumo: r, destaque }: { resumo: ResumoSemanalRow; destaque?: boolean }) {
   const metricas = (r.metricas ?? {}) as Record<string, number>;
   const taxaConclusao =
     metricas.tarefas_total > 0

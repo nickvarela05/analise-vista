@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { separar } from "../Contagem";
+import { separar } from "../separarNumero";
 
 describe("separar (Contagem)", () => {
   it("número inteiro e decimal", () => {

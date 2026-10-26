@@ -746,8 +746,9 @@ async function processarPendentes() {
   }
 }
 
-// deno-lint-ignore no-explicit-any
-const EdgeRuntime: any = (globalThis as any).EdgeRuntime;
+// API do runtime das edge functions do Supabase (não tem tipo no Deno padrão).
+const EdgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } })
+  .EdgeRuntime;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

@@ -20,10 +20,11 @@ import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 import { emailSendLogInsertSchema, dispatchDigestModeSchema } from "@/lib/schemas/email";
 import { Contagem } from "@/components/shared/Contagem";
+import type { Tables } from "@/integrations/supabase/types";
 
 export function ConfiguracoesEmails() {
   const { role, user } = useAuth();
-  const [logs, setLogs] = React.useState<any[]>([]);
+  const [logs, setLogs] = React.useState<Tables<"email_send_log">[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState({ sent7d: 0, pending: 0, failed: 0 });
   const [testando, setTestando] = React.useState(false);

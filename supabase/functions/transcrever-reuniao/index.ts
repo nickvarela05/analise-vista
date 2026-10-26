@@ -5,13 +5,22 @@ import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
 import { analisarReuniao } from "../_shared/analise-reuniao.ts";
 
+// API do runtime das edge functions do Supabase (não tem tipo no Deno padrão).
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-function formatTranscriptByWords(words: any[]): string {
+/** Palavra da transcrição com o falante (formato da resposta da API). */
+interface PalavraTranscrita {
+  text?: string;
+  speaker_id?: string | null;
+}
+
+function formatTranscriptByWords(words: PalavraTranscrita[]): string {
   if (!Array.isArray(words) || words.length === 0) return "";
   const lines: string[] = [];
   let currentSpeaker: string | null = null;
@@ -520,7 +529,7 @@ async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Prom
   const text: string = json.text ?? "";
   const formatted = formatTranscriptByWords(json.words ?? []) || text;
   const speakers = Array.from(
-    new Set((json.words ?? []).map((w: any) => w.speaker_id).filter(Boolean)),
+    new Set((json.words ?? []).map((w: PalavraTranscrita) => w.speaker_id).filter(Boolean)),
   ) as string[];
   return { text, formatted, speakers };
 }
@@ -610,7 +619,7 @@ async function processarReuniao(
   try {
     await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
     return;
-  } catch (e: any) {
+  } catch (e) {
     console.error("transcrever-reuniao error:", e);
     const wait = retryableWait(e);
 
@@ -632,7 +641,7 @@ async function processarReuniao(
         .update({
           transcricao_status: "erro",
           transcricao_rodadas: rodadas,
-          transcricao_erro: String(e?.message ?? e).slice(0, 500),
+          transcricao_erro: String((e as Error)?.message ?? e).slice(0, 500),
         })
         .eq("id", reuniaoId);
       return;
@@ -764,9 +773,7 @@ Deno.serve(async (req) => {
       await processarReuniao(reuniaoId, audioPath, !retomar);
     })();
 
-    // @ts-ignore — API do runtime de edge functions
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
-      // @ts-ignore
       EdgeRuntime.waitUntil(task);
     } else {
       await task;
@@ -775,10 +782,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, status: "processando" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Response) return e;
     console.error("transcrever-reuniao error:", e);
-    return new Response(JSON.stringify({ ok: false, error: String(e?.message ?? e) }), {
+    return new Response(JSON.stringify({ ok: false, error: String((e as Error)?.message ?? e) }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -46,8 +46,10 @@ import { WORKFLOW, STATUS_LABEL, statusVariant, prioVariant, PRIO } from "./lib/
 import { DialogHero } from "@/components/shared/DialogHero";
 
 import { prioridadeLabel } from "@/lib/utils";
+import type { TarefaRow } from "@/lib/db-types";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 interface Props {
-  tarefa: any | null;
+  tarefa: TarefaRow | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   colabs: { id: string; nome: string; cargo: string | null }[];
@@ -182,21 +184,22 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   });
 
   if (!tarefa) return null;
+  const idTarefa = tarefa.id;
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["tarefas"] });
-    qc.invalidateQueries({ queryKey: ["tar-coments", id] });
-    qc.invalidateQueries({ queryKey: ["tar-checklist", id] });
-    qc.invalidateQueries({ queryKey: ["tar-anexos", id] });
-    qc.invalidateQueries({ queryKey: ["tar-historico", id] });
+    qc.invalidateQueries({ queryKey: ["tar-coments", idTarefa] });
+    qc.invalidateQueries({ queryKey: ["tar-checklist", idTarefa] });
+    qc.invalidateQueries({ queryKey: ["tar-anexos", idTarefa] });
+    qc.invalidateQueries({ queryKey: ["tar-historico", idTarefa] });
     qc.invalidateQueries({ queryKey: ["tar-counts"] });
   };
 
-  const logHistorico = async (campo: string, antigo: any, novo: any) => {
+  const logHistorico = async (campo: string, antigo: unknown, novo: unknown) => {
     // Status: o banco grava sozinho (gatilho trg_todo_registrar_status, 08/10/2026).
     if (!user || campo === "status") return;
     await supabase.from("todo_historico").insert({
-      todo_id: id,
+      todo_id: idTarefa,
       autor_id: user.id,
       autor_nome: profile?.nome ?? user.email,
       campo,
@@ -205,12 +208,15 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     });
   };
 
-  const updateField = async (field: string, novo: any) => {
-    const antigo = (tarefa as any)[field];
-    const updates: any = { [field]: novo };
+  const updateField = async <K extends keyof TablesUpdate<"todo">>(
+    field: K,
+    novo: TablesUpdate<"todo">[K],
+  ) => {
+    const antigo = tarefa?.[field as keyof TarefaRow];
+    const updates = { [field]: novo } as TablesUpdate<"todo">;
     if (field === "status" && novo === "producao") updates.concluida_em = new Date().toISOString();
     if (field === "status" && novo !== "producao") updates.concluida_em = null;
-    const { error } = await supabase.from("todo").update(updates).eq("id", id);
+    const { error } = await supabase.from("todo").update(updates).eq("id", idTarefa);
     if (error) {
       toast.error("Erro", { description: error.message });
       return;
@@ -220,14 +226,15 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   };
 
   const salvarEdicao = async () => {
-    if (!dirty || !id) return;
+    if (!dirty || !idTarefa) return;
     const mudouStatus = draft.status !== tarefa.status;
     const observacao = mudouStatus ? await obs.pedir(draft.status) : "";
     if (observacao === null) return; // cancelou: nada é salvo
     setSalvando(true);
-    const updates: any = {
-      status: draft.status,
-      prioridade: draft.prioridade,
+    // O formulário guarda texto; os valores vêm dos seletores (WORKFLOW e PRIO).
+    const updates: TablesUpdate<"todo"> = {
+      status: draft.status as TarefaRow["status"],
+      prioridade: draft.prioridade as TarefaRow["prioridade"],
       data_prevista: draft.data_prevista || null,
       demanda_id: draft.demanda_id || null,
       em_teste: draft.em_teste,
@@ -238,7 +245,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     } else if (draft.status !== "producao" && tarefa.status === "producao") {
       updates.concluida_em = null;
     }
-    const { error } = await supabase.from("todo").update(updates).eq("id", id);
+    const { error } = await supabase.from("todo").update(updates).eq("id", idTarefa);
     setSalvando(false);
     if (error) {
       toast.error("Erro ao salvar", { description: error.message });
@@ -255,7 +262,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
     for (const [campo, antigo, novo] of campos) {
       if ((antigo ?? null) !== (novo ?? null)) await logHistorico(campo, antigo, novo);
     }
-    if (mudouStatus && user) await obs.gravar(user, [id], draft.status, observacao);
+    if (mudouStatus && user) await obs.gravar(user, [idTarefa], draft.status, observacao);
     toast.success("Tarefa atualizada");
     invalidate();
   };
@@ -263,7 +270,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const adicionarComentario = async () => {
     if (!novoComentario.trim() || !user) return;
     const { error } = await supabase.from("todo_comentario").insert({
-      todo_id: id,
+      todo_id: idTarefa,
       autor_id: user.id,
       autor_nome: profile?.nome ?? user.email,
       conteudo: novoComentario.trim(),
@@ -279,7 +286,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const adicionarChecklist = async () => {
     if (!novoChecklistItem.trim()) return;
     const { error } = await supabase.from("todo_checklist").insert({
-      todo_id: id,
+      todo_id: idTarefa,
       texto: novoChecklistItem.trim(),
       ordem: checklist.length,
     });
@@ -304,7 +311,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
   const uploadAnexo = async (file: File) => {
     if (!user) return;
     setUploadingFile(true);
-    const path = `${id}/${Date.now()}-${file.name}`;
+    const path = `${idTarefa}/${Date.now()}-${file.name}`;
     const { error: upErr } = await supabase.storage.from("tarefa-anexos").upload(path, file);
     if (upErr) {
       toast.error("Erro no upload", { description: upErr.message });
@@ -312,7 +319,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       return;
     }
     const { error } = await supabase.from("todo_anexo").insert({
-      todo_id: id,
+      todo_id: idTarefa,
       autor_id: user.id,
       autor_nome: profile?.nome ?? user.email,
       nome_arquivo: file.name,
@@ -486,7 +493,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                 <SelectItem value="none" className="text-xs">
                   Nenhuma
                 </SelectItem>
-                {demandas.map((d: any) => (
+                {demandas.map((d) => (
                   <SelectItem key={d.id} value={d.id} className="text-xs">
                     {d.titulo}
                   </SelectItem>
@@ -503,12 +510,12 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
               onChange={async (n) => {
                 // Update otimista: aplica no cache antes do round-trip.
                 const key = ["tarefas"] as const;
-                const previous = qc.getQueryData<any[]>(key);
-                if (previous && id) {
-                  qc.setQueryData<any[]>(
+                const previous = qc.getQueryData<TarefaRow[]>(key);
+                if (previous && idTarefa) {
+                  qc.setQueryData<TarefaRow[]>(
                     key,
                     previous.map((t) =>
-                      t.id === id
+                      t.id === idTarefa
                         ? { ...t, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda }
                         : t,
                     ),
@@ -517,7 +524,7 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
                 const { error } = await supabase
                   .from("todo")
                   .update({ responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })
-                  .eq("id", id);
+                  .eq("id", idTarefa);
                 if (error) {
                   if (previous) qc.setQueryData(key, previous);
                   toast.error("Erro ao atribuir", { description: error.message });

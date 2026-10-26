@@ -20,9 +20,19 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // useAuth/useTheme moram junto do Provider de propósito (padrão de contexto do React).
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true, allowExportNames: ["useAuth", "useTheme"] },
+      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
+  },
+  // Componentes prontos do shadcn: exportam as variantes junto (buttonVariants etc.), como no
+  // original. Não editamos a "biblioteca" só por causa do recarregamento rápido do dev.
+  {
+    files: ["src/components/ui/**"],
+    rules: { "react-refresh/only-export-components": "off" },
   },
   eslintPluginPrettier,
 );

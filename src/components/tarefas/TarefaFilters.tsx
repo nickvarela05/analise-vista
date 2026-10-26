@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 
 import { prioridadeLabel } from "@/lib/utils";
+import { initialFilters } from "./lib/filtrosIniciais";
 export interface TarefaFiltersState {
   search: string;
   responsaveis: string[];
@@ -27,17 +28,6 @@ export interface TarefaFiltersState {
   lotes: string[];
   emTeste: boolean;
 }
-
-export const initialFilters: TarefaFiltersState = {
-  search: "",
-  responsaveis: [],
-  prioridades: [],
-  prazo: "todos",
-  comDemanda: "todos",
-  origem: "todos",
-  lotes: [],
-  emTeste: false,
-};
 
 interface Props {
   value: TarefaFiltersState;
@@ -132,7 +122,9 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
               <Label className="text-xs">Prazo</Label>
               <Select
                 value={value.prazo}
-                onValueChange={(v) => onChange({ ...value, prazo: v as any })}
+                onValueChange={(v) =>
+                  onChange({ ...value, prazo: v as TarefaFiltersState["prazo"] })
+                }
               >
                 <SelectTrigger className="mt-1.5 h-8 text-xs">
                   <SelectValue />
@@ -151,7 +143,9 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
               <Label className="text-xs">Vínculo com demanda</Label>
               <Select
                 value={value.comDemanda}
-                onValueChange={(v) => onChange({ ...value, comDemanda: v as any })}
+                onValueChange={(v) =>
+                  onChange({ ...value, comDemanda: v as TarefaFiltersState["comDemanda"] })
+                }
               >
                 <SelectTrigger className="mt-1.5 h-8 text-xs">
                   <SelectValue />

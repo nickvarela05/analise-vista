@@ -47,6 +47,9 @@ import {
   type DemandaStatus,
 } from "@/components/demandas/lib/demanda-utils";
 import { EsqueletoKanban, EsqueletoLista } from "@/components/shared/Esqueletos";
+import type { DemandaRow } from "@/lib/db-types";
+
+type ColabMini = { id: string; nome: string; cargo: string | null };
 
 export const Route = createFileRoute("/demandas")({
   errorComponent: RouteErrorBoundary,
@@ -85,9 +88,9 @@ function Demandas() {
   const [statusFilter, setStatusFilter] = React.useState<string>("todos");
 
   const [openCreate, setOpenCreate] = React.useState(false);
-  const [editing, setEditing] = React.useState<any>(null);
+  const [editing, setEditing] = React.useState<DemandaRow | null>(null);
   const [detailId, setDetailId] = React.useState<string | null>(null);
-  const [tarefaTarget, setTarefaTarget] = React.useState<any>(null);
+  const [tarefaTarget, setTarefaTarget] = React.useState<DemandaRow | null>(null);
 
   const { data: colabs = [] } = useQuery({
     queryKey: qk.demandas.colabs(),
@@ -124,7 +127,7 @@ function Demandas() {
         .not("demanda_id", "is", null);
       if (error) throw error;
       const map: Record<string, number> = {};
-      (data ?? []).forEach((r: any) => {
+      (data ?? []).forEach((r) => {
         if (r.demanda_id) map[r.demanda_id] = (map[r.demanda_id] ?? 0) + 1;
       });
       return map;
@@ -142,7 +145,7 @@ function Demandas() {
   // Filtragem
   const filtered = React.useMemo(() => {
     const s = search.trim().toLowerCase();
-    return demandas.filter((d: any) => {
+    return demandas.filter((d) => {
       if (s) {
         const haystack =
           `${d.titulo} ${d.descricao ?? ""} ${d.solicitante ?? ""} ${(d.tags ?? []).join(" ")}`.toLowerCase();
@@ -179,14 +182,12 @@ function Demandas() {
 
   // KPIs (sobre todas, não filtradas)
   const kpis = React.useMemo(() => {
-    const ativas = demandas.filter(
-      (d: any) => d.status !== "concluida" && d.status !== "cancelada",
-    );
-    const novas = demandas.filter((d: any) => d.status === "aberta");
-    const atrasadas = ativas.filter((d: any) => describePrazo(d.prazo, d.status)?.isAtrasada);
-    const criticas = ativas.filter((d: any) => d.prioridade === "critica");
+    const ativas = demandas.filter((d) => d.status !== "concluida" && d.status !== "cancelada");
+    const novas = demandas.filter((d) => d.status === "aberta");
+    const atrasadas = ativas.filter((d) => describePrazo(d.prazo, d.status)?.isAtrasada);
+    const criticas = ativas.filter((d) => d.prioridade === "critica");
     const now = new Date();
-    const concluidasMes = demandas.filter((d: any) => {
+    const concluidasMes = demandas.filter((d) => {
       if (d.status !== "concluida") return false;
       const u = new Date(d.updated_at);
       return u.getFullYear() === now.getFullYear() && u.getMonth() === now.getMonth();
@@ -209,7 +210,7 @@ function Demandas() {
     setDraggingId(null);
     setOverCol(null);
     if (!id) return;
-    const current = demandas.find((d: any) => d.id === id);
+    const current = demandas.find((d) => d.id === id);
     if (!current || current.status === status) return;
     const { error } = await supabase.from("demanda").update({ status }).eq("id", id);
     if (error) toast.error("Erro ao mover", { description: error.message });
@@ -221,9 +222,7 @@ function Demandas() {
 
   const detail = React.useMemo(
     () =>
-      filtered.find((d: any) => d.id === detailId) ??
-      demandas.find((d: any) => d.id === detailId) ??
-      null,
+      filtered.find((d) => d.id === detailId) ?? demandas.find((d) => d.id === detailId) ?? null,
     [detailId, filtered, demandas],
   );
 
@@ -462,8 +461,8 @@ function KanbanView({
   setOverCol,
   onDropTo,
 }: {
-  demandas: any[];
-  colabs: any[];
+  demandas: DemandaRow[];
+  colabs: ColabMini[];
   tarefaCounts: Record<string, number>;
   onCardClick: (id: string) => void;
   onDragStart: (id: string) => void;
@@ -472,7 +471,7 @@ function KanbanView({
   onDropTo: (status: DemandaStatus) => void;
 }) {
   const grouped = React.useMemo(() => {
-    const map: Record<string, any[]> = {};
+    const map: Record<string, DemandaRow[]> = {};
     KANBAN_STATUS.forEach((s) => (map[s] = []));
     demandas.forEach((d) => {
       if (map[d.status]) map[d.status].push(d);
@@ -609,8 +608,8 @@ function ListaView({
   tarefaCounts,
   onCardClick,
 }: {
-  demandas: any[];
-  colabs: any[];
+  demandas: DemandaRow[];
+  colabs: ColabMini[];
   tarefaCounts: Record<string, number>;
   onCardClick: (id: string) => void;
 }) {

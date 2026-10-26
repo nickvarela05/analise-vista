@@ -25,6 +25,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { qk } from "@/lib/queries/keys";
+import { meuProfileQuery } from "@/lib/queries/compartilhadas";
 import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/AvisoCard";
 import { AvisoDialog } from "@/components/avisos/AvisoDialog";
 
@@ -119,17 +120,20 @@ function Avisos() {
     return m;
   }, [leiturasAgrupadas]);
 
+  const { data: perfil } = useQuery(meuProfileQuery(user?.id));
+  const meuColabId = perfil?.colaborador_id ?? null;
+
   const isParaMim = React.useCallback(
     (a: AvisoRow) => {
       const ids = new Set<string>();
       if (a.colaborador_id) ids.add(a.colaborador_id);
       (a.colaboradores_ids ?? []).forEach((id) => ids.add(id));
-      const meuColab = colabs.find((c) => c.id && user && (c as any).email === user.email);
       if (ids.size === 0) return true;
-      if (meuColab && ids.has(meuColab.id)) return true;
-      return false;
+      // Colaborador da pessoa logada vem do perfil (como na Central). Antes procurava por e-mail
+      // na tabela colaborador, que não tem e-mail: "Para mim" nunca achava os avisos dirigidos.
+      return !!meuColabId && ids.has(meuColabId);
     },
-    [colabs, user],
+    [meuColabId],
   );
 
   const filtrados = React.useMemo(() => {
