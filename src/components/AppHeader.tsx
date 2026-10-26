@@ -59,6 +59,7 @@ export function AppHeader() {
 
   return (
     <header
+      data-app-header
       className={cn(
         "sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/70 px-3 sm:gap-3 sm:px-4",
         "bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/55",
