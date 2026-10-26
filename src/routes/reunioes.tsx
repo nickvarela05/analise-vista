@@ -99,6 +99,25 @@ function ReunioesRoute() {
   );
 }
 
+// A lista não baixa a transcrição (quase todo o peso da tabela): ela vem só ao abrir a reunião.
+const COLUNAS_LISTA =
+  "id, titulo, tipo, status, data_reuniao, duracao_min, pauta, resumo, proximos_passos, decisoes, participantes, participantes_detectados, link_calendario, responsavel_id, responsaveis_ids, equipe_toda, audio_path, audio_size, audio_mime, criado_por, created_at, updated_at, transcricao_status, transcricao_erro, transcricao_partes_feitas, transcricao_partes_total, transcricao_rodadas";
+
+type ReuniaoLista = Omit<ReuniaoRow, "transcricao"> & { temTranscricao: boolean };
+
+const transcricaoQuery = (id: string) => ({
+  queryKey: ["reuniao-transcricao", id],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("reuniao")
+      .select("transcricao")
+      .eq("id", id)
+      .single();
+    if (error) throw error;
+    return data.transcricao ?? "";
+  },
+});
+
 const TIPOS = ["interna", "cliente", "fornecedor", "alinhamento", "outro"] as const;
 const STATUS = ["agendada", "realizada", "cancelada"] as const;
 
@@ -173,8 +192,8 @@ function Reunioes() {
   // Dialogs / drawers
   const [formOpen, setFormOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [openDetail, setOpenDetail] = React.useState<ReuniaoRow | null>(null);
-  const [confirmDelete, setConfirmDelete] = React.useState<ReuniaoRow | null>(null);
+  const [openDetail, setOpenDetail] = React.useState<ReuniaoLista | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState<ReuniaoLista | null>(null);
 
   // Background upload jobs (compressão/upload em segundo plano) → anima cards
   const uploadJobs = useUploadStore((s) => s.jobs);
@@ -195,7 +214,7 @@ function Reunioes() {
   const [analyzing, setAnalyzing] = React.useState(false);
   const [generatingReport, setGeneratingReport] = React.useState(false);
 
-  const handleGerarRelatorio = async (reuniao: ReuniaoRow) => {
+  const handleGerarRelatorio = async (reuniao: ReuniaoLista) => {
     if (!reuniao?.id) return;
     setGeneratingReport(true);
     try {
@@ -260,14 +279,21 @@ function Reunioes() {
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["reunioes"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reuniao")
-        .select("*")
-        .order("data_reuniao", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+    queryFn: async (): Promise<ReuniaoLista[]> => {
+      const [lista, comTranscricao] = await Promise.all([
+        supabase.from("reuniao").select(COLUNAS_LISTA).order("data_reuniao", { ascending: false }),
+        supabase.from("reuniao").select("id").not("transcricao", "is", null).neq("transcricao", ""),
+      ]);
+      if (lista.error) throw lista.error;
+      if (comTranscricao.error) throw comTranscricao.error;
+      const ids = new Set((comTranscricao.data ?? []).map((r) => r.id));
+      return (lista.data ?? []).map((r) => ({ ...r, temTranscricao: ids.has(r.id) }));
     },
+  });
+
+  const { data: transcricaoDetalhe, isLoading: carregandoTranscricao } = useQuery({
+    ...transcricaoQuery(openDetail?.id ?? ""),
+    enabled: !!openDetail?.temTranscricao,
   });
 
   // Audio signed URL para detalhe (Sheet)
@@ -296,9 +322,19 @@ function Reunioes() {
         { event: "UPDATE", schema: "public", table: "reuniao" },
         (payload) => {
           qc.invalidateQueries({ queryKey: ["reunioes"] });
-          // Mantém o detail aberto sincronizado
           const nova = payload.new as Partial<ReuniaoRow>;
-          setOpenDetail((cur) => (cur && cur.id === nova.id ? { ...cur, ...nova } : cur));
+          if (nova.id) qc.invalidateQueries({ queryKey: ["reuniao-transcricao", nova.id] });
+          // Mantém o detail aberto sincronizado
+          const { transcricao, ...semTranscricao } = nova;
+          setOpenDetail((cur) =>
+            cur && cur.id === nova.id
+              ? {
+                  ...cur,
+                  ...semTranscricao,
+                  ...(transcricao !== undefined && { temTranscricao: !!transcricao }),
+                }
+              : cur,
+          );
           // Mantém form aberto sincronizado se for a mesma reunião
           if (editingId && nova.id === editingId && nova.transcricao_status === "concluido") {
             const n = nova;
@@ -333,7 +369,17 @@ function Reunioes() {
     setFormOpen(true);
   };
 
-  const openEdit = (r: ReuniaoRow) => {
+  const openEdit = async (r: ReuniaoLista) => {
+    // O salvar grava a transcrição do formulário: sem ela carregada, o formulário não abre.
+    let transcricao = "";
+    if (r.temTranscricao) {
+      try {
+        transcricao = await qc.fetchQuery({ ...transcricaoQuery(r.id), staleTime: 0 });
+      } catch (e) {
+        toast.error("Não foi possível abrir a reunião", { description: getErrorMessage(e) });
+        return;
+      }
+    }
     setEditingId(r.id);
     setForm({
       titulo: r.titulo ?? "",
@@ -346,7 +392,7 @@ function Reunioes() {
       pauta: r.pauta ?? "",
       resumo: r.resumo ?? "",
       proximos_passos: r.proximos_passos ?? "",
-      transcricao: r.transcricao ?? "",
+      transcricao,
       link_calendario: r.link_calendario ?? "",
       participantes_str: (r.participantes ?? []).join(", "),
       responsaveis_ids: r.responsaveis_ids ?? [],
@@ -702,7 +748,7 @@ function Reunioes() {
 
   const [resuming, setResuming] = React.useState(false);
   /** Retoma a transcrição da última parte concluída. */
-  const handleRetomarTranscricao = async (reuniao: ReuniaoRow) => {
+  const handleRetomarTranscricao = async (reuniao: ReuniaoLista) => {
     if (!reuniao?.audio_path) {
       toast.error("Reunião sem áudio para transcrever");
       return;
@@ -893,7 +939,7 @@ function Reunioes() {
           {filtered.map((r) => {
             const tone = REUNIAO_TONE[r.status] ?? REUNIAO_TONE.agendada;
             const isFuturo = r.status === "agendada" && isFuture(new Date(r.data_reuniao));
-            const hasIA = !!(r.transcricao && r.resumo);
+            const hasIA = !!(r.temTranscricao && r.resumo);
             const job = uploadJobs[r.id];
             const jobActive =
               job &&
@@ -1059,7 +1105,7 @@ function Reunioes() {
                         <Users className="h-3 w-3" /> {r.participantes.length}
                       </span>
                     )}
-                    {r.transcricao && (
+                    {r.temTranscricao && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         <FileText className="h-3 w-3" /> transcrição
                       </span>
@@ -1391,7 +1437,7 @@ function Reunioes() {
                       <Badge variant="outline" className="capitalize">
                         {openDetail.tipo}
                       </Badge>
-                      {openDetail.transcricao && openDetail.resumo && (
+                      {openDetail.temTranscricao && openDetail.resumo && (
                         <Badge
                           variant="outline"
                           className="gap-1 border-primary/30 bg-primary/5 text-primary"
@@ -1619,7 +1665,7 @@ function Reunioes() {
                   </div>
                 )}
 
-                {openDetail.transcricao && (
+                {openDetail.temTranscricao && (
                   <Accordion type="single" collapsible>
                     <AccordionItem value="transcricao" className="rounded-md border px-3">
                       <AccordionTrigger className="text-sm">
@@ -1628,13 +1674,19 @@ function Reunioes() {
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <TranscricaoFormatada transcricao={openDetail.transcricao} />
+                        {carregandoTranscricao ? (
+                          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando transcrição…
+                          </p>
+                        ) : (
+                          <TranscricaoFormatada transcricao={transcricaoDetalhe ?? ""} />
+                        )}
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
                 )}
 
-                {openDetail.transcricao && (
+                {openDetail.temTranscricao && (
                   <div className="flex justify-end pt-2">
                     <Button
                       variant="outline"
