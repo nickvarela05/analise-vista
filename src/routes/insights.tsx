@@ -443,18 +443,6 @@ const METRIC_META: Record<
     tone: "text-indigo-600 dark:text-indigo-400",
     ring: "from-indigo-500/20 to-transparent",
   },
-  chamados_total: {
-    label: "Chamados",
-    icon: Target,
-    tone: "text-cyan-600 dark:text-cyan-400",
-    ring: "from-cyan-500/20 to-transparent",
-  },
-  chamados_sla_estourado: {
-    label: "SLA estourado",
-    icon: AlertTriangle,
-    tone: "text-red-600 dark:text-red-400",
-    ring: "from-red-500/20 to-transparent",
-  },
 };
 
 function ResumoCard({ resumo: r, destaque }: { resumo: ResumoSemanalRow; destaque?: boolean }) {

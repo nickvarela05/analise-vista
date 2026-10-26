@@ -30,8 +30,8 @@ function PrivacidadePage() {
           <p>
             Quando um gestor conecta a conta Google da equipe, o Nexus recebe permissão para ler e
             gerenciar eventos de agenda dessa conta. O uso se limita a criar, atualizar e remover,
-            no calendário escolhido nas configurações, eventos que representam reuniões, tarefas,
-            demandas e chamados cadastrados no próprio Nexus.
+            no calendário escolhido nas configurações, eventos que representam reuniões, tarefas e
+            demandas cadastradas no próprio Nexus.
           </p>
           <p>
             O Nexus não lê e-mails, contatos nem arquivos, e não altera eventos que ele mesmo não

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 
 export type PreviewItem = {
   id: string;
-  tipo: "tarefa" | "demanda" | "reuniao" | "chamado" | "aviso";
+  tipo: "tarefa" | "demanda" | "reuniao" | "aviso";
   titulo: string;
   descricao?: string | null;
   status?: string | null;
@@ -32,7 +32,6 @@ const tipoToRoute: Record<PreviewItem["tipo"], string> = {
   tarefa: "/tarefas",
   demanda: "/demandas",
   reuniao: "/reunioes",
-  chamado: "/relatorios",
   aviso: "/avisos",
 };
 
@@ -40,7 +39,6 @@ const tipoToLabel: Record<PreviewItem["tipo"], string> = {
   tarefa: "Tarefa",
   demanda: "Demanda",
   reuniao: "Reunião",
-  chamado: "Chamado",
   aviso: "Aviso",
 };
 

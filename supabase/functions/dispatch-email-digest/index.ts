@@ -238,7 +238,7 @@ async function runResumoDiario(
   // e filtradas em memória por usuário. Antes eram disparadas N×
   // (uma por profile), saturando o PostgREST e causando 503/504.
   // ---------------------------------------------------------------
-  const [demR, reuR, tarR, tarTesteR, relR, prefR, procR] = await Promise.all([
+  const [demR, reuR, tarR, tarTesteR, prefR, procR] = await Promise.all([
     admin
       .from("demanda")
       .select("id, titulo, prazo, prioridade, status, responsavel_id, responsaveis_ids")
@@ -261,12 +261,6 @@ async function runResumoDiario(
       .order("numero_eproject"),
     // Aguardando produção: tarefas em Pré-build.
     admin.from("todo").select("id, titulo, numero_eproject").eq("status", "pre_build"),
-    admin
-      .from("chamado_externo")
-      .select(
-        "id, codigo, titulo, cliente, prazo, prioridade, status, responsavel_id, responsaveis_ids, equipe_toda, created_at",
-      )
-      .neq("status", "finalizado"),
     admin
       .from("notificacao_preferencia")
       .select("user_id, ativo")
@@ -328,7 +322,6 @@ async function runResumoDiario(
     .filter((x) => x.d !== null)
     .sort((a, b) => (b.d as number) - (a.d as number))
     .slice(0, 3);
-  const relAll = relR.data ?? [];
   const procAll = (procR.data ?? []) as Array<{
     id: string;
     nome: string;
@@ -364,15 +357,6 @@ async function runResumoDiario(
         r.equipe_toda === true ||
         (!!colabId &&
           (r.responsavel_id === colabId || (r.responsaveis_ids ?? []).includes(colabId)));
-      // chamado_externo (relatórios) usa user_id nos campos de responsável
-      const meuChamado = (r: {
-        responsavel_id?: string | null;
-        responsaveis_ids?: string[] | null;
-        equipe_toda?: boolean | null;
-      }) =>
-        r.equipe_toda === true ||
-        r.responsavel_id === u.user_id ||
-        (r.responsaveis_ids ?? []).includes(u.user_id);
 
       const minhasDemandas = demAll.filter(meu);
       const minhasReunioes = reuAll.filter(meu);
@@ -385,7 +369,6 @@ async function runResumoDiario(
           (t.responsavel_id === colabId || (t.responsaveis_ids ?? []).includes(colabId)),
       );
       const minhasTarefas: Array<{ titulo: string; data_prevista: string | null }> = [];
-      const meusRelatorios = relAll.filter(meuChamado);
       const meusAvisos = avisosAtivos.filter(
         (a) => !a.colaboradores_ids?.length || (colabId && a.colaboradores_ids.includes(colabId)),
       );
@@ -406,7 +389,6 @@ async function runResumoDiario(
         minhaRodada.length +
         (semResponsavel > 0 ? 1 : 0) +
         preBuildAll.length +
-        meusRelatorios.length +
         meusAvisos.length +
         meusProcessos.length +
         minhasSolicitacoes.length;
@@ -519,13 +501,6 @@ async function runResumoDiario(
           "#6366f1",
           `${headRow(escapeHtml(r.titulo), prazoBadge(r.data_reuniao))}
          <div style="color:#6b7280;font-size:12px;margin-top:6px">🗓️ ${fmtData(r.data_reuniao)} às ${fmtHora(r.data_reuniao)}</div>`,
-        );
-
-      const renderRelatorio = (r: (typeof meusRelatorios)[number]) =>
-        card(
-          "#0ea5e9",
-          `${headRow(escapeHtml(r.codigo) + " — " + escapeHtml(r.titulo ?? ""), r.prazo ? prazoBadge(r.prazo) : "")}
-         <div style="color:#6b7280;font-size:12px;margin-top:6px">${r.cliente ? "🏢 " + escapeHtml(r.cliente) + " &nbsp;·&nbsp; " : ""}Status: <b style="color:#0369a1">${escapeHtml(r.status)}</b></div>`,
         );
 
       const renderSolicitacao = (s: SolicitacaoPendente) => {
@@ -669,7 +644,6 @@ async function runResumoDiario(
             ${bloco("Com você na rodada", "🧪", minhaRodada.length, rodadaHtml)}
             ${alertaSemResponsavel}
             ${bloco("Aguardando produção", "🚀", preBuildAll.length, aguardandoHtml)}
-            ${bloco("Relatórios pendentes", "📄", meusRelatorios.length, meusRelatorios.map(renderRelatorio).join(""))}
             ${bloco("Solicitações de relatório pendentes de envio", "📨", minhasSolicitacoes.length, minhasSolicitacoes.map(renderSolicitacao).join(""))}
             ${bloco("Agenda da semana", "📆", semanaCount, semanaItems)}
             <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center">
@@ -680,7 +654,7 @@ async function runResumoDiario(
         </table>
       </div>`;
 
-      const text = `Resumo do dia — ${total} item(ns).\nCom você na rodada: ${minhaRodada.length} · Sem responsável na rodada: ${semResponsavel} · Aguardando produção: ${preBuildAll.length} · Avisos: ${meusAvisos.length} · Relatórios: ${meusRelatorios.length} · Solicitações pendentes: ${minhasSolicitacoes.length} · Demandas: ${minhasDemandas.length} · Reuniões: ${minhasReunioes.length}`;
+      const text = `Resumo do dia — ${total} item(ns).\nCom você na rodada: ${minhaRodada.length} · Sem responsável na rodada: ${semResponsavel} · Aguardando produção: ${preBuildAll.length} · Avisos: ${meusAvisos.length} · Solicitações pendentes: ${minhasSolicitacoes.length} · Demandas: ${minhasDemandas.length} · Reuniões: ${minhasReunioes.length}`;
 
       await admin.from("email_send_log").insert({
         user_id: u.user_id,

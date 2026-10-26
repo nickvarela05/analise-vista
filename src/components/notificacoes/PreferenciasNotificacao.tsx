@@ -12,7 +12,6 @@ import {
   Clock,
   Briefcase,
   AlertTriangle,
-  Timer,
   Megaphone,
   Monitor,
   Mail,
@@ -61,13 +60,6 @@ const EVENTOS: {
     desc: "Demandas marcadas como urgentes.",
     icon: AlertTriangle,
     tone: "text-rose-600 bg-rose-500/10 ring-rose-500/20 dark:text-rose-400",
-  },
-  {
-    id: "chamado_sla",
-    label: "SLA de chamado externo",
-    desc: "Quando o SLA está prestes a estourar.",
-    icon: Timer,
-    tone: "text-orange-600 bg-orange-500/10 ring-orange-500/20 dark:text-orange-400",
   },
   {
     id: "aviso_critico",
