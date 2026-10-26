@@ -28,6 +28,7 @@ import { AssigneeCombobox, type AssigneeOption } from "@/components/AssigneeComb
 import { cn, prioridadeLabel } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { tarefaSchema } from "@/lib/schemas/tarefa";
+import { padronizarTitulo } from "@/components/tarefas/lib/taskNumber";
 
 interface Props {
   open: boolean;
@@ -90,6 +91,7 @@ export function CriarTarefaDialog({ open, onOpenChange, demanda, colabs, userId,
     setSaving(true);
     const { error } = await supabase.from("todo").insert({
       ...parsed.data,
+      titulo: padronizarTitulo(parsed.data.titulo),
       status: parsed.data.status as never,
       criado_por: userId,
     });

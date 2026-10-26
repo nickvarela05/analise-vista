@@ -33,6 +33,7 @@ import { DialogSection } from "@/components/shared/DialogSection";
 import { tarefaSchema } from "@/lib/schemas/tarefa";
 
 import { prioridadeLabel } from "@/lib/utils";
+import { padronizarTitulo } from "@/components/tarefas/lib/taskNumber";
 const normalizarTitulo = (s: string) =>
   s
     .toLowerCase()
@@ -145,6 +146,7 @@ export function NovaTarefaDialog({
     }
     const { error } = await supabase.from("todo").insert({
       ...parsed.data,
+      titulo: padronizarTitulo(parsed.data.titulo),
       status: parsed.data.status as never,
       criado_por: user?.id,
     });
