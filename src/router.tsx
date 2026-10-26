@@ -23,11 +23,11 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Transição entre telas pelo navegador (26/10/2026); regras em src/transicoes.css.
+    defaultViewTransition: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
-    defaultErrorComponent: ({ error, reset }) => (
-      <ErrorFallback error={error} reset={reset} />
-    ),
+    defaultErrorComponent: ({ error, reset }) => <ErrorFallback error={error} reset={reset} />,
   });
 
   return router;

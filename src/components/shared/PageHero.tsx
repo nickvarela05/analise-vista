@@ -150,6 +150,7 @@ export function PageHero({
           // M12 da auditoria visual: no celular, os indicadores viram uma faixa que rola para o
           // lado, em vez de ocupar a tela inteira antes do conteúdo. Do tablet em diante, grade.
           <div
+            data-cascata
             className={cn(
               "-mx-5 mt-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1 sm:mx-0 sm:mt-6 sm:grid sm:overflow-visible sm:px-0 sm:pb-0",
               statsGridClassName ?? "sm:grid-cols-3 lg:grid-cols-6",

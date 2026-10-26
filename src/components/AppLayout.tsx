@@ -59,7 +59,10 @@ export function AppLayout({
           <AppHeader />
           {/* overflow-x-clip: nada dentro da página empurra a tela para o lado no celular (sem
               virar contêiner de rolagem, para não quebrar elementos fixos com sticky). */}
-          <main className="animate-page-in min-w-0 flex-1 overflow-x-clip p-3 sm:p-4 lg:p-6">
+          <main
+            data-vt-conteudo
+            className="cascata-pagina min-w-0 flex-1 overflow-x-clip p-3 sm:p-4 lg:p-6"
+          >
             {children}
           </main>
         </SidebarInset>

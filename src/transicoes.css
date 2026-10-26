@@ -1,0 +1,110 @@
+/*
+ * Transições de tela (26/10/2026), inspiradas no "Glassy Dashboard V2" que o Nickolas mandou:
+ *  1. o conteúdo antigo some rápido; menu e cabeçalho ficam parados;
+ *  2. a tela nova entra em cascata (seção por seção, e os indicadores um a um);
+ *  3. o destaque do menu desliza do item antigo para o novo.
+ * Usa a View Transitions API do navegador (o roteador chama document.startViewTransition).
+ * Navegador sem suporte troca de tela sem animação, como antes. Tudo desliga com "menos movimento".
+ */
+
+/* A página inteira não faz o crossfade padrão: cada parte tem a sua regra. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* Menu e cabeçalho: parados durante a troca (sem piscar). */
+[data-vt-menu] {
+  view-transition-name: nexus-menu;
+}
+[data-app-header] {
+  view-transition-name: nexus-cabecalho;
+}
+::view-transition-old(nexus-menu),
+::view-transition-new(nexus-menu),
+::view-transition-old(nexus-cabecalho),
+::view-transition-new(nexus-cabecalho) {
+  animation: none;
+}
+
+/* Conteúdo: o antigo sai rápido; o novo entra pela cascata abaixo (não pelo crossfade). */
+[data-vt-conteudo] {
+  view-transition-name: nexus-conteudo;
+}
+::view-transition-old(nexus-conteudo) {
+  animation: vt-sai 140ms ease-in both;
+}
+::view-transition-new(nexus-conteudo) {
+  animation: none;
+}
+@keyframes vt-sai {
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Destaque do item ativo do menu: o navegador o move do item antigo para o novo. */
+[data-vt-menu-ativo] {
+  view-transition-name: nexus-menu-ativo;
+}
+::view-transition-group(nexus-menu-ativo) {
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Cascata: cada seção da página entra um pouco depois da anterior. */
+@keyframes cascata-entra {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cascata-pagina > * > *,
+[data-cascata] > * {
+  animation: cascata-entra 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.cascata-pagina > * > :nth-child(2),
+[data-cascata] > :nth-child(2) { animation-delay: 60ms; }
+.cascata-pagina > * > :nth-child(3),
+[data-cascata] > :nth-child(3) { animation-delay: 120ms; }
+.cascata-pagina > * > :nth-child(4),
+[data-cascata] > :nth-child(4) { animation-delay: 180ms; }
+.cascata-pagina > * > :nth-child(5),
+[data-cascata] > :nth-child(5) { animation-delay: 240ms; }
+.cascata-pagina > * > :nth-child(n + 6),
+[data-cascata] > :nth-child(n + 6) { animation-delay: 300ms; }
+
+/* No tema Vidro, a cascata entra "desembaçando". */
+@keyframes cascata-desembaca {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+.vidro .cascata-pagina > * > *,
+.vidro [data-cascata] > * {
+  animation-name: cascata-desembaca;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .cascata-pagina > * > *,
+  [data-cascata] > * {
+    animation: none;
+  }
+}
