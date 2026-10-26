@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Response) return e;
     console.error("analisar-transcricao error:", e);
     if (reuniaoId) {
@@ -64,11 +64,11 @@ Deno.serve(async (req) => {
         .from("reuniao")
         .update({
           transcricao_status: "erro",
-          transcricao_erro: String(e?.message ?? e).slice(0, 500),
+          transcricao_erro: String((e as Error)?.message ?? e).slice(0, 500),
         })
         .eq("id", reuniaoId);
     }
-    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
+    return new Response(JSON.stringify({ error: String((e as Error)?.message ?? e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

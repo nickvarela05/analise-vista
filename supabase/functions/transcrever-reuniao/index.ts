@@ -14,7 +14,13 @@ const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
 
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-function formatTranscriptByWords(words: any[]): string {
+/** Palavra da transcrição com o falante (formato da resposta da API). */
+interface PalavraTranscrita {
+  text?: string;
+  speaker_id?: string | null;
+}
+
+function formatTranscriptByWords(words: PalavraTranscrita[]): string {
   if (!Array.isArray(words) || words.length === 0) return "";
   const lines: string[] = [];
   let currentSpeaker: string | null = null;
@@ -523,7 +529,7 @@ async function transcribeWithElevenLabs(audioBlob: Blob, fileName: string): Prom
   const text: string = json.text ?? "";
   const formatted = formatTranscriptByWords(json.words ?? []) || text;
   const speakers = Array.from(
-    new Set((json.words ?? []).map((w: any) => w.speaker_id).filter(Boolean)),
+    new Set((json.words ?? []).map((w: PalavraTranscrita) => w.speaker_id).filter(Boolean)),
   ) as string[];
   return { text, formatted, speakers };
 }
@@ -613,7 +619,7 @@ async function processarReuniao(
   try {
     await Promise.race([executarPipeline(reuniaoId, audioPath), deadline]);
     return;
-  } catch (e: any) {
+  } catch (e) {
     console.error("transcrever-reuniao error:", e);
     const wait = retryableWait(e);
 
@@ -635,7 +641,7 @@ async function processarReuniao(
         .update({
           transcricao_status: "erro",
           transcricao_rodadas: rodadas,
-          transcricao_erro: String(e?.message ?? e).slice(0, 500),
+          transcricao_erro: String((e as Error)?.message ?? e).slice(0, 500),
         })
         .eq("id", reuniaoId);
       return;
@@ -776,10 +782,10 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, status: "processando" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Response) return e;
     console.error("transcrever-reuniao error:", e);
-    return new Response(JSON.stringify({ ok: false, error: String(e?.message ?? e) }), {
+    return new Response(JSON.stringify({ ok: false, error: String((e as Error)?.message ?? e) }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

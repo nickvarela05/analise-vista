@@ -5,6 +5,7 @@
 // Configurações → IA (ia_prompt_config) e as duas liam só os primeiros 60 mil caracteres.
 // Unificado em 06/10/2026, depois de o Nickolas relatar análise rasa.
 // deno-lint-ignore-file no-explicit-any
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { aiFetch, AI_API_KEY } from "./ai.ts";
 
 export type AnaliseReuniao = {
@@ -73,7 +74,7 @@ const tool = {
 };
 
 /** Prompt de sistema configurável em Configurações → IA (chave `analise_reuniao`). */
-async function promptDoSistema(admin: any): Promise<string> {
+async function promptDoSistema(admin: SupabaseClient): Promise<string> {
   try {
     const { data } = await admin
       .from("ia_prompt_config")
@@ -95,7 +96,10 @@ async function promptDoSistema(admin: any): Promise<string> {
  * @param admin Cliente Supabase com service role (para ler a configuração de prompt).
  * @param transcricao Texto da reunião.
  */
-export async function analisarReuniao(admin: any, transcricao: string): Promise<AnaliseReuniao> {
+export async function analisarReuniao(
+  admin: SupabaseClient,
+  transcricao: string,
+): Promise<AnaliseReuniao> {
   if (!AI_API_KEY) throw new Error("AI_API_KEY não configurada");
   const res = await aiFetch({
     method: "POST",

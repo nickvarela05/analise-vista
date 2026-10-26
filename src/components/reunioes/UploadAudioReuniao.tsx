@@ -29,8 +29,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { startUploadJob, useUploadJob, useUploadStore } from "@/lib/reuniao-upload-manager";
 import { parseAudioFile, audioUploadMetaSchema } from "@/lib/schemas/reuniao_audio";
+import type { Database } from "@/integrations/supabase/types";
 
-type Status = "pendente" | "processando" | "concluido" | "erro";
+// Status do banco ("pausado" inclusive: a retomada automática fica na tela de Reuniões).
+type Status = Database["public"]["Enums"]["reuniao_transcricao_status"];
 
 interface Props {
   reuniaoId: string | null; // null em modo "criação" (sem id ainda)

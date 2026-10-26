@@ -84,6 +84,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import type { ReuniaoRow } from "@/lib/db-types";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/reunioes")({
   component: ReunioesRoute,
@@ -171,8 +173,8 @@ function Reunioes() {
   // Dialogs / drawers
   const [formOpen, setFormOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [openDetail, setOpenDetail] = React.useState<any>(null);
-  const [confirmDelete, setConfirmDelete] = React.useState<any>(null);
+  const [openDetail, setOpenDetail] = React.useState<ReuniaoRow | null>(null);
+  const [confirmDelete, setConfirmDelete] = React.useState<ReuniaoRow | null>(null);
 
   // Background upload jobs (compressão/upload em segundo plano) → anima cards
   const uploadJobs = useUploadStore((s) => s.jobs);
@@ -193,7 +195,7 @@ function Reunioes() {
   const [analyzing, setAnalyzing] = React.useState(false);
   const [generatingReport, setGeneratingReport] = React.useState(false);
 
-  const handleGerarRelatorio = async (reuniao: any) => {
+  const handleGerarRelatorio = async (reuniao: ReuniaoRow) => {
     if (!reuniao?.id) return;
     setGeneratingReport(true);
     try {
@@ -295,16 +297,11 @@ function Reunioes() {
         (payload) => {
           qc.invalidateQueries({ queryKey: ["reunioes"] });
           // Mantém o detail aberto sincronizado
-          setOpenDetail((cur: any) =>
-            cur && cur.id === (payload.new as any).id ? { ...cur, ...payload.new } : cur,
-          );
+          const nova = payload.new as Partial<ReuniaoRow>;
+          setOpenDetail((cur) => (cur && cur.id === nova.id ? { ...cur, ...nova } : cur));
           // Mantém form aberto sincronizado se for a mesma reunião
-          if (
-            editingId &&
-            (payload.new as any).id === editingId &&
-            (payload.new as any).transcricao_status === "concluido"
-          ) {
-            const n = payload.new as any;
+          if (editingId && nova.id === editingId && nova.transcricao_status === "concluido") {
+            const n = nova;
             setForm((f) => ({
               ...f,
               transcricao: n.transcricao ?? f.transcricao,
@@ -336,7 +333,7 @@ function Reunioes() {
     setFormOpen(true);
   };
 
-  const openEdit = (r: any) => {
+  const openEdit = (r: ReuniaoRow) => {
     setEditingId(r.id);
     setForm({
       titulo: r.titulo ?? "",
@@ -364,7 +361,7 @@ function Reunioes() {
 
   // Encontra a reunião atual em edição (para status de transcrição em tempo real)
   const editingRow = React.useMemo(
-    () => (editingId ? data.find((r: any) => r.id === editingId) : null),
+    () => (editingId ? data.find((r) => r.id === editingId) : null),
     [editingId, data],
   );
 
@@ -574,7 +571,7 @@ function Reunioes() {
     let savedId = editingId;
 
     if (editingId) {
-      const updatePayload: any = {
+      const updatePayload: TablesUpdate<"reuniao"> = {
         ...rest,
         data_reuniao: new Date(form.data_reuniao).toISOString(),
         duracao_min: Number(form.duracao_min) || null,
@@ -705,7 +702,7 @@ function Reunioes() {
 
   const [resuming, setResuming] = React.useState(false);
   /** Retoma a transcrição da última parte concluída. */
-  const handleRetomarTranscricao = async (reuniao: any) => {
+  const handleRetomarTranscricao = async (reuniao: ReuniaoRow) => {
     if (!reuniao?.audio_path) {
       toast.error("Reunião sem áudio para transcrever");
       return;
@@ -728,7 +725,7 @@ function Reunioes() {
   // quando o encadeamento automático no servidor é interrompido).
   const autoResumidas = React.useRef<Set<string>>(new Set());
   React.useEffect(() => {
-    const alvos = (data as any[]).filter(
+    const alvos = data.filter(
       (r) =>
         r.transcricao_status === "pausado" &&
         r.audio_path &&
@@ -750,7 +747,7 @@ function Reunioes() {
   // Filtragem em memória
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data.filter((r: any) => {
+    return data.filter((r) => {
       if (filterStatus !== "todos" && r.status !== filterStatus) return false;
       if (filterTipo !== "todos" && r.tipo !== filterTipo) return false;
       if (!q) return true;
@@ -769,12 +766,12 @@ function Reunioes() {
   }, [data, search, filterStatus, filterTipo]);
 
   const total = data.length;
-  const agendadas = data.filter((r: any) => r.status === "agendada").length;
-  const realizadas = data.filter((r: any) => r.status === "realizada").length;
-  const canceladas = data.filter((r: any) => r.status === "cancelada").length;
-  const noMes = data.filter((r: any) => isThisMonth(new Date(r.data_reuniao))).length;
+  const agendadas = data.filter((r) => r.status === "agendada").length;
+  const realizadas = data.filter((r) => r.status === "realizada").length;
+  const canceladas = data.filter((r) => r.status === "cancelada").length;
+  const noMes = data.filter((r) => isThisMonth(new Date(r.data_reuniao))).length;
   const proximas = data.filter(
-    (r: any) => r.status === "agendada" && isFuture(new Date(r.data_reuniao)),
+    (r) => r.status === "agendada" && isFuture(new Date(r.data_reuniao)),
   ).length;
 
   return (
@@ -893,7 +890,7 @@ function Reunioes() {
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((r: any) => {
+          {filtered.map((r) => {
             const tone = REUNIAO_TONE[r.status] ?? REUNIAO_TONE.agendada;
             const isFuturo = r.status === "agendada" && isFuture(new Date(r.data_reuniao));
             const hasIA = !!(r.transcricao && r.resumo);
@@ -1211,7 +1208,7 @@ function Reunioes() {
                 userId={user.id}
                 titulo={form.titulo}
                 audioPath={audioPath}
-                status={(editingRow?.transcricao_status as any) ?? "pendente"}
+                status={editingRow?.transcricao_status ?? "pendente"}
                 errorMessage={editingRow?.transcricao_erro ?? null}
                 onUploaded={async (info) => {
                   setAudioPath(info.audio_path || null);
@@ -1250,26 +1247,24 @@ function Reunioes() {
               </div>
             )}
 
-            {editingId &&
-              audioPath &&
-              (editingRow?.transcricao_status as any) !== "processando" && (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs">
-                  <span className="text-muted-foreground">
-                    {form.transcricao.trim()
-                      ? `A transcrição já está salva. O áudio${audioSize ? ` (${(audioSize / 1048576).toFixed(1)} MB)` : ""} pode ser apagado para liberar espaço.`
-                      : "O áudio ainda não foi transcrito. Apague só se não for precisar dele."}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
-                    onClick={() => setConfirmApagarAudio(true)}
-                  >
-                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Apagar áudio
-                  </Button>
-                </div>
-              )}
+            {editingId && audioPath && editingRow?.transcricao_status !== "processando" && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs">
+                <span className="text-muted-foreground">
+                  {form.transcricao.trim()
+                    ? `A transcrição já está salva. O áudio${audioSize ? ` (${(audioSize / 1048576).toFixed(1)} MB)` : ""} pode ser apagado para liberar espaço.`
+                    : "O áudio ainda não foi transcrito. Apague só se não for precisar dele."}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
+                  onClick={() => setConfirmApagarAudio(true)}
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Apagar áudio
+                </Button>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
@@ -1352,7 +1347,7 @@ function Reunioes() {
                 disabled={
                   analyzing ||
                   (!audioPath && !form.transcricao.trim()) ||
-                  (editingRow?.transcricao_status as any) === "processando"
+                  editingRow?.transcricao_status === "processando"
                 }
                 onClick={audioPath ? handleEarlyAnalysis : handleAnalisarTranscricaoColada}
               >

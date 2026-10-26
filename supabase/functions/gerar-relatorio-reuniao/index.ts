@@ -2,6 +2,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import {
   Document,
+  TabStopType,
   Packer,
   Paragraph,
   HeadingLevel,
@@ -292,18 +293,31 @@ function fmtDate(iso?: string | null): string {
   }
 }
 
-function fmtParticipantes(list: any): string {
+function fmtParticipantes(list: unknown): string {
   if (!Array.isArray(list) || list.length === 0) return "—";
   return list
-    .map((p: any) => {
+    .map((p: unknown) => {
       if (typeof p === "string") return p;
-      if (p && typeof p === "object") return p.nome ?? p.name ?? p.email ?? JSON.stringify(p);
+      if (p && typeof p === "object") {
+        const o = p as Record<string, unknown>;
+        return o.nome ?? o.name ?? o.email ?? JSON.stringify(p);
+      }
       return String(p);
     })
     .join(", ");
 }
 
-function buildCapa(r: any): (Paragraph | Table)[] {
+/** Campos da reunião que a capa do relatório usa. */
+interface ReuniaoCapa {
+  titulo?: string | null;
+  data_reuniao?: string | null;
+  duracao_min?: number | null;
+  tipo?: string | null;
+  status?: string | null;
+  participantes?: unknown;
+}
+
+function buildCapa(r: ReuniaoCapa): (Paragraph | Table)[] {
   const blocks: (Paragraph | Table)[] = [];
 
   // Título
@@ -412,7 +426,7 @@ function buildHeader(): Header {
             italics: true,
           }),
         ],
-        tabStops: [{ type: "right" as any, position: 9360 }],
+        tabStops: [{ type: TabStopType.RIGHT, position: 9360 }],
       }),
     ],
   });
@@ -585,10 +599,10 @@ Deno.serve(async (req) => {
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
-  } catch (e: any) {
+  } catch (e) {
     if (e instanceof Response) return e;
     console.error("gerar-relatorio-reuniao error:", e);
-    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
+    return new Response(JSON.stringify({ error: String((e as Error)?.message ?? e) }), {
       status: 500,
       headers: { ...corsFor(req), "Content-Type": "application/json" },
     });

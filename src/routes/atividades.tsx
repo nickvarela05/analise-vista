@@ -225,10 +225,7 @@ function Atividades() {
     [demandas],
   );
 
-  const isMine = React.useCallback(
-    (r: AtribuivelRow) => isAtribuidoA(r, meuColabId),
-    [meuColabId],
-  );
+  const isMine = React.useCallback((r: AtribuivelRow) => isAtribuidoA(r, meuColabId), [meuColabId]);
 
   const colabById = React.useMemo(() => {
     const m = new Map<string, string>();

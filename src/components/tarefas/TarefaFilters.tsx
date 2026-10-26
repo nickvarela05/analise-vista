@@ -122,7 +122,9 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
               <Label className="text-xs">Prazo</Label>
               <Select
                 value={value.prazo}
-                onValueChange={(v) => onChange({ ...value, prazo: v as TarefaFiltersState["prazo"] })}
+                onValueChange={(v) =>
+                  onChange({ ...value, prazo: v as TarefaFiltersState["prazo"] })
+                }
               >
                 <SelectTrigger className="mt-1.5 h-8 text-xs">
                   <SelectValue />
@@ -141,7 +143,9 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
               <Label className="text-xs">Vínculo com demanda</Label>
               <Select
                 value={value.comDemanda}
-                onValueChange={(v) => onChange({ ...value, comDemanda: v as TarefaFiltersState["comDemanda"] })}
+                onValueChange={(v) =>
+                  onChange({ ...value, comDemanda: v as TarefaFiltersState["comDemanda"] })
+                }
               >
                 <SelectTrigger className="mt-1.5 h-8 text-xs">
                   <SelectValue />
