@@ -120,7 +120,7 @@ export function GoogleCalendarConfig() {
           <div>
             <CardTitle className="text-base">Google Agenda</CardTitle>
             <CardDescription>
-              Replica reuniões, tarefas, demandas e chamados no calendário compartilhado da equipe.
+              Replica reuniões, tarefas e demandas no calendário compartilhado da equipe.
             </CardDescription>
           </div>
         </div>

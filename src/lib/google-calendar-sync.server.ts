@@ -1,6 +1,6 @@
 /**
  * Google Calendar sync core logic (server-only).
- * Replica itens da tela Atividades Semanais (reuniões, tarefas, demandas, chamados)
+ * Replica itens da tela Atividades Semanais (reuniões, tarefas e demandas)
  * em uma agenda Google compartilhada da equipe, via conta de serviço (google-auth.server).
  */
 import { createHash } from "node:crypto";
@@ -8,7 +8,7 @@ import { googleCalendarFetch } from "@/lib/google-auth.server";
 
 const TIMEZONE = "America/Sao_Paulo";
 
-type Fonte = "reuniao" | "tarefa" | "demanda" | "chamado";
+type Fonte = "reuniao" | "tarefa" | "demanda";
 
 function hashPayload(parts: Array<string | number | null | undefined>): string {
   return createHash("sha1")
@@ -149,7 +149,7 @@ export async function syncGoogleCalendar(options: { manual?: boolean } = {}): Pr
   const inicioData = inicio.slice(0, 10);
 
   // 1) Coleta itens da janela
-  const [reunioes, tarefas, demandas, chamados] = await Promise.all([
+  const [reunioes, tarefas, demandas] = await Promise.all([
     supabaseAdmin
       .from("reuniao")
       .select("id, titulo, data_reuniao, duracao_min, pauta, resumo, status")
@@ -164,12 +164,6 @@ export async function syncGoogleCalendar(options: { manual?: boolean } = {}): Pr
     supabaseAdmin
       .from("demanda")
       .select("id, titulo, descricao, prazo, status, prioridade")
-      .not("prazo", "is", null)
-      .gte("prazo", inicioData)
-      .lte("prazo", fimData),
-    supabaseAdmin
-      .from("chamado_externo")
-      .select("id, titulo, descricao, prazo, status, cliente, codigo")
       .not("prazo", "is", null)
       .gte("prazo", inicioData)
       .lte("prazo", fimData),
@@ -236,24 +230,6 @@ export async function syncGoogleCalendar(options: { manual?: boolean } = {}): Pr
       finalizado,
     });
   }
-  for (const c of chamados.data ?? []) {
-    const finalizado = c.status === "finalizado";
-    if (finalizado) continue;
-    const payload = buildAllDay(
-      "[Chamado]",
-      `${c.codigo ?? ""} ${c.titulo}`.trim(),
-      c.prazo!,
-      `Cliente: ${c.cliente ?? "—"}\nStatus: ${c.status}\n${c.descricao ?? ""}`,
-    );
-    alvos.push({
-      fonte: "chamado",
-      id: c.id,
-      payload,
-      hash: hashPayload([payload.summary, payload.description, payload.start, c.status]),
-      finalizado,
-    });
-  }
-
   // 2) Mapeamentos existentes
   const { data: mapasRaw } = await supabaseAdmin.from("google_calendar_evento").select("*");
   const mapas = new Map<

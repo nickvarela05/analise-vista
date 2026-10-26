@@ -14,7 +14,6 @@
 export const qk = {
   // ---------- Dashboard ----------
   dash: {
-    chamados: () => ["dash-chamados"] as const,
     tarefas: () => ["dash-tarefas"] as const,
     reunioes: () => ["dash-reunioes"] as const,
     avisos: () => ["dash-avisos"] as const,

@@ -39,7 +39,6 @@ export const EVENTOS_TIPOS = [
   "tarefa_status",
   "demanda_atribuida",
   "demanda_urgente",
-  "chamado_sla",
   "aviso_critico",
 ] as const;
 

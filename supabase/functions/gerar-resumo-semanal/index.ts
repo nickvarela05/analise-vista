@@ -15,9 +15,8 @@ function startOfWeek(d: Date) {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
 }
 
-function escopoAtividade(userId: string, colaboradorId?: string | null, incluirCriador = true) {
-  const filtros = ["equipe_toda.is.true"];
-  if (incluirCriador) filtros.push(`criado_por.eq.${userId}`);
+function escopoAtividade(userId: string, colaboradorId?: string | null) {
+  const filtros = ["equipe_toda.is.true", `criado_por.eq.${userId}`];
   if (colaboradorId) {
     filtros.push(`responsavel_id.eq.${colaboradorId}`, `responsaveis_ids.cs.{${colaboradorId}}`);
   }
@@ -127,7 +126,6 @@ Deno.serve(async (req) => {
   for (const u of users ?? []) {
     try {
       const escopo = escopoAtividade(u.user_id, u.colaborador_id);
-      const escopoChamados = escopoAtividade(u.user_id, u.colaborador_id, false);
       // Métricas do usuário na semana. Contagens feitas no banco (count exact + head): trazer
       // as linhas esbarrava no limite de 1.000 linhas por consulta do Supabase e distorcia o
       // resumo em semanas com importação em massa (ex.: 8.675 tarefas contadas como 1.000).
@@ -145,7 +143,6 @@ Deno.serve(async (req) => {
           .lt("created_at", fimISO);
       const todo = () => naSemana("todo", escopo);
       const demanda = () => naSemana("demanda", escopo);
-      const chamado = () => naSemana("chamado_externo", escopoChamados);
 
       const [
         tarefas_total,
@@ -153,18 +150,14 @@ Deno.serve(async (req) => {
         tarefas_urgentes,
         demandas_total,
         demandas_em_andamento,
-        chamados_total,
-        chamados_sla_estourado,
       ] = await Promise.all([
         contar(todo()),
         contar(todo().in("status", ["concluida", "producao", "aprovado"])),
         // Só valores que existem nos tipos do banco: um valor inválido derruba a contagem inteira
-        // (foi o que zerou o resumo de 05/10: "urgente" em todo e "fechado" em chamado_externo).
+        // (foi o que zerou o resumo de 05/10: "urgente" em todo).
         contar(todo().eq("prioridade", "alta")),
         contar(demanda()),
         contar(demanda().not("status", "in", "(concluida,cancelada)")),
-        contar(chamado()),
-        contar(chamado().lt("prazo", hoje.toISOString()).neq("status", "finalizado")),
       ]);
       const metricas = {
         tarefas_total,
@@ -172,12 +165,10 @@ Deno.serve(async (req) => {
         tarefas_urgentes,
         demandas_total,
         demandas_em_andamento,
-        chamados_total,
-        chamados_sla_estourado,
       };
 
       // pula se não teve atividade
-      if (tarefas_total === 0 && demandas_total === 0 && chamados_total === 0) continue;
+      if (tarefas_total === 0 && demandas_total === 0) continue;
 
       const taxaConclusao =
         metricas.tarefas_total > 0
@@ -189,7 +180,6 @@ Deno.serve(async (req) => {
 Dados consolidados da semana:
 - Tarefas: ${metricas.tarefas_total} criadas · ${metricas.tarefas_concluidas} concluídas (${taxaConclusao}% conclusão) · ${metricas.tarefas_urgentes} urgentes/alta prioridade
 - Demandas: ${metricas.demandas_total} novas · ${metricas.demandas_em_andamento} em andamento
-- Chamados externos: ${metricas.chamados_total} novos · ${metricas.chamados_sla_estourado} com SLA estourado
 
 Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (três seções, bullets curtos com **negrito** em números e termos-chave). Conecte os números a uma narrativa: o que avançou, onde está o risco, e o que fazer na próxima semana.`;
 
