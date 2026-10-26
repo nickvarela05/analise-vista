@@ -725,12 +725,19 @@
 .animate-progress-in {
   animation: progress-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+/* Sem animação quando o sistema pede menos movimento (salvo se a pessoa escolheu "Sempre" em
+   Configurações) ou quando ela escolheu "Desligar". Ver src/lib/movimento.ts. */
 @media (prefers-reduced-motion: reduce) {
-  .animate-page-in,
-  .animate-grow-x,
-  .animate-progress-in {
+  :root:not(.movimento-sempre) .animate-page-in,
+  :root:not(.movimento-sempre) .animate-grow-x,
+  :root:not(.movimento-sempre) .animate-progress-in {
     animation: none;
   }
+}
+.movimento-nunca .animate-page-in,
+.movimento-nunca .animate-grow-x,
+.movimento-nunca .animate-progress-in {
+  animation: none;
 }
 
 /* ============================================================
@@ -830,11 +837,18 @@
   animation: page-in-desembaca 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 @media (prefers-reduced-motion: reduce) {
-  .vidro .animate-page-in {
+  :root:not(.movimento-sempre).vidro .animate-page-in {
     animation: none;
   }
-  .vidro .panel:hover,
-  .vidro .kpi-tile:hover {
+  :root:not(.movimento-sempre).vidro .panel:hover,
+  :root:not(.movimento-sempre).vidro .kpi-tile:hover {
     transform: none;
   }
+}
+.movimento-nunca.vidro .animate-page-in {
+  animation: none;
+}
+.movimento-nunca.vidro .panel:hover,
+.movimento-nunca.vidro .kpi-tile:hover {
+  transform: none;
 }

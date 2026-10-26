@@ -1,4 +1,5 @@
 import * as React from "react";
+import { menosMovimento } from "@/lib/movimento";
 
 /**
  * Número que "conta" até o valor ao aparecer e ao mudar (pedido do Nickolas, 23/10/2026).
@@ -31,9 +32,6 @@ function formatar(n: number, casas: number, virgula: boolean) {
   const s = n.toFixed(casas);
   return virgula ? s.replace(".", ",") : s;
 }
-
-const menosMovimento = () =>
-  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export function Contagem({ valor, className }: { valor: number | string; className?: string }) {
   const ref = React.useRef<HTMLSpanElement>(null);

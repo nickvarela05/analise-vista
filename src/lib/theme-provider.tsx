@@ -6,7 +6,6 @@ export type Theme = "light" | "dark" | "vidro";
 
 interface ThemeContextValue {
   theme: Theme;
-  toggle: () => void;
   setTheme: (t: Theme) => void;
 }
 
@@ -39,12 +38,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, t);
   };
 
-  // O botão do cabeçalho alterna claro/escuro; do Vidro, vai para o escuro.
-  const toggle = () => setTheme(theme === "dark" ? "light" : "dark");
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggle, setTheme }}>{children}</ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

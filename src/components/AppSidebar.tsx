@@ -173,7 +173,7 @@ export function AppSidebar() {
                           tooltip={item.title}
                           className="group/btn relative h-9 rounded-lg transition-all data-[active=true]:bg-transparent"
                         >
-                          <Link to={item.url} className="flex items-center gap-2.5">
+                          <Link to={item.url} viewTransition className="flex items-center gap-2.5">
                             {/* Destaque do item ativo: um só no menu, com nome de transição, para o
                                 navegador deslizá-lo do item antigo para o novo (26/10/2026). */}
                             {active && (
@@ -231,7 +231,7 @@ export function AppSidebar() {
                     active && "bg-sidebar-accent",
                   )}
                 >
-                  <Link to={item.url} className="flex items-center gap-2.5">
+                  <Link to={item.url} viewTransition className="flex items-center gap-2.5">
                     <Icon
                       className={cn(
                         "h-4 w-4 shrink-0 transition-transform duration-300 group-hover/btn:rotate-45",

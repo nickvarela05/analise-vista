@@ -29,6 +29,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHero } from "@/components/shared/PageHero";
 import { papelLabel } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { AnimacoesConfig } from "@/components/configuracoes/AnimacoesConfig";
 
 export const Route = createFileRoute("/configuracoes")({
   component: ConfigRoute,
@@ -194,6 +195,9 @@ function Configuracoes() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Animações (26/10/2026) */}
+          <AnimacoesConfig />
 
           {/* Sessão */}
           <Card className="border-destructive/20">

@@ -3,8 +3,10 @@
  *  1. o conteúdo antigo some rápido; menu e cabeçalho ficam parados;
  *  2. a tela nova entra em cascata (seção por seção, e os indicadores um a um);
  *  3. o destaque do menu desliza do item antigo para o novo.
- * Usa a View Transitions API do navegador (o roteador chama document.startViewTransition).
- * Navegador sem suporte troca de tela sem animação, como antes. Tudo desliga com "menos movimento".
+ * Usa a View Transitions API do navegador, só nos cliques do menu lateral (no login não: lá
+ * ela "congelava" a tela até a Central carregar e a entrada voltou a ficar lenta, 26/10/2026).
+ * Navegador sem suporte troca de tela sem animação. "Menos movimento" do sistema desliga tudo,
+ * salvo se a pessoa escolheu "Sempre" em Configurações; "Desligar" desliga sempre.
  */
 
 /* A página inteira não faz o crossfade padrão: cada parte tem a sua regra. */
@@ -98,13 +100,22 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
+  :root:not(.movimento-sempre)::view-transition-group(*),
+  :root:not(.movimento-sempre)::view-transition-old(*),
+  :root:not(.movimento-sempre)::view-transition-new(*) {
     animation: none !important;
   }
-  .cascata-pagina > * > *,
-  [data-cascata] > * {
+  :root:not(.movimento-sempre) .cascata-pagina > * > *,
+  :root:not(.movimento-sempre) [data-cascata] > * {
     animation: none;
   }
+}
+.movimento-nunca::view-transition-group(*),
+.movimento-nunca::view-transition-old(*),
+.movimento-nunca::view-transition-new(*) {
+  animation: none !important;
+}
+.movimento-nunca .cascata-pagina > * > *,
+.movimento-nunca [data-cascata] > * {
+  animation: none;
 }
