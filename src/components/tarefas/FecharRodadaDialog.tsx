@@ -49,7 +49,8 @@ const SEM_LOTE = "__sem_lote";
 const PRONTAS = new Set<string>(STATUS_PRONTAS);
 const RODADA = new Set<string>(STATUS_RODADA);
 
-const INTRO_PADRAO = "Bom dia, prezados,\n\nSegue abaixo a situação após os testes das tarefas em homologação.";
+const INTRO_PADRAO =
+  "Bom dia, prezados,\n\nSegue abaixo a situação após os testes das tarefas em homologação.";
 const FECHO_PADRAO = "Atenciosamente,";
 
 function baixar(blob: Blob, nome: string) {
@@ -110,9 +111,14 @@ async function gerarExcel(linhas: LinhaEnvio[], titulo: string): Promise<Blob> {
       row.getCell(4).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEF3C7" } };
     }
   }
-  ws.autoFilter = { from: { row: 2, column: 1 }, to: { row: 2 + linhas.length, column: colunas.length } };
+  ws.autoFilter = {
+    from: { row: 2, column: 1 },
+    to: { row: 2 + linhas.length, column: colunas.length },
+  };
   const buf = await wb.xlsx.writeBuffer();
-  return new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  return new Blob([buf], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
 }
 
 export function FecharRodadaDialog({
@@ -267,7 +273,11 @@ export function FecharRodadaDialog({
       toast.error("Não foi possível mover para Pré-build", { description: error.message });
       return;
     }
-    const { data: perfil } = await supabase.from("profiles").select("nome").eq("user_id", user.id).maybeSingle();
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("user_id", user.id)
+      .maybeSingle();
     const autorNome = perfil?.nome ?? user.email ?? null;
     const hoje = format(new Date(), "dd/MM/yyyy");
     // O histórico de status é gravado pelo banco (gatilho trg_todo_registrar_status, 08/10/2026).
@@ -340,9 +350,12 @@ export function FecharRodadaDialog({
             </ol>
           </div>
           <DialogDescription>
-            {passo === 1 && "Escolha os lotes desta rodada. Entram as aprovadas e as aprovadas com ressalvas."}
-            {passo === 2 && "Escreva a observação de cada tarefa. Ela vai no e-mail e fica salva no card."}
-            {passo === 3 && "Copie o corpo, baixe o Excel, envie pelo Outlook e depois marque como enviadas."}
+            {passo === 1 &&
+              "Escolha os lotes desta rodada. Entram as aprovadas e as aprovadas com ressalvas."}
+            {passo === 2 &&
+              "Escreva a observação de cada tarefa. Ela vai no e-mail e fica salva no card."}
+            {passo === 3 &&
+              "Copie o corpo, baixe o Excel, envie pelo Outlook e depois marque como enviadas."}
           </DialogDescription>
         </DialogHeader>
 
@@ -359,15 +372,25 @@ export function FecharRodadaDialog({
                   className="flex cursor-pointer items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
                 >
                   <span className="flex items-center gap-2">
-                    <Checkbox id={`lote-${o.id}`} checked={lotesSel.has(o.id)} onCheckedChange={() => alternarLote(o.id)} />
+                    <Checkbox
+                      id={`lote-${o.id}`}
+                      checked={lotesSel.has(o.id)}
+                      onCheckedChange={() => alternarLote(o.id)}
+                    />
                     {o.nome}
                   </span>
                   <span className="flex gap-1.5 text-[11px]">
-                    <Badge variant="outline" className="border-success/30 bg-success/10 text-success">
+                    <Badge
+                      variant="outline"
+                      className="border-success/30 bg-success/10 text-success"
+                    >
                       {o.prontas} pronta(s)
                     </Badge>
                     {o.pendentes > 0 && (
-                      <Badge variant="outline" className="border-warning/40 bg-warning/15 text-warning">
+                      <Badge
+                        variant="outline"
+                        className="border-warning/40 bg-warning/15 text-warning"
+                      >
                         {o.pendentes} ainda em teste
                       </Badge>
                     )}
@@ -378,7 +401,8 @@ export function FecharRodadaDialog({
                 <div className="rounded-md border border-warning/50 p-3 text-xs">
                   <p className="flex items-center gap-2 font-medium">
                     <AlertTriangle className="h-4 w-4 text-warning" />
-                    {pendentes.length} tarefa(s) ainda em teste ficam fora deste envio e continuam na rodada
+                    {pendentes.length} tarefa(s) ainda em teste ficam fora deste envio e continuam
+                    na rodada
                   </p>
                   <ul className="mt-1.5 space-y-0.5 text-muted-foreground">
                     {pendentes.map((t) => (
@@ -397,13 +421,16 @@ export function FecharRodadaDialog({
               {ressalvasSemObs.length > 0 && (
                 <p className="flex items-center gap-2 rounded-md border border-warning/50 bg-warning/10 px-3 py-2 text-xs">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />
-                  {ressalvasSemObs.length} aprovada(s) com ressalvas sem observação. O desenvolvimento precisa saber
-                  qual é a ressalva.
+                  {ressalvasSemObs.length} aprovada(s) com ressalvas sem observação. O
+                  desenvolvimento precisa saber qual é a ressalva.
                 </p>
               )}
               <ul className="divide-y rounded-md border text-xs">
                 {linhas.map((l) => (
-                  <li key={l.id} className="grid gap-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
+                  <li
+                    key={l.id}
+                    className="grid gap-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]"
+                  >
                     <div className="min-w-0">
                       <p>
                         <span className="font-mono text-muted-foreground">{l.numero}</span>{" "}
@@ -430,7 +457,11 @@ export function FecharRodadaDialog({
                       aria-label={`Observação da tarefa ${l.numero}`}
                       value={observacoes[l.id] ?? ""}
                       onChange={(e) => setObservacoes((o) => ({ ...o, [l.id]: e.target.value }))}
-                      placeholder={l.status === "aprovado_ressalvas" ? "Qual é a ressalva?" : "Observação (opcional)"}
+                      placeholder={
+                        l.status === "aprovado_ressalvas"
+                          ? "Qual é a ressalva?"
+                          : "Observação (opcional)"
+                      }
                       className="h-8 text-xs"
                       maxLength={500}
                     />
@@ -447,7 +478,12 @@ export function FecharRodadaDialog({
                   Assunto
                 </Label>
                 <div className="mt-1 flex gap-2">
-                  <Input id="rodada-assunto" value={assunto} onChange={(e) => setAssunto(e.target.value)} className="h-8 text-sm" />
+                  <Input
+                    id="rodada-assunto"
+                    value={assunto}
+                    onChange={(e) => setAssunto(e.target.value)}
+                    className="h-8 text-sm"
+                  />
                   <Button type="button" variant="outline" size="sm" onClick={copiarAssunto}>
                     <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar
                   </Button>
@@ -458,13 +494,25 @@ export function FecharRodadaDialog({
                   <Label htmlFor="rodada-intro" className="text-xs">
                     Abertura
                   </Label>
-                  <Textarea id="rodada-intro" value={intro} onChange={(e) => setIntro(e.target.value)} rows={3} className="mt-1 text-xs" />
+                  <Textarea
+                    id="rodada-intro"
+                    value={intro}
+                    onChange={(e) => setIntro(e.target.value)}
+                    rows={3}
+                    className="mt-1 text-xs"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="rodada-fecho" className="text-xs">
                     Fechamento (ex.: tarefa a manter em stand-by)
                   </Label>
-                  <Textarea id="rodada-fecho" value={fecho} onChange={(e) => setFecho(e.target.value)} rows={3} className="mt-1 text-xs" />
+                  <Textarea
+                    id="rodada-fecho"
+                    value={fecho}
+                    onChange={(e) => setFecho(e.target.value)}
+                    rows={3}
+                    className="mt-1 text-xs"
+                  />
                 </div>
               </div>
               <div>
@@ -483,8 +531,8 @@ export function FecharRodadaDialog({
             <p className="flex items-center gap-2 text-sm font-medium">
               <CheckCircle2 className="h-5 w-5 text-success" />
               {enviadas} tarefa(s) movida(s) para Pré-build
-              {tirarDeTeste ? ", sem a marca “em teste”" : ", mantendo a marca “em teste”"}. As observações ficaram
-              salvas nos cards.
+              {tirarDeTeste ? ", sem a marca “em teste”" : ", mantendo a marca “em teste”"}. As
+              observações ficaram salvas nos cards.
             </p>
           )}
         </div>
@@ -492,7 +540,10 @@ export function FecharRodadaDialog({
         <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t px-5 py-3">
           <span className="text-xs text-muted-foreground">
             {passo < 3 && `${prontas.length} pronta(s) para enviar`}
-            {passo === 3 && enviadas === null && !confirmando && "Envie o e-mail pelo Outlook antes de marcar como enviadas."}
+            {passo === 3 &&
+              enviadas === null &&
+              !confirmando &&
+              "Envie o e-mail pelo Outlook antes de marcar como enviadas."}
             {confirmando && (
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>Confirma: {linhas.length} tarefa(s) vão para Pré-build.</span>
@@ -502,7 +553,10 @@ export function FecharRodadaDialog({
                     checked={tirarDeTeste}
                     onCheckedChange={(v) => setTirarDeTeste(v === true)}
                   />
-                  <Label htmlFor="rodada-tirar-teste" className="cursor-pointer text-xs font-normal">
+                  <Label
+                    htmlFor="rodada-tirar-teste"
+                    className="cursor-pointer text-xs font-normal"
+                  >
                     Tirar também a marca “em teste”
                   </Label>
                 </span>

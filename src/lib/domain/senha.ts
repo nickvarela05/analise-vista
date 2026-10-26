@@ -6,7 +6,8 @@
  */
 export const SENHA_MINIMO = 8;
 
-export const REGRA_SENHA_TEXTO = "Mínimo de 8 caracteres, com letra minúscula, letra maiúscula e número.";
+export const REGRA_SENHA_TEXTO =
+  "Mínimo de 8 caracteres, com letra minúscula, letra maiúscula e número.";
 
 /** O que falta na senha; lista vazia quando ela atende à regra. */
 export function problemasSenha(senha: string): string[] {
@@ -22,6 +23,7 @@ export function problemasSenha(senha: string): string[] {
 export function mensagemSenha(senha: string): string | null {
   const falta = problemasSenha(senha);
   if (falta.length === 0) return null;
-  const lista = falta.length === 1 ? falta[0] : `${falta.slice(0, -1).join(", ")} e ${falta.at(-1)}`;
+  const lista =
+    falta.length === 1 ? falta[0] : `${falta.slice(0, -1).join(", ")} e ${falta.at(-1)}`;
   return `A senha precisa de ${lista}.`;
 }

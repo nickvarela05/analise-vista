@@ -53,9 +53,7 @@ export function FeriasDialog({
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
       return;
     }
-    const { error } = await supabase
-      .from("colaborador_ferias")
-      .insert(parsed.data);
+    const { error } = await supabase.from("colaborador_ferias").insert(parsed.data);
     if (error) toast.error("Erro", { description: error.message });
     else {
       toast.success("Férias registradas");

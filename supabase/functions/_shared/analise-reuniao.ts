@@ -55,7 +55,8 @@ const tool = {
         decisoes: {
           type: "array",
           items: { type: "string" },
-          description: "Cada decisão tomada, em uma frase. Não repita ações dos próximos passos. Vazio se não houver.",
+          description:
+            "Cada decisão tomada, em uma frase. Não repita ações dos próximos passos. Vazio se não houver.",
         },
         participantes_detectados: {
           type: "array",
@@ -81,7 +82,9 @@ async function promptDoSistema(admin: any): Promise<string> {
       .maybeSingle();
     if (!data || !data.ativo || !data.prompt_sistema?.trim()) return PROMPT_PADRAO;
     const extra = data.instrucoes_extras?.trim();
-    return extra ? `${data.prompt_sistema.trim()}\n\nContexto adicional:\n${extra}` : data.prompt_sistema.trim();
+    return extra
+      ? `${data.prompt_sistema.trim()}\n\nContexto adicional:\n${extra}`
+      : data.prompt_sistema.trim();
   } catch {
     return PROMPT_PADRAO;
   }
@@ -111,8 +114,10 @@ export async function analisarReuniao(admin: any, transcricao: string): Promise<
     }),
   });
 
-  if (res.status === 429) throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
-  if (res.status === 402) throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
+  if (res.status === 429)
+    throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
+  if (res.status === 402)
+    throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
   if (!res.ok) throw new Error(`IA (${res.status}): ${(await res.text()).slice(0, 300)}`);
 
   const json = await res.json();
@@ -124,6 +129,8 @@ export async function analisarReuniao(admin: any, transcricao: string): Promise<
     pauta: args.pauta ?? "",
     proximos_passos: args.proximos_passos ?? "",
     decisoes: Array.isArray(args.decisoes) ? args.decisoes : [],
-    participantes_detectados: Array.isArray(args.participantes_detectados) ? args.participantes_detectados : [],
+    participantes_detectados: Array.isArray(args.participantes_detectados)
+      ? args.participantes_detectados
+      : [],
   };
 }

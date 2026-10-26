@@ -19,11 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -261,10 +257,7 @@ export function EventoPopover({
                                   )}
                                 </div>
                                 <Check
-                                  className={cn(
-                                    "h-4 w-4",
-                                    checked ? "opacity-100" : "opacity-0",
-                                  )}
+                                  className={cn("h-4 w-4", checked ? "opacity-100" : "opacity-0")}
                                 />
                               </CommandItem>
                             );
@@ -308,30 +301,18 @@ export function EventoPopover({
 
           <div className="space-y-1.5">
             <Label className="text-xs">Data</Label>
-            <Input
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-            />
+            <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
           </div>
 
           {tipo === "atraso" && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">Chegou às</Label>
-                <Input
-                  type="time"
-                  value={horaIni}
-                  onChange={(e) => setHoraIni(e.target.value)}
-                />
+                <Input type="time" value={horaIni} onChange={(e) => setHoraIni(e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Esperado às</Label>
-                <Input
-                  type="time"
-                  value={horaFim}
-                  onChange={(e) => setHoraFim(e.target.value)}
-                />
+                <Input type="time" value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
               </div>
             </div>
           )}

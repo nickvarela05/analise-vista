@@ -48,9 +48,10 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const dia = now.getDay();
 
-  const filtered = colabs.filter((c) =>
-    c.nome.toLowerCase().includes(q.toLowerCase()) ||
-    (c.cargo ?? "").toLowerCase().includes(q.toLowerCase()),
+  const filtered = colabs.filter(
+    (c) =>
+      c.nome.toLowerCase().includes(q.toLowerCase()) ||
+      (c.cargo ?? "").toLowerCase().includes(q.toLowerCase()),
   );
 
   const byLocal = React.useMemo(() => {
@@ -85,13 +86,12 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
         const total = groups.reduce((sum, [, items]) => sum + items.length, 0);
 
         return (
-          <section
-            key={key}
-            className={`relative overflow-hidden rounded-2xl border ${bg}`}
-          >
+          <section key={key} className={`relative overflow-hidden rounded-2xl border ${bg}`}>
             <header className="flex items-center justify-between gap-2 border-b border-border/40 bg-background/40 px-5 py-3 backdrop-blur">
               <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-background ring-1 ${ring}`}>
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg bg-background ring-1 ${ring}`}
+                >
                   <Icon className={`h-4 w-4 ${accent}`} />
                 </div>
                 <div>
@@ -183,7 +183,10 @@ export function EquipeListaView({ colabs, onSelect }: Props) {
                                     <>
                                       {almoco}
                                       {h?.local_almoco && (
-                                        <span className="text-foreground/70"> · {h.local_almoco}</span>
+                                        <span className="text-foreground/70">
+                                          {" "}
+                                          · {h.local_almoco}
+                                        </span>
                                       )}
                                     </>
                                   ) : h?.local_almoco ? (

@@ -21,7 +21,14 @@ interface Props {
   onClear: () => void;
 }
 
-export function TarefasBulkBar({ count, onBulkStatus, onBulkPriority, onBulkEmTeste, onBulkDelete, onClear }: Props) {
+export function TarefasBulkBar({
+  count,
+  onBulkStatus,
+  onBulkPriority,
+  onBulkEmTeste,
+  onBulkDelete,
+  onClear,
+}: Props) {
   return (
     <Card className="mb-3 flex flex-wrap items-center gap-2 border-primary/40 bg-primary/5 p-2">
       <span className="ml-2 text-sm font-medium">{count} selecionada(s)</span>
@@ -59,12 +66,17 @@ export function TarefasBulkBar({ count, onBulkStatus, onBulkPriority, onBulkEmTe
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button size="sm" variant="outline">
-              <FlaskConical className="mr-1 h-3.5 w-3.5" /> Em teste <ChevronDown className="ml-1 h-3.5 w-3.5" />
+              <FlaskConical className="mr-1 h-3.5 w-3.5" /> Em teste{" "}
+              <ChevronDown className="ml-1 h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => onBulkEmTeste(true)}>Marcar como Em teste</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onBulkEmTeste(false)}>Remover Em teste</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onBulkEmTeste(true)}>
+              Marcar como Em teste
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onBulkEmTeste(false)}>
+              Remover Em teste
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button size="sm" variant="outline" onClick={onBulkDelete} className="text-destructive">

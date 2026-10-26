@@ -13,11 +13,7 @@ const emailField = z
 const roleField = z.enum(ROLES).default("analista");
 
 export const criarUsuarioSchema = z.object({
-  nome: z
-    .string()
-    .trim()
-    .min(1, "Nome é obrigatório")
-    .max(120, "Nome muito longo"),
+  nome: z.string().trim().min(1, "Nome é obrigatório").max(120, "Nome muito longo"),
   email: emailField,
   role: roleField,
   colaborador_id: z.string().uuid("Colaborador inválido").nullable(),

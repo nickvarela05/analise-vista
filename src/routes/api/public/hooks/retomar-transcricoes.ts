@@ -55,10 +55,10 @@ export const Route = createFileRoute("/api/public/hooks/retomar-transcricoes")({
             if (res.ok) retomadas++;
           }
 
-          return new Response(
-            JSON.stringify({ ok: true, encontradas: alvos.length, retomadas }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: true, encontradas: alvos.length, retomadas }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           return new Response(JSON.stringify({ ok: false, error: msg }), {

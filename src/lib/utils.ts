@@ -54,7 +54,10 @@ export function prioridadeLabel(p: string | null | undefined): string {
  * iniciais("nickolas.varela@sisteplan.com.br") // => "NV"
  */
 export function iniciais(texto: string | null | undefined): string {
-  const partes = (texto ?? "").split("@")[0].split(/[\s._-]+/).filter(Boolean);
+  const partes = (texto ?? "")
+    .split("@")[0]
+    .split(/[\s._-]+/)
+    .filter(Boolean);
   if (partes.length === 0) return "?";
   if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
   return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
@@ -70,7 +73,12 @@ export function iniciais(texto: string | null | undefined): string {
 export function getErrorMessage(e: unknown, fallback = "Erro desconhecido"): string {
   if (e instanceof Error) return e.message;
   if (typeof e === "string") return e;
-  if (e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string") {
+  if (
+    e &&
+    typeof e === "object" &&
+    "message" in e &&
+    typeof (e as { message: unknown }).message === "string"
+  ) {
     return (e as { message: string }).message;
   }
   return fallback;

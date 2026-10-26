@@ -1,5 +1,16 @@
 import * as React from "react";
-import { Loader2, Sparkles, Upload, AlertCircle, RefreshCw, CheckCircle2, FileAudio, Trash2, Wand2, X } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  Upload,
+  AlertCircle,
+  RefreshCw,
+  CheckCircle2,
+  FileAudio,
+  Trash2,
+  Wand2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getErrorMessage } from "@/lib/utils";
@@ -190,10 +201,7 @@ export function UploadAudioReuniao({
   };
 
   const jobActive =
-    job &&
-    (job.phase === "compressing" ||
-      job.phase === "uploading" ||
-      job.phase === "triggering");
+    job && (job.phase === "compressing" || job.phase === "uploading" || job.phase === "triggering");
   const isProcessing = status === "processando" || triggering;
 
   const jobPhaseLabel: Record<string, string> = {
@@ -211,8 +219,8 @@ export function UploadAudioReuniao({
             Áudio e análise automática
           </h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Anexe a gravação (até 25 MB). O upload roda em segundo plano —
-            você pode fechar este formulário e navegar pelo sistema enquanto isso.
+            Anexe a gravação (até 25 MB). O upload roda em segundo plano — você pode fechar este
+            formulário e navegar pelo sistema enquanto isso.
           </p>
         </div>
       </div>
@@ -261,13 +269,18 @@ export function UploadAudioReuniao({
         <div className="space-y-2 rounded-md border border-primary/30 bg-primary/5 p-3">
           <div className="flex items-center justify-between gap-2 text-sm">
             <span className="flex items-center gap-2">
-              {job.phase === "compressing" && <Wand2 className="h-4 w-4 animate-pulse text-primary" />}
-              {job.phase === "uploading" && <Upload className="h-4 w-4 animate-pulse text-primary" />}
-              {job.phase === "triggering" && <Sparkles className="h-4 w-4 animate-pulse text-primary" />}
+              {job.phase === "compressing" && (
+                <Wand2 className="h-4 w-4 animate-pulse text-primary" />
+              )}
+              {job.phase === "uploading" && (
+                <Upload className="h-4 w-4 animate-pulse text-primary" />
+              )}
+              {job.phase === "triggering" && (
+                <Sparkles className="h-4 w-4 animate-pulse text-primary" />
+              )}
               <span>
                 {jobPhaseLabel[job.phase]}
-                {(job.phase === "compressing" || job.phase === "uploading") &&
-                  ` ${job.progress}%`}
+                {(job.phase === "compressing" || job.phase === "uploading") && ` ${job.progress}%`}
               </span>
             </span>
             {(job.phase === "compressing" || job.phase === "uploading") && (
@@ -285,7 +298,8 @@ export function UploadAudioReuniao({
             <Progress value={job.progress} />
           )}
           <p className="text-xs text-muted-foreground">
-            💡 Você pode fechar este formulário ou navegar para outra página — o processamento continua.
+            💡 Você pode fechar este formulário ou navegar para outra página — o processamento
+            continua.
           </p>
         </div>
       )}
@@ -319,9 +333,10 @@ export function UploadAudioReuniao({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir áudio da reunião?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    O arquivo de áudio será removido permanentemente do armazenamento. A transcrição e os campos
-                    já preenchidos pela IA (resumo, pauta, decisões, próximos passos) permanecem inalterados —
-                    você pode editá-los manualmente. Esta ação não pode ser desfeita.
+                    O arquivo de áudio será removido permanentemente do armazenamento. A transcrição
+                    e os campos já preenchidos pela IA (resumo, pauta, decisões, próximos passos)
+                    permanecem inalterados — você pode editá-los manualmente. Esta ação não pode ser
+                    desfeita.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -164,7 +164,6 @@ const REUNIAO_TONE: Record<string, { accent: string; statusBadge: string; dot: s
   },
 };
 
-
 function Reunioes() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -380,7 +379,10 @@ function Reunioes() {
     }
     const { participantes_str, ...rest } = form;
     const participantes = participantes_str
-      ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
+      ? participantes_str
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : null;
     const { data: inserted, error } = await supabase
       .from("reuniao")
@@ -505,7 +507,10 @@ function Reunioes() {
       if (!rid) {
         const { participantes_str, ...rest } = form;
         const participantes = participantes_str
-          ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
+          ? participantes_str
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
           : null;
         const { data: inserted, error } = await supabase
           .from("reuniao")
@@ -538,7 +543,8 @@ function Reunioes() {
         toast.error("Falha ao iniciar análise", { description: fnError.message });
       } else {
         toast.info("🎧 Transcrevendo e analisando com IA...", {
-          description: "Os campos serão preenchidos automaticamente. Continue editando e salve depois.",
+          description:
+            "Os campos serão preenchidos automaticamente. Continue editando e salve depois.",
         });
       }
       qc.invalidateQueries({ queryKey: ["reunioes"] });
@@ -557,7 +563,10 @@ function Reunioes() {
 
     const { participantes_str, ...rest } = form;
     const participantes = participantes_str
-      ? participantes_str.split(",").map((s) => s.trim()).filter(Boolean)
+      ? participantes_str
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : null;
 
     let savedId = editingId;
@@ -613,7 +622,10 @@ function Reunioes() {
         .invoke("analisar-transcricao", { body: { reuniao_id: savedId } })
         .then(({ error }) => {
           if (error) toast.error("Falha na análise por IA", { description: error.message });
-          else toast.info("✨ Analisando a transcrição com IA...", { description: "A reunião será atualizada automaticamente." });
+          else
+            toast.info("✨ Analisando a transcrição com IA...", {
+              description: "A reunião será atualizada automaticamente.",
+            });
         });
     }
 
@@ -641,7 +653,6 @@ function Reunioes() {
     qc.invalidateQueries({ queryKey: ["dash-reunioes"] });
     qc.invalidateQueries({ queryKey: ["dash-atribuicoes"] });
   };
-
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
@@ -684,7 +695,10 @@ function Reunioes() {
     });
     setRegenerating(false);
     if (error) toast.error("Falha ao regerar análise", { description: error.message });
-    else toast.info("✨ Regerando análise com IA...", { description: "A reunião será atualizada em instantes." });
+    else
+      toast.info("✨ Regerando análise com IA...", {
+        description: "A reunião será atualizada em instantes.",
+      });
   };
 
   const [resuming, setResuming] = React.useState(false);
@@ -731,7 +745,6 @@ function Reunioes() {
     });
   }, [data, qc]);
 
-
   // Filtragem em memória
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -739,7 +752,13 @@ function Reunioes() {
       if (filterStatus !== "todos" && r.status !== filterStatus) return false;
       if (filterTipo !== "todos" && r.tipo !== filterTipo) return false;
       if (!q) return true;
-      const hay = [r.titulo, r.resumo, r.pauta, r.proximos_passos, (r.participantes ?? []).join(" ")]
+      const hay = [
+        r.titulo,
+        r.resumo,
+        r.pauta,
+        r.proximos_passos,
+        (r.participantes ?? []).join(" "),
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -766,10 +785,7 @@ function Reunioes() {
         icon={CalIcon}
         tone="violet"
         actions={
-          <Button
-            onClick={openCreate}
-            className="gap-2"
-          >
+          <Button onClick={openCreate} className="gap-2">
             <Plus className="h-4 w-4" /> Nova reunião
           </Button>
         }
@@ -783,7 +799,13 @@ function Reunioes() {
             tone: "sky",
             hint: `${proximas} futuras`,
           },
-          { icon: CheckCircle2, label: "Realizadas", value: realizadas, tone: "emerald", hint: "Concluídas" },
+          {
+            icon: CheckCircle2,
+            label: "Realizadas",
+            value: realizadas,
+            tone: "emerald",
+            hint: "Concluídas",
+          },
           {
             icon: XCircle,
             label: "Canceladas",
@@ -791,7 +813,13 @@ function Reunioes() {
             tone: canceladas > 0 ? "rose" : "emerald",
             hint: canceladas > 0 ? "Revisar motivos" : "Sem cancelamentos",
           },
-          { icon: Sparkles, label: "Neste mês", value: noMes, tone: "amber", hint: "Ritmo do time" },
+          {
+            icon: Sparkles,
+            label: "Neste mês",
+            value: noMes,
+            tone: "amber",
+            hint: "Ritmo do time",
+          },
         ]}
       />
 
@@ -852,13 +880,14 @@ function Reunioes() {
         </div>
       </div>
 
-
       {isLoading ? (
         <EsqueletoCartoes quantidade={6} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CalIcon}
-          title={data.length === 0 ? "Nenhuma reunião registrada" : "Nenhuma reunião com esses filtros"}
+          title={
+            data.length === 0 ? "Nenhuma reunião registrada" : "Nenhuma reunião com esses filtros"
+          }
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -894,17 +923,13 @@ function Reunioes() {
                 {isProcessing ? (
                   <span aria-hidden className="reuniao-processing-bar" />
                 ) : (
-                  <span
-                    aria-hidden
-                    className={cn("absolute inset-x-0 top-0 h-0.5", tone.accent)}
-                  />
+                  <span aria-hidden className={cn("absolute inset-x-0 top-0 h-0.5", tone.accent)} />
                 )}
                 {/* hover wash */}
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-0 bg-primary/[0.03] opacity-0 transition-opacity group-hover:opacity-100"
                 />
-
 
                 <div className="relative p-4 pt-5 space-y-3">
                   <div className="flex items-start justify-between gap-2">
@@ -915,7 +940,9 @@ function Reunioes() {
                       <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <CalIcon className="h-3 w-3" />
-                          {format(new Date(r.data_reuniao), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+                          {format(new Date(r.data_reuniao), "dd 'de' MMM 'às' HH:mm", {
+                            locale: ptBR,
+                          })}
                         </span>
                         {r.duracao_min ? (
                           <>
@@ -944,7 +971,10 @@ function Reunioes() {
                           <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
                           {r.status}
                         </span>
-                        <Badge variant="outline" className="capitalize text-[10px] text-muted-foreground">
+                        <Badge
+                          variant="outline"
+                          className="capitalize text-[10px] text-muted-foreground"
+                        >
                           {r.tipo}
                         </Badge>
                       </div>
@@ -1063,7 +1093,6 @@ function Reunioes() {
         </div>
       )}
 
-
       {/* Form criar/editar */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="w-[95vw] sm:max-w-3xl lg:max-w-4xl max-h-[92vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
@@ -1084,12 +1113,18 @@ function Reunioes() {
           <form onSubmit={onSubmit} className="space-y-3">
             <div className="space-y-1.5">
               <Label>Título</Label>
-              <Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
+              <Input
+                value={form.titulo}
+                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+              />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Tipo</Label>
-                <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}>
+                <Select
+                  value={form.tipo}
+                  onValueChange={(v) => setForm({ ...form, tipo: v as typeof form.tipo })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -1213,52 +1248,73 @@ function Reunioes() {
               </div>
             )}
 
-            {editingId && audioPath && (editingRow?.transcricao_status as any) !== "processando" && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs">
-                <span className="text-muted-foreground">
-                  {form.transcricao.trim()
-                    ? `A transcrição já está salva. O áudio${audioSize ? ` (${(audioSize / 1048576).toFixed(1)} MB)` : ""} pode ser apagado para liberar espaço.`
-                    : "O áudio ainda não foi transcrito. Apague só se não for precisar dele."}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
-                  onClick={() => setConfirmApagarAudio(true)}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Apagar áudio
-                </Button>
-              </div>
-            )}
+            {editingId &&
+              audioPath &&
+              (editingRow?.transcricao_status as any) !== "processando" && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs">
+                  <span className="text-muted-foreground">
+                    {form.transcricao.trim()
+                      ? `A transcrição já está salva. O áudio${audioSize ? ` (${(audioSize / 1048576).toFixed(1)} MB)` : ""} pode ser apagado para liberar espaço.`
+                      : "O áudio ainda não foi transcrito. Apague só se não for precisar dele."}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 border-destructive/40 text-destructive hover:bg-destructive/10"
+                    onClick={() => setConfirmApagarAudio(true)}
+                  >
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Apagar áudio
+                  </Button>
+                </div>
+              )}
 
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Pauta
                 {form.pauta && (audioPath || form.transcricao) && (
-                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
+                  <Badge
+                    variant="outline"
+                    className="border-primary/30 bg-primary/5 text-[10px] text-primary"
+                  >
                     <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
                   </Badge>
                 )}
               </Label>
-              <Textarea rows={6} className="min-h-[140px] resize-y leading-relaxed" value={form.pauta} onChange={(e) => setForm({ ...form, pauta: e.target.value })} />
+              <Textarea
+                rows={6}
+                className="min-h-[140px] resize-y leading-relaxed"
+                value={form.pauta}
+                onChange={(e) => setForm({ ...form, pauta: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Resumo
                 {form.resumo && (audioPath || form.transcricao) && (
-                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
+                  <Badge
+                    variant="outline"
+                    className="border-primary/30 bg-primary/5 text-[10px] text-primary"
+                  >
                     <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
                   </Badge>
                 )}
               </Label>
-              <Textarea rows={6} className="min-h-[140px] resize-y leading-relaxed" value={form.resumo} onChange={(e) => setForm({ ...form, resumo: e.target.value })} />
+              <Textarea
+                rows={6}
+                className="min-h-[140px] resize-y leading-relaxed"
+                value={form.resumo}
+                onChange={(e) => setForm({ ...form, resumo: e.target.value })}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5">
                 Próximos passos
                 {form.proximos_passos && (audioPath || form.transcricao) && (
-                  <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
+                  <Badge
+                    variant="outline"
+                    className="border-primary/30 bg-primary/5 text-[10px] text-primary"
+                  >
                     <Sparkles className="mr-1 h-2.5 w-2.5" /> IA
                   </Badge>
                 )}
@@ -1329,14 +1385,20 @@ function Reunioes() {
                   <div className="min-w-0 flex-1">
                     <SheetTitle className="text-xl">{openDetail.titulo}</SheetTitle>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                      <Badge variant="outline" className={`capitalize ${statusBadgeClass(openDetail.status)}`}>
+                      <Badge
+                        variant="outline"
+                        className={`capitalize ${statusBadgeClass(openDetail.status)}`}
+                      >
                         {openDetail.status}
                       </Badge>
                       <Badge variant="outline" className="capitalize">
                         {openDetail.tipo}
                       </Badge>
                       {openDetail.transcricao && openDetail.resumo && (
-                        <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-primary">
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-primary/30 bg-primary/5 text-primary"
+                        >
                           <Sparkles className="h-3 w-3" /> Analisada por IA
                         </Badge>
                       )}
@@ -1346,7 +1408,10 @@ function Reunioes() {
                         </Badge>
                       )}
                       {openDetail.transcricao_status === "pausado" && (
-                        <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300">
+                        <Badge
+                          variant="outline"
+                          className="gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300"
+                        >
                           ⏸ pausado
                           {openDetail.transcricao_partes_total
                             ? ` ${openDetail.transcricao_partes_feitas}/${openDetail.transcricao_partes_total}`
@@ -1356,7 +1421,6 @@ function Reunioes() {
                       {openDetail.transcricao_status === "erro" && (
                         <Badge variant="destructive">⚠️ erro IA</Badge>
                       )}
-
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-1">
@@ -1395,9 +1459,13 @@ function Reunioes() {
                   <MetaItem
                     icon={CalIcon}
                     label="Data"
-                    value={format(new Date(openDetail.data_reuniao), "EEEE, dd 'de' MMMM 'de' yyyy", {
-                      locale: ptBR,
-                    })}
+                    value={format(
+                      new Date(openDetail.data_reuniao),
+                      "EEEE, dd 'de' MMMM 'de' yyyy",
+                      {
+                        locale: ptBR,
+                      },
+                    )}
                   />
                   <MetaItem
                     icon={Clock}
@@ -1422,7 +1490,9 @@ function Reunioes() {
 
                 {/* Responsáveis */}
                 <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase text-muted-foreground">Responsáveis</p>
+                  <p className="mb-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                    Responsáveis
+                  </p>
                   <AssigneeBadges
                     selectedIds={openDetail.responsaveis_ids}
                     equipeToda={openDetail.equipe_toda}
@@ -1552,7 +1622,6 @@ function Reunioes() {
                   </div>
                 )}
 
-
                 {openDetail.transcricao && (
                   <Accordion type="single" collapsible>
                     <AccordionItem value="transcricao" className="rounded-md border px-3">
@@ -1597,8 +1666,8 @@ function Reunioes() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir reunião?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A reunião <strong>{confirmDelete?.titulo}</strong> e seus dados
-              (incluindo o áudio, se houver) serão removidos permanentemente.
+              Esta ação não pode ser desfeita. A reunião <strong>{confirmDelete?.titulo}</strong> e
+              seus dados (incluindo o áudio, se houver) serão removidos permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1614,13 +1683,16 @@ function Reunioes() {
       </AlertDialog>
 
       {/* Confirmar apagar só o áudio */}
-      <AlertDialog open={confirmApagarAudio} onOpenChange={(v) => !apagandoAudio && setConfirmApagarAudio(v)}>
+      <AlertDialog
+        open={confirmApagarAudio}
+        onOpenChange={(v) => !apagandoAudio && setConfirmApagarAudio(v)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Apagar o áudio desta reunião?</AlertDialogTitle>
             <AlertDialogDescription>
-              O arquivo de áudio é apagado de vez e não pode ser recuperado. A reunião, a transcrição, a
-              pauta, o resumo e os próximos passos continuam salvos.
+              O arquivo de áudio é apagado de vez e não pode ser recuperado. A reunião, a
+              transcrição, a pauta, o resumo e os próximos passos continuam salvos.
               {!form.transcricao.trim() && " Atenção: este áudio ainda não foi transcrito."}
             </AlertDialogDescription>
           </AlertDialogHeader>

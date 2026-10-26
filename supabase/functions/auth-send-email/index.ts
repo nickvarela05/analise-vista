@@ -43,7 +43,8 @@ const TEXTOS: Record<string, Texto> = {
   magiclink: {
     assunto: "Seu link de acesso — Nexus",
     titulo: "Acesse o Nexus",
-    corpo: "Use o link abaixo para entrar no Nexus. Ele vale por tempo limitado e só pode ser usado uma vez.",
+    corpo:
+      "Use o link abaixo para entrar no Nexus. Ele vale por tempo limitado e só pode ser usado uma vez.",
     botao: "Entrar no Nexus",
   },
   email_change: {
@@ -76,7 +77,10 @@ const TEXTO_PADRAO: Texto = {
 };
 
 function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  );
 }
 
 function montarEmail(tipo: string, d: EmailData): { subject: string; html: string; text: string } {
@@ -93,13 +97,25 @@ function montarEmail(tipo: string, d: EmailData): { subject: string; html: strin
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#111827">
   <h2 style="margin:0 0 12px;font-size:20px">${escapeHtml(t.titulo)}</h2>
   <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#374151">${escapeHtml(t.corpo)}</p>
-  ${link ? `<a href="${escapeHtml(link)}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px">${escapeHtml(t.botao!)}</a>
-  <p style="margin:16px 0 0;font-size:12px;color:#6b7280">Se o botão não funcionar, copie este endereço no navegador:<br><span style="word-break:break-all">${escapeHtml(link)}</span></p>` : ""}
+  ${
+    link
+      ? `<a href="${escapeHtml(link)}" style="display:inline-block;background:#4f46e5;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 20px;border-radius:8px">${escapeHtml(t.botao!)}</a>
+  <p style="margin:16px 0 0;font-size:12px;color:#6b7280">Se o botão não funcionar, copie este endereço no navegador:<br><span style="word-break:break-all">${escapeHtml(link)}</span></p>`
+      : ""
+  }
   ${codigo ? `<p style="font-size:24px;font-weight:700;letter-spacing:4px;margin:8px 0 0">${escapeHtml(codigo)}</p>` : ""}
   <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af">${escapeHtml(rodape)}</p>
 </div>`;
 
-  const text = [t.titulo, "", t.corpo, link ? `\n${t.botao}: ${link}` : "", codigo ? `\nCódigo: ${codigo}` : "", "", rodape]
+  const text = [
+    t.titulo,
+    "",
+    t.corpo,
+    link ? `\n${t.botao}: ${link}` : "",
+    codigo ? `\nCódigo: ${codigo}` : "",
+    "",
+    rodape,
+  ]
     .filter((l) => l !== "")
     .join("\n");
 
@@ -147,9 +163,13 @@ Deno.serve(async (req) => {
     })
     .catch((e) => console.error(`[auth-send-email] erro ao enviar (${tipo}):`, e));
 
-  const runtime = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime;
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } })
+    .EdgeRuntime;
   if (runtime) runtime.waitUntil(envio);
   else await envio;
 
-  return new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } });
+  return new Response(JSON.stringify({}), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 });

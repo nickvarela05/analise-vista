@@ -117,7 +117,13 @@ export function EquipeCalendarioView({ colabs }: { colabs: Colaborador[] }) {
             <Download className="mr-1 h-3.5 w-3.5" /> CSV
           </Button>
           <EventoPopover
-            colaboradores={colabs.map((c) => ({ id: c.id, nome: c.nome, cargo: c.cargo, foto_url: c.foto_url, local_trabalho: c.local_trabalho }))}
+            colaboradores={colabs.map((c) => ({
+              id: c.id,
+              nome: c.nome,
+              cargo: c.cargo,
+              foto_url: c.foto_url,
+              local_trabalho: c.local_trabalho,
+            }))}
             defaultDate={today}
             trigger={
               <Button size="sm">
@@ -169,9 +175,7 @@ export function EquipeCalendarioView({ colabs }: { colabs: Colaborador[] }) {
                       )}
                       title={`${it.colab.nome} · ${EVENTO_LABEL[it.tipo as keyof typeof EVENTO_LABEL] ?? it.tipo}`}
                     >
-                      <span className="truncate font-medium">
-                        {it.colab.nome.split(" ")[0]}
-                      </span>
+                      <span className="truncate font-medium">{it.colab.nome.split(" ")[0]}</span>
                       <span className="truncate opacity-75">
                         {EVENTO_LABEL[it.tipo as keyof typeof EVENTO_LABEL] ?? it.tipo}
                       </span>
@@ -189,7 +193,13 @@ export function EquipeCalendarioView({ colabs }: { colabs: Colaborador[] }) {
             return (
               <EventoPopover
                 key={i}
-                colaboradores={colabs.map((c) => ({ id: c.id, nome: c.nome, cargo: c.cargo, foto_url: c.foto_url, local_trabalho: c.local_trabalho }))}
+                colaboradores={colabs.map((c) => ({
+                  id: c.id,
+                  nome: c.nome,
+                  cargo: c.cargo,
+                  foto_url: c.foto_url,
+                  local_trabalho: c.local_trabalho,
+                }))}
                 defaultDate={cell.iso}
                 trigger={dayCell}
               />

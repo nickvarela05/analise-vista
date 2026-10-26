@@ -68,9 +68,9 @@ Deno.serve(async (req) => {
         })
         .eq("id", reuniaoId);
     }
-    return new Response(
-      JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

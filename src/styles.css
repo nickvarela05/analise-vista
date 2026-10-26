@@ -178,12 +178,12 @@
   --secondary-foreground: oklch(0.27 0.006 230);
 
   --muted: oklch(0.955 0.003 230);
-  --muted-foreground: oklch(0.50 0.008 230);
+  --muted-foreground: oklch(0.5 0.008 230);
 
   --accent: oklch(0.94 0.03 182);
   --accent-foreground: oklch(0.32 0.06 185);
 
-  --destructive: oklch(0.60 0.22 25);
+  --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.99 0.005 180);
 
   --success: oklch(0.62 0.15 155);
@@ -192,7 +192,7 @@
   --warning: oklch(0.75 0.16 70);
   --warning-foreground: oklch(0.22 0.05 70);
 
-  --info: oklch(0.58 0.10 200);
+  --info: oklch(0.58 0.1 200);
   --info-foreground: oklch(0.99 0.005 180);
 
   --border: oklch(0.905 0.004 230);
@@ -202,8 +202,8 @@
   --chart-1: oklch(0.55 0.11 184);
   --chart-2: oklch(0.62 0.15 155);
   --chart-3: oklch(0.75 0.16 70);
-  --chart-4: oklch(0.58 0.10 200);
-  --chart-5: oklch(0.60 0.22 25);
+  --chart-4: oklch(0.58 0.1 200);
+  --chart-5: oklch(0.6 0.22 25);
 
   /* Gradientes elegantes */
   --gradient-primary: var(--primary);
@@ -215,10 +215,18 @@
 
   /* Sombras */
   --shadow-xs: 0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
-  --shadow-sm: 0 1px 3px color-mix(in oklab, var(--foreground) 6%, transparent), 0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
-  --shadow-md: 0 4px 12px -2px color-mix(in oklab, var(--foreground) 8%, transparent), 0 2px 4px -1px color-mix(in oklab, var(--foreground) 4%, transparent);
-  --shadow-lg: 0 10px 30px -8px color-mix(in oklab, var(--foreground) 12%, transparent), 0 4px 8px -2px color-mix(in oklab, var(--foreground) 6%, transparent);
-  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent), 0 8px 24px -6px color-mix(in oklab, var(--primary) 30%, transparent);
+  --shadow-sm:
+    0 1px 3px color-mix(in oklab, var(--foreground) 6%, transparent),
+    0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
+  --shadow-md:
+    0 4px 12px -2px color-mix(in oklab, var(--foreground) 8%, transparent),
+    0 2px 4px -1px color-mix(in oklab, var(--foreground) 4%, transparent);
+  --shadow-lg:
+    0 10px 30px -8px color-mix(in oklab, var(--foreground) 12%, transparent),
+    0 4px 8px -2px color-mix(in oklab, var(--foreground) 6%, transparent);
+  --shadow-glow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent),
+    0 8px 24px -6px color-mix(in oklab, var(--primary) 30%, transparent);
 
   /* Sidebar */
   --sidebar: oklch(1 0 0);
@@ -232,15 +240,15 @@
 
   /* Tooltip flutuante (claro) */
   --tooltip-bg: oklch(1 0 0);
-  --tooltip-foreground: oklch(0.20 0.02 220);
+  --tooltip-foreground: oklch(0.2 0.02 220);
   --tooltip-border: oklch(0.91 0.008 210);
 
   /* Status de colaborador (Equipe) */
   --status-trabalhando: oklch(0.62 0.15 155);
-  --status-almoco:      oklch(0.75 0.16 70);
-  --status-ferias:      oklch(0.62 0.13 235);
-  --status-evento:      oklch(0.65 0.18 40);
-  --status-fora:        oklch(0.65 0.01 220);
+  --status-almoco: oklch(0.75 0.16 70);
+  --status-ferias: oklch(0.62 0.13 235);
+  --status-evento: oklch(0.65 0.18 40);
+  --status-fora: oklch(0.65 0.01 220);
 }
 
 .dark {
@@ -253,7 +261,7 @@
   --popover: oklch(0.225 0.006 230);
   --popover-foreground: oklch(0.945 0.004 230);
 
-  --primary: oklch(0.80 0.13 182);
+  --primary: oklch(0.8 0.13 182);
   --primary-foreground: oklch(0.18 0.02 190);
   --primary-glow: oklch(0.86 0.11 182);
 
@@ -266,7 +274,7 @@
   --accent: oklch(0.27 0.03 185);
   --accent-foreground: oklch(0.945 0.004 230);
 
-  --destructive: oklch(0.68 0.20 25);
+  --destructive: oklch(0.68 0.2 25);
   --destructive-foreground: oklch(0.99 0.005 180);
 
   --success: oklch(0.72 0.15 155);
@@ -275,18 +283,18 @@
   --warning: oklch(0.82 0.15 70);
   --warning-foreground: oklch(0.18 0.03 70);
 
-  --info: oklch(0.78 0.10 200);
+  --info: oklch(0.78 0.1 200);
   --info-foreground: oklch(0.14 0.02 220);
 
   --border: oklch(1 0 0 / 7.5%);
   --input: oklch(1 0 0 / 11%);
-  --ring: oklch(0.80 0.13 182);
+  --ring: oklch(0.8 0.13 182);
 
-  --chart-1: oklch(0.80 0.13 182);
+  --chart-1: oklch(0.8 0.13 182);
   --chart-2: oklch(0.72 0.15 155);
   --chart-3: oklch(0.82 0.15 70);
-  --chart-4: oklch(0.78 0.10 200);
-  --chart-5: oklch(0.72 0.20 25);
+  --chart-4: oklch(0.78 0.1 200);
+  --chart-5: oklch(0.72 0.2 25);
 
   --gradient-primary: var(--primary);
   --gradient-success: var(--success);
@@ -299,16 +307,18 @@
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --shadow-md: 0 8px 20px -8px rgb(0 0 0 / 0.55);
   --shadow-lg: 0 10px 30px -8px rgb(0 0 0 / 0.7), 0 4px 8px -2px rgb(0 0 0 / 0.4);
-  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent), 0 8px 24px -6px color-mix(in oklab, var(--primary) 40%, transparent);
+  --shadow-glow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent),
+    0 8px 24px -6px color-mix(in oklab, var(--primary) 40%, transparent);
 
   --sidebar: oklch(0.205 0.005 230);
   --sidebar-foreground: oklch(0.93 0.01 180);
-  --sidebar-primary: oklch(0.80 0.13 182);
+  --sidebar-primary: oklch(0.8 0.13 182);
   --sidebar-primary-foreground: oklch(0.18 0.02 190);
   --sidebar-accent: oklch(0.27 0.03 185);
   --sidebar-accent-foreground: oklch(0.97 0.005 180);
   --sidebar-border: oklch(1 0 0 / 7.5%);
-  --sidebar-ring: oklch(0.80 0.13 182);
+  --sidebar-ring: oklch(0.8 0.13 182);
 
   /* Tooltip flutuante — superfície elevada com mais contraste no escuro */
   --tooltip-bg: oklch(0.27 0.006 230);
@@ -317,10 +327,10 @@
 
   /* Status de colaborador (Equipe) — dark */
   --status-trabalhando: oklch(0.72 0.15 155);
-  --status-almoco:      oklch(0.82 0.15 70);
-  --status-ferias:      oklch(0.72 0.13 235);
-  --status-evento:      oklch(0.75 0.18 40);
-  --status-fora:        oklch(0.55 0.01 220);
+  --status-almoco: oklch(0.82 0.15 70);
+  --status-ferias: oklch(0.72 0.13 235);
+  --status-evento: oklch(0.75 0.18 40);
+  --status-fora: oklch(0.55 0.01 220);
 }
 
 @layer base {
@@ -396,11 +406,21 @@
     background: color-mix(in oklab, var(--kpi-accent, var(--primary)) 14%, transparent);
     color: var(--kpi-accent, var(--primary));
   }
-  .kpi-tile-link:hover .kpi-icon { transform: scale(1.06) rotate(-2deg); }
-  .kpi-icon-success { --kpi-accent: var(--success); }
-  .kpi-icon-warning { --kpi-accent: var(--warning); }
-  .kpi-icon-destructive { --kpi-accent: var(--destructive); }
-  .kpi-icon-info { --kpi-accent: var(--info); }
+  .kpi-tile-link:hover .kpi-icon {
+    transform: scale(1.06) rotate(-2deg);
+  }
+  .kpi-icon-success {
+    --kpi-accent: var(--success);
+  }
+  .kpi-icon-warning {
+    --kpi-accent: var(--warning);
+  }
+  .kpi-icon-destructive {
+    --kpi-accent: var(--destructive);
+  }
+  .kpi-icon-info {
+    --kpi-accent: var(--info);
+  }
 
   .kpi-value {
     @apply text-3xl font-semibold tabular-nums leading-none tracking-tight;
@@ -411,22 +431,40 @@
   .kpi-label {
     @apply text-xs font-medium text-muted-foreground;
   }
-  .kpi-trend-up { @apply text-success; }
-  .kpi-trend-down { @apply text-destructive; }
-  .kpi-trend-flat { @apply text-muted-foreground; }
+  .kpi-trend-up {
+    @apply text-success;
+  }
+  .kpi-trend-down {
+    @apply text-destructive;
+  }
+  .kpi-trend-flat {
+    @apply text-muted-foreground;
+  }
 
   /* Tons por categoria — define accent var usado em borda/sombra/faixa */
-  .kpi-tone-primary     { --kpi-accent: var(--primary); }
-  .kpi-tone-success     { --kpi-accent: var(--success); }
-  .kpi-tone-warning     { --kpi-accent: var(--warning); }
-  .kpi-tone-destructive { --kpi-accent: var(--destructive); }
-  .kpi-tone-info        { --kpi-accent: var(--info); }
+  .kpi-tone-primary {
+    --kpi-accent: var(--primary);
+  }
+  .kpi-tone-success {
+    --kpi-accent: var(--success);
+  }
+  .kpi-tone-warning {
+    --kpi-accent: var(--warning);
+  }
+  .kpi-tone-destructive {
+    --kpi-accent: var(--destructive);
+  }
+  .kpi-tone-info {
+    --kpi-accent: var(--info);
+  }
 
   /* Slot de métrica (cards multimétrica como "Minhas atribuições") */
   .kpi-metric-slot {
     @apply relative flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-2.5 transition-colors;
   }
-  .kpi-metric-slot:hover { background: color-mix(in oklab, var(--kpi-slot-accent, var(--primary)) 10%, transparent); }
+  .kpi-metric-slot:hover {
+    background: color-mix(in oklab, var(--kpi-slot-accent, var(--primary)) 10%, transparent);
+  }
   .kpi-metric-value {
     @apply text-2xl font-semibold leading-none tabular-nums text-foreground;
   }
@@ -438,10 +476,18 @@
     background: color-mix(in oklab, var(--kpi-slot-accent, var(--primary)) 14%, transparent);
     color: var(--kpi-slot-accent, var(--primary));
   }
-  .kpi-slot-primary { --kpi-slot-accent: var(--primary); }
-  .kpi-slot-warning { --kpi-slot-accent: var(--warning); }
-  .kpi-slot-info    { --kpi-slot-accent: var(--info); }
-  .kpi-slot-success { --kpi-slot-accent: var(--success); }
+  .kpi-slot-primary {
+    --kpi-slot-accent: var(--primary);
+  }
+  .kpi-slot-warning {
+    --kpi-slot-accent: var(--warning);
+  }
+  .kpi-slot-info {
+    --kpi-slot-accent: var(--info);
+  }
+  .kpi-slot-success {
+    --kpi-slot-accent: var(--success);
+  }
 
   /* Painel (mesma família, com header sticky opcional) */
   .panel {
@@ -480,10 +526,18 @@
     @apply mt-1.5 h-2 w-2 shrink-0 rounded-full;
     background: var(--primary);
   }
-  .type-dot-success { background: var(--success); }
-  .type-dot-warning { background: var(--warning); }
-  .type-dot-destructive { background: var(--destructive); }
-  .type-dot-info { background: var(--info); }
+  .type-dot-success {
+    background: var(--success);
+  }
+  .type-dot-warning {
+    background: var(--warning);
+  }
+  .type-dot-destructive {
+    background: var(--destructive);
+  }
+  .type-dot-info {
+    background: var(--info);
+  }
 
   /* Aviso banner */
   .alert-banner {
@@ -525,7 +579,9 @@
       0 0 0 2px var(--background),
       0 0 0 4px var(--ring);
   }
-  .workflow-step:active { transform: translateY(0); }
+  .workflow-step:active {
+    transform: translateY(0);
+  }
 
   /* === Mantido por compatibilidade com StatCard === */
   .stat-card {
@@ -542,12 +598,29 @@
     border-color: color-mix(in oklab, var(--foreground) 30%, transparent);
     color: var(--foreground);
   }
-  .stat-circle-sm { @apply h-12 w-12 text-lg; }
-  .stat-circle-primary { color: var(--primary); border-color: color-mix(in oklab, var(--primary) 50%, transparent); }
-  .stat-circle-success { color: var(--success); border-color: color-mix(in oklab, var(--success) 50%, transparent); }
-  .stat-circle-warning { color: var(--warning); border-color: color-mix(in oklab, var(--warning) 60%, transparent); }
-  .stat-circle-destructive { color: var(--destructive); border-color: color-mix(in oklab, var(--destructive) 50%, transparent); }
-  .stat-circle-info { color: var(--info); border-color: color-mix(in oklab, var(--info) 50%, transparent); }
+  .stat-circle-sm {
+    @apply h-12 w-12 text-lg;
+  }
+  .stat-circle-primary {
+    color: var(--primary);
+    border-color: color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+  .stat-circle-success {
+    color: var(--success);
+    border-color: color-mix(in oklab, var(--success) 50%, transparent);
+  }
+  .stat-circle-warning {
+    color: var(--warning);
+    border-color: color-mix(in oklab, var(--warning) 60%, transparent);
+  }
+  .stat-circle-destructive {
+    color: var(--destructive);
+    border-color: color-mix(in oklab, var(--destructive) 50%, transparent);
+  }
+  .stat-circle-info {
+    color: var(--info);
+    border-color: color-mix(in oklab, var(--info) 50%, transparent);
+  }
 
   /* === Reunião em processamento (background job) ===
      Combinação de: borda com glow pulsante, listra superior animada (sweep
@@ -581,7 +654,7 @@
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
-            mask-composite: exclude;
+    mask-composite: exclude;
     pointer-events: none;
     animation: reuniao-processing-sweep 2.8s linear infinite;
   }
@@ -609,7 +682,8 @@
   }
 
   @keyframes reuniao-processing-glow {
-    0%, 100% {
+    0%,
+    100% {
       box-shadow:
         0 0 0 1px color-mix(in oklab, oklch(0.62 0.18 295) 25%, transparent),
         0 8px 24px -10px color-mix(in oklab, oklch(0.62 0.18 295) 30%, transparent);
@@ -621,12 +695,20 @@
     }
   }
   @keyframes reuniao-processing-sweep {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -100% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
   }
   @keyframes reuniao-processing-indeterminate {
-    0%   { left: -40%; }
-    100% { left: 100%; }
+    0% {
+      left: -40%;
+    }
+    100% {
+      left: 100%;
+    }
   }
 
   /* Sparkle "pulsing dot" — usado dentro da pílula de status */
@@ -647,12 +729,20 @@
     animation: reuniao-processing-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
   @keyframes reuniao-processing-ping {
-    0%   { transform: scale(1);   opacity: 0.7; }
-    80%  { transform: scale(2.6); opacity: 0;   }
-    100% { transform: scale(2.6); opacity: 0;   }
+    0% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    80% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
   }
 }
-
 
 /* Barras de rolagem no tema (14/10/2026): as nativas apareciam brancas e largas no tema escuro,
    sobretudo nas colunas do Kanban. Finas, com a cor do texto suave e trilho transparente; no

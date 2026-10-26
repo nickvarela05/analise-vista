@@ -5,15 +5,11 @@ export const resumoDiarioTogglePayloadSchema = z.object({
   ativo: z.boolean(),
 });
 
-export type ResumoDiarioTogglePayload = z.infer<
-  typeof resumoDiarioTogglePayloadSchema
->;
+export type ResumoDiarioTogglePayload = z.infer<typeof resumoDiarioTogglePayloadSchema>;
 
 export const resumoDiarioBulkPayloadSchema = z.object({
   ids: z.array(z.string().uuid()).min(1),
   ativo: z.boolean(),
 });
 
-export type ResumoDiarioBulkPayload = z.infer<
-  typeof resumoDiarioBulkPayloadSchema
->;
+export type ResumoDiarioBulkPayload = z.infer<typeof resumoDiarioBulkPayloadSchema>;

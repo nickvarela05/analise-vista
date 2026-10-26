@@ -105,7 +105,11 @@ export function DiasResumoDiario() {
                   : `${dias.length} dia${dias.length > 1 ? "s" : ""} ativo${dias.length > 1 ? "s" : ""}.`}
               </p>
               <Button size="sm" onClick={salvar} disabled={saving} className="gap-2">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 Salvar
               </Button>
             </div>

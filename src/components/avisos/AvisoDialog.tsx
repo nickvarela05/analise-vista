@@ -24,11 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -63,8 +59,7 @@ const TIPOS: TipoMeta[] = [
     hint: "Comunicado geral",
     Icon: Info,
     tone: "sky",
-    active:
-      "border-sky-500/60 bg-sky-500/10 text-sky-700 ring-1 ring-sky-500/30 dark:text-sky-300",
+    active: "border-sky-500/60 bg-sky-500/10 text-sky-700 ring-1 ring-sky-500/30 dark:text-sky-300",
     idle: "border-border bg-card hover:bg-sky-500/5",
   },
   {
@@ -83,8 +78,7 @@ const TIPOS: TipoMeta[] = [
     hint: "Ação imediata",
     Icon: AlertTriangle,
     tone: "destructive",
-    active:
-      "border-destructive/60 bg-destructive/10 text-destructive ring-1 ring-destructive/30",
+    active: "border-destructive/60 bg-destructive/10 text-destructive ring-1 ring-destructive/30",
     idle: "border-border bg-card hover:bg-destructive/5",
   },
 ];
@@ -116,14 +110,7 @@ interface Props {
   onSaved: () => void;
 }
 
-export function AvisoDialog({
-  open,
-  onOpenChange,
-  editing,
-  colabs,
-  userId,
-  onSaved,
-}: Props) {
+export function AvisoDialog({ open, onOpenChange, editing, colabs, userId, onSaved }: Props) {
   const [form, setForm] = React.useState<FormState>(empty);
   const [saving, setSaving] = React.useState(false);
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -166,17 +153,12 @@ export function AvisoDialog({
       ativo: d.ativo,
       colaborador_id: null,
       colaboradores_ids: d.destinatarios,
-      expira_em: d.expira_em
-        ? new Date(d.expira_em + "T23:59:59").toISOString()
-        : null,
+      expira_em: d.expira_em ? new Date(d.expira_em + "T23:59:59").toISOString() : null,
     };
-
 
     const { error } = editing
       ? await supabase.from("aviso_gestor").update(payload).eq("id", editing.id)
-      : await supabase
-          .from("aviso_gestor")
-          .insert({ ...payload, criado_por: userId ?? null });
+      : await supabase.from("aviso_gestor").insert({ ...payload, criado_por: userId ?? null });
 
     setSaving(false);
 
@@ -189,10 +171,7 @@ export function AvisoDialog({
     onOpenChange(false);
   };
 
-  const colabsMap = React.useMemo(
-    () => new Map(colabs.map((c) => [c.id, c.nome])),
-    [colabs],
-  );
+  const colabsMap = React.useMemo(() => new Map(colabs.map((c) => [c.id, c.nome])), [colabs]);
 
   const toggleDestinatario = (id: string) => {
     setForm((f) => ({
@@ -254,10 +233,7 @@ export function AvisoDialog({
           />
         </div>
 
-        <form
-          onSubmit={submit}
-          className="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5"
-        >
+        <form onSubmit={submit} className="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5">
           <DialogSection title="Urgência" icon={AlertTriangle}>
             <div className="grid grid-cols-3 gap-2">
               {TIPOS.map((t) => {
@@ -277,9 +253,7 @@ export function AvisoDialog({
                       <t.Icon className="h-3.5 w-3.5" />
                       <span className="text-xs font-semibold">{t.label}</span>
                     </div>
-                    <span className="text-[10.5px] text-muted-foreground">
-                      {t.hint}
-                    </span>
+                    <span className="text-[10.5px] text-muted-foreground">{t.hint}</span>
                   </button>
                 );
               })}
@@ -337,27 +311,20 @@ export function AvisoDialog({
                       {destinatariosLabel}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent
-                    className="w-[--radix-popover-trigger-width] p-0"
-                    align="start"
-                  >
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                     <Command>
                       <CommandInput placeholder="Buscar colaborador..." />
                       <CommandList>
                         <CommandEmpty>Nenhum encontrado.</CommandEmpty>
                         <CommandGroup>
                           <CommandItem
-                            onSelect={() =>
-                              setForm({ ...form, destinatarios: [] })
-                            }
+                            onSelect={() => setForm({ ...form, destinatarios: [] })}
                             className="cursor-pointer"
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                form.destinatarios.length === 0
-                                  ? "opacity-100"
-                                  : "opacity-0",
+                                form.destinatarios.length === 0 ? "opacity-100" : "opacity-0",
                               )}
                             />
                             Equipe toda
@@ -371,9 +338,7 @@ export function AvisoDialog({
                               <Check
                                 className={cn(
                                   "mr-2 h-4 w-4",
-                                  form.destinatarios.includes(c.id)
-                                    ? "opacity-100"
-                                    : "opacity-0",
+                                  form.destinatarios.includes(c.id) ? "opacity-100" : "opacity-0",
                                 )}
                               />
                               {c.nome}
@@ -395,9 +360,7 @@ export function AvisoDialog({
                   id="expira"
                   type="date"
                   value={form.expira_em}
-                  onChange={(e) =>
-                    setForm({ ...form, expira_em: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, expira_em: e.target.value })}
                   min={new Date().toISOString().slice(0, 10)}
                   className="focus-visible:ring-amber-500/40"
                 />
@@ -424,11 +387,7 @@ export function AvisoDialog({
           </DialogSection>
 
           <DialogFooter className="sticky bottom-0 -mx-6 gap-2 border-t bg-card/70 px-6 py-3 backdrop-blur">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button
@@ -437,16 +396,11 @@ export function AvisoDialog({
               className={cn(
                 heroTone === "destructive" &&
                   "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-                heroTone === "amber" &&
-                  "bg-amber-500 text-white hover:bg-amber-600",
+                heroTone === "amber" && "bg-amber-500 text-white hover:bg-amber-600",
                 heroTone === "sky" && "bg-sky-500 text-white hover:bg-sky-600",
               )}
             >
-              {saving
-                ? "Salvando..."
-                : editing
-                  ? "Salvar alterações"
-                  : "Publicar aviso"}
+              {saving ? "Salvando..." : editing ? "Salvar alterações" : "Publicar aviso"}
             </Button>
           </DialogFooter>
         </form>

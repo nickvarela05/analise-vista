@@ -25,7 +25,14 @@ import {
 } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AssigneeCombobox, type AssigneeOption } from "@/components/AssigneeCombobox";
 import { cn, prioridadeLabel } from "@/lib/utils";
@@ -80,7 +87,9 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
   const [form, setForm] = React.useState<DemandaInitial>(EMPTY);
   const [tagInput, setTagInput] = React.useState("");
   const [saving, setSaving] = React.useState(false);
-  const [tarefasDisponiveis, setTarefasDisponiveis] = React.useState<{ id: string; titulo: string; demanda_id: string | null }[]>([]);
+  const [tarefasDisponiveis, setTarefasDisponiveis] = React.useState<
+    { id: string; titulo: string; demanda_id: string | null }[]
+  >([]);
   const [tarefasSelecionadas, setTarefasSelecionadas] = React.useState<string[]>([]);
   const [tarefasIniciais, setTarefasIniciais] = React.useState<string[]>([]);
   const [tarefasOpen, setTarefasOpen] = React.useState(false);
@@ -99,7 +108,9 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
           .limit(500);
         setTarefasDisponiveis(data ?? []);
         if (isEditing && initial?.id) {
-          const vinculadas = (data ?? []).filter((t) => t.demanda_id === initial.id).map((t) => t.id);
+          const vinculadas = (data ?? [])
+            .filter((t) => t.demanda_id === initial.id)
+            .map((t) => t.id);
           setTarefasSelecionadas(vinculadas);
           setTarefasIniciais(vinculadas);
         } else {
@@ -150,10 +161,16 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
     };
     const { data: saved, error } = isEditing
       ? await supabase.from("demanda").update(payload).eq("id", initial!.id!).select("id").single()
-      : await supabase.from("demanda").insert({ ...payload, criado_por: userId }).select("id").single();
+      : await supabase
+          .from("demanda")
+          .insert({ ...payload, criado_por: userId })
+          .select("id")
+          .single();
     if (error || !saved) {
       setSaving(false);
-      toast.error(isEditing ? "Erro ao atualizar" : "Erro ao criar", { description: error?.message });
+      toast.error(isEditing ? "Erro ao atualizar" : "Erro ao criar", {
+        description: error?.message,
+      });
       return;
     }
 
@@ -208,103 +225,131 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
           <DialogSection title="Resumo" variant="default">
             <div className="space-y-1.5">
               <Label className="text-xs">Título *</Label>
-            <Input
-              autoFocus
-              value={form.titulo}
-              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              placeholder="Resumo curto da demanda"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Descrição</Label>
-            <Textarea
-              rows={4}
-              value={form.descricao ?? ""}
-              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-              placeholder="Contexto, o que precisa ser feito, critérios de aceite..."
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Origem</Label>
-              <Select value={form.origem} onValueChange={(v) => setForm({ ...form, origem: v as DemandaOrigem })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ORIGEM_OPTS.map((o) => (
-                    <SelectItem key={o} value={o} className="capitalize">{o}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Categoria</Label>
-              <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v as DemandaCategoria })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIA_OPTS.map((o) => (
-                    <SelectItem key={o} value={o} className="capitalize">{o.replace(/_/g, " ")}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prioridade</Label>
-              <Select value={form.prioridade} onValueChange={(v) => setForm({ ...form, prioridade: v as DemandaPrioridade })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PRIORIDADE_OPTS.map((o) => (
-                    <SelectItem key={o} value={o} className="capitalize">{prioridadeLabel(o)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Prazo</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !form.prazo && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.prazo ? format(new Date(form.prazo + "T00:00:00"), "dd/MM/yyyy") : "Sem prazo"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={form.prazo ? new Date(form.prazo + "T00:00:00") : undefined}
-                    onSelect={(d) => setForm({ ...form, prazo: d ? format(d, "yyyy-MM-dd") : null })}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                  {form.prazo && (
-                    <div className="border-t p-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setForm({ ...form, prazo: null })}
-                      >
-                        Limpar prazo
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Solicitante</Label>
               <Input
-                value={form.solicitante ?? ""}
-                onChange={(e) => setForm({ ...form, solicitante: e.target.value })}
-                placeholder="Nome de quem solicitou (cliente, área...)"
+                autoFocus
+                value={form.titulo}
+                onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+                placeholder="Resumo curto da demanda"
               />
             </div>
-          </div>
+            <div className="space-y-1.5">
+              <Label>Descrição</Label>
+              <Textarea
+                rows={4}
+                value={form.descricao ?? ""}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                placeholder="Contexto, o que precisa ser feito, critérios de aceite..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Origem</Label>
+                <Select
+                  value={form.origem}
+                  onValueChange={(v) => setForm({ ...form, origem: v as DemandaOrigem })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ORIGEM_OPTS.map((o) => (
+                      <SelectItem key={o} value={o} className="capitalize">
+                        {o}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Categoria</Label>
+                <Select
+                  value={form.categoria}
+                  onValueChange={(v) => setForm({ ...form, categoria: v as DemandaCategoria })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIA_OPTS.map((o) => (
+                      <SelectItem key={o} value={o} className="capitalize">
+                        {o.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prioridade</Label>
+                <Select
+                  value={form.prioridade}
+                  onValueChange={(v) => setForm({ ...form, prioridade: v as DemandaPrioridade })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORIDADE_OPTS.map((o) => (
+                      <SelectItem key={o} value={o} className="capitalize">
+                        {prioridadeLabel(o)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Prazo</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !form.prazo && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.prazo
+                        ? format(new Date(form.prazo + "T00:00:00"), "dd/MM/yyyy")
+                        : "Sem prazo"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={form.prazo ? new Date(form.prazo + "T00:00:00") : undefined}
+                      onSelect={(d) =>
+                        setForm({ ...form, prazo: d ? format(d, "yyyy-MM-dd") : null })
+                      }
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                    {form.prazo && (
+                      <div className="border-t p-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setForm({ ...form, prazo: null })}
+                        >
+                          Limpar prazo
+                        </Button>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Solicitante</Label>
+                <Input
+                  value={form.solicitante ?? ""}
+                  onChange={(e) => setForm({ ...form, solicitante: e.target.value })}
+                  placeholder="Nome de quem solicitou (cliente, área...)"
+                />
+              </div>
+            </div>
           </DialogSection>
 
           <DialogSection title="Atribuição & tags" variant="tinted">
@@ -314,7 +359,9 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
                 options={colabs}
                 selectedIds={form.responsaveis_ids}
                 equipeToda={form.equipe_toda}
-                onChange={(n) => setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })}
+                onChange={(n) =>
+                  setForm({ ...form, responsaveis_ids: n.selectedIds, equipe_toda: n.equipeToda })
+                }
               />
             </div>
 
@@ -359,7 +406,11 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
           <DialogSection title="Tarefas vinculadas" icon={ListTodo} variant="default">
             <Popover open={tarefasOpen} onOpenChange={setTarefasOpen}>
               <PopoverTrigger asChild>
-                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
                   {tarefasSelecionadas.length === 0
                     ? "Selecione tarefas para vincular..."
                     : `${tarefasSelecionadas.length} tarefa(s) selecionada(s)`}
@@ -385,7 +436,9 @@ export function DemandaDialog({ open, onOpenChange, initial, colabs, userId, onS
                               <div
                                 className={cn(
                                   "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                                  selected ? "bg-primary border-primary text-primary-foreground" : "border-input",
+                                  selected
+                                    ? "bg-primary border-primary text-primary-foreground"
+                                    : "border-input",
                                 )}
                               >
                                 {selected && <Check className="h-3 w-3" />}

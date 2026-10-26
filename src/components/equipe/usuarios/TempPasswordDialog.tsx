@@ -70,11 +70,7 @@ export function TempPasswordDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">Senha temporária</Label>
               <div className="flex items-center gap-2">
-                <Input
-                  value={info.password}
-                  readOnly
-                  className="font-mono tracking-wider"
-                />
+                <Input value={info.password} readOnly className="font-mono tracking-wider" />
                 <Button type="button" variant="outline" size="icon" onClick={copy}>
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -84,16 +80,11 @@ export function TempPasswordDialog({
 
           <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>
-              Anote ou copie agora — esta senha não poderá ser recuperada depois.
-            </span>
+            <span>Anote ou copie agora — esta senha não poderá ser recuperada depois.</span>
           </div>
 
           <DialogFooter className="gap-2 border-t pt-3">
-            <Button
-              onClick={onClose}
-              className="bg-amber-500 text-white hover:bg-amber-600"
-            >
+            <Button onClick={onClose} className="bg-amber-500 text-white hover:bg-amber-600">
               Entendi
             </Button>
           </DialogFooter>

@@ -115,7 +115,11 @@ REGRA DE OURO: detalhe sem inventar; não repita o que já está na capa.`;
 function truncateMiddle(text: string, max: number): string {
   if (!text || text.length <= max) return text;
   const half = Math.floor((max - 40) / 2);
-  return text.slice(0, half) + "\n\n[... trecho omitido para reduzir o tempo de geração ...]\n\n" + text.slice(-half);
+  return (
+    text.slice(0, half) +
+    "\n\n[... trecho omitido para reduzir o tempo de geração ...]\n\n" +
+    text.slice(-half)
+  );
 }
 
 const thinBorder = { style: BorderStyle.SINGLE, size: 4, color: BRAND.border };
@@ -127,7 +131,8 @@ function parseInline(text: string): TextRun[] {
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = regex.exec(text)) !== null) {
-    if (m.index > last) runs.push(new TextRun({ text: text.slice(last, m.index), color: BRAND.text }));
+    if (m.index > last)
+      runs.push(new TextRun({ text: text.slice(last, m.index), color: BRAND.text }));
     runs.push(new TextRun({ text: m[1], bold: true, color: BRAND.text }));
     last = m.index + m[0].length;
   }
@@ -186,7 +191,9 @@ function mdToDocx(md: string): (Paragraph | Table)[] {
   const flushTable = () => {
     if (!tableBuf) return;
     // Remove linha separadora |---|---|
-    const cleaned = tableBuf.filter((r) => !r.every((c) => /^-{2,}:?$|^:?-{2,}:?$|^:?-{2,}$/.test(c.trim())));
+    const cleaned = tableBuf.filter(
+      (r) => !r.every((c) => /^-{2,}:?$|^:?-{2,}:?$|^:?-{2,}$/.test(c.trim())),
+    );
     out.push(makeTable(cleaned));
     out.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
     tableBuf = null;
@@ -196,7 +203,10 @@ function mdToDocx(md: string): (Paragraph | Table)[] {
     const line = raw.trimEnd();
 
     if (/^\s*\|.*\|\s*$/.test(line)) {
-      const cells = line.split("|").slice(1, -1).map((c) => c.trim());
+      const cells = line
+        .split("|")
+        .slice(1, -1)
+        .map((c) => c.trim());
       if (!tableBuf) tableBuf = [];
       tableBuf.push(cells);
       continue;
@@ -216,9 +226,13 @@ function mdToDocx(md: string): (Paragraph | Table)[] {
       out.push(
         new Paragraph({
           heading: HeadingLevel.HEADING_2,
-          children: [new TextRun({ text: line.slice(3), bold: true, color: BRAND.primary, size: 28 })],
+          children: [
+            new TextRun({ text: line.slice(3), bold: true, color: BRAND.primary, size: 28 }),
+          ],
           spacing: { before: 320, after: 140 },
-          border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: BRAND.primary, space: 4 } },
+          border: {
+            bottom: { style: BorderStyle.SINGLE, size: 8, color: BRAND.primary, space: 4 },
+          },
         }),
       );
     } else if (line.startsWith("### ")) {
@@ -308,7 +322,12 @@ function buildCapa(r: any): (Paragraph | Table)[] {
       spacing: { before: 0, after: 240 },
       border: { bottom: { style: BorderStyle.SINGLE, size: 16, color: BRAND.primary, space: 6 } },
       children: [
-        new TextRun({ text: r.titulo ?? "Reunião sem título", bold: true, color: BRAND.primary, size: 40 }),
+        new TextRun({
+          text: r.titulo ?? "Reunião sem título",
+          bold: true,
+          color: BRAND.primary,
+          size: 40,
+        }),
       ],
     }),
   );
@@ -325,32 +344,42 @@ function buildCapa(r: any): (Paragraph | Table)[] {
   const infoTable = new Table({
     width: { size: 9360, type: WidthType.DXA },
     columnWidths: [2600, 6760],
-    rows: rows.map(([k, v], i) => new TableRow({
-      children: [
-        new TableCell({
-          width: { size: 2600, type: WidthType.DXA },
-          borders: cellBorders,
-          shading: { fill: BRAND.primaryLight, type: ShadingType.CLEAR, color: "auto" },
-          margins: { top: 100, bottom: 100, left: 140, right: 140 },
-          verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({
-            spacing: { before: 0, after: 0 },
-            children: [new TextRun({ text: k, bold: true, color: BRAND.primary, size: 20 })],
-          })],
+    rows: rows.map(
+      ([k, v], i) =>
+        new TableRow({
+          children: [
+            new TableCell({
+              width: { size: 2600, type: WidthType.DXA },
+              borders: cellBorders,
+              shading: { fill: BRAND.primaryLight, type: ShadingType.CLEAR, color: "auto" },
+              margins: { top: 100, bottom: 100, left: 140, right: 140 },
+              verticalAlign: VerticalAlign.CENTER,
+              children: [
+                new Paragraph({
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: k, bold: true, color: BRAND.primary, size: 20 })],
+                }),
+              ],
+            }),
+            new TableCell({
+              width: { size: 6760, type: WidthType.DXA },
+              borders: cellBorders,
+              shading:
+                i % 2 === 0
+                  ? undefined
+                  : { fill: "F8FAFC", type: ShadingType.CLEAR, color: "auto" },
+              margins: { top: 100, bottom: 100, left: 140, right: 140 },
+              verticalAlign: VerticalAlign.CENTER,
+              children: [
+                new Paragraph({
+                  spacing: { before: 0, after: 0 },
+                  children: [new TextRun({ text: v, color: BRAND.text, size: 20 })],
+                }),
+              ],
+            }),
+          ],
         }),
-        new TableCell({
-          width: { size: 6760, type: WidthType.DXA },
-          borders: cellBorders,
-          shading: i % 2 === 0 ? undefined : { fill: "F8FAFC", type: ShadingType.CLEAR, color: "auto" },
-          margins: { top: 100, bottom: 100, left: 140, right: 140 },
-          verticalAlign: VerticalAlign.CENTER,
-          children: [new Paragraph({
-            spacing: { before: 0, after: 0 },
-            children: [new TextRun({ text: v, color: BRAND.text, size: 20 })],
-          })],
-        }),
-      ],
-    })),
+    ),
   });
   blocks.push(infoTable);
   blocks.push(new Paragraph({ spacing: { after: 240 }, children: [] }));
@@ -376,7 +405,12 @@ function buildHeader(): Header {
             altText: { title: "Sisteplan", description: "Logo Sisteplan", name: "logo" },
           }),
           new TextRun({ text: "\t" }),
-          new TextRun({ text: "Relatório de Reunião", color: BRAND.muted, size: 18, italics: true }),
+          new TextRun({
+            text: "Relatório de Reunião",
+            color: BRAND.muted,
+            size: 18,
+            italics: true,
+          }),
         ],
         tabStops: [{ type: "right" as any, position: 9360 }],
       }),
@@ -392,7 +426,11 @@ function buildFooter(): Footer {
         spacing: { before: 60 },
         border: { top: { style: BorderStyle.SINGLE, size: 4, color: BRAND.border, space: 4 } },
         children: [
-          new TextRun({ text: "Sisteplan · Análise de Requisitos · ", color: BRAND.muted, size: 16 }),
+          new TextRun({
+            text: "Sisteplan · Análise de Requisitos · ",
+            color: BRAND.muted,
+            size: 16,
+          }),
           new TextRun({ text: "Página ", color: BRAND.muted, size: 16 }),
           new TextRun({ children: [PageNumber.CURRENT], color: BRAND.muted, size: 16 }),
           new TextRun({ text: " de ", color: BRAND.muted, size: 16 }),
@@ -461,8 +499,10 @@ Deno.serve(async (req) => {
       }),
     });
 
-    if (aiRes.status === 429) throw new Error("Limite de requisições à IA atingido. Aguarde alguns segundos.");
-    if (aiRes.status === 402) throw new Error("Cota do provedor de IA esgotada. Contate o administrador.");
+    if (aiRes.status === 429)
+      throw new Error("Limite de requisições à IA atingido. Aguarde alguns segundos.");
+    if (aiRes.status === 402)
+      throw new Error("Cota do provedor de IA esgotada. Contate o administrador.");
     if (!aiRes.ok) {
       const t = await aiRes.text();
       throw new Error(`Falha na IA (${aiRes.status}): ${t.slice(0, 300)}`);
@@ -472,10 +512,7 @@ Deno.serve(async (req) => {
     const markdown: string = aiJson.choices?.[0]?.message?.content ?? "";
     if (!markdown.trim()) throw new Error("IA retornou conteúdo vazio");
 
-    const children: (Paragraph | Table)[] = [
-      ...buildCapa(r),
-      ...mdToDocx(markdown),
-    ];
+    const children: (Paragraph | Table)[] = [...buildCapa(r), ...mdToDocx(markdown)];
 
     const doc = new Document({
       creator: "Sisteplan — Sistema de Reuniões",
@@ -489,23 +526,27 @@ Deno.serve(async (req) => {
         config: [
           {
             reference: "bullets",
-            levels: [{
-              level: 0,
-              format: LevelFormat.BULLET,
-              text: "•",
-              alignment: AlignmentType.LEFT,
-              style: { paragraph: { indent: { left: 540, hanging: 280 } } },
-            }],
+            levels: [
+              {
+                level: 0,
+                format: LevelFormat.BULLET,
+                text: "•",
+                alignment: AlignmentType.LEFT,
+                style: { paragraph: { indent: { left: 540, hanging: 280 } } },
+              },
+            ],
           },
           {
             reference: "numbers",
-            levels: [{
-              level: 0,
-              format: LevelFormat.DECIMAL,
-              text: "%1.",
-              alignment: AlignmentType.LEFT,
-              style: { paragraph: { indent: { left: 540, hanging: 280 } } },
-            }],
+            levels: [
+              {
+                level: 0,
+                format: LevelFormat.DECIMAL,
+                text: "%1.",
+                alignment: AlignmentType.LEFT,
+                style: { paragraph: { indent: { left: 540, hanging: 280 } } },
+              },
+            ],
           },
         ],
       },
@@ -540,17 +581,16 @@ Deno.serve(async (req) => {
       status: 200,
       headers: {
         ...corsHeaders,
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("gerar-relatorio-reuniao error:", e);
-    return new Response(
-      JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsFor(req), "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
+      status: 500,
+      headers: { ...corsFor(req), "Content-Type": "application/json" },
+    });
   }
 });

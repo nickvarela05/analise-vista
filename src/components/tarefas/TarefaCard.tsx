@@ -2,7 +2,14 @@ import * as React from "react";
 import { format, differenceInCalendarDays, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  AlertCircle, Calendar, MessageSquare, ListChecks, Paperclip, Link2, FlaskConical, History,
+  AlertCircle,
+  Calendar,
+  MessageSquare,
+  ListChecks,
+  Paperclip,
+  Link2,
+  FlaskConical,
+  History,
   ExternalLink,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -52,21 +59,43 @@ const PRIO_BADGE: Record<string, string> = {
   baixa: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
 };
 
-function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, hasDemanda, statusLog = [], reprovacoes = 0 }: Props) {
+function TarefaCardImpl({
+  tarefa,
+  colabs,
+  selected,
+  onSelect,
+  onOpen,
+  counts,
+  hasDemanda,
+  statusLog = [],
+  reprovacoes = 0,
+}: Props) {
   const responsaveis = tarefa.equipe_toda
     ? colabs
     : colabs.filter((c) => (tarefa.responsaveis_ids ?? []).includes(c.id));
 
   const prazo = parseDateOnly(tarefa.data_prevista);
-  const atrasada = !!(prazo && isPast(prazo) && !isToday(prazo) && !["producao", "aprovado"].includes(tarefa.status));
+  const atrasada = !!(
+    prazo &&
+    isPast(prazo) &&
+    !isToday(prazo) &&
+    !["producao", "aprovado"].includes(tarefa.status)
+  );
   const hojeFlag = !!(prazo && isToday(prazo));
   const diasRestantes = prazo ? differenceInCalendarDays(prazo, new Date()) : null;
-  const proxima = !!(diasRestantes !== null && diasRestantes >= 0 && diasRestantes <= 3 && !atrasada && !hojeFlag);
+  const proxima = !!(
+    diasRestantes !== null &&
+    diasRestantes >= 0 &&
+    diasRestantes <= 3 &&
+    !atrasada &&
+    !hojeFlag
+  );
 
   const prio = (tarefa.prioridade ?? "baixa") as "alta" | "media" | "baixa";
-  const checklistPct = counts.checklistTotal > 0
-    ? Math.round((counts.checklistDone / counts.checklistTotal) * 100)
-    : 0;
+  const checklistPct =
+    counts.checklistTotal > 0
+      ? Math.round((counts.checklistDone / counts.checklistTotal) * 100)
+      : 0;
 
   return (
     <Card
@@ -82,7 +111,10 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
 
       {/* glow sutil de atrasada */}
       {atrasada && (
-        <span className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-rose-500/15 blur-2xl" aria-hidden />
+        <span
+          className="pointer-events-none absolute -right-8 -top-8 h-20 w-20 rounded-full bg-rose-500/15 blur-2xl"
+          aria-hidden
+        />
       )}
 
       {/* checkbox */}
@@ -115,13 +147,19 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
       )}
 
       <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline" className={cn("h-5 px-1.5 text-[10px] font-semibold capitalize", PRIO_BADGE[prio])}>
+        <Badge
+          variant="outline"
+          className={cn("h-5 px-1.5 text-[10px] font-semibold capitalize", PRIO_BADGE[prio])}
+        >
           {prioridadeLabel(prio)}
         </Badge>
         {hasDemanda && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="h-5 gap-1 border-indigo-500/30 bg-indigo-500/10 px-1.5 text-[10px] text-indigo-700 dark:text-indigo-300">
+              <Badge
+                variant="outline"
+                className="h-5 gap-1 border-indigo-500/30 bg-indigo-500/10 px-1.5 text-[10px] text-indigo-700 dark:text-indigo-300"
+              >
                 <Link2 className="h-3 w-3" /> Demanda
               </Badge>
             </TooltipTrigger>
@@ -178,7 +216,10 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
                 reprovada {reprovacoes}×
               </Badge>
             </TooltipTrigger>
-            <TooltipContent>Já voltou do teste {reprovacoes === 1 ? "uma vez" : `${reprovacoes} vezes`}; a observação está nos comentários</TooltipContent>
+            <TooltipContent>
+              Já voltou do teste {reprovacoes === 1 ? "uma vez" : `${reprovacoes} vezes`}; a
+              observação está nos comentários
+            </TooltipContent>
           </Tooltip>
         )}
       </div>
@@ -255,7 +296,9 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
           ))}
           {responsaveis.length > 3 && (
             <Avatar className="h-5 w-5 ring-2 ring-background">
-              <AvatarFallback className="bg-muted text-[9px] font-bold">+{responsaveis.length - 3}</AvatarFallback>
+              <AvatarFallback className="bg-muted text-[9px] font-bold">
+                +{responsaveis.length - 3}
+              </AvatarFallback>
             </Avatar>
           )}
         </div>
@@ -268,7 +311,10 @@ function TarefaCardImpl({ tarefa, colabs, selected, onSelect, onOpen, counts, ha
           </div>
           <ul className="space-y-0.5">
             {statusLog.slice(0, 3).map((l, i) => (
-              <li key={`${l.quando}-${i}`} className="flex items-start gap-1 text-[10.5px] leading-tight text-muted-foreground">
+              <li
+                key={`${l.quando}-${i}`}
+                className="flex items-start gap-1 text-[10.5px] leading-tight text-muted-foreground"
+              >
                 <span className="tabular-nums text-muted-foreground/70">
                   {format(new Date(l.quando), "dd/MM HH:mm", { locale: ptBR })}
                 </span>
@@ -304,7 +350,8 @@ export const TarefaCard = React.memo(TarefaCardImpl, (prev, next) => {
     prev.counts.anexos !== next.counts.anexos
   )
     return false;
-  const a = prev.tarefa, b = next.tarefa;
+  const a = prev.tarefa,
+    b = next.tarefa;
   if (
     a.id !== b.id ||
     a.titulo !== b.titulo ||

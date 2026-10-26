@@ -312,7 +312,9 @@ export function ReceberPacoteDialog() {
                             <td className="w-14 px-3 py-1.5 font-mono text-[11px] text-muted-foreground">
                               {i.numero}
                             </td>
-                            <td className="w-28 px-2 py-1.5 text-muted-foreground">{i.sistema ?? "—"}</td>
+                            <td className="w-28 px-2 py-1.5 text-muted-foreground">
+                              {i.sistema ?? "—"}
+                            </td>
                             <td className="px-2 py-1.5">{i.tarefa ?? "—"}</td>
                             <td className="w-12 px-2 py-1.5 text-right text-[11px] text-muted-foreground">
                               {i.link ? "link" : ""}
@@ -326,7 +328,8 @@ export function ReceberPacoteDialog() {
               )}
               {erroCarga && (
                 <p className="text-xs text-destructive">
-                  Não foi possível carregar as tarefas do Nexus para conferir duplicidade: {erroCarga}
+                  Não foi possível carregar as tarefas do Nexus para conferir duplicidade:{" "}
+                  {erroCarga}
                 </p>
               )}
             </div>
@@ -445,13 +448,17 @@ export function ReceberPacoteDialog() {
             <div className="space-y-3 text-sm">
               <p className="flex items-center gap-2 font-medium">
                 <CheckCircle2 className="h-5 w-5 text-success" />
-                {resultado.criadas + resultado.movidas} tarefa(s) em Homologação, marcadas “em teste”.
+                {resultado.criadas + resultado.movidas} tarefa(s) em Homologação, marcadas “em
+                teste”.
               </p>
               <ul className="list-disc space-y-0.5 pl-6 text-xs text-muted-foreground">
                 <li>{resultado.criadas} nova(s) criada(s)</li>
                 <li>{resultado.movidas} já existente(s) movida(s) para Homologação</li>
                 {resultado.atualizadas > 0 && (
-                  <li>{resultado.atualizadas} mantida(s) no status atual, com os dados do e-mail atualizados</li>
+                  <li>
+                    {resultado.atualizadas} mantida(s) no status atual, com os dados do e-mail
+                    atualizados
+                  </li>
                 )}
               </ul>
               {resultado.conferir.length > 0 && (

@@ -28,7 +28,7 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   const r = await aiFetch({
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${AI_API_KEY}`,
+      Authorization: `Bearer ${AI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -61,9 +61,15 @@ async function callIA(prompt: string): Promise<{ texto: string; insights: string
   const data = await r.json();
   const texto = data.choices?.[0]?.message?.content ?? "";
   // extrai bullets como insights
-  const insights = texto.split("\n")
+  const insights = texto
+    .split("\n")
     .filter((l: string) => /^[-*•]\s/.test(l))
-    .map((l: string) => l.replace(/^[-*•]\s*/, "").replace(/\*\*/g, "").trim())
+    .map((l: string) =>
+      l
+        .replace(/^[-*•]\s*/, "")
+        .replace(/\*\*/g, "")
+        .trim(),
+    )
     .slice(0, 5);
   return { texto, insights };
 }
@@ -103,7 +109,8 @@ Deno.serve(async (req) => {
   }
   if (!(await isAuthorized(req))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
-      status: 403, headers: { ...cors, "Content-Type": "application/json" },
+      status: 403,
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -113,11 +120,10 @@ Deno.serve(async (req) => {
   const inicioISO = semanaInicio.toISOString();
   const fimISO = new Date(semanaFim.getTime() + 86400000).toISOString();
 
-  const { data: users } = await admin
-    .from("profiles")
-    .select("user_id, colaborador_id, nome");
+  const { data: users } = await admin.from("profiles").select("user_id, colaborador_id, nome");
 
-  let gerados = 0, erros = 0;
+  let gerados = 0,
+    erros = 0;
   for (const u of users ?? []) {
     try {
       const escopo = escopoAtividade(u.user_id, u.colaborador_id);
@@ -131,17 +137,24 @@ Deno.serve(async (req) => {
         return count ?? 0;
       };
       const naSemana = (tabela: string, filtroEscopo: string) =>
-        admin.from(tabela).select("id", { count: "exact", head: true })
+        admin
+          .from(tabela)
+          .select("id", { count: "exact", head: true })
           .or(filtroEscopo)
-          .gte("created_at", inicioISO).lt("created_at", fimISO);
+          .gte("created_at", inicioISO)
+          .lt("created_at", fimISO);
       const todo = () => naSemana("todo", escopo);
       const demanda = () => naSemana("demanda", escopo);
       const chamado = () => naSemana("chamado_externo", escopoChamados);
 
       const [
-        tarefas_total, tarefas_concluidas, tarefas_urgentes,
-        demandas_total, demandas_em_andamento,
-        chamados_total, chamados_sla_estourado,
+        tarefas_total,
+        tarefas_concluidas,
+        tarefas_urgentes,
+        demandas_total,
+        demandas_em_andamento,
+        chamados_total,
+        chamados_sla_estourado,
       ] = await Promise.all([
         contar(todo()),
         contar(todo().in("status", ["concluida", "producao", "aprovado"])),
@@ -154,17 +167,22 @@ Deno.serve(async (req) => {
         contar(chamado().lt("prazo", hoje.toISOString()).neq("status", "finalizado")),
       ]);
       const metricas = {
-        tarefas_total, tarefas_concluidas, tarefas_urgentes,
-        demandas_total, demandas_em_andamento,
-        chamados_total, chamados_sla_estourado,
+        tarefas_total,
+        tarefas_concluidas,
+        tarefas_urgentes,
+        demandas_total,
+        demandas_em_andamento,
+        chamados_total,
+        chamados_sla_estourado,
       };
 
       // pula se não teve atividade
       if (tarefas_total === 0 && demandas_total === 0 && chamados_total === 0) continue;
 
-      const taxaConclusao = metricas.tarefas_total > 0
-        ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
-        : 0;
+      const taxaConclusao =
+        metricas.tarefas_total > 0
+          ? Math.round((metricas.tarefas_concluidas / metricas.tarefas_total) * 100)
+          : 0;
 
       const prompt = `Briefing semanal para **${u.nome ?? "o colaborador"}** — período de ${semanaInicio.toLocaleDateString("pt-BR")} a ${semanaFim.toLocaleDateString("pt-BR")}.
 
@@ -178,15 +196,18 @@ Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (tr
       const { texto, insights } = await callIA(prompt);
 
       // upsert resumo
-      const { error: upsertError } = await admin.from("resumo_semanal").upsert({
-        user_id: u.user_id,
-        semana_inicio: semanaInicio.toISOString().slice(0, 10),
-        semana_fim: semanaFim.toISOString().slice(0, 10),
-        conteudo_md: texto,
-        metricas,
-        insights,
-        modelo: resolveModel("google/gemini-2.5-flash"),
-      }, { onConflict: "user_id,semana_inicio" });
+      const { error: upsertError } = await admin.from("resumo_semanal").upsert(
+        {
+          user_id: u.user_id,
+          semana_inicio: semanaInicio.toISOString().slice(0, 10),
+          semana_fim: semanaFim.toISOString().slice(0, 10),
+          conteudo_md: texto,
+          metricas,
+          insights,
+          modelo: resolveModel("google/gemini-2.5-flash"),
+        },
+        { onConflict: "user_id,semana_inicio" },
+      );
       if (upsertError) throw upsertError;
 
       // notificação in-app
@@ -203,12 +224,21 @@ Escreva o briefing seguindo EXATAMENTE a estrutura definida no system prompt (tr
     } catch (e) {
       // Erro do PostgREST em consulta só de contagem (head) chega sem mensagem: registra o código.
       const err = e as { message?: string; code?: string; details?: string; hint?: string };
-      console.error(`[resumo] user ${u.user_id}:`, err?.message || "(sem mensagem)", err?.code ?? "", err?.details ?? "", err?.hint ?? "");
+      console.error(
+        `[resumo] user ${u.user_id}:`,
+        err?.message || "(sem mensagem)",
+        err?.code ?? "",
+        err?.details ?? "",
+        err?.hint ?? "",
+      );
       erros++;
     }
   }
 
-  return new Response(JSON.stringify({ gerados, erros, semana: semanaInicio.toISOString().slice(0, 10) }), {
-    headers: { ...cors, "Content-Type": "application/json" },
-  });
+  return new Response(
+    JSON.stringify({ gerados, erros, semana: semanaInicio.toISOString().slice(0, 10) }),
+    {
+      headers: { ...cors, "Content-Type": "application/json" },
+    },
+  );
 });

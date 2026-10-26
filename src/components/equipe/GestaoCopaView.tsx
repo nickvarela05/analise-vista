@@ -17,12 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Colaborador, Horario } from "./lib/types";
-import {
-  COPA_CAPACIDADE,
-  COPA_WINDOW_MIN,
-  ocupacaoCopa,
-  slotsExcedidos,
-} from "@/lib/domain/copa";
+import { COPA_CAPACIDADE, COPA_WINDOW_MIN, ocupacaoCopa, slotsExcedidos } from "@/lib/domain/copa";
 
 const TIMELINE_INI = 11 * 60; // 11:00
 const TIMELINE_FIM = 15 * 60; // 15:00
@@ -96,14 +91,7 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
 
   // Capacidade da copa: considera apenas os PRIMEIROS 30 MIN do almoço de cada pessoa.
   const ocupSlots = React.useMemo(
-    () =>
-      ocupacaoCopa(
-        Object.values(edits),
-        TIMELINE_INI,
-        TIMELINE_FIM,
-        SNAP,
-        COPA_WINDOW_MIN,
-      ),
+    () => ocupacaoCopa(Object.values(edits), TIMELINE_INI, TIMELINE_FIM, SNAP, COPA_WINDOW_MIN),
     [edits],
   );
   const copaSlots = React.useMemo(
@@ -161,7 +149,8 @@ export function GestaoCopaView({ colabs }: { colabs: Colaborador[] }) {
               <div>
                 <div className="text-sm font-semibold">Gestão de copa</div>
                 <div className="text-xs text-muted-foreground">
-                  Arraste o bloco para mover, ou as bordas para redimensionar. Vale para todos os dias da semana.
+                  Arraste o bloco para mover, ou as bordas para redimensionar. Vale para todos os
+                  dias da semana.
                 </div>
               </div>
             </div>
@@ -262,9 +251,7 @@ function PainelLocal({
           </div>
           <div>
             <div className="text-sm font-semibold">{titulo}</div>
-            <div className="text-[11px] text-muted-foreground">
-              {colabs.length} colaborador(es)
-            </div>
+            <div className="text-[11px] text-muted-foreground">{colabs.length} colaborador(es)</div>
           </div>
         </div>
       </div>
@@ -394,7 +381,7 @@ function Linha({
     if (!drag || !trackRef.current) return;
     const rect = trackRef.current.getBoundingClientRect();
     const dx = e.clientX - drag.startX;
-    const dxMin = Math.round((dx / rect.width) * TOTAL_MIN / SNAP) * SNAP;
+    const dxMin = Math.round(((dx / rect.width) * TOTAL_MIN) / SNAP) * SNAP;
 
     let ai = drag.startAi;
     let af = drag.startAf;
@@ -462,11 +449,11 @@ function Linha({
         onPointerCancel={onPointerUp}
       >
         {/* grid */}
-        {Array.from({ length: (TOTAL_MIN / 30) - 1 }, (_, i) => (
+        {Array.from({ length: TOTAL_MIN / 30 - 1 }, (_, i) => (
           <div
             key={i}
             className="absolute top-0 bottom-0 w-px bg-border/60"
-            style={{ left: `${((i + 1) * 30 / TOTAL_MIN) * 100}%` }}
+            style={{ left: `${(((i + 1) * 30) / TOTAL_MIN) * 100}%` }}
           />
         ))}
 
@@ -474,9 +461,7 @@ function Linha({
         <div
           className={cn(
             "absolute top-1 bottom-1 flex items-center rounded-md text-[10px] font-medium text-white shadow-sm select-none touch-none transition-shadow",
-            isCopa
-              ? "bg-[var(--status-almoco)]"
-              : "bg-info",
+            isCopa ? "bg-[var(--status-almoco)]" : "bg-info",
             slot.dirty && "ring-2 ring-primary/60",
             drag && "shadow-lg",
           )}

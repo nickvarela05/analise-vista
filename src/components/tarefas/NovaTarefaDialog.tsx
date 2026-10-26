@@ -90,7 +90,10 @@ export function NovaTarefaDialog({
     if (!isControlled) setInternalOpen(v);
     onOpenChange?.(v);
   };
-  const [form, setForm] = React.useState<FormState>({ ...initialForm, data_prevista: defaultData ?? "" });
+  const [form, setForm] = React.useState<FormState>({
+    ...initialForm,
+    data_prevista: defaultData ?? "",
+  });
 
   React.useEffect(() => {
     if (open) setForm((f) => ({ ...f, data_prevista: defaultData ?? f.data_prevista }));
@@ -100,7 +103,9 @@ export function NovaTarefaDialog({
   const duplicata = React.useMemo(() => {
     const alvo = normalizarTitulo(form.titulo);
     if (alvo.length < 3) return null;
-    const cache = qc.getQueryData<Array<{ id: string; titulo: string; status: string }>>(qk.tarefas.all());
+    const cache = qc.getQueryData<Array<{ id: string; titulo: string; status: string }>>(
+      qk.tarefas.all(),
+    );
     if (!cache) return null;
     return cache.find((t) => normalizarTitulo(t.titulo ?? "") === alvo) ?? null;
   }, [form.titulo, qc]);
@@ -115,7 +120,9 @@ export function NovaTarefaDialog({
       toast.error("Erro ao atualizar", { description: error.message });
       return;
     }
-    toast.success(`Status atualizado para "${STATUS_LABEL[form.status as (typeof WORKFLOW)[number]] ?? form.status}"`);
+    toast.success(
+      `Status atualizado para "${STATUS_LABEL[form.status as (typeof WORKFLOW)[number]] ?? form.status}"`,
+    );
     setOpen(false);
     setForm(initialForm);
     qc.invalidateQueries({ queryKey: qk.tarefas.all() });
@@ -125,7 +132,8 @@ export function NovaTarefaDialog({
     e.preventDefault();
     if (duplicata) {
       toast.error("Tarefa duplicada", {
-        description: "Já existe uma tarefa com este título. Atualize o status da existente ou altere o título.",
+        description:
+          "Já existe uma tarefa com este título. Atualize o status da existente ou altere o título.",
       });
       return;
     }
@@ -199,7 +207,10 @@ export function NovaTarefaDialog({
                     <p>
                       Já existe uma tarefa com este título{" "}
                       <span className="font-medium">
-                        (status atual: {STATUS_LABEL[duplicata.status as (typeof WORKFLOW)[number]] ?? duplicata.status})
+                        (status atual:{" "}
+                        {STATUS_LABEL[duplicata.status as (typeof WORKFLOW)[number]] ??
+                          duplicata.status}
+                        )
                       </span>
                       . Deseja apenas atualizar o status dela para{" "}
                       <span className="font-medium">
@@ -234,10 +245,14 @@ export function NovaTarefaDialog({
               <div className="space-y-1.5">
                 <Label className="text-xs">Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {WORKFLOW.map((s) => (
-                      <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {STATUS_LABEL[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -246,12 +261,18 @@ export function NovaTarefaDialog({
                 <Label className="text-xs">Prioridade</Label>
                 <Select
                   value={form.prioridade}
-                  onValueChange={(v) => setForm({ ...form, prioridade: v as FormState["prioridade"] })}
+                  onValueChange={(v) =>
+                    setForm({ ...form, prioridade: v as FormState["prioridade"] })
+                  }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PRIO.map((p) => (
-                      <SelectItem key={p} value={p} className="capitalize">{prioridadeLabel(p)}</SelectItem>
+                      <SelectItem key={p} value={p} className="capitalize">
+                        {prioridadeLabel(p)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -270,11 +291,15 @@ export function NovaTarefaDialog({
                   value={form.demanda_id ?? "none"}
                   onValueChange={(v) => setForm({ ...form, demanda_id: v === "none" ? null : v })}
                 >
-                  <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nenhuma" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Nenhuma</SelectItem>
                     {demandas.map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.titulo}</SelectItem>
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.titulo}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -317,7 +342,9 @@ export function NovaTarefaDialog({
               <Sparkles className="h-3 w-3" /> Atalho: pressione Enter para criar
             </p>
             <div className="flex gap-2">
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={!!duplicata}>
                 <Plus className="mr-1.5 h-4 w-4" /> Criar tarefa
               </Button>

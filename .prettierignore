@@ -5,3 +5,9 @@ dist
 pnpm-lock.yaml
 package-lock.json
 routeTree.gen.ts
+# Gerados por ferramentas (fase A2, 26/10/2026)
+.wrangler
+.tanstack
+supabase/.temp
+bun.lock
+deno.lock

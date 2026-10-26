@@ -16,10 +16,7 @@ export const feriasSchema = z
       .refine(isRealDate, "Data de fim inexistente"),
     observacao: z.preprocess(
       emptyToNull,
-      z
-        .string()
-        .max(500, "Observação deve ter no máximo 500 caracteres")
-        .nullable(),
+      z.string().max(500, "Observação deve ter no máximo 500 caracteres").nullable(),
     ),
   })
   .superRefine((val, ctx) => {

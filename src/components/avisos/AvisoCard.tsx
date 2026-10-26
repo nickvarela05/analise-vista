@@ -28,12 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type AvisoTipo = "informativo" | "alerta" | "critico";
@@ -167,7 +162,10 @@ function AvisoProcessoCard({
                 </span>
               )}
               {!isLido && aviso.ativo && (
-                <span className="inline-flex h-2 w-2 rounded-full bg-primary" aria-label="Não lida" />
+                <span
+                  className="inline-flex h-2 w-2 rounded-full bg-primary"
+                  aria-label="Não lida"
+                />
               )}
               {!aviso.ativo && (
                 <Badge variant="secondary" className="text-[10px]">
@@ -242,9 +240,8 @@ function AvisoProcessoCard({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Excluir aviso?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        O aviso "{aviso.titulo}" será removido permanentemente. Um novo
-                        aviso será gerado automaticamente enquanto o processo estiver
-                        próximo.
+                        O aviso "{aviso.titulo}" será removido permanentemente. Um novo aviso será
+                        gerado automaticamente enquanto o processo estiver próximo.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -406,8 +403,7 @@ export function AvisoCard({
 
             {expiraEm && !expirado && (
               <span className="inline-flex items-center gap-1">
-                · Expira{" "}
-                {formatDistanceToNow(expiraEm, { addSuffix: true, locale: ptBR })}
+                · Expira {formatDistanceToNow(expiraEm, { addSuffix: true, locale: ptBR })}
               </span>
             )}
 
@@ -429,9 +425,7 @@ export function AvisoCard({
                       {totalLeituras ?? 0}/{totalDestinatarios} leram
                     </span>
                   </TooltipTrigger>
-                  <TooltipContent side="top">
-                    Confirmações de leitura
-                  </TooltipContent>
+                  <TooltipContent side="top">Confirmações de leitura</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
@@ -465,9 +459,7 @@ export function AvisoCard({
                       />
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top">
-                    {aviso.ativo ? "Desativar" : "Ativar"}
-                  </TooltipContent>
+                  <TooltipContent side="top">{aviso.ativo ? "Desativar" : "Ativar"}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
@@ -496,8 +488,8 @@ export function AvisoCard({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Excluir aviso?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      O aviso "{aviso.titulo}" será removido permanentemente, junto com
-                      o histórico de leituras.
+                      O aviso "{aviso.titulo}" será removido permanentemente, junto com o histórico
+                      de leituras.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

@@ -11,7 +11,9 @@ const TIMEZONE = "America/Sao_Paulo";
 type Fonte = "reuniao" | "tarefa" | "demanda" | "chamado";
 
 function hashPayload(parts: Array<string | number | null | undefined>): string {
-  return createHash("sha1").update(parts.map((p) => String(p ?? "")).join("|")).digest("hex");
+  return createHash("sha1")
+    .update(parts.map((p) => String(p ?? "")).join("|"))
+    .digest("hex");
 }
 
 interface EventPayload {
@@ -36,9 +38,10 @@ function buildReuniaoPayload(r: {
   const end = new Date(start.getTime() + durMin * 60_000);
   return {
     summary: `[Reunião] ${r.titulo}${r.status === "cancelada" ? " (Cancelada)" : ""}`,
-    description: [r.pauta && `Pauta:\n${r.pauta}`, r.resumo && `Resumo:\n${r.resumo}`]
-      .filter(Boolean)
-      .join("\n\n") || "Reunião do Nexus.",
+    description:
+      [r.pauta && `Pauta:\n${r.pauta}`, r.resumo && `Resumo:\n${r.resumo}`]
+        .filter(Boolean)
+        .join("\n\n") || "Reunião do Nexus.",
     isAllDay: false,
     start: start.toISOString(),
     end: end.toISOString(),
@@ -103,9 +106,7 @@ export interface SyncResult {
  * Executa uma passagem completa de sincronização Nexus → Google Agenda.
  * Deve ser chamada apenas do servidor (cron ou serverFn autenticada de gestor).
  */
-export async function syncGoogleCalendar(
-  options: { manual?: boolean } = {},
-): Promise<SyncResult> {
+export async function syncGoogleCalendar(options: { manual?: boolean } = {}): Promise<SyncResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const result: SyncResult = {
     ok: true,
@@ -189,12 +190,20 @@ export async function syncGoogleCalendar(
       fonte: "reuniao",
       id: r.id,
       payload,
-      hash: hashPayload([payload.summary, payload.description, payload.start, payload.end, r.status]),
+      hash: hashPayload([
+        payload.summary,
+        payload.description,
+        payload.start,
+        payload.end,
+        r.status,
+      ]),
       finalizado: r.status === "cancelada",
     });
   }
   for (const t of tarefas.data ?? []) {
-    const finalizado = ["producao", "aprovado", "encerrada", "cancelada", "concluida"].includes(t.status);
+    const finalizado = ["producao", "aprovado", "encerrada", "cancelada", "concluida"].includes(
+      t.status,
+    );
     if (finalizado) continue;
     const payload = buildAllDay(
       "[Tarefa]",
@@ -246,17 +255,18 @@ export async function syncGoogleCalendar(
   }
 
   // 2) Mapeamentos existentes
-  const { data: mapasRaw } = await supabaseAdmin
-    .from("google_calendar_evento")
-    .select("*");
-  const mapas = new Map<string, {
-    id: string;
-    fonte: string;
-    fonte_id: string;
-    google_event_id: string;
-    google_calendar_id: string;
-    conteudo_hash: string;
-  }>();
+  const { data: mapasRaw } = await supabaseAdmin.from("google_calendar_evento").select("*");
+  const mapas = new Map<
+    string,
+    {
+      id: string;
+      fonte: string;
+      fonte_id: string;
+      google_event_id: string;
+      google_calendar_id: string;
+      conteudo_hash: string;
+    }
+  >();
   for (const m of mapasRaw ?? []) mapas.set(`${m.fonte}:${m.fonte_id}`, m);
 
   const alvosKeys = new Set(alvos.map((a) => `${a.fonte}:${a.id}`));
@@ -282,7 +292,10 @@ export async function syncGoogleCalendar(
           conteudo_hash: alvo.hash,
         });
         result.criados++;
-      } else if (existente.conteudo_hash !== alvo.hash || existente.google_calendar_id !== config.google_calendar_id) {
+      } else if (
+        existente.conteudo_hash !== alvo.hash ||
+        existente.google_calendar_id !== config.google_calendar_id
+      ) {
         // Recriar no calendário certo se mudou
         if (existente.google_calendar_id !== config.google_calendar_id) {
           await gcalRequest(

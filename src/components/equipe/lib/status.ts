@@ -53,9 +53,7 @@ export function computeStatus(c: Colaborador, now: Date = new Date()): ComputedS
 }
 
 export function isOnVacation(c: Colaborador, dateISO: string): boolean {
-  return !!c.colaborador_ferias?.find(
-    (f) => f.data_inicio <= dateISO && f.data_fim >= dateISO,
-  );
+  return !!c.colaborador_ferias?.find((f) => f.data_inicio <= dateISO && f.data_fim >= dateISO);
 }
 
 export function eventOn(c: Colaborador, dateISO: string) {

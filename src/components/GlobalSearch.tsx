@@ -77,7 +77,11 @@ export function GlobalSearch({
         {results.demandas.length > 0 && (
           <CommandGroup heading="Demandas">
             {results.demandas.map((it) => (
-              <CommandItem key={it.id} value={`d-${it.id}-${it.titulo}`} onSelect={() => go("/demandas")}>
+              <CommandItem
+                key={it.id}
+                value={`d-${it.id}-${it.titulo}`}
+                onSelect={() => go("/demandas")}
+              >
                 <Inbox className="h-4 w-4" /> {it.titulo}
               </CommandItem>
             ))}
@@ -86,7 +90,11 @@ export function GlobalSearch({
         {results.tarefas.length > 0 && (
           <CommandGroup heading="Tarefas">
             {results.tarefas.map((it) => (
-              <CommandItem key={it.id} value={`t-${it.id}-${it.titulo}`} onSelect={() => go("/tarefas")}>
+              <CommandItem
+                key={it.id}
+                value={`t-${it.id}-${it.titulo}`}
+                onSelect={() => go("/tarefas")}
+              >
                 <CheckSquare className="h-4 w-4" /> {it.titulo}
               </CommandItem>
             ))}
@@ -95,7 +103,11 @@ export function GlobalSearch({
         {results.reunioes.length > 0 && (
           <CommandGroup heading="Reuniões">
             {results.reunioes.map((it) => (
-              <CommandItem key={it.id} value={`r-${it.id}-${it.titulo}`} onSelect={() => go("/reunioes")}>
+              <CommandItem
+                key={it.id}
+                value={`r-${it.id}-${it.titulo}`}
+                onSelect={() => go("/reunioes")}
+              >
                 <Calendar className="h-4 w-4" /> {it.titulo}
               </CommandItem>
             ))}

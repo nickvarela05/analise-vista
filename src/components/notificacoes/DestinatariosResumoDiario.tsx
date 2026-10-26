@@ -78,9 +78,7 @@ export function DestinatariosResumoDiario() {
     const q = busca.trim().toLowerCase();
     if (!q) return perfis;
     return perfis.filter(
-      (p) =>
-        (p.nome ?? "").toLowerCase().includes(q) ||
-        (p.email ?? "").toLowerCase().includes(q),
+      (p) => (p.nome ?? "").toLowerCase().includes(q) || (p.email ?? "").toLowerCase().includes(q),
     );
   }, [perfis, busca]);
 
@@ -103,7 +101,8 @@ export function DestinatariosResumoDiario() {
             </p>
             <h3 className="text-base font-semibold">Destinatários do resumo diário</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Defina quem recebe o e-mail diário (10h) com demandas, reuniões, tarefas em alerta e novos relatórios.
+              Defina quem recebe o e-mail diário (10h) com demandas, reuniões, tarefas em alerta e
+              novos relatórios.
             </p>
           </div>
         </div>
@@ -142,10 +141,16 @@ export function DestinatariosResumoDiario() {
 
         <div className="flex flex-wrap gap-2 text-xs">
           <Badge variant="outline">{total} usuários</Badge>
-          <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          <Badge
+            variant="outline"
+            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+          >
             {recebem} recebem
           </Badge>
-          <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+          <Badge
+            variant="outline"
+            className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+          >
             {naoRecebem} não recebem
           </Badge>
           {semEmail > 0 && (
@@ -189,9 +194,7 @@ export function DestinatariosResumoDiario() {
                       <Switch
                         checked={!!p.recebe_resumo_diario && !semEmail}
                         disabled={semEmail || toggleOne.isPending}
-                        onCheckedChange={(v) =>
-                          toggleOne.mutate({ userId: p.user_id, ativo: v })
-                        }
+                        onCheckedChange={(v) => toggleOne.mutate({ userId: p.user_id, ativo: v })}
                         aria-label={p.recebe_resumo_diario ? "Desativar" : "Ativar"}
                       />
                     </li>

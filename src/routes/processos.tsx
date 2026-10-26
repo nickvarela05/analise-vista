@@ -39,16 +39,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -66,12 +58,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -80,15 +67,7 @@ import { cn } from "@/lib/utils";
 // ---------- Types ----------
 
 type ProcessoStatus = "planejado" | "em_andamento" | "concluido" | "atrasado";
-type CorProcesso =
-  | "indigo"
-  | "sky"
-  | "emerald"
-  | "violet"
-  | "amber"
-  | "rose"
-  | "cyan"
-  | "primary";
+type CorProcesso = "indigo" | "sky" | "emerald" | "violet" | "amber" | "rose" | "cyan" | "primary";
 
 type Processo = {
   id: string;
@@ -125,10 +104,7 @@ const STATUS_LABEL: Record<ProcessoStatus, string> = {
   atrasado: "Atrasado",
 };
 
-const STATUS_TONE: Record<
-  ProcessoStatus,
-  { bg: string; text: string; ring: string }
-> = {
+const STATUS_TONE: Record<ProcessoStatus, { bg: string; text: string; ring: string }> = {
   planejado: {
     bg: "bg-muted",
     text: "text-muted-foreground",
@@ -184,20 +160,7 @@ const COR_BG_SOFT: Record<CorProcesso, string> = {
   primary: "bg-primary/25 border-primary/60",
 };
 
-const MESES = [
-  "Jan",
-  "Fev",
-  "Mar",
-  "Abr",
-  "Mai",
-  "Jun",
-  "Jul",
-  "Ago",
-  "Set",
-  "Out",
-  "Nov",
-  "Dez",
-];
+const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 // ---------- Route ----------
 
@@ -497,7 +460,9 @@ function Processos() {
       }));
       const { error: insErr } = await db.from("processo_anual").insert(payload);
       if (insErr) throw insErr;
-      toast.success(`${rows.length} processo${rows.length === 1 ? "" : "s"} copiado${rows.length === 1 ? "" : "s"} de ${anoOrigem}.`);
+      toast.success(
+        `${rows.length} processo${rows.length === 1 ? "" : "s"} copiado${rows.length === 1 ? "" : "s"} de ${anoOrigem}.`,
+      );
       invalidar();
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -571,7 +536,11 @@ function Processos() {
                 disabled={copiando}
                 title={`Duplicar processos de ${ano - 1} para ${ano}`}
               >
-                {copiando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+                {copiando ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
                 Copiar de {ano - 1}
               </Button>
             )}
@@ -618,13 +587,11 @@ function Processos() {
       ) : (
         (() => {
           const processosFiltrados = filtroResp
-            ? processos.filter((p) =>
-                p.equipe_toda || (p.responsaveis_ids ?? []).includes(filtroResp),
+            ? processos.filter(
+                (p) => p.equipe_toda || (p.responsaveis_ids ?? []).includes(filtroResp),
               )
             : processos;
-          const respAtivo = filtroResp
-            ? colabs.find((c) => c.id === filtroResp)
-            : null;
+          const respAtivo = filtroResp ? colabs.find((c) => c.id === filtroResp) : null;
           return (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -743,23 +710,17 @@ function Processos() {
         assigneeOptions={assigneeOptions}
         tarefasMini={tarefasMini}
         demandasMini={demandasMini}
-        vinculosDoProcesso={
-          editing ? (vincPorProcesso.get(editing.id) ?? []) : []
-        }
+        vinculosDoProcesso={editing ? (vincPorProcesso.get(editing.id) ?? []) : []}
         onSaved={invalidar}
       />
 
-      <AlertDialog
-        open={!!confirmDel}
-        onOpenChange={(o) => !o && setConfirmDel(null)}
-      >
+      <AlertDialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir processo?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O processo{" "}
-              <strong>{confirmDel?.nome}</strong> e seus vínculos serão
-              removidos.
+              Esta ação não pode ser desfeita. O processo <strong>{confirmDel?.nome}</strong> e seus
+              vínculos serão removidos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -884,8 +845,7 @@ function MiniMes({
                 "relative mx-auto flex h-10 w-10 flex-col items-center justify-center rounded-lg text-sm leading-none transition-colors",
                 !inMonth && "text-muted-foreground/30",
                 inMonth && !isHoje && "text-foreground/80 hover:bg-muted",
-                isHoje &&
-                  "bg-primary font-semibold text-primary-foreground ring-2 ring-primary/40",
+                isHoje && "bg-primary font-semibold text-primary-foreground ring-2 ring-primary/40",
                 hasProc && !isHoje && "font-semibold text-foreground",
               )}
             >
@@ -893,14 +853,10 @@ function MiniMes({
               {hasProc && (
                 <span className="absolute bottom-1 flex gap-[3px]">
                   {cores.map((c, idx) => (
-                    <span
-                      key={idx}
-                      className={cn("h-1.5 w-1.5 rounded-full", COR_BG[c])}
-                    />
+                    <span key={idx} className={cn("h-1.5 w-1.5 rounded-full", COR_BG[c])} />
                   ))}
                 </span>
               )}
-
             </button>
           );
 
@@ -930,13 +886,9 @@ function MiniMes({
                         !onEdit && "cursor-default",
                       )}
                     >
-                      <span
-                        className={cn("mt-0.5 h-3 w-3 shrink-0 rounded-sm", COR_BG[p.cor])}
-                      />
+                      <span className={cn("mt-0.5 h-3 w-3 shrink-0 rounded-sm", COR_BG[p.cor])} />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-foreground">
-                          {p.nome}
-                        </div>
+                        <div className="truncate text-sm font-medium text-foreground">{p.nome}</div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-muted-foreground">
                           <Badge
                             variant="outline"
@@ -979,14 +931,7 @@ function CalendarioAnoGoogle({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       {Array.from({ length: 12 }, (_, m) => (
-        <MiniMes
-          key={m}
-          ano={ano}
-          mes={m}
-          indice={indice}
-          onEdit={onEdit}
-          hojeISO={hojeISO}
-        />
+        <MiniMes key={m} ano={ano} mes={m} indice={indice} onEdit={onEdit} hojeISO={hojeISO} />
       ))}
     </div>
   );
@@ -1183,9 +1128,7 @@ function BentoDoMes({
   }, [processos, hoje, anoEhAtual]);
 
   const hojePctNoMes =
-    anoEhAtual && hoje.getMonth() === mes
-      ? ((hoje.getDate() - 1) / (diasNoMes - 1)) * 100
-      : null;
+    anoEhAtual && hoje.getMonth() === mes ? ((hoje.getDate() - 1) / (diasNoMes - 1)) * 100 : null;
 
   // Marcadores de semana (7,14,21,28)
   const semanas = [7, 14, 21, 28].filter((d) => d < diasNoMes);
@@ -1265,10 +1208,7 @@ function BentoDoMes({
                   {barras.map(({ p, previsto, real }) => {
                     const s = computarStatusDinamico(p);
                     return (
-                      <div
-                        key={p.id}
-                        className="grid grid-cols-[160px_1fr] items-center gap-3"
-                      >
+                      <div key={p.id} className="grid grid-cols-[160px_1fr] items-center gap-3">
                         <button
                           type="button"
                           onClick={onEdit ? () => onEdit(p) : undefined}
@@ -1277,9 +1217,7 @@ function BentoDoMes({
                             onEdit && "hover:bg-muted",
                           )}
                         >
-                          <span
-                            className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])}
-                          />
+                          <span className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])} />
                           <span className="min-w-0 flex-1 truncate font-medium">{p.nome}</span>
                         </button>
                         <div className="relative h-7 rounded-md bg-muted/40">
@@ -1387,9 +1325,7 @@ function BentoDoMes({
                   >
                     <div className="mb-1 flex items-center gap-2">
                       <span className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])} />
-                      <span className="min-w-0 flex-1 truncate text-xs font-medium">
-                        {p.nome}
-                      </span>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.nome}</span>
                       <span className="shrink-0 tabular-nums text-[10px] text-muted-foreground">
                         {restante === 0 ? "hoje" : `${restante}d`}
                       </span>
@@ -1436,9 +1372,7 @@ function BentoDoMes({
                     )}
                   >
                     <span className={cn("h-2 w-2 shrink-0 rounded-full", COR_BG[p.cor])} />
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium">
-                      {p.nome}
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium">{p.nome}</span>
                     <Badge
                       variant="outline"
                       className={cn(
@@ -1542,10 +1476,7 @@ function CalendarioAnual({
                   );
                   const corPrev = p.cor;
                   return (
-                    <div
-                      key={p.id}
-                      className="grid grid-cols-[240px_1fr] items-stretch gap-3"
-                    >
+                    <div key={p.id} className="grid grid-cols-[240px_1fr] items-stretch gap-3">
                       {/* Coluna esquerda: nome + meta */}
                       <button
                         type="button"
@@ -1556,7 +1487,9 @@ function CalendarioAnual({
                         )}
                       >
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", COR_BG[p.cor])} />
+                          <span
+                            className={cn("h-2.5 w-2.5 shrink-0 rounded-full", COR_BG[p.cor])}
+                          />
                           <span className="min-w-0 flex-1 truncate text-sm font-medium">
                             {p.nome}
                           </span>
@@ -1698,8 +1631,6 @@ function CalendarioAnual({
 
 // ---------- Card lista ----------
 
-
-
 function ProcessoCard({
   processo: p,
   colabs,
@@ -1719,8 +1650,7 @@ function ProcessoCard({
 }) {
   const s = computarStatusDinamico(p);
   const dias = diasParaInicio(p);
-  const proximo =
-    dias !== null && dias >= 0 && dias <= p.alerta_dias_antes && s !== "concluido";
+  const proximo = dias !== null && dias >= 0 && dias <= p.alerta_dias_antes && s !== "concluido";
   const durPrev = duracaoDias(p.previsto_inicio, p.previsto_fim);
   const durReal = duracaoDias(p.real_inicio, p.real_fim);
   const dev = desvioReal(p.previsto_inicio, p.previsto_fim, p.real_inicio, p.real_fim);
@@ -1747,22 +1677,13 @@ function ProcessoCard({
       <CardContent className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span
-              className={cn(
-                "mt-1 h-4 w-4 shrink-0 rounded-full",
-                COR_BG[p.cor],
-              )}
-            />
+            <span className={cn("mt-1 h-4 w-4 shrink-0 rounded-full", COR_BG[p.cor])} />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-semibold">{p.nome}</h3>
                 <Badge
                   variant="outline"
-                  className={cn(
-                    "text-[10px]",
-                    STATUS_TONE[s].text,
-                    STATUS_TONE[s].ring,
-                  )}
+                  className={cn("text-[10px]", STATUS_TONE[s].text, STATUS_TONE[s].ring)}
                 >
                   {STATUS_LABEL[s]}
                 </Badge>
@@ -1773,9 +1694,7 @@ function ProcessoCard({
                   </Badge>
                 )}
               </div>
-              {p.descricao && (
-                <p className="mt-1 text-sm text-muted-foreground">{p.descricao}</p>
-              )}
+              {p.descricao && <p className="mt-1 text-sm text-muted-foreground">{p.descricao}</p>}
             </div>
           </div>
 
@@ -1805,11 +1724,16 @@ function ProcessoCard({
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="text-muted-foreground">Visualização anual</span>
             {dev.dias !== null && dev.dias > 0 && (
-              <span className={cn(
-                "font-medium",
-                dev.tipo === "atraso" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400",
-              )}>
-                {dev.tipo === "atraso" ? "Início com atraso" : "Início adiantado"} de {dev.dias} dia{dev.dias === 1 ? "" : "s"}
+              <span
+                className={cn(
+                  "font-medium",
+                  dev.tipo === "atraso"
+                    ? "text-rose-600 dark:text-rose-400"
+                    : "text-emerald-600 dark:text-emerald-400",
+                )}
+              >
+                {dev.tipo === "atraso" ? "Início com atraso" : "Início adiantado"} de {dev.dias} dia
+                {dev.dias === 1 ? "" : "s"}
               </span>
             )}
           </div>
@@ -1842,7 +1766,10 @@ function ProcessoCard({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
-                    className={cn("absolute bottom-1 flex h-3 items-center rounded-sm", COR_BG[p.cor])}
+                    className={cn(
+                      "absolute bottom-1 flex h-3 items-center rounded-sm",
+                      COR_BG[p.cor],
+                    )}
                     style={{
                       left: `${(rStart / 12) * 100}%`,
                       width: `${Math.max(1, ((rEnd - rStart) / 12) * 100)}%`,
@@ -1858,7 +1785,12 @@ function ProcessoCard({
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
             <span className="flex items-center gap-1.5">
-              <span className={cn("inline-block h-2 w-4 rounded-sm border border-dashed", COR_BG_SOFT[p.cor])} />
+              <span
+                className={cn(
+                  "inline-block h-2 w-4 rounded-sm border border-dashed",
+                  COR_BG_SOFT[p.cor],
+                )}
+              />
               Previsto{durPrev !== null ? ` · ${durPrev}d` : ""}
             </span>
             <span className="flex items-center gap-1.5">
@@ -1869,16 +1801,8 @@ function ProcessoCard({
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <InfoBloco
-            titulo="Previsto"
-            inicio={p.previsto_inicio}
-            fim={p.previsto_fim}
-          />
-          <InfoBloco
-            titulo="Real"
-            inicio={p.real_inicio}
-            fim={p.real_fim}
-          />
+          <InfoBloco titulo="Previsto" inicio={p.previsto_inicio} fim={p.previsto_fim} />
+          <InfoBloco titulo="Real" inicio={p.real_inicio} fim={p.real_fim} />
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               Responsáveis
@@ -1899,13 +1823,10 @@ function ProcessoCard({
             <div className="flex flex-wrap gap-1">
               {vinculos.map((v) => {
                 const label =
-                  v.tipo === "tarefa"
-                    ? tarefaMap.get(v.ref_id)
-                    : demandaMap.get(v.ref_id);
+                  v.tipo === "tarefa" ? tarefaMap.get(v.ref_id) : demandaMap.get(v.ref_id);
                 return (
                   <Badge key={v.id} variant="secondary" className="text-[10px]">
-                    {v.tipo === "tarefa" ? "Tarefa" : "Demanda"}:{" "}
-                    {label ?? "(removido)"}
+                    {v.tipo === "tarefa" ? "Tarefa" : "Demanda"}: {label ?? "(removido)"}
                   </Badge>
                 );
               })}
@@ -1914,9 +1835,7 @@ function ProcessoCard({
         )}
 
         {p.observacoes && (
-          <div className="mt-3 border-t pt-3 text-sm text-muted-foreground">
-            {p.observacoes}
-          </div>
+          <div className="mt-3 border-t pt-3 text-sm text-muted-foreground">{p.observacoes}</div>
         )}
       </CardContent>
     </Card>
@@ -1939,11 +1858,12 @@ function InfoBloco({
         {titulo}
       </p>
       <p className="text-sm font-medium">
-        {fmtBRData(inicio)} <span className="text-muted-foreground">→</span>{" "}
-        {fmtBRData(fim)}
+        {fmtBRData(inicio)} <span className="text-muted-foreground">→</span> {fmtBRData(fim)}
       </p>
       {dur !== null && (
-        <p className="text-xs text-muted-foreground">{dur} dia{dur === 1 ? "" : "s"}</p>
+        <p className="text-xs text-muted-foreground">
+          {dur} dia{dur === 1 ? "" : "s"}
+        </p>
       )}
     </div>
   );
@@ -1955,16 +1875,7 @@ const processoSchema = z
   .object({
     nome: z.string().trim().min(1, "Informe um nome").max(200),
     descricao: z.string().max(2000).nullable(),
-    cor: z.enum([
-      "indigo",
-      "sky",
-      "emerald",
-      "violet",
-      "amber",
-      "rose",
-      "cyan",
-      "primary",
-    ]),
+    cor: z.enum(["indigo", "sky", "emerald", "violet", "amber", "rose", "cyan", "primary"]),
     previsto_inicio: z.string().nullable(),
     previsto_fim: z.string().nullable(),
     real_inicio: z.string().nullable(),
@@ -1975,17 +1886,14 @@ const processoSchema = z
     alerta_dias_antes: z.number().int().min(0).max(365),
     observacoes: z.string().max(3000).nullable(),
   })
-  .refine(
-    (v) =>
-      !v.previsto_inicio ||
-      !v.previsto_fim ||
-      v.previsto_fim >= v.previsto_inicio,
-    { message: "Fim previsto não pode ser antes do início", path: ["previsto_fim"] },
-  )
-  .refine(
-    (v) => !v.real_inicio || !v.real_fim || v.real_fim >= v.real_inicio,
-    { message: "Fim real não pode ser antes do início", path: ["real_fim"] },
-  );
+  .refine((v) => !v.previsto_inicio || !v.previsto_fim || v.previsto_fim >= v.previsto_inicio, {
+    message: "Fim previsto não pode ser antes do início",
+    path: ["previsto_fim"],
+  })
+  .refine((v) => !v.real_inicio || !v.real_fim || v.real_fim >= v.real_inicio, {
+    message: "Fim real não pode ser antes do início",
+    path: ["real_fim"],
+  });
 
 type ProcessoForm = z.infer<typeof processoSchema>;
 
@@ -2069,10 +1977,7 @@ function ProcessoDialog({
 
       let processoId: string;
       if (editing) {
-        const { error } = await db
-          .from("processo_anual")
-          .update(payload)
-          .eq("id", editing.id);
+        const { error } = await db.from("processo_anual").update(payload).eq("id", editing.id);
         if (error) throw error;
         processoId = editing.id;
       } else {
@@ -2104,9 +2009,7 @@ function ProcessoDialog({
         })),
       ];
       if (novos.length > 0) {
-        const { error: insErr } = await db
-          .from("processo_anual_vinculo")
-          .insert(novos);
+        const { error: insErr } = await db.from("processo_anual_vinculo").insert(novos);
         if (insErr) throw insErr;
       }
 
@@ -2120,7 +2023,6 @@ function ProcessoDialog({
       setSaving(false);
     }
   };
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -2145,10 +2047,7 @@ function ProcessoDialog({
               </div>
               <div className="space-y-1.5">
                 <Label>Cor</Label>
-                <Select
-                  value={form.cor}
-                  onValueChange={(v) => setField("cor", v as CorProcesso)}
-                >
+                <Select value={form.cor} onValueChange={(v) => setField("cor", v as CorProcesso)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -2156,9 +2055,7 @@ function ProcessoDialog({
                     {COR_OPTIONS.map((c) => (
                       <SelectItem key={c.value} value={c.value}>
                         <span className="flex items-center gap-2">
-                          <span
-                            className={cn("h-3 w-3 rounded-full", c.swatch)}
-                          />
+                          <span className={cn("h-3 w-3 rounded-full", c.swatch)} />
                           {c.label}
                         </span>
                       </SelectItem>
@@ -2171,9 +2068,7 @@ function ProcessoDialog({
               <Label>Descrição</Label>
               <Textarea
                 value={form.descricao ?? ""}
-                onChange={(e) =>
-                  setField("descricao", e.target.value || null)
-                }
+                onChange={(e) => setField("descricao", e.target.value || null)}
                 rows={2}
                 placeholder="Contexto ou detalhes do processo"
               />
@@ -2192,9 +2087,7 @@ function ProcessoDialog({
                     <Input
                       type="date"
                       value={form.previsto_inicio ?? ""}
-                      onChange={(e) =>
-                        setField("previsto_inicio", e.target.value || null)
-                      }
+                      onChange={(e) => setField("previsto_inicio", e.target.value || null)}
                     />
                   </div>
                   <div className="space-y-1">
@@ -2202,9 +2095,7 @@ function ProcessoDialog({
                     <Input
                       type="date"
                       value={form.previsto_fim ?? ""}
-                      onChange={(e) =>
-                        setField("previsto_fim", e.target.value || null)
-                      }
+                      onChange={(e) => setField("previsto_fim", e.target.value || null)}
                     />
                   </div>
                 </div>
@@ -2219,9 +2110,7 @@ function ProcessoDialog({
                     <Input
                       type="date"
                       value={form.real_inicio ?? ""}
-                      onChange={(e) =>
-                        setField("real_inicio", e.target.value || null)
-                      }
+                      onChange={(e) => setField("real_inicio", e.target.value || null)}
                     />
                   </div>
                   <div className="space-y-1">
@@ -2229,9 +2118,7 @@ function ProcessoDialog({
                     <Input
                       type="date"
                       value={form.real_fim ?? ""}
-                      onChange={(e) =>
-                        setField("real_fim", e.target.value || null)
-                      }
+                      onChange={(e) => setField("real_fim", e.target.value || null)}
                     />
                   </div>
                 </div>
@@ -2263,9 +2150,7 @@ function ProcessoDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(
-                      Object.keys(STATUS_LABEL) as ProcessoStatus[]
-                    ).map((s) => (
+                    {(Object.keys(STATUS_LABEL) as ProcessoStatus[]).map((s) => (
                       <SelectItem key={s} value={s}>
                         {STATUS_LABEL[s]}
                       </SelectItem>
@@ -2281,10 +2166,7 @@ function ProcessoDialog({
                   max={365}
                   value={form.alerta_dias_antes}
                   onChange={(e) =>
-                    setField(
-                      "alerta_dias_antes",
-                      Math.max(0, Number(e.target.value) || 0),
-                    )
+                    setField("alerta_dias_antes", Math.max(0, Number(e.target.value) || 0))
                   }
                 />
               </div>

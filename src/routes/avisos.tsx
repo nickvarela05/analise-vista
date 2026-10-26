@@ -14,13 +14,7 @@ import {
   CheckCheck,
   Megaphone,
 } from "lucide-react";
-import {
-  isToday,
-  isYesterday,
-  isThisWeek,
-  isThisMonth,
-  parseISO,
-} from "date-fns";
+import { isToday, isYesterday, isThisWeek, isThisMonth, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { EmptyState } from "@/components/EmptyState";
@@ -75,10 +69,7 @@ function Avisos() {
   });
 
   const colabsMap = React.useMemo(
-    () =>
-      new Map(
-        colabs.map((c) => [c.id, { nome: c.nome, foto_url: c.foto_url ?? null }]),
-      ),
+    () => new Map(colabs.map((c) => [c.id, { nome: c.nome, foto_url: c.foto_url ?? null }])),
     [colabs],
   );
 
@@ -107,18 +98,13 @@ function Avisos() {
     },
   });
 
-  const lidos = React.useMemo(
-    () => new Set(leituras.map((l) => l.aviso_id)),
-    [leituras],
-  );
+  const lidos = React.useMemo(() => new Set(leituras.map((l) => l.aviso_id)), [leituras]);
 
   const { data: leiturasAgrupadas = [] } = useQuery({
     queryKey: qk.avisos.leiturasTodas(),
     enabled: isGestor,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("aviso_leitura")
-        .select("aviso_id, user_id");
+      const { data, error } = await supabase.from("aviso_leitura").select("aviso_id, user_id");
       if (error) throw error;
       return data ?? [];
     },
@@ -138,9 +124,7 @@ function Avisos() {
       const ids = new Set<string>();
       if (a.colaborador_id) ids.add(a.colaborador_id);
       (a.colaboradores_ids ?? []).forEach((id) => ids.add(id));
-      const meuColab = colabs.find(
-        (c) => c.id && user && (c as any).email === user.email,
-      );
+      const meuColab = colabs.find((c) => c.id && user && (c as any).email === user.email);
       if (ids.size === 0) return true;
       if (meuColab && ids.has(meuColab.id)) return true;
       return false;
@@ -156,15 +140,11 @@ function Avisos() {
       if (escopo === "para_mim" && !isParaMim(a)) return false;
       if (busca) {
         const q = busca.toLowerCase();
-        if (
-          !a.titulo.toLowerCase().includes(q) &&
-          !a.mensagem.toLowerCase().includes(q)
-        )
+        if (!a.titulo.toLowerCase().includes(q) && !a.mensagem.toLowerCase().includes(q))
           return false;
       }
       if (!isGestor && !a.ativo) return false;
-      if (!isGestor && a.expira_em && new Date(a.expira_em).getTime() < now)
-        return false;
+      if (!isGestor && a.expira_em && new Date(a.expira_em).getTime() < now) return false;
       return true;
     });
   }, [avisos, urgencia, escopo, lidos, busca, isGestor, isParaMim]);
@@ -350,10 +330,7 @@ function Avisos() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card/60 p-2 backdrop-blur sm:gap-3">
-        <Tabs
-          value={urgencia}
-          onValueChange={(v) => setUrgencia(v as FiltroUrgencia)}
-        >
+        <Tabs value={urgencia} onValueChange={(v) => setUrgencia(v as FiltroUrgencia)}>
           <TabsList className="bg-muted/60">
             <TabsTrigger value="todos">Todos</TabsTrigger>
             <TabsTrigger value="critico" className="gap-1 data-[state=active]:text-destructive">
@@ -398,14 +375,10 @@ function Avisos() {
         <EmptyState
           icon={Bell}
           title={
-            avisos.length === 0
-              ? "Nenhum aviso ainda"
-              : "Nenhum aviso corresponde aos filtros"
+            avisos.length === 0 ? "Nenhum aviso ainda" : "Nenhum aviso corresponde aos filtros"
           }
           description={
-            avisos.length === 0 && isGestor
-              ? "Publique o primeiro aviso para a equipe."
-              : undefined
+            avisos.length === 0 && isGestor ? "Publique o primeiro aviso para a equipe." : undefined
           }
         />
       ) : (

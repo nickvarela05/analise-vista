@@ -18,10 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
-import {
-  emailSendLogInsertSchema,
-  dispatchDigestModeSchema,
-} from "@/lib/schemas/email";
+import { emailSendLogInsertSchema, dispatchDigestModeSchema } from "@/lib/schemas/email";
 import { Contagem } from "@/components/shared/Contagem";
 
 export function ConfiguracoesEmails() {
@@ -53,7 +50,9 @@ export function ConfiguracoesEmails() {
     setLoading(false);
   }
 
-  React.useEffect(() => { if (role === "gestor") carregar(); }, [role]);
+  React.useEffect(() => {
+    if (role === "gestor") carregar();
+  }, [role]);
 
   if (role !== "gestor") {
     return (
@@ -67,7 +66,10 @@ export function ConfiguracoesEmails() {
   }
 
   async function testarEnvio() {
-    if (!user?.email) { toast.error("Sem e-mail no perfil"); return; }
+    if (!user?.email) {
+      toast.error("Sem e-mail no perfil");
+      return;
+    }
     setTestando(true);
     try {
       const payload = {
@@ -126,7 +128,9 @@ export function ConfiguracoesEmails() {
         toast.error(parsedMode.error.issues[0]?.message ?? "Modo inválido");
         return;
       }
-      const { error } = await supabase.functions.invoke("dispatch-email-digest", { body: { mode: parsedMode.data } });
+      const { error } = await supabase.functions.invoke("dispatch-email-digest", {
+        body: { mode: parsedMode.data },
+      });
       if (error) throw error;
       toast.success("Resumo diário enfileirado para todos os usuários elegíveis");
       setTimeout(carregar, 2500);
@@ -138,13 +142,13 @@ export function ConfiguracoesEmails() {
   }
 
   async function limparDisparos() {
-    if (!confirm("Apagar TODOS os registros de disparo de e-mail? Esta ação não pode ser desfeita.")) return;
+    if (
+      !confirm("Apagar TODOS os registros de disparo de e-mail? Esta ação não pode ser desfeita.")
+    )
+      return;
     setLimpando(true);
     try {
-      const { error } = await supabase
-        .from("email_send_log")
-        .delete()
-        .not("id", "is", null);
+      const { error } = await supabase.from("email_send_log").delete().not("id", "is", null);
       if (error) throw error;
       toast.success("Histórico de disparos limpo");
       await carregar();
@@ -179,24 +183,9 @@ export function ConfiguracoesEmails() {
       <CardContent className="space-y-5 p-5">
         {/* Stat tiles */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <StatTile
-            icon={CheckCircle2}
-            label="Enviados (7d)"
-            value={stats.sent7d}
-            tone="emerald"
-          />
-          <StatTile
-            icon={Clock}
-            label="Na fila"
-            value={stats.pending}
-            tone="amber"
-          />
-          <StatTile
-            icon={AlertCircle}
-            label="Falhas"
-            value={stats.failed}
-            tone="destructive"
-          />
+          <StatTile icon={CheckCircle2} label="Enviados (7d)" value={stats.sent7d} tone="emerald" />
+          <StatTile icon={Clock} label="Na fila" value={stats.pending} tone="amber" />
+          <StatTile icon={AlertCircle} label="Falhas" value={stats.failed} tone="destructive" />
         </div>
 
         {/* Actions */}
@@ -212,7 +201,11 @@ export function ConfiguracoesEmails() {
             disabled={reprocessando || stats.failed === 0}
             className="gap-2"
           >
-            {reprocessando ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            {reprocessando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
             Reprocessar falhados
           </Button>
           <Button
@@ -222,7 +215,11 @@ export function ConfiguracoesEmails() {
             disabled={disparandoResumo}
             className="gap-2"
           >
-            {disparandoResumo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {disparandoResumo ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
             Disparar resumo diário agora
           </Button>
           <Button size="sm" variant="ghost" onClick={carregar} className="gap-2">
@@ -235,12 +232,14 @@ export function ConfiguracoesEmails() {
             disabled={limpando || logs.length === 0}
             className="gap-2 text-destructive hover:text-destructive"
           >
-            {limpando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            {limpando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
             Limpar disparos
           </Button>
         </div>
-
-
 
         {/* Log table */}
         <div className="overflow-hidden rounded-xl border">
@@ -280,7 +279,9 @@ export function ConfiguracoesEmails() {
                       </td>
                       <td className="px-3 py-2 font-medium">{l.recipient_email}</td>
                       <td className="max-w-xs truncate px-3 py-2">{l.subject}</td>
-                      <td className="px-3 py-2"><StatusBadge status={l.status} /></td>
+                      <td className="px-3 py-2">
+                        <StatusBadge status={l.status} />
+                      </td>
                       <td className="max-w-xs truncate px-3 py-2 text-destructive">
                         {l.last_error ?? "—"}
                       </td>
@@ -297,8 +298,16 @@ export function ConfiguracoesEmails() {
 }
 
 const toneMap: Record<string, { bg: string; text: string; ring: string }> = {
-  emerald: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", ring: "ring-emerald-500/25" },
-  amber: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", ring: "ring-amber-500/25" },
+  emerald: {
+    bg: "bg-emerald-500/10",
+    text: "text-emerald-600 dark:text-emerald-400",
+    ring: "ring-emerald-500/25",
+  },
+  amber: {
+    bg: "bg-amber-500/10",
+    text: "text-amber-600 dark:text-amber-400",
+    ring: "ring-amber-500/25",
+  },
   destructive: { bg: "bg-destructive/10", text: "text-destructive", ring: "ring-destructive/25" },
 };
 

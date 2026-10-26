@@ -6,10 +6,7 @@ async function authHeaders(): Promise<HeadersInit> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export async function adminFetch<T = unknown>(
-  url: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function adminFetch<T = unknown>(url: string, init: RequestInit = {}): Promise<T> {
   const headers = {
     "Content-Type": "application/json",
     ...(await authHeaders()),

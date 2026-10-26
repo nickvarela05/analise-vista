@@ -46,9 +46,7 @@ export function AssigneeCombobox({
   const selectedOptions = options.filter((o) => selectedSet.has(o.id));
 
   const toggle = (id: string) => {
-    const next = selectedSet.has(id)
-      ? selectedIds.filter((x) => x !== id)
-      : [...selectedIds, id];
+    const next = selectedSet.has(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id];
     onChange({ selectedIds: next, equipeToda: false });
   };
 
@@ -82,10 +80,7 @@ export function AssigneeCombobox({
             role="combobox"
             aria-expanded={open}
             disabled={disabled}
-            className={cn(
-              "w-full justify-between font-normal",
-              isEmpty && "text-muted-foreground",
-            )}
+            className={cn("w-full justify-between font-normal", isEmpty && "text-muted-foreground")}
           >
             <span className="flex items-center gap-2 truncate">
               {equipeToda && <Users className="h-3.5 w-3.5 text-primary" />}
@@ -93,10 +88,7 @@ export function AssigneeCombobox({
             </span>
             <span className="flex items-center gap-1">
               {(equipeToda || selectedOptions.length > 0) && (
-                <X
-                  className="h-3.5 w-3.5 opacity-60 hover:opacity-100"
-                  onClick={clear}
-                />
+                <X className="h-3.5 w-3.5 opacity-60 hover:opacity-100" onClick={clear} />
               )}
               <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
             </span>
@@ -112,10 +104,7 @@ export function AssigneeCombobox({
                   <Users className="mr-2 h-4 w-4 text-primary" />
                   <span className="font-medium">Equipe toda</span>
                   <Check
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      equipeToda ? "opacity-100" : "opacity-0",
-                    )}
+                    className={cn("ml-auto h-4 w-4", equipeToda ? "opacity-100" : "opacity-0")}
                   />
                 </CommandItem>
               </CommandGroup>
@@ -125,24 +114,15 @@ export function AssigneeCombobox({
                 const renderItem = (opt: AssigneeOption) => {
                   const checked = selectedSet.has(opt.id);
                   return (
-                    <CommandItem
-                      key={opt.id}
-                      value={opt.nome}
-                      onSelect={() => toggle(opt.id)}
-                    >
+                    <CommandItem key={opt.id} value={opt.nome} onSelect={() => toggle(opt.id)}>
                       <div className="flex flex-1 flex-col">
                         <span>{opt.nome}</span>
                         {opt.cargo && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {opt.cargo}
-                          </span>
+                          <span className="text-[10px] text-muted-foreground">{opt.cargo}</span>
                         )}
                       </div>
                       <Check
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          checked ? "opacity-100" : "opacity-0",
-                        )}
+                        className={cn("ml-auto h-4 w-4", checked ? "opacity-100" : "opacity-0")}
                       />
                     </CommandItem>
                   );
@@ -157,9 +137,7 @@ export function AssigneeCombobox({
                       ),
                     )}
                     {outros.length > 0 && (
-                      <CommandGroup heading="Outros">
-                        {outros.map(renderItem)}
-                      </CommandGroup>
+                      <CommandGroup heading="Outros">{outros.map(renderItem)}</CommandGroup>
                     )}
                   </>
                 );

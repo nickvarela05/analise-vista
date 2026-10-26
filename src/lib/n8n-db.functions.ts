@@ -51,10 +51,7 @@ export const updateSolicitacaoRelatorio = createServerFn({ method: "POST" })
     if (data.status !== undefined) patch.status = data.status;
     if (data.categoria !== undefined) patch.categoria = data.categoria;
     if (Object.keys(patch).length === 0) return { ok: true as const };
-    const { error } = await client
-      .from("solicitacoes_relatorios")
-      .update(patch)
-      .eq("id", data.id);
+    const { error } = await client.from("solicitacoes_relatorios").update(patch).eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });
@@ -64,10 +61,7 @@ export const deleteSolicitacaoRelatorio = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
     const client = getN8nDbClient();
-    const { error } = await client
-      .from("solicitacoes_relatorios")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await client.from("solicitacoes_relatorios").delete().eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
   });

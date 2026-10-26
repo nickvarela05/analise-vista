@@ -77,8 +77,17 @@ function retryAfterSeconds(res: Response, errText: string): number {
 function audioFormat(fileName: string, mime: string | undefined): string {
   const ext = (fileName.split(".").pop() ?? "").toLowerCase();
   const map: Record<string, string> = {
-    mp3: "mp3", mpeg: "mp3", m4a: "m4a", mp4: "m4a", aac: "aac",
-    wav: "wav", webm: "webm", ogg: "ogg", oga: "ogg", opus: "ogg", flac: "flac",
+    mp3: "mp3",
+    mpeg: "mp3",
+    m4a: "m4a",
+    mp4: "m4a",
+    aac: "aac",
+    wav: "wav",
+    webm: "webm",
+    ogg: "ogg",
+    oga: "ogg",
+    opus: "ogg",
+    flac: "flac",
   };
   if (map[ext]) return map[ext];
   const sub = (mime ?? "").split("/")[1]?.replace("x-", "") ?? "";
@@ -97,7 +106,10 @@ function blobToBase64(bytes: Uint8Array): string {
 // =============================================================
 // Fallback: Gemini (Lovable AI) — aceita áudios maiores que o Groq.
 // =============================================================
-async function transcribeWithGemini(audioBlob: Blob, fileName: string): Promise<{
+async function transcribeWithGemini(
+  audioBlob: Blob,
+  fileName: string,
+): Promise<{
   text: string;
   formatted: string;
   speakers: string[];
@@ -133,8 +145,10 @@ async function transcribeWithGemini(audioBlob: Blob, fileName: string): Promise<
 
   if (!res.ok) {
     const t = await res.text();
-    if (res.status === 429) throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
-    if (res.status === 402) throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
+    if (res.status === 429)
+      throw new Error("Limite de requisições à IA atingido. Tente novamente em alguns minutos.");
+    if (res.status === 402)
+      throw new Error("Cota do provedor de IA esgotada. Verifique o faturamento da chave de IA.");
     if (res.status === 413) {
       throw new Error(
         `Áudio de ${formatBytes(audioBlob.size)} é grande demais também para a transcrição por IA. Divida o arquivo antes de enviar.`,
@@ -151,7 +165,10 @@ async function transcribeWithGemini(audioBlob: Blob, fileName: string): Promise<
 // =============================================================
 // Groq Whisper-large-v3 — gratuito, rápido, sem bloqueio de IP.
 // =============================================================
-async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
+async function transcribeWithGroq(
+  audioBlob: Blob,
+  fileName: string,
+): Promise<{
   text: string;
   formatted: string;
   speakers: string[];
@@ -172,10 +189,15 @@ async function transcribeWithGroq(audioBlob: Blob, fileName: string): Promise<{
   if (!res.ok) {
     const errText = await res.text();
     if (res.status === 401) {
-      throw new Error("Groq: API key inválida. Verifique o secret GROQ_API_KEY em console.groq.com.");
+      throw new Error(
+        "Groq: API key inválida. Verifique o secret GROQ_API_KEY em console.groq.com.",
+      );
     }
     // Cota de segundos de áudio por hora (ASPH) / rate limit: não é tamanho.
-    if (/ASPH|seconds of audio|rate.?limit|too many requests/i.test(errText) || res.status === 429) {
+    if (
+      /ASPH|seconds of audio|rate.?limit|too many requests/i.test(errText) ||
+      res.status === 429
+    ) {
       throw new GroqQuotaError(
         `Groq: cota de áudio por hora atingida`,
         retryAfterSeconds(res, errText),
@@ -217,7 +239,6 @@ async function transcribeWithGroqRetry(
   throw last;
 }
 
-
 /** Duração alvo de cada parte (segundos) e teto de tamanho. */
 const CHUNK_TARGET_SECONDS = 600; // ~10 min
 const CHUNK_MAX_BYTES = 5 * 1024 * 1024;
@@ -241,8 +262,11 @@ function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): U
   // aconteceu com o MP4 de 19,6 MB do WhatsApp em 06/10 (4 partes inválidas, "0 min").
   const tag = String.fromCharCode(...bytes.subarray(0, 12));
   if (
-    tag.slice(4, 8) === "ftyp" || tag.startsWith("RIFF") || tag.startsWith("OggS") ||
-    tag.startsWith("fLaC") || (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3)
+    tag.slice(4, 8) === "ftyp" ||
+    tag.startsWith("RIFF") ||
+    tag.startsWith("OggS") ||
+    tag.startsWith("fLaC") ||
+    (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3)
   ) {
     return null;
   }
@@ -256,7 +280,10 @@ function splitMp3(bytes: Uint8Array, targetSeconds: number, maxBytes: number): U
   // Pula tag ID3v2, se houver.
   if (bytes.length > 10 && bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
     const size =
-      ((bytes[6] & 0x7f) << 21) | ((bytes[7] & 0x7f) << 14) | ((bytes[8] & 0x7f) << 7) | (bytes[9] & 0x7f);
+      ((bytes[6] & 0x7f) << 21) |
+      ((bytes[7] & 0x7f) << 14) |
+      ((bytes[8] & 0x7f) << 7) |
+      (bytes[9] & 0x7f);
     i = 10 + size;
     start = i;
   }
@@ -383,7 +410,9 @@ async function transcribeChunked(
     try {
       r = await transcribeWithGroqRetry(partBlob, `parte-${idx + 1}.mp3`);
     } catch (e) {
-      console.log(`[transcrever] parte ${idx + 1} falhou no Groq (${(e as Error).message}) → Gemini`);
+      console.log(
+        `[transcrever] parte ${idx + 1} falhou no Groq (${(e as Error).message}) → Gemini`,
+      );
       try {
         r = await transcribeWithGemini(partBlob, `parte-${idx + 1}.mp3`);
       } catch (e2) {
@@ -408,7 +437,6 @@ async function transcribeChunked(
   const full = acumulado();
   return { text: full, formatted: full, speakers: [] };
 }
-
 
 /**
  * Escolhe a melhor rota de transcrição:
@@ -453,8 +481,6 @@ async function transcribeAudio(
     throw e;
   }
 }
-
-
 
 /* =============================================================
  * ElevenLabs DESATIVADO — Free Tier bloqueia chamadas de servidores
@@ -551,7 +577,11 @@ async function reinvocar(reuniaoId: string, audioPath: string, waitSeconds: numb
  * orçamento de tempo, salva o progresso, marca a reunião como `pausado` e
  * dispara uma nova execução que continua da última parte concluída.
  */
-async function processarReuniao(reuniaoId: string, audioPath: string, reset = false): Promise<void> {
+async function processarReuniao(
+  reuniaoId: string,
+  audioPath: string,
+  reset = false,
+): Promise<void> {
   if (reset) {
     await admin
       .from("reuniao")
@@ -571,9 +601,10 @@ async function processarReuniao(reuniaoId: string, audioPath: string, reset = fa
 
   const deadline = new Promise<never>((_, reject) =>
     setTimeout(
-      () => reject(new RetryableError("Execução excedeu o tempo máximo — retomando de onde parou.", 0)),
+      () =>
+        reject(new RetryableError("Execução excedeu o tempo máximo — retomando de onde parou.", 0)),
       PIPELINE_TIMEOUT_MS,
-    )
+    ),
   );
 
   try {
@@ -613,9 +644,10 @@ async function processarReuniao(reuniaoId: string, audioPath: string, reset = fa
       .update({
         transcricao_status: "pausado",
         transcricao_rodadas: rodadas,
-        transcricao_erro: espera > 0
-          ? `Pausado por limite do serviço — retomando automaticamente em ~${Math.ceil(espera / 60)} min${progresso}.`
-          : `Retomando automaticamente${progresso}…`,
+        transcricao_erro:
+          espera > 0
+            ? `Pausado por limite do serviço — retomando automaticamente em ~${Math.ceil(espera / 60)} min${progresso}.`
+            : `Retomando automaticamente${progresso}…`,
       })
       .eq("id", reuniaoId);
     if (espera <= MAX_WAIT_IN_WORKER_S) {
@@ -628,7 +660,6 @@ async function processarReuniao(reuniaoId: string, audioPath: string, reset = fa
     }
   }
 }
-
 
 async function executarPipeline(reuniaoId: string, audioPath: string): Promise<void> {
   {
@@ -733,7 +764,6 @@ Deno.serve(async (req) => {
       await processarReuniao(reuniaoId, audioPath, !retomar);
     })();
 
-
     // @ts-ignore — API do runtime de edge functions
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
       // @ts-ignore
@@ -748,9 +778,9 @@ Deno.serve(async (req) => {
   } catch (e: any) {
     if (e instanceof Response) return e;
     console.error("transcrever-reuniao error:", e);
-    return new Response(
-      JSON.stringify({ ok: false, error: String(e?.message ?? e) }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ ok: false, error: String(e?.message ?? e) }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

@@ -1,15 +1,21 @@
 import * as React from "react";
-import { Bell, AlertTriangle, AlertCircle, Info, CheckCheck, MessageSquare, ListTodo, Briefcase, Phone } from "lucide-react";
+import {
+  Bell,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  CheckCheck,
+  MessageSquare,
+  ListTodo,
+  Briefcase,
+  Phone,
+} from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -102,17 +108,11 @@ export function NotificationBell() {
     };
   }, [user, qc, navigate]);
 
-  const naoLidas = React.useMemo(
-    () => notificacoes.filter((n) => !n.lida_em),
-    [notificacoes],
-  );
+  const naoLidas = React.useMemo(() => notificacoes.filter((n) => !n.lida_em), [notificacoes]);
   const count = naoLidas.length;
 
   const marcarComoLida = async (id: string) => {
-    await supabase
-      .from("notificacao")
-      .update({ lida_em: new Date().toISOString() })
-      .eq("id", id);
+    await supabase.from("notificacao").update({ lida_em: new Date().toISOString() }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["notificacoes", user?.id] });
   };
 
@@ -185,7 +185,12 @@ export function NotificationBell() {
                     >
                       <Icon className={cn("mt-0.5 h-4 w-4 shrink-0", cfg.color)} />
                       <div className="min-w-0 flex-1">
-                        <p className={cn("truncate text-xs", !n.lida_em ? "font-semibold" : "font-medium")}>
+                        <p
+                          className={cn(
+                            "truncate text-xs",
+                            !n.lida_em ? "font-semibold" : "font-medium",
+                          )}
+                        >
                           {n.titulo}
                         </p>
                         {n.mensagem && (

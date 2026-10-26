@@ -42,10 +42,7 @@ export const emailSendLogInsertSchema = z.object({
   ),
   status: z.enum(EMAIL_STATUS),
   attempts: z.number().int().min(0).optional(),
-  last_error: z.preprocess(
-    emptyToNull,
-    z.string().max(LAST_ERROR_MAX).nullable().optional(),
-  ),
+  last_error: z.preprocess(emptyToNull, z.string().max(LAST_ERROR_MAX).nullable().optional()),
 });
 
 export type EmailSendLogInsert = z.infer<typeof emailSendLogInsertSchema>;

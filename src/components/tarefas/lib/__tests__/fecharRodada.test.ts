@@ -17,9 +17,28 @@ const base: Omit<TarefaEnvio, "id" | "titulo" | "status"> = {
 };
 
 const tarefas: TarefaEnvio[] = [
-  { ...base, id: "a", titulo: "Tarefa 9412 - Customizar a migração de afastamento", status: "aprovado_ressalvas", responsaveis_ids: ["c1"] },
-  { ...base, id: "b", titulo: "Tarefa 9361 - Relação Geral dos <Inscritos>", status: "aprovado", responsaveis_ids: ["c1", "c2"] },
-  { ...base, id: "c", titulo: "9083 - Painel educação", status: "aprovado", sistema: "BI", responsavel_id: "c2" },
+  {
+    ...base,
+    id: "a",
+    titulo: "Tarefa 9412 - Customizar a migração de afastamento",
+    status: "aprovado_ressalvas",
+    responsaveis_ids: ["c1"],
+  },
+  {
+    ...base,
+    id: "b",
+    titulo: "Tarefa 9361 - Relação Geral dos <Inscritos>",
+    status: "aprovado",
+    responsaveis_ids: ["c1", "c2"],
+  },
+  {
+    ...base,
+    id: "c",
+    titulo: "9083 - Painel educação",
+    status: "aprovado",
+    sistema: "BI",
+    responsavel_id: "c2",
+  },
 ];
 const colabs = new Map([
   ["c1", "Matheus Nogueira"],
@@ -43,7 +62,9 @@ describe("montarLinhas", () => {
   });
 
   it("junta responsável principal e lista de responsáveis, sem repetir", () => {
-    expect(linhas.find((l) => l.numero === "9361")!.responsaveis).toBe("Matheus Nogueira, Hugo Santos");
+    expect(linhas.find((l) => l.numero === "9361")!.responsaveis).toBe(
+      "Matheus Nogueira, Hugo Santos",
+    );
     expect(linhas.find((l) => l.numero === "9083")!.responsaveis).toBe("Hugo Santos");
   });
 
@@ -59,7 +80,11 @@ describe("montarLinhas", () => {
 
 describe("montarHtmlEmail", () => {
   const linhas = montarLinhas(tarefas, colabs, lotes, {});
-  const html = montarHtmlEmail("Bom dia, prezados,\n\nSegue a situação.", linhas, "Atenciosamente,");
+  const html = montarHtmlEmail(
+    "Bom dia, prezados,\n\nSegue a situação.",
+    linhas,
+    "Atenciosamente,",
+  );
 
   it("separa os grupos com a contagem", () => {
     expect(html).toContain("Aprovadas (2)");
@@ -77,7 +102,11 @@ describe("montarHtmlEmail", () => {
   });
 
   it("omite o grupo vazio", () => {
-    const so = montarHtmlEmail("Oi", linhas.filter((l) => l.status === "aprovado"), "");
+    const so = montarHtmlEmail(
+      "Oi",
+      linhas.filter((l) => l.status === "aprovado"),
+      "",
+    );
     expect(so).not.toContain("ressalvas");
   });
 });
@@ -86,6 +115,8 @@ describe("montarTextoEmail", () => {
   it("lista cada tarefa com sistema, responsáveis e observação", () => {
     const linhas = montarLinhas(tarefas, colabs, lotes, { a: "Falta filtro" });
     const t = montarTextoEmail("Bom dia", linhas, "");
-    expect(t).toContain("- 9412 Customizar a migração de afastamento (GED · teste: Matheus Nogueira · obs.: Falta filtro)");
+    expect(t).toContain(
+      "- 9412 Customizar a migração de afastamento (GED · teste: Matheus Nogueira · obs.: Falta filtro)",
+    );
   });
 });

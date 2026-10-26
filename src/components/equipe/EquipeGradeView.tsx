@@ -117,9 +117,7 @@ export function EquipeGradeView({ colabs }: { colabs: Colaborador[] }) {
                 <div className="min-w-0">
                   <div className="truncate text-xs font-medium">{c.nome}</div>
                   {c.cargo && (
-                    <div className="truncate text-[10px] text-muted-foreground">
-                      {c.cargo}
-                    </div>
+                    <div className="truncate text-[10px] text-muted-foreground">{c.cargo}</div>
                   )}
                 </div>
               </div>
@@ -139,10 +137,7 @@ export function EquipeGradeView({ colabs }: { colabs: Colaborador[] }) {
                 return (
                   <div
                     key={i}
-                    className={cn(
-                      "relative h-12 border-l",
-                      iso === today && "bg-primary/5",
-                    )}
+                    className={cn("relative h-12 border-l", iso === today && "bg-primary/5")}
                     title={
                       onVacation
                         ? "Em férias"
@@ -207,10 +202,7 @@ export function EquipeGradeView({ colabs }: { colabs: Colaborador[] }) {
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span
-        className="h-2.5 w-2.5 rounded-sm"
-        style={{ background: color, opacity: 0.6 }}
-      />
+      <span className="h-2.5 w-2.5 rounded-sm" style={{ background: color, opacity: 0.6 }} />
       {label}
     </span>
   );

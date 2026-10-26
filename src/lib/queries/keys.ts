@@ -26,8 +26,7 @@ export const qk = {
   },
 
   // ---------- Perfil/me ----------
-  meuProfile: (userId: string | undefined | null) =>
-    ["meu-profile", userId ?? null] as const,
+  meuProfile: (userId: string | undefined | null) => ["meu-profile", userId ?? null] as const,
 
   // ---------- Tarefas ----------
   tarefas: {
@@ -61,8 +60,7 @@ export const qk = {
 
   // ---------- Atividades (semanal) ----------
   atividades: {
-    meuProfile: (userId: string | undefined | null) =>
-      ["atv-meu-profile", userId ?? null] as const,
+    meuProfile: (userId: string | undefined | null) => ["atv-meu-profile", userId ?? null] as const,
     tarefas: () => ["atv-tarefas"] as const,
     demandas: () => ["atv-demandas"] as const,
     reunioes: () => ["atv-reunioes"] as const,

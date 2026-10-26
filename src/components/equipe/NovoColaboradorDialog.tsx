@@ -46,10 +46,7 @@ export function NovoColaboradorDialog() {
     local_trabalho: LocalTrabalho;
   }>({ nome: "", cargo: "", bio: "", local_trabalho: "escritorio" });
 
-  const previewUrl = React.useMemo(
-    () => (foto ? URL.createObjectURL(foto) : null),
-    [foto],
-  );
+  const previewUrl = React.useMemo(() => (foto ? URL.createObjectURL(foto) : null), [foto]);
   React.useEffect(
     () => () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -83,22 +80,16 @@ export function NovoColaboradorDialog() {
     let foto_url: string | null = null;
     if (foto) {
       const path = `team/${Date.now()}-${foto.name}`;
-      const { error: upErr } = await supabase.storage
-        .from("colaborador-fotos")
-        .upload(path, foto);
+      const { error: upErr } = await supabase.storage.from("colaborador-fotos").upload(path, foto);
       if (upErr) {
         setSaving(false);
         toast.error("Erro no upload", { description: upErr.message });
         return;
       }
-      const { data: pub } = supabase.storage
-        .from("colaborador-fotos")
-        .getPublicUrl(path);
+      const { data: pub } = supabase.storage.from("colaborador-fotos").getPublicUrl(path);
       foto_url = pub.publicUrl;
     }
-    const { error } = await supabase
-      .from("colaborador")
-      .insert({ ...parsed.data, foto_url });
+    const { error } = await supabase.from("colaborador").insert({ ...parsed.data, foto_url });
     setSaving(false);
     if (error) {
       toast.error("Erro", { description: error.message });
@@ -133,10 +124,7 @@ export function NovoColaboradorDialog() {
           />
         </div>
 
-        <form
-          onSubmit={criar}
-          className="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5"
-        >
+        <form onSubmit={criar} className="max-h-[70vh] space-y-4 overflow-y-auto px-6 py-5">
           <DialogSection title="Identidade" icon={UserIcon}>
             <div className="flex items-start gap-4">
               <Avatar className="h-20 w-20 ring-4 ring-cyan-500/15">
@@ -175,10 +163,7 @@ export function NovoColaboradorDialog() {
                 <Briefcase className="mr-1 inline h-3 w-3" />
                 Cargo
               </Label>
-              <CargoSelect
-                value={form.cargo}
-                onChange={(v) => setForm({ ...form, cargo: v })}
-              />
+              <CargoSelect value={form.cargo} onChange={(v) => setForm({ ...form, cargo: v })} />
             </div>
           </DialogSection>
 
@@ -201,9 +186,7 @@ export function NovoColaboradorDialog() {
                     aria-pressed={active}
                   >
                     <Icon className="h-4 w-4" />
-                    <span className="text-xs font-semibold">
-                      {LOCAL_TRABALHO_LABEL[local]}
-                    </span>
+                    <span className="text-xs font-semibold">{LOCAL_TRABALHO_LABEL[local]}</span>
                   </button>
                 );
               })}

@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  isAtribuidoA,
-  contarAtribuicoes,
-  filtrarPorEscopo,
-} from "../atividades";
+import { isAtribuidoA, contarAtribuicoes, filtrarPorEscopo } from "../atividades";
 
 describe("isAtribuidoA", () => {
   it("equipe_toda sempre verdadeiro", () => {

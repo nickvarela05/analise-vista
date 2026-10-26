@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 
@@ -124,7 +130,10 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
 
             <div>
               <Label className="text-xs">Prazo</Label>
-              <Select value={value.prazo} onValueChange={(v) => onChange({ ...value, prazo: v as any })}>
+              <Select
+                value={value.prazo}
+                onValueChange={(v) => onChange({ ...value, prazo: v as any })}
+              >
                 <SelectTrigger className="mt-1.5 h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -157,7 +166,12 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
 
             <div>
               <Label className="text-xs">Origem</Label>
-              <Select value={value.origem} onValueChange={(v) => onChange({ ...value, origem: v as TarefaFiltersState["origem"] })}>
+              <Select
+                value={value.origem}
+                onValueChange={(v) =>
+                  onChange({ ...value, origem: v as TarefaFiltersState["origem"] })
+                }
+              >
                 <SelectTrigger className="mt-1.5 h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -175,7 +189,10 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
                 <ScrollArea className="mt-1.5 h-28 rounded-md border p-2">
                   <div className="space-y-0.5">
                     {lotes.map((l) => (
-                      <label key={l.id} className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-muted">
+                      <label
+                        key={l.id}
+                        className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-muted"
+                      >
                         <Checkbox
                           checked={value.lotes.includes(l.id)}
                           onCheckedChange={() =>
@@ -239,7 +256,12 @@ export function TarefaFilters({ value, onChange, colabs, lotes = [] }: Props) {
             </div>
 
             {activeCount > 0 && (
-              <Button variant="ghost" size="sm" className="w-full" onClick={() => onChange(initialFilters)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => onChange(initialFilters)}
+              >
                 <X className="mr-1.5 h-3.5 w-3.5" /> Limpar filtros
               </Button>
             )}

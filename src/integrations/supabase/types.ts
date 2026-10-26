@@ -1,1587 +1,1581 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       audit_log: {
         Row: {
-          changed_at: string
-          changed_by: string | null
-          changed_fields: string[] | null
-          id: string
-          new_data: Json | null
-          old_data: Json | null
-          operation: string
-          record_id: string
-          table_name: string
-        }
+          changed_at: string;
+          changed_by: string | null;
+          changed_fields: string[] | null;
+          id: string;
+          new_data: Json | null;
+          old_data: Json | null;
+          operation: string;
+          record_id: string;
+          table_name: string;
+        };
         Insert: {
-          changed_at?: string
-          changed_by?: string | null
-          changed_fields?: string[] | null
-          id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-          operation: string
-          record_id: string
-          table_name: string
-        }
+          changed_at?: string;
+          changed_by?: string | null;
+          changed_fields?: string[] | null;
+          id?: string;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          operation: string;
+          record_id: string;
+          table_name: string;
+        };
         Update: {
-          changed_at?: string
-          changed_by?: string | null
-          changed_fields?: string[] | null
-          id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-          operation?: string
-          record_id?: string
-          table_name?: string
-        }
-        Relationships: []
-      }
+          changed_at?: string;
+          changed_by?: string | null;
+          changed_fields?: string[] | null;
+          id?: string;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          operation?: string;
+          record_id?: string;
+          table_name?: string;
+        };
+        Relationships: [];
+      };
       aviso_gestor: {
         Row: {
-          ativo: boolean
-          colaborador_id: string | null
-          colaboradores_ids: string[]
-          created_at: string
-          criado_por: string | null
-          email_assunto: string | null
-          email_html: string | null
-          email_texto: string | null
-          expira_em: string | null
-          id: string
-          mensagem: string
-          processo_id: string | null
-          tipo: Database["public"]["Enums"]["aviso_tipo"]
-          titulo: string
-          updated_at: string
-        }
+          ativo: boolean;
+          colaborador_id: string | null;
+          colaboradores_ids: string[];
+          created_at: string;
+          criado_por: string | null;
+          email_assunto: string | null;
+          email_html: string | null;
+          email_texto: string | null;
+          expira_em: string | null;
+          id: string;
+          mensagem: string;
+          processo_id: string | null;
+          tipo: Database["public"]["Enums"]["aviso_tipo"];
+          titulo: string;
+          updated_at: string;
+        };
         Insert: {
-          ativo?: boolean
-          colaborador_id?: string | null
-          colaboradores_ids?: string[]
-          created_at?: string
-          criado_por?: string | null
-          email_assunto?: string | null
-          email_html?: string | null
-          email_texto?: string | null
-          expira_em?: string | null
-          id?: string
-          mensagem: string
-          processo_id?: string | null
-          tipo?: Database["public"]["Enums"]["aviso_tipo"]
-          titulo: string
-          updated_at?: string
-        }
+          ativo?: boolean;
+          colaborador_id?: string | null;
+          colaboradores_ids?: string[];
+          created_at?: string;
+          criado_por?: string | null;
+          email_assunto?: string | null;
+          email_html?: string | null;
+          email_texto?: string | null;
+          expira_em?: string | null;
+          id?: string;
+          mensagem: string;
+          processo_id?: string | null;
+          tipo?: Database["public"]["Enums"]["aviso_tipo"];
+          titulo: string;
+          updated_at?: string;
+        };
         Update: {
-          ativo?: boolean
-          colaborador_id?: string | null
-          colaboradores_ids?: string[]
-          created_at?: string
-          criado_por?: string | null
-          email_assunto?: string | null
-          email_html?: string | null
-          email_texto?: string | null
-          expira_em?: string | null
-          id?: string
-          mensagem?: string
-          processo_id?: string | null
-          tipo?: Database["public"]["Enums"]["aviso_tipo"]
-          titulo?: string
-          updated_at?: string
-        }
+          ativo?: boolean;
+          colaborador_id?: string | null;
+          colaboradores_ids?: string[];
+          created_at?: string;
+          criado_por?: string | null;
+          email_assunto?: string | null;
+          email_html?: string | null;
+          email_texto?: string | null;
+          expira_em?: string | null;
+          id?: string;
+          mensagem?: string;
+          processo_id?: string | null;
+          tipo?: Database["public"]["Enums"]["aviso_tipo"];
+          titulo?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "aviso_gestor_colaborador_id_fkey"
-            columns: ["colaborador_id"]
-            isOneToOne: false
-            referencedRelation: "colaborador"
-            referencedColumns: ["id"]
+            foreignKeyName: "aviso_gestor_colaborador_id_fkey";
+            columns: ["colaborador_id"];
+            isOneToOne: false;
+            referencedRelation: "colaborador";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "aviso_gestor_processo_id_fkey"
-            columns: ["processo_id"]
-            isOneToOne: false
-            referencedRelation: "processo_anual"
-            referencedColumns: ["id"]
+            foreignKeyName: "aviso_gestor_processo_id_fkey";
+            columns: ["processo_id"];
+            isOneToOne: false;
+            referencedRelation: "processo_anual";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       aviso_leitura: {
         Row: {
-          aviso_id: string
-          id: string
-          lido_em: string
-          user_id: string
-        }
+          aviso_id: string;
+          id: string;
+          lido_em: string;
+          user_id: string;
+        };
         Insert: {
-          aviso_id: string
-          id?: string
-          lido_em?: string
-          user_id: string
-        }
+          aviso_id: string;
+          id?: string;
+          lido_em?: string;
+          user_id: string;
+        };
         Update: {
-          aviso_id?: string
-          id?: string
-          lido_em?: string
-          user_id?: string
-        }
+          aviso_id?: string;
+          id?: string;
+          lido_em?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "aviso_leitura_aviso_id_fkey"
-            columns: ["aviso_id"]
-            isOneToOne: false
-            referencedRelation: "aviso_gestor"
-            referencedColumns: ["id"]
+            foreignKeyName: "aviso_leitura_aviso_id_fkey";
+            columns: ["aviso_id"];
+            isOneToOne: false;
+            referencedRelation: "aviso_gestor";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       chamado_externo: {
         Row: {
-          abertura: string
-          cliente: string | null
-          codigo: string
-          created_at: string
-          descricao: string | null
-          equipe_toda: boolean
-          id: string
-          modulo: string | null
-          origem: string | null
-          prazo: string | null
-          prioridade: Database["public"]["Enums"]["chamado_externo_prioridade"]
-          responsaveis_ids: string[]
-          responsavel_id: string | null
-          status: Database["public"]["Enums"]["chamado_externo_status"]
-          tags: string[] | null
-          titulo: string
-          updated_at: string
-        }
+          abertura: string;
+          cliente: string | null;
+          codigo: string;
+          created_at: string;
+          descricao: string | null;
+          equipe_toda: boolean;
+          id: string;
+          modulo: string | null;
+          origem: string | null;
+          prazo: string | null;
+          prioridade: Database["public"]["Enums"]["chamado_externo_prioridade"];
+          responsaveis_ids: string[];
+          responsavel_id: string | null;
+          status: Database["public"]["Enums"]["chamado_externo_status"];
+          tags: string[] | null;
+          titulo: string;
+          updated_at: string;
+        };
         Insert: {
-          abertura?: string
-          cliente?: string | null
-          codigo: string
-          created_at?: string
-          descricao?: string | null
-          equipe_toda?: boolean
-          id?: string
-          modulo?: string | null
-          origem?: string | null
-          prazo?: string | null
-          prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"]
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          status?: Database["public"]["Enums"]["chamado_externo_status"]
-          tags?: string[] | null
-          titulo: string
-          updated_at?: string
-        }
+          abertura?: string;
+          cliente?: string | null;
+          codigo: string;
+          created_at?: string;
+          descricao?: string | null;
+          equipe_toda?: boolean;
+          id?: string;
+          modulo?: string | null;
+          origem?: string | null;
+          prazo?: string | null;
+          prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"];
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          status?: Database["public"]["Enums"]["chamado_externo_status"];
+          tags?: string[] | null;
+          titulo: string;
+          updated_at?: string;
+        };
         Update: {
-          abertura?: string
-          cliente?: string | null
-          codigo?: string
-          created_at?: string
-          descricao?: string | null
-          equipe_toda?: boolean
-          id?: string
-          modulo?: string | null
-          origem?: string | null
-          prazo?: string | null
-          prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"]
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          status?: Database["public"]["Enums"]["chamado_externo_status"]
-          tags?: string[] | null
-          titulo?: string
-          updated_at?: string
-        }
+          abertura?: string;
+          cliente?: string | null;
+          codigo?: string;
+          created_at?: string;
+          descricao?: string | null;
+          equipe_toda?: boolean;
+          id?: string;
+          modulo?: string | null;
+          origem?: string | null;
+          prazo?: string | null;
+          prioridade?: Database["public"]["Enums"]["chamado_externo_prioridade"];
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          status?: Database["public"]["Enums"]["chamado_externo_status"];
+          tags?: string[] | null;
+          titulo?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "chamado_externo_responsavel_id_fkey"
-            columns: ["responsavel_id"]
-            isOneToOne: false
-            referencedRelation: "colaborador"
-            referencedColumns: ["id"]
+            foreignKeyName: "chamado_externo_responsavel_id_fkey";
+            columns: ["responsavel_id"];
+            isOneToOne: false;
+            referencedRelation: "colaborador";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       chat_rate_limit: {
         Row: {
-          contagem: number
-          janela_inicio: string
-          telefone: string
-        }
+          contagem: number;
+          janela_inicio: string;
+          telefone: string;
+        };
         Insert: {
-          contagem?: number
-          janela_inicio: string
-          telefone: string
-        }
+          contagem?: number;
+          janela_inicio: string;
+          telefone: string;
+        };
         Update: {
-          contagem?: number
-          janela_inicio?: string
-          telefone?: string
-        }
-        Relationships: []
-      }
+          contagem?: number;
+          janela_inicio?: string;
+          telefone?: string;
+        };
+        Relationships: [];
+      };
       chat_whatsapp_log: {
         Row: {
-          created_at: string
-          erro: string | null
-          id: string
-          latencia_ms: number | null
-          pergunta: string
-          resposta: string | null
-          status: string
-          telefone: string
-          tokens_input: number | null
-          tokens_output: number | null
-          tools_chamadas: Json | null
-          user_id: string | null
-        }
+          created_at: string;
+          erro: string | null;
+          id: string;
+          latencia_ms: number | null;
+          pergunta: string;
+          resposta: string | null;
+          status: string;
+          telefone: string;
+          tokens_input: number | null;
+          tokens_output: number | null;
+          tools_chamadas: Json | null;
+          user_id: string | null;
+        };
         Insert: {
-          created_at?: string
-          erro?: string | null
-          id?: string
-          latencia_ms?: number | null
-          pergunta: string
-          resposta?: string | null
-          status?: string
-          telefone: string
-          tokens_input?: number | null
-          tokens_output?: number | null
-          tools_chamadas?: Json | null
-          user_id?: string | null
-        }
+          created_at?: string;
+          erro?: string | null;
+          id?: string;
+          latencia_ms?: number | null;
+          pergunta: string;
+          resposta?: string | null;
+          status?: string;
+          telefone: string;
+          tokens_input?: number | null;
+          tokens_output?: number | null;
+          tools_chamadas?: Json | null;
+          user_id?: string | null;
+        };
         Update: {
-          created_at?: string
-          erro?: string | null
-          id?: string
-          latencia_ms?: number | null
-          pergunta?: string
-          resposta?: string | null
-          status?: string
-          telefone?: string
-          tokens_input?: number | null
-          tokens_output?: number | null
-          tools_chamadas?: Json | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          erro?: string | null;
+          id?: string;
+          latencia_ms?: number | null;
+          pergunta?: string;
+          resposta?: string | null;
+          status?: string;
+          telefone?: string;
+          tokens_input?: number | null;
+          tokens_output?: number | null;
+          tools_chamadas?: Json | null;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       colaborador: {
         Row: {
-          ativo: boolean
-          bio: string | null
-          cargo: string | null
-          created_at: string
-          foto_url: string | null
-          id: string
-          local_trabalho: Database["public"]["Enums"]["local_trabalho"]
-          nome: string
-          ordem: number
-          updated_at: string
-        }
+          ativo: boolean;
+          bio: string | null;
+          cargo: string | null;
+          created_at: string;
+          foto_url: string | null;
+          id: string;
+          local_trabalho: Database["public"]["Enums"]["local_trabalho"];
+          nome: string;
+          ordem: number;
+          updated_at: string;
+        };
         Insert: {
-          ativo?: boolean
-          bio?: string | null
-          cargo?: string | null
-          created_at?: string
-          foto_url?: string | null
-          id?: string
-          local_trabalho?: Database["public"]["Enums"]["local_trabalho"]
-          nome: string
-          ordem?: number
-          updated_at?: string
-        }
+          ativo?: boolean;
+          bio?: string | null;
+          cargo?: string | null;
+          created_at?: string;
+          foto_url?: string | null;
+          id?: string;
+          local_trabalho?: Database["public"]["Enums"]["local_trabalho"];
+          nome: string;
+          ordem?: number;
+          updated_at?: string;
+        };
         Update: {
-          ativo?: boolean
-          bio?: string | null
-          cargo?: string | null
-          created_at?: string
-          foto_url?: string | null
-          id?: string
-          local_trabalho?: Database["public"]["Enums"]["local_trabalho"]
-          nome?: string
-          ordem?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          ativo?: boolean;
+          bio?: string | null;
+          cargo?: string | null;
+          created_at?: string;
+          foto_url?: string | null;
+          id?: string;
+          local_trabalho?: Database["public"]["Enums"]["local_trabalho"];
+          nome?: string;
+          ordem?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       colaborador_evento: {
         Row: {
-          anexo_url: string | null
-          colaborador_id: string
-          created_at: string
-          data: string
-          hora_fim: string | null
-          hora_inicio: string | null
-          id: string
-          observacao: string | null
-          registrado_por: string | null
-          tipo: Database["public"]["Enums"]["evento_tipo"]
-          updated_at: string
-        }
+          anexo_url: string | null;
+          colaborador_id: string;
+          created_at: string;
+          data: string;
+          hora_fim: string | null;
+          hora_inicio: string | null;
+          id: string;
+          observacao: string | null;
+          registrado_por: string | null;
+          tipo: Database["public"]["Enums"]["evento_tipo"];
+          updated_at: string;
+        };
         Insert: {
-          anexo_url?: string | null
-          colaborador_id: string
-          created_at?: string
-          data: string
-          hora_fim?: string | null
-          hora_inicio?: string | null
-          id?: string
-          observacao?: string | null
-          registrado_por?: string | null
-          tipo: Database["public"]["Enums"]["evento_tipo"]
-          updated_at?: string
-        }
+          anexo_url?: string | null;
+          colaborador_id: string;
+          created_at?: string;
+          data: string;
+          hora_fim?: string | null;
+          hora_inicio?: string | null;
+          id?: string;
+          observacao?: string | null;
+          registrado_por?: string | null;
+          tipo: Database["public"]["Enums"]["evento_tipo"];
+          updated_at?: string;
+        };
         Update: {
-          anexo_url?: string | null
-          colaborador_id?: string
-          created_at?: string
-          data?: string
-          hora_fim?: string | null
-          hora_inicio?: string | null
-          id?: string
-          observacao?: string | null
-          registrado_por?: string | null
-          tipo?: Database["public"]["Enums"]["evento_tipo"]
-          updated_at?: string
-        }
+          anexo_url?: string | null;
+          colaborador_id?: string;
+          created_at?: string;
+          data?: string;
+          hora_fim?: string | null;
+          hora_inicio?: string | null;
+          id?: string;
+          observacao?: string | null;
+          registrado_por?: string | null;
+          tipo?: Database["public"]["Enums"]["evento_tipo"];
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "colaborador_evento_colaborador_id_fkey"
-            columns: ["colaborador_id"]
-            isOneToOne: false
-            referencedRelation: "colaborador"
-            referencedColumns: ["id"]
+            foreignKeyName: "colaborador_evento_colaborador_id_fkey";
+            columns: ["colaborador_id"];
+            isOneToOne: false;
+            referencedRelation: "colaborador";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       colaborador_ferias: {
         Row: {
-          colaborador_id: string
-          created_at: string
-          data_fim: string
-          data_inicio: string
-          id: string
-          observacao: string | null
-          updated_at: string
-        }
+          colaborador_id: string;
+          created_at: string;
+          data_fim: string;
+          data_inicio: string;
+          id: string;
+          observacao: string | null;
+          updated_at: string;
+        };
         Insert: {
-          colaborador_id: string
-          created_at?: string
-          data_fim: string
-          data_inicio: string
-          id?: string
-          observacao?: string | null
-          updated_at?: string
-        }
+          colaborador_id: string;
+          created_at?: string;
+          data_fim: string;
+          data_inicio: string;
+          id?: string;
+          observacao?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          colaborador_id?: string
-          created_at?: string
-          data_fim?: string
-          data_inicio?: string
-          id?: string
-          observacao?: string | null
-          updated_at?: string
-        }
+          colaborador_id?: string;
+          created_at?: string;
+          data_fim?: string;
+          data_inicio?: string;
+          id?: string;
+          observacao?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "colaborador_ferias_colaborador_id_fkey"
-            columns: ["colaborador_id"]
-            isOneToOne: false
-            referencedRelation: "colaborador"
-            referencedColumns: ["id"]
+            foreignKeyName: "colaborador_ferias_colaborador_id_fkey";
+            columns: ["colaborador_id"];
+            isOneToOne: false;
+            referencedRelation: "colaborador";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       colaborador_galeria: {
         Row: {
-          colaborador_id: string | null
-          created_at: string
-          foto_url: string
-          id: string
-          legenda: string | null
-          ordem: number
-          updated_at: string
-        }
+          colaborador_id: string | null;
+          created_at: string;
+          foto_url: string;
+          id: string;
+          legenda: string | null;
+          ordem: number;
+          updated_at: string;
+        };
         Insert: {
-          colaborador_id?: string | null
-          created_at?: string
-          foto_url: string
-          id?: string
-          legenda?: string | null
-          ordem?: number
-          updated_at?: string
-        }
+          colaborador_id?: string | null;
+          created_at?: string;
+          foto_url: string;
+          id?: string;
+          legenda?: string | null;
+          ordem?: number;
+          updated_at?: string;
+        };
         Update: {
-          colaborador_id?: string | null
-          created_at?: string
-          foto_url?: string
-          id?: string
-          legenda?: string | null
-          ordem?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          colaborador_id?: string | null;
+          created_at?: string;
+          foto_url?: string;
+          id?: string;
+          legenda?: string | null;
+          ordem?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       colaborador_horario: {
         Row: {
-          almoco_fim: string | null
-          almoco_inicio: string | null
-          colaborador_id: string
-          created_at: string
-          dia_semana: number
-          expediente_fim: string | null
-          expediente_inicio: string | null
-          id: string
-          local_almoco: string | null
-          updated_at: string
-        }
+          almoco_fim: string | null;
+          almoco_inicio: string | null;
+          colaborador_id: string;
+          created_at: string;
+          dia_semana: number;
+          expediente_fim: string | null;
+          expediente_inicio: string | null;
+          id: string;
+          local_almoco: string | null;
+          updated_at: string;
+        };
         Insert: {
-          almoco_fim?: string | null
-          almoco_inicio?: string | null
-          colaborador_id: string
-          created_at?: string
-          dia_semana: number
-          expediente_fim?: string | null
-          expediente_inicio?: string | null
-          id?: string
-          local_almoco?: string | null
-          updated_at?: string
-        }
+          almoco_fim?: string | null;
+          almoco_inicio?: string | null;
+          colaborador_id: string;
+          created_at?: string;
+          dia_semana: number;
+          expediente_fim?: string | null;
+          expediente_inicio?: string | null;
+          id?: string;
+          local_almoco?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          almoco_fim?: string | null
-          almoco_inicio?: string | null
-          colaborador_id?: string
-          created_at?: string
-          dia_semana?: number
-          expediente_fim?: string | null
-          expediente_inicio?: string | null
-          id?: string
-          local_almoco?: string | null
-          updated_at?: string
-        }
+          almoco_fim?: string | null;
+          almoco_inicio?: string | null;
+          colaborador_id?: string;
+          created_at?: string;
+          dia_semana?: number;
+          expediente_fim?: string | null;
+          expediente_inicio?: string | null;
+          id?: string;
+          local_almoco?: string | null;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "colaborador_horario_colaborador_id_fkey"
-            columns: ["colaborador_id"]
-            isOneToOne: false
-            referencedRelation: "colaborador"
-            referencedColumns: ["id"]
+            foreignKeyName: "colaborador_horario_colaborador_id_fkey";
+            columns: ["colaborador_id"];
+            isOneToOne: false;
+            referencedRelation: "colaborador";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       demanda: {
         Row: {
-          categoria: Database["public"]["Enums"]["demanda_categoria"]
-          created_at: string
-          criado_por: string | null
-          descricao: string | null
-          equipe_toda: boolean
-          id: string
-          origem: Database["public"]["Enums"]["demanda_origem"]
-          prazo: string | null
-          prioridade: Database["public"]["Enums"]["demanda_prioridade"]
-          responsaveis_ids: string[]
-          responsavel_id: string | null
-          solicitante: string | null
-          status: Database["public"]["Enums"]["demanda_status"]
-          tags: string[] | null
-          titulo: string
-          updated_at: string
-        }
+          categoria: Database["public"]["Enums"]["demanda_categoria"];
+          created_at: string;
+          criado_por: string | null;
+          descricao: string | null;
+          equipe_toda: boolean;
+          id: string;
+          origem: Database["public"]["Enums"]["demanda_origem"];
+          prazo: string | null;
+          prioridade: Database["public"]["Enums"]["demanda_prioridade"];
+          responsaveis_ids: string[];
+          responsavel_id: string | null;
+          solicitante: string | null;
+          status: Database["public"]["Enums"]["demanda_status"];
+          tags: string[] | null;
+          titulo: string;
+          updated_at: string;
+        };
         Insert: {
-          categoria?: Database["public"]["Enums"]["demanda_categoria"]
-          created_at?: string
-          criado_por?: string | null
-          descricao?: string | null
-          equipe_toda?: boolean
-          id?: string
-          origem?: Database["public"]["Enums"]["demanda_origem"]
-          prazo?: string | null
-          prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          solicitante?: string | null
-          status?: Database["public"]["Enums"]["demanda_status"]
-          tags?: string[] | null
-          titulo: string
-          updated_at?: string
-        }
+          categoria?: Database["public"]["Enums"]["demanda_categoria"];
+          created_at?: string;
+          criado_por?: string | null;
+          descricao?: string | null;
+          equipe_toda?: boolean;
+          id?: string;
+          origem?: Database["public"]["Enums"]["demanda_origem"];
+          prazo?: string | null;
+          prioridade?: Database["public"]["Enums"]["demanda_prioridade"];
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          solicitante?: string | null;
+          status?: Database["public"]["Enums"]["demanda_status"];
+          tags?: string[] | null;
+          titulo: string;
+          updated_at?: string;
+        };
         Update: {
-          categoria?: Database["public"]["Enums"]["demanda_categoria"]
-          created_at?: string
-          criado_por?: string | null
-          descricao?: string | null
-          equipe_toda?: boolean
-          id?: string
-          origem?: Database["public"]["Enums"]["demanda_origem"]
-          prazo?: string | null
-          prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          solicitante?: string | null
-          status?: Database["public"]["Enums"]["demanda_status"]
-          tags?: string[] | null
-          titulo?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          categoria?: Database["public"]["Enums"]["demanda_categoria"];
+          created_at?: string;
+          criado_por?: string | null;
+          descricao?: string | null;
+          equipe_toda?: boolean;
+          id?: string;
+          origem?: Database["public"]["Enums"]["demanda_origem"];
+          prazo?: string | null;
+          prioridade?: Database["public"]["Enums"]["demanda_prioridade"];
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          solicitante?: string | null;
+          status?: Database["public"]["Enums"]["demanda_status"];
+          tags?: string[] | null;
+          titulo?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       email_digest_config: {
         Row: {
-          dias_semana: number[]
-          id: boolean
-          updated_at: string
-          updated_by: string | null
-        }
+          dias_semana: number[];
+          id: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
         Insert: {
-          dias_semana?: number[]
-          id?: boolean
-          updated_at?: string
-          updated_by?: string | null
-        }
+          dias_semana?: number[];
+          id?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
         Update: {
-          dias_semana?: number[]
-          id?: boolean
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
+          dias_semana?: number[];
+          id?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       email_send_log: {
         Row: {
-          attempts: number
-          body_html: string | null
-          body_text: string | null
-          created_at: string
-          id: string
-          last_error: string | null
-          notificacao_ids: string[] | null
-          recipient_email: string
-          scheduled_for: string
-          sent_at: string | null
-          status: string
-          subject: string
-          updated_at: string
-          user_id: string | null
-          webhook_response: Json | null
-        }
+          attempts: number;
+          body_html: string | null;
+          body_text: string | null;
+          created_at: string;
+          id: string;
+          last_error: string | null;
+          notificacao_ids: string[] | null;
+          recipient_email: string;
+          scheduled_for: string;
+          sent_at: string | null;
+          status: string;
+          subject: string;
+          updated_at: string;
+          user_id: string | null;
+          webhook_response: Json | null;
+        };
         Insert: {
-          attempts?: number
-          body_html?: string | null
-          body_text?: string | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          notificacao_ids?: string[] | null
-          recipient_email: string
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: string
-          subject: string
-          updated_at?: string
-          user_id?: string | null
-          webhook_response?: Json | null
-        }
+          attempts?: number;
+          body_html?: string | null;
+          body_text?: string | null;
+          created_at?: string;
+          id?: string;
+          last_error?: string | null;
+          notificacao_ids?: string[] | null;
+          recipient_email: string;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          status?: string;
+          subject: string;
+          updated_at?: string;
+          user_id?: string | null;
+          webhook_response?: Json | null;
+        };
         Update: {
-          attempts?: number
-          body_html?: string | null
-          body_text?: string | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          notificacao_ids?: string[] | null
-          recipient_email?: string
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: string
-          subject?: string
-          updated_at?: string
-          user_id?: string | null
-          webhook_response?: Json | null
-        }
-        Relationships: []
-      }
+          attempts?: number;
+          body_html?: string | null;
+          body_text?: string | null;
+          created_at?: string;
+          id?: string;
+          last_error?: string | null;
+          notificacao_ids?: string[] | null;
+          recipient_email?: string;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          status?: string;
+          subject?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          webhook_response?: Json | null;
+        };
+        Relationships: [];
+      };
       google_calendar_config: {
         Row: {
-          created_at: string
-          dias_horizonte: number
-          google_calendar_id: string | null
-          id: boolean
-          sync_ativo: boolean
-          ultima_sync_em: string | null
-          ultimo_erro: string | null
-          updated_at: string
-        }
+          created_at: string;
+          dias_horizonte: number;
+          google_calendar_id: string | null;
+          id: boolean;
+          sync_ativo: boolean;
+          ultima_sync_em: string | null;
+          ultimo_erro: string | null;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          dias_horizonte?: number
-          google_calendar_id?: string | null
-          id?: boolean
-          sync_ativo?: boolean
-          ultima_sync_em?: string | null
-          ultimo_erro?: string | null
-          updated_at?: string
-        }
+          created_at?: string;
+          dias_horizonte?: number;
+          google_calendar_id?: string | null;
+          id?: boolean;
+          sync_ativo?: boolean;
+          ultima_sync_em?: string | null;
+          ultimo_erro?: string | null;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          dias_horizonte?: number
-          google_calendar_id?: string | null
-          id?: boolean
-          sync_ativo?: boolean
-          ultima_sync_em?: string | null
-          ultimo_erro?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          dias_horizonte?: number;
+          google_calendar_id?: string | null;
+          id?: boolean;
+          sync_ativo?: boolean;
+          ultima_sync_em?: string | null;
+          ultimo_erro?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       google_calendar_evento: {
         Row: {
-          conteudo_hash: string
-          created_at: string
-          fonte: string
-          fonte_id: string
-          google_calendar_id: string
-          google_event_id: string
-          id: string
-          ultima_sync_em: string
-        }
+          conteudo_hash: string;
+          created_at: string;
+          fonte: string;
+          fonte_id: string;
+          google_calendar_id: string;
+          google_event_id: string;
+          id: string;
+          ultima_sync_em: string;
+        };
         Insert: {
-          conteudo_hash: string
-          created_at?: string
-          fonte: string
-          fonte_id: string
-          google_calendar_id: string
-          google_event_id: string
-          id?: string
-          ultima_sync_em?: string
-        }
+          conteudo_hash: string;
+          created_at?: string;
+          fonte: string;
+          fonte_id: string;
+          google_calendar_id: string;
+          google_event_id: string;
+          id?: string;
+          ultima_sync_em?: string;
+        };
         Update: {
-          conteudo_hash?: string
-          created_at?: string
-          fonte?: string
-          fonte_id?: string
-          google_calendar_id?: string
-          google_event_id?: string
-          id?: string
-          ultima_sync_em?: string
-        }
-        Relationships: []
-      }
+          conteudo_hash?: string;
+          created_at?: string;
+          fonte?: string;
+          fonte_id?: string;
+          google_calendar_id?: string;
+          google_event_id?: string;
+          id?: string;
+          ultima_sync_em?: string;
+        };
+        Relationships: [];
+      };
       google_oauth_conta: {
         Row: {
-          conectado_em: string
-          conectado_por: string | null
-          email: string | null
-          id: boolean
-          refresh_token: string
-        }
+          conectado_em: string;
+          conectado_por: string | null;
+          email: string | null;
+          id: boolean;
+          refresh_token: string;
+        };
         Insert: {
-          conectado_em?: string
-          conectado_por?: string | null
-          email?: string | null
-          id?: boolean
-          refresh_token: string
-        }
+          conectado_em?: string;
+          conectado_por?: string | null;
+          email?: string | null;
+          id?: boolean;
+          refresh_token: string;
+        };
         Update: {
-          conectado_em?: string
-          conectado_por?: string | null
-          email?: string | null
-          id?: boolean
-          refresh_token?: string
-        }
-        Relationships: []
-      }
+          conectado_em?: string;
+          conectado_por?: string | null;
+          email?: string | null;
+          id?: boolean;
+          refresh_token?: string;
+        };
+        Relationships: [];
+      };
       ia_prompt_config: {
         Row: {
-          ativo: boolean
-          chave: string
-          created_at: string
-          id: string
-          instrucoes_extras: string | null
-          prompt_sistema: string
-          updated_at: string
-          updated_by: string | null
-        }
+          ativo: boolean;
+          chave: string;
+          created_at: string;
+          id: string;
+          instrucoes_extras: string | null;
+          prompt_sistema: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
         Insert: {
-          ativo?: boolean
-          chave: string
-          created_at?: string
-          id?: string
-          instrucoes_extras?: string | null
-          prompt_sistema: string
-          updated_at?: string
-          updated_by?: string | null
-        }
+          ativo?: boolean;
+          chave: string;
+          created_at?: string;
+          id?: string;
+          instrucoes_extras?: string | null;
+          prompt_sistema: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
         Update: {
-          ativo?: boolean
-          chave?: string
-          created_at?: string
-          id?: string
-          instrucoes_extras?: string | null
-          prompt_sistema?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
+          ativo?: boolean;
+          chave?: string;
+          created_at?: string;
+          id?: string;
+          instrucoes_extras?: string | null;
+          prompt_sistema?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       invite_token: {
         Row: {
-          created_at: string
-          created_by: string | null
-          email: string
-          expires_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          token: string
-          updated_at: string
-          used_at: string | null
-        }
+          created_at: string;
+          created_by: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          token: string;
+          updated_at: string;
+          used_at: string | null;
+        };
         Insert: {
-          created_at?: string
-          created_by?: string | null
-          email: string
-          expires_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          token: string
-          updated_at?: string
-          used_at?: string | null
-        }
+          created_at?: string;
+          created_by?: string | null;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          token: string;
+          updated_at?: string;
+          used_at?: string | null;
+        };
         Update: {
-          created_at?: string
-          created_by?: string | null
-          email?: string
-          expires_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          token?: string
-          updated_at?: string
-          used_at?: string | null
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          created_by?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          token?: string;
+          updated_at?: string;
+          used_at?: string | null;
+        };
+        Relationships: [];
+      };
       notificacao: {
         Row: {
-          created_at: string
-          id: string
-          lida_em: string | null
-          link: string | null
-          mensagem: string | null
-          metadata: Json | null
-          tipo: Database["public"]["Enums"]["notificacao_tipo"]
-          titulo: string
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          lida_em: string | null;
+          link: string | null;
+          mensagem: string | null;
+          metadata: Json | null;
+          tipo: Database["public"]["Enums"]["notificacao_tipo"];
+          titulo: string;
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          lida_em?: string | null
-          link?: string | null
-          mensagem?: string | null
-          metadata?: Json | null
-          tipo: Database["public"]["Enums"]["notificacao_tipo"]
-          titulo: string
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          lida_em?: string | null;
+          link?: string | null;
+          mensagem?: string | null;
+          metadata?: Json | null;
+          tipo: Database["public"]["Enums"]["notificacao_tipo"];
+          titulo: string;
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          lida_em?: string | null
-          link?: string | null
-          mensagem?: string | null
-          metadata?: Json | null
-          tipo?: Database["public"]["Enums"]["notificacao_tipo"]
-          titulo?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          id?: string;
+          lida_em?: string | null;
+          link?: string | null;
+          mensagem?: string | null;
+          metadata?: Json | null;
+          tipo?: Database["public"]["Enums"]["notificacao_tipo"];
+          titulo?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       notificacao_preferencia: {
         Row: {
-          ativo: boolean
-          canal: Database["public"]["Enums"]["notificacao_canal"]
-          created_at: string
-          evento: Database["public"]["Enums"]["notificacao_tipo"]
-          id: string
-          updated_at: string
-          user_id: string
-        }
+          ativo: boolean;
+          canal: Database["public"]["Enums"]["notificacao_canal"];
+          created_at: string;
+          evento: Database["public"]["Enums"]["notificacao_tipo"];
+          id: string;
+          updated_at: string;
+          user_id: string;
+        };
         Insert: {
-          ativo?: boolean
-          canal: Database["public"]["Enums"]["notificacao_canal"]
-          created_at?: string
-          evento: Database["public"]["Enums"]["notificacao_tipo"]
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
+          ativo?: boolean;
+          canal: Database["public"]["Enums"]["notificacao_canal"];
+          created_at?: string;
+          evento: Database["public"]["Enums"]["notificacao_tipo"];
+          id?: string;
+          updated_at?: string;
+          user_id: string;
+        };
         Update: {
-          ativo?: boolean
-          canal?: Database["public"]["Enums"]["notificacao_canal"]
-          created_at?: string
-          evento?: Database["public"]["Enums"]["notificacao_tipo"]
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          ativo?: boolean;
+          canal?: Database["public"]["Enums"]["notificacao_canal"];
+          created_at?: string;
+          evento?: Database["public"]["Enums"]["notificacao_tipo"];
+          id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       processo_anual: {
         Row: {
-          alerta_dias_antes: number
-          ano: number
-          cor: string
-          created_at: string
-          criado_por: string | null
-          descricao: string | null
-          equipe_toda: boolean
-          id: string
-          nome: string
-          observacoes: string | null
-          previsto_fim: string | null
-          previsto_inicio: string | null
-          real_fim: string | null
-          real_inicio: string | null
-          responsaveis_ids: string[]
-          status: Database["public"]["Enums"]["processo_status"]
-          updated_at: string
-        }
+          alerta_dias_antes: number;
+          ano: number;
+          cor: string;
+          created_at: string;
+          criado_por: string | null;
+          descricao: string | null;
+          equipe_toda: boolean;
+          id: string;
+          nome: string;
+          observacoes: string | null;
+          previsto_fim: string | null;
+          previsto_inicio: string | null;
+          real_fim: string | null;
+          real_inicio: string | null;
+          responsaveis_ids: string[];
+          status: Database["public"]["Enums"]["processo_status"];
+          updated_at: string;
+        };
         Insert: {
-          alerta_dias_antes?: number
-          ano: number
-          cor?: string
-          created_at?: string
-          criado_por?: string | null
-          descricao?: string | null
-          equipe_toda?: boolean
-          id?: string
-          nome: string
-          observacoes?: string | null
-          previsto_fim?: string | null
-          previsto_inicio?: string | null
-          real_fim?: string | null
-          real_inicio?: string | null
-          responsaveis_ids?: string[]
-          status?: Database["public"]["Enums"]["processo_status"]
-          updated_at?: string
-        }
+          alerta_dias_antes?: number;
+          ano: number;
+          cor?: string;
+          created_at?: string;
+          criado_por?: string | null;
+          descricao?: string | null;
+          equipe_toda?: boolean;
+          id?: string;
+          nome: string;
+          observacoes?: string | null;
+          previsto_fim?: string | null;
+          previsto_inicio?: string | null;
+          real_fim?: string | null;
+          real_inicio?: string | null;
+          responsaveis_ids?: string[];
+          status?: Database["public"]["Enums"]["processo_status"];
+          updated_at?: string;
+        };
         Update: {
-          alerta_dias_antes?: number
-          ano?: number
-          cor?: string
-          created_at?: string
-          criado_por?: string | null
-          descricao?: string | null
-          equipe_toda?: boolean
-          id?: string
-          nome?: string
-          observacoes?: string | null
-          previsto_fim?: string | null
-          previsto_inicio?: string | null
-          real_fim?: string | null
-          real_inicio?: string | null
-          responsaveis_ids?: string[]
-          status?: Database["public"]["Enums"]["processo_status"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          alerta_dias_antes?: number;
+          ano?: number;
+          cor?: string;
+          created_at?: string;
+          criado_por?: string | null;
+          descricao?: string | null;
+          equipe_toda?: boolean;
+          id?: string;
+          nome?: string;
+          observacoes?: string | null;
+          previsto_fim?: string | null;
+          previsto_inicio?: string | null;
+          real_fim?: string | null;
+          real_inicio?: string | null;
+          responsaveis_ids?: string[];
+          status?: Database["public"]["Enums"]["processo_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       processo_anual_vinculo: {
         Row: {
-          created_at: string
-          id: string
-          processo_id: string
-          ref_id: string
-          tipo: string
-        }
+          created_at: string;
+          id: string;
+          processo_id: string;
+          ref_id: string;
+          tipo: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          processo_id: string
-          ref_id: string
-          tipo: string
-        }
+          created_at?: string;
+          id?: string;
+          processo_id: string;
+          ref_id: string;
+          tipo: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          processo_id?: string
-          ref_id?: string
-          tipo?: string
-        }
+          created_at?: string;
+          id?: string;
+          processo_id?: string;
+          ref_id?: string;
+          tipo?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "processo_anual_vinculo_processo_id_fkey"
-            columns: ["processo_id"]
-            isOneToOne: false
-            referencedRelation: "processo_anual"
-            referencedColumns: ["id"]
+            foreignKeyName: "processo_anual_vinculo_processo_id_fkey";
+            columns: ["processo_id"];
+            isOneToOne: false;
+            referencedRelation: "processo_anual";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       profiles: {
         Row: {
-          avatar_url: string | null
-          cargo: string | null
-          colaborador_id: string | null
-          created_at: string
-          email: string
-          id: string
-          must_change_password: boolean
-          nome: string
-          recebe_resumo_diario: boolean
-          telefone: string | null
-          updated_at: string
-          user_id: string
-        }
+          avatar_url: string | null;
+          cargo: string | null;
+          colaborador_id: string | null;
+          created_at: string;
+          email: string;
+          id: string;
+          must_change_password: boolean;
+          nome: string;
+          recebe_resumo_diario: boolean;
+          telefone: string | null;
+          updated_at: string;
+          user_id: string;
+        };
         Insert: {
-          avatar_url?: string | null
-          cargo?: string | null
-          colaborador_id?: string | null
-          created_at?: string
-          email: string
-          id?: string
-          must_change_password?: boolean
-          nome: string
-          recebe_resumo_diario?: boolean
-          telefone?: string | null
-          updated_at?: string
-          user_id: string
-        }
+          avatar_url?: string | null;
+          cargo?: string | null;
+          colaborador_id?: string | null;
+          created_at?: string;
+          email: string;
+          id?: string;
+          must_change_password?: boolean;
+          nome: string;
+          recebe_resumo_diario?: boolean;
+          telefone?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
         Update: {
-          avatar_url?: string | null
-          cargo?: string | null
-          colaborador_id?: string | null
-          created_at?: string
-          email?: string
-          id?: string
-          must_change_password?: boolean
-          nome?: string
-          recebe_resumo_diario?: boolean
-          telefone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
+          avatar_url?: string | null;
+          cargo?: string | null;
+          colaborador_id?: string | null;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          must_change_password?: boolean;
+          nome?: string;
+          recebe_resumo_diario?: boolean;
+          telefone?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "profiles_colaborador_id_fkey"
-            columns: ["colaborador_id"]
-            isOneToOne: false
-            referencedRelation: "colaborador"
-            referencedColumns: ["id"]
+            foreignKeyName: "profiles_colaborador_id_fkey";
+            columns: ["colaborador_id"];
+            isOneToOne: false;
+            referencedRelation: "colaborador";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       relatorio_inativo: {
         Row: {
-          created_at: string
-          id: string
-          inativado_por: string | null
-          inativado_por_nome: string | null
-          motivo: string | null
-          solicitacao_id: string
-        }
+          created_at: string;
+          id: string;
+          inativado_por: string | null;
+          inativado_por_nome: string | null;
+          motivo: string | null;
+          solicitacao_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          inativado_por?: string | null
-          inativado_por_nome?: string | null
-          motivo?: string | null
-          solicitacao_id: string
-        }
+          created_at?: string;
+          id?: string;
+          inativado_por?: string | null;
+          inativado_por_nome?: string | null;
+          motivo?: string | null;
+          solicitacao_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          inativado_por?: string | null
-          inativado_por_nome?: string | null
-          motivo?: string | null
-          solicitacao_id?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          id?: string;
+          inativado_por?: string | null;
+          inativado_por_nome?: string | null;
+          motivo?: string | null;
+          solicitacao_id?: string;
+        };
+        Relationships: [];
+      };
       resumo_semanal: {
         Row: {
-          conteudo_md: string
-          created_at: string
-          id: string
-          insights: string[] | null
-          metricas: Json | null
-          modelo: string | null
-          semana_fim: string
-          semana_inicio: string
-          user_id: string
-        }
+          conteudo_md: string;
+          created_at: string;
+          id: string;
+          insights: string[] | null;
+          metricas: Json | null;
+          modelo: string | null;
+          semana_fim: string;
+          semana_inicio: string;
+          user_id: string;
+        };
         Insert: {
-          conteudo_md: string
-          created_at?: string
-          id?: string
-          insights?: string[] | null
-          metricas?: Json | null
-          modelo?: string | null
-          semana_fim: string
-          semana_inicio: string
-          user_id: string
-        }
+          conteudo_md: string;
+          created_at?: string;
+          id?: string;
+          insights?: string[] | null;
+          metricas?: Json | null;
+          modelo?: string | null;
+          semana_fim: string;
+          semana_inicio: string;
+          user_id: string;
+        };
         Update: {
-          conteudo_md?: string
-          created_at?: string
-          id?: string
-          insights?: string[] | null
-          metricas?: Json | null
-          modelo?: string | null
-          semana_fim?: string
-          semana_inicio?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
+          conteudo_md?: string;
+          created_at?: string;
+          id?: string;
+          insights?: string[] | null;
+          metricas?: Json | null;
+          modelo?: string | null;
+          semana_fim?: string;
+          semana_inicio?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       reuniao: {
         Row: {
-          audio_mime: string | null
-          audio_path: string | null
-          audio_size: number | null
-          created_at: string
-          criado_por: string | null
-          data_reuniao: string
-          decisoes: string[] | null
-          duracao_min: number | null
-          equipe_toda: boolean
-          id: string
-          link_calendario: string | null
-          participantes: string[] | null
-          participantes_detectados: string[] | null
-          pauta: string | null
-          proximos_passos: string | null
-          responsaveis_ids: string[]
-          responsavel_id: string | null
-          resumo: string | null
-          status: Database["public"]["Enums"]["reuniao_status"]
-          tipo: Database["public"]["Enums"]["reuniao_tipo"]
-          titulo: string
-          transcricao: string | null
-          transcricao_erro: string | null
-          transcricao_partes_feitas: number
-          transcricao_partes_total: number
-          transcricao_rodadas: number
-          transcricao_status: Database["public"]["Enums"]["reuniao_transcricao_status"]
-          updated_at: string
-        }
+          audio_mime: string | null;
+          audio_path: string | null;
+          audio_size: number | null;
+          created_at: string;
+          criado_por: string | null;
+          data_reuniao: string;
+          decisoes: string[] | null;
+          duracao_min: number | null;
+          equipe_toda: boolean;
+          id: string;
+          link_calendario: string | null;
+          participantes: string[] | null;
+          participantes_detectados: string[] | null;
+          pauta: string | null;
+          proximos_passos: string | null;
+          responsaveis_ids: string[];
+          responsavel_id: string | null;
+          resumo: string | null;
+          status: Database["public"]["Enums"]["reuniao_status"];
+          tipo: Database["public"]["Enums"]["reuniao_tipo"];
+          titulo: string;
+          transcricao: string | null;
+          transcricao_erro: string | null;
+          transcricao_partes_feitas: number;
+          transcricao_partes_total: number;
+          transcricao_rodadas: number;
+          transcricao_status: Database["public"]["Enums"]["reuniao_transcricao_status"];
+          updated_at: string;
+        };
         Insert: {
-          audio_mime?: string | null
-          audio_path?: string | null
-          audio_size?: number | null
-          created_at?: string
-          criado_por?: string | null
-          data_reuniao: string
-          decisoes?: string[] | null
-          duracao_min?: number | null
-          equipe_toda?: boolean
-          id?: string
-          link_calendario?: string | null
-          participantes?: string[] | null
-          participantes_detectados?: string[] | null
-          pauta?: string | null
-          proximos_passos?: string | null
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          resumo?: string | null
-          status?: Database["public"]["Enums"]["reuniao_status"]
-          tipo?: Database["public"]["Enums"]["reuniao_tipo"]
-          titulo: string
-          transcricao?: string | null
-          transcricao_erro?: string | null
-          transcricao_partes_feitas?: number
-          transcricao_partes_total?: number
-          transcricao_rodadas?: number
-          transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"]
-          updated_at?: string
-        }
+          audio_mime?: string | null;
+          audio_path?: string | null;
+          audio_size?: number | null;
+          created_at?: string;
+          criado_por?: string | null;
+          data_reuniao: string;
+          decisoes?: string[] | null;
+          duracao_min?: number | null;
+          equipe_toda?: boolean;
+          id?: string;
+          link_calendario?: string | null;
+          participantes?: string[] | null;
+          participantes_detectados?: string[] | null;
+          pauta?: string | null;
+          proximos_passos?: string | null;
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          resumo?: string | null;
+          status?: Database["public"]["Enums"]["reuniao_status"];
+          tipo?: Database["public"]["Enums"]["reuniao_tipo"];
+          titulo: string;
+          transcricao?: string | null;
+          transcricao_erro?: string | null;
+          transcricao_partes_feitas?: number;
+          transcricao_partes_total?: number;
+          transcricao_rodadas?: number;
+          transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"];
+          updated_at?: string;
+        };
         Update: {
-          audio_mime?: string | null
-          audio_path?: string | null
-          audio_size?: number | null
-          created_at?: string
-          criado_por?: string | null
-          data_reuniao?: string
-          decisoes?: string[] | null
-          duracao_min?: number | null
-          equipe_toda?: boolean
-          id?: string
-          link_calendario?: string | null
-          participantes?: string[] | null
-          participantes_detectados?: string[] | null
-          pauta?: string | null
-          proximos_passos?: string | null
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          resumo?: string | null
-          status?: Database["public"]["Enums"]["reuniao_status"]
-          tipo?: Database["public"]["Enums"]["reuniao_tipo"]
-          titulo?: string
-          transcricao?: string | null
-          transcricao_erro?: string | null
-          transcricao_partes_feitas?: number
-          transcricao_partes_total?: number
-          transcricao_rodadas?: number
-          transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          audio_mime?: string | null;
+          audio_path?: string | null;
+          audio_size?: number | null;
+          created_at?: string;
+          criado_por?: string | null;
+          data_reuniao?: string;
+          decisoes?: string[] | null;
+          duracao_min?: number | null;
+          equipe_toda?: boolean;
+          id?: string;
+          link_calendario?: string | null;
+          participantes?: string[] | null;
+          participantes_detectados?: string[] | null;
+          pauta?: string | null;
+          proximos_passos?: string | null;
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          resumo?: string | null;
+          status?: Database["public"]["Enums"]["reuniao_status"];
+          tipo?: Database["public"]["Enums"]["reuniao_tipo"];
+          titulo?: string;
+          transcricao?: string | null;
+          transcricao_erro?: string | null;
+          transcricao_partes_feitas?: number;
+          transcricao_partes_total?: number;
+          transcricao_rodadas?: number;
+          transcricao_status?: Database["public"]["Enums"]["reuniao_transcricao_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       todo: {
         Row: {
-          concluida_em: string | null
-          created_at: string
-          criado_por: string | null
-          data_prevista: string | null
-          demanda_id: string | null
-          descricao: string | null
-          em_teste: boolean
-          equipe_toda: boolean
-          id: string
-          lote_importacao_id: string | null
-          origem_importacao: string | null
-          data_homologacao: string | null
-          liberacao_acesso_dispensada: boolean
-          liberacao_acesso_em: string | null
-          liberacao_acesso_por: string | null
-          liberacao_objetos: string | null
-          liberacao_validada_em: string | null
-          liberacao_validada_por: string | null
-          liberacao_versao_em: string | null
-          liberacao_versao_por: string | null
-          link_homologacao: string | null
-          numero_eproject: number | null
-          observacao_homologacao: string | null
-          sistema: string | null
-          prioridade: Database["public"]["Enums"]["todo_prioridade"]
-          responsaveis_ids: string[]
-          responsavel_id: string | null
-          status: Database["public"]["Enums"]["todo_status"]
-          titulo: string
-          updated_at: string
-        }
+          concluida_em: string | null;
+          created_at: string;
+          criado_por: string | null;
+          data_prevista: string | null;
+          demanda_id: string | null;
+          descricao: string | null;
+          em_teste: boolean;
+          equipe_toda: boolean;
+          id: string;
+          lote_importacao_id: string | null;
+          origem_importacao: string | null;
+          data_homologacao: string | null;
+          liberacao_acesso_dispensada: boolean;
+          liberacao_acesso_em: string | null;
+          liberacao_acesso_por: string | null;
+          liberacao_objetos: string | null;
+          liberacao_validada_em: string | null;
+          liberacao_validada_por: string | null;
+          liberacao_versao_em: string | null;
+          liberacao_versao_por: string | null;
+          link_homologacao: string | null;
+          numero_eproject: number | null;
+          observacao_homologacao: string | null;
+          sistema: string | null;
+          prioridade: Database["public"]["Enums"]["todo_prioridade"];
+          responsaveis_ids: string[];
+          responsavel_id: string | null;
+          status: Database["public"]["Enums"]["todo_status"];
+          titulo: string;
+          updated_at: string;
+        };
         Insert: {
-          concluida_em?: string | null
-          created_at?: string
-          criado_por?: string | null
-          data_prevista?: string | null
-          demanda_id?: string | null
-          descricao?: string | null
-          em_teste?: boolean
-          equipe_toda?: boolean
-          id?: string
-          lote_importacao_id?: string | null
-          origem_importacao?: string | null
-          data_homologacao?: string | null
-          liberacao_acesso_dispensada?: boolean
-          liberacao_acesso_em?: string | null
-          liberacao_acesso_por?: string | null
-          liberacao_objetos?: string | null
-          liberacao_validada_em?: string | null
-          liberacao_validada_por?: string | null
-          liberacao_versao_em?: string | null
-          liberacao_versao_por?: string | null
-          link_homologacao?: string | null
-          numero_eproject?: number | null
-          observacao_homologacao?: string | null
-          sistema?: string | null
-          prioridade?: Database["public"]["Enums"]["todo_prioridade"]
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          status?: Database["public"]["Enums"]["todo_status"]
-          titulo: string
-          updated_at?: string
-        }
+          concluida_em?: string | null;
+          created_at?: string;
+          criado_por?: string | null;
+          data_prevista?: string | null;
+          demanda_id?: string | null;
+          descricao?: string | null;
+          em_teste?: boolean;
+          equipe_toda?: boolean;
+          id?: string;
+          lote_importacao_id?: string | null;
+          origem_importacao?: string | null;
+          data_homologacao?: string | null;
+          liberacao_acesso_dispensada?: boolean;
+          liberacao_acesso_em?: string | null;
+          liberacao_acesso_por?: string | null;
+          liberacao_objetos?: string | null;
+          liberacao_validada_em?: string | null;
+          liberacao_validada_por?: string | null;
+          liberacao_versao_em?: string | null;
+          liberacao_versao_por?: string | null;
+          link_homologacao?: string | null;
+          numero_eproject?: number | null;
+          observacao_homologacao?: string | null;
+          sistema?: string | null;
+          prioridade?: Database["public"]["Enums"]["todo_prioridade"];
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          status?: Database["public"]["Enums"]["todo_status"];
+          titulo: string;
+          updated_at?: string;
+        };
         Update: {
-          concluida_em?: string | null
-          created_at?: string
-          criado_por?: string | null
-          data_prevista?: string | null
-          demanda_id?: string | null
-          descricao?: string | null
-          em_teste?: boolean
-          equipe_toda?: boolean
-          id?: string
-          lote_importacao_id?: string | null
-          origem_importacao?: string | null
-          data_homologacao?: string | null
-          liberacao_acesso_dispensada?: boolean
-          liberacao_acesso_em?: string | null
-          liberacao_acesso_por?: string | null
-          liberacao_objetos?: string | null
-          liberacao_validada_em?: string | null
-          liberacao_validada_por?: string | null
-          liberacao_versao_em?: string | null
-          liberacao_versao_por?: string | null
-          link_homologacao?: string | null
-          numero_eproject?: number | null
-          observacao_homologacao?: string | null
-          sistema?: string | null
-          prioridade?: Database["public"]["Enums"]["todo_prioridade"]
-          responsaveis_ids?: string[]
-          responsavel_id?: string | null
-          status?: Database["public"]["Enums"]["todo_status"]
-          titulo?: string
-          updated_at?: string
-        }
+          concluida_em?: string | null;
+          created_at?: string;
+          criado_por?: string | null;
+          data_prevista?: string | null;
+          demanda_id?: string | null;
+          descricao?: string | null;
+          em_teste?: boolean;
+          equipe_toda?: boolean;
+          id?: string;
+          lote_importacao_id?: string | null;
+          origem_importacao?: string | null;
+          data_homologacao?: string | null;
+          liberacao_acesso_dispensada?: boolean;
+          liberacao_acesso_em?: string | null;
+          liberacao_acesso_por?: string | null;
+          liberacao_objetos?: string | null;
+          liberacao_validada_em?: string | null;
+          liberacao_validada_por?: string | null;
+          liberacao_versao_em?: string | null;
+          liberacao_versao_por?: string | null;
+          link_homologacao?: string | null;
+          numero_eproject?: number | null;
+          observacao_homologacao?: string | null;
+          sistema?: string | null;
+          prioridade?: Database["public"]["Enums"]["todo_prioridade"];
+          responsaveis_ids?: string[];
+          responsavel_id?: string | null;
+          status?: Database["public"]["Enums"]["todo_status"];
+          titulo?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "todo_demanda_id_fkey"
-            columns: ["demanda_id"]
-            isOneToOne: false
-            referencedRelation: "demanda"
-            referencedColumns: ["id"]
+            foreignKeyName: "todo_demanda_id_fkey";
+            columns: ["demanda_id"];
+            isOneToOne: false;
+            referencedRelation: "demanda";
+            referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "todo_lote_importacao_id_fkey"
-            columns: ["lote_importacao_id"]
-            isOneToOne: false
-            referencedRelation: "todo_importacao_lote"
-            referencedColumns: ["id"]
+            foreignKeyName: "todo_lote_importacao_id_fkey";
+            columns: ["lote_importacao_id"];
+            isOneToOne: false;
+            referencedRelation: "todo_importacao_lote";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       todo_anexo: {
         Row: {
-          autor_id: string | null
-          autor_nome: string | null
-          created_at: string
-          id: string
-          mime_type: string | null
-          nome_arquivo: string
-          storage_path: string
-          tamanho_bytes: number | null
-          todo_id: string
-        }
+          autor_id: string | null;
+          autor_nome: string | null;
+          created_at: string;
+          id: string;
+          mime_type: string | null;
+          nome_arquivo: string;
+          storage_path: string;
+          tamanho_bytes: number | null;
+          todo_id: string;
+        };
         Insert: {
-          autor_id?: string | null
-          autor_nome?: string | null
-          created_at?: string
-          id?: string
-          mime_type?: string | null
-          nome_arquivo: string
-          storage_path: string
-          tamanho_bytes?: number | null
-          todo_id: string
-        }
+          autor_id?: string | null;
+          autor_nome?: string | null;
+          created_at?: string;
+          id?: string;
+          mime_type?: string | null;
+          nome_arquivo: string;
+          storage_path: string;
+          tamanho_bytes?: number | null;
+          todo_id: string;
+        };
         Update: {
-          autor_id?: string | null
-          autor_nome?: string | null
-          created_at?: string
-          id?: string
-          mime_type?: string | null
-          nome_arquivo?: string
-          storage_path?: string
-          tamanho_bytes?: number | null
-          todo_id?: string
-        }
+          autor_id?: string | null;
+          autor_nome?: string | null;
+          created_at?: string;
+          id?: string;
+          mime_type?: string | null;
+          nome_arquivo?: string;
+          storage_path?: string;
+          tamanho_bytes?: number | null;
+          todo_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "todo_anexo_todo_id_fkey"
-            columns: ["todo_id"]
-            isOneToOne: false
-            referencedRelation: "todo"
-            referencedColumns: ["id"]
+            foreignKeyName: "todo_anexo_todo_id_fkey";
+            columns: ["todo_id"];
+            isOneToOne: false;
+            referencedRelation: "todo";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       todo_checklist: {
         Row: {
-          concluido: boolean
-          created_at: string
-          id: string
-          ordem: number
-          texto: string
-          todo_id: string
-          updated_at: string
-        }
+          concluido: boolean;
+          created_at: string;
+          id: string;
+          ordem: number;
+          texto: string;
+          todo_id: string;
+          updated_at: string;
+        };
         Insert: {
-          concluido?: boolean
-          created_at?: string
-          id?: string
-          ordem?: number
-          texto: string
-          todo_id: string
-          updated_at?: string
-        }
+          concluido?: boolean;
+          created_at?: string;
+          id?: string;
+          ordem?: number;
+          texto: string;
+          todo_id: string;
+          updated_at?: string;
+        };
         Update: {
-          concluido?: boolean
-          created_at?: string
-          id?: string
-          ordem?: number
-          texto?: string
-          todo_id?: string
-          updated_at?: string
-        }
+          concluido?: boolean;
+          created_at?: string;
+          id?: string;
+          ordem?: number;
+          texto?: string;
+          todo_id?: string;
+          updated_at?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "todo_checklist_todo_id_fkey"
-            columns: ["todo_id"]
-            isOneToOne: false
-            referencedRelation: "todo"
-            referencedColumns: ["id"]
+            foreignKeyName: "todo_checklist_todo_id_fkey";
+            columns: ["todo_id"];
+            isOneToOne: false;
+            referencedRelation: "todo";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       todo_comentario: {
         Row: {
-          autor_id: string
-          autor_nome: string | null
-          conteudo: string
-          created_at: string
-          id: string
-          todo_id: string
-        }
+          autor_id: string;
+          autor_nome: string | null;
+          conteudo: string;
+          created_at: string;
+          id: string;
+          todo_id: string;
+        };
         Insert: {
-          autor_id: string
-          autor_nome?: string | null
-          conteudo: string
-          created_at?: string
-          id?: string
-          todo_id: string
-        }
+          autor_id: string;
+          autor_nome?: string | null;
+          conteudo: string;
+          created_at?: string;
+          id?: string;
+          todo_id: string;
+        };
         Update: {
-          autor_id?: string
-          autor_nome?: string | null
-          conteudo?: string
-          created_at?: string
-          id?: string
-          todo_id?: string
-        }
+          autor_id?: string;
+          autor_nome?: string | null;
+          conteudo?: string;
+          created_at?: string;
+          id?: string;
+          todo_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: "todo_comentario_todo_id_fkey"
-            columns: ["todo_id"]
-            isOneToOne: false
-            referencedRelation: "todo"
-            referencedColumns: ["id"]
+            foreignKeyName: "todo_comentario_todo_id_fkey";
+            columns: ["todo_id"];
+            isOneToOne: false;
+            referencedRelation: "todo";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       todo_historico: {
         Row: {
-          autor_id: string | null
-          autor_nome: string | null
-          campo: string
-          created_at: string
-          id: string
-          todo_id: string
-          valor_antigo: string | null
-          valor_novo: string | null
-        }
+          autor_id: string | null;
+          autor_nome: string | null;
+          campo: string;
+          created_at: string;
+          id: string;
+          todo_id: string;
+          valor_antigo: string | null;
+          valor_novo: string | null;
+        };
         Insert: {
-          autor_id?: string | null
-          autor_nome?: string | null
-          campo: string
-          created_at?: string
-          id?: string
-          todo_id: string
-          valor_antigo?: string | null
-          valor_novo?: string | null
-        }
+          autor_id?: string | null;
+          autor_nome?: string | null;
+          campo: string;
+          created_at?: string;
+          id?: string;
+          todo_id: string;
+          valor_antigo?: string | null;
+          valor_novo?: string | null;
+        };
         Update: {
-          autor_id?: string | null
-          autor_nome?: string | null
-          campo?: string
-          created_at?: string
-          id?: string
-          todo_id?: string
-          valor_antigo?: string | null
-          valor_novo?: string | null
-        }
+          autor_id?: string | null;
+          autor_nome?: string | null;
+          campo?: string;
+          created_at?: string;
+          id?: string;
+          todo_id?: string;
+          valor_antigo?: string | null;
+          valor_novo?: string | null;
+        };
         Relationships: [
           {
-            foreignKeyName: "todo_historico_todo_id_fkey"
-            columns: ["todo_id"]
-            isOneToOne: false
-            referencedRelation: "todo"
-            referencedColumns: ["id"]
+            foreignKeyName: "todo_historico_todo_id_fkey";
+            columns: ["todo_id"];
+            isOneToOne: false;
+            referencedRelation: "todo";
+            referencedColumns: ["id"];
           },
-        ]
-      }
+        ];
+      };
       todo_importacao_lote: {
         Row: {
-          created_at: string
-          criado_por: string | null
-          descricao: string | null
-          id: string
-          nome: string
-          tipo: string
-          total_tarefas: number
-          updated_at: string
-        }
+          created_at: string;
+          criado_por: string | null;
+          descricao: string | null;
+          id: string;
+          nome: string;
+          tipo: string;
+          total_tarefas: number;
+          updated_at: string;
+        };
         Insert: {
-          created_at?: string
-          criado_por?: string | null
-          descricao?: string | null
-          id?: string
-          nome: string
-          tipo?: string
-          total_tarefas?: number
-          updated_at?: string
-        }
+          created_at?: string;
+          criado_por?: string | null;
+          descricao?: string | null;
+          id?: string;
+          nome: string;
+          tipo?: string;
+          total_tarefas?: number;
+          updated_at?: string;
+        };
         Update: {
-          created_at?: string
-          criado_por?: string | null
-          descricao?: string | null
-          id?: string
-          nome?: string
-          tipo?: string
-          total_tarefas?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
+          created_at?: string;
+          criado_por?: string | null;
+          descricao?: string | null;
+          id?: string;
+          nome?: string;
+          tipo?: string;
+          total_tarefas?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       unidades_rede: {
         Row: {
-          bairro: string | null
-          cod_unidade: string
-          created_at: string
-          endereco: string | null
-          id: string
-          nome: string
-          polo: string | null
-          tecnicos: string[]
-          tipo: string
-          updated_at: string
-          zona: string | null
-        }
+          bairro: string | null;
+          cod_unidade: string;
+          created_at: string;
+          endereco: string | null;
+          id: string;
+          nome: string;
+          polo: string | null;
+          tecnicos: string[];
+          tipo: string;
+          updated_at: string;
+          zona: string | null;
+        };
         Insert: {
-          bairro?: string | null
-          cod_unidade: string
-          created_at?: string
-          endereco?: string | null
-          id?: string
-          nome: string
-          polo?: string | null
-          tecnicos?: string[]
-          tipo: string
-          updated_at?: string
-          zona?: string | null
-        }
+          bairro?: string | null;
+          cod_unidade: string;
+          created_at?: string;
+          endereco?: string | null;
+          id?: string;
+          nome: string;
+          polo?: string | null;
+          tecnicos?: string[];
+          tipo: string;
+          updated_at?: string;
+          zona?: string | null;
+        };
         Update: {
-          bairro?: string | null
-          cod_unidade?: string
-          created_at?: string
-          endereco?: string | null
-          id?: string
-          nome?: string
-          polo?: string | null
-          tecnicos?: string[]
-          tipo?: string
-          updated_at?: string
-          zona?: string | null
-        }
-        Relationships: []
-      }
+          bairro?: string | null;
+          cod_unidade?: string;
+          created_at?: string;
+          endereco?: string | null;
+          id?: string;
+          nome?: string;
+          polo?: string | null;
+          tecnicos?: string[];
+          tipo?: string;
+          updated_at?: string;
+          zona?: string | null;
+        };
+        Relationships: [];
+      };
       user_roles: {
         Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          created_at: string;
+          id: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Insert: {
-          created_at?: string
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
+          created_at?: string;
+          id?: string;
+          role: Database["public"]["Enums"]["app_role"];
+          user_id: string;
+        };
         Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-    }
+          created_at?: string;
+          id?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+    };
     Views: {
-      [_ in never]: never
-    }
+      [_ in never]: never;
+    };
     Functions: {
       confirmar_liberacao: {
         Args: {
-          p_dispensada?: boolean
-          p_etapa: string
-          p_ids: string[]
-          p_marcar?: boolean
-          p_objetos?: string
-        }
-        Returns: Json
-      }
+          p_dispensada?: boolean;
+          p_etapa: string;
+          p_ids: string[];
+          p_marcar?: boolean;
+          p_objetos?: string;
+        };
+        Returns: Json;
+      };
       registrar_visita_central: {
-        Args: { p_marcar_visto?: boolean }
-        Returns: string
-      }
+        Args: { p_marcar_visto?: boolean };
+        Returns: string;
+      };
       receber_pacote_homologacao: {
-        Args: { p_descricao: string | null; p_itens: Json; p_nome: string }
-        Returns: Json
-      }
+        Args: { p_descricao: string | null; p_itens: Json; p_nome: string };
+        Returns: Json;
+      };
       enqueue_notificacao: {
         Args: {
-          _link?: string
-          _mensagem?: string
-          _metadata?: Json
-          _tipo: Database["public"]["Enums"]["notificacao_tipo"]
-          _titulo: string
-          _user_id: string
-        }
-        Returns: string
-      }
-      executar_busca_natural: { Args: { _sql: string }; Returns: Json }
-      gerar_avisos_processos_proximos: { Args: never; Returns: number }
-      gerar_notificacoes_prazo: { Args: never; Returns: undefined }
+          _link?: string;
+          _mensagem?: string;
+          _metadata?: Json;
+          _tipo: Database["public"]["Enums"]["notificacao_tipo"];
+          _titulo: string;
+          _user_id: string;
+        };
+        Returns: string;
+      };
+      executar_busca_natural: { Args: { _sql: string }; Returns: Json };
+      gerar_avisos_processos_proximos: { Args: never; Returns: number };
+      gerar_notificacoes_prazo: { Args: never; Returns: undefined };
       get_tarefa_counts: {
-        Args: never
+        Args: never;
         Returns: {
-          anexos: number
-          checklist_done: number
-          checklist_total: number
-          comentarios: number
-          todo_id: string
-        }[]
-      }
+          anexos: number;
+          checklist_done: number;
+          checklist_total: number;
+          comentarios: number;
+          todo_id: string;
+        }[];
+      };
       has_role: {
         Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      html_escape: { Args: { _t: string }; Returns: string }
-      limpar_atribuicoes_finalizadas: { Args: never; Returns: Json }
-      marcar_transcricoes_travadas: { Args: never; Returns: number }
-      notify_processo_proximo: { Args: never; Returns: undefined }
-    }
+          _role: Database["public"]["Enums"]["app_role"];
+          _user_id: string;
+        };
+        Returns: boolean;
+      };
+      html_escape: { Args: { _t: string }; Returns: string };
+      limpar_atribuicoes_finalizadas: { Args: never; Returns: Json };
+      marcar_transcricoes_travadas: { Args: never; Returns: number };
+      notify_processo_proximo: { Args: never; Returns: undefined };
+    };
     Enums: {
-      app_role: "gestor" | "analista"
-      aviso_tipo: "informativo" | "alerta" | "critico"
-      chamado_externo_prioridade: "baixa" | "media" | "alta" | "critica"
-      chamado_externo_status: "aberto" | "encaminhado" | "finalizado"
+      app_role: "gestor" | "analista";
+      aviso_tipo: "informativo" | "alerta" | "critico";
+      chamado_externo_prioridade: "baixa" | "media" | "alta" | "critica";
+      chamado_externo_status: "aberto" | "encaminhado" | "finalizado";
       demanda_categoria:
         | "bug"
         | "melhoria"
         | "nova_funcionalidade"
         | "duvida"
         | "documentacao"
-        | "outro"
-      demanda_origem: "email" | "reuniao" | "chamado" | "whatsapp" | "outro"
-      demanda_prioridade: "baixa" | "media" | "alta" | "critica"
+        | "outro";
+      demanda_origem: "email" | "reuniao" | "chamado" | "whatsapp" | "outro";
+      demanda_prioridade: "baixa" | "media" | "alta" | "critica";
       demanda_status:
         | "aberta"
         | "em_analise"
@@ -1589,10 +1583,10 @@ export type Database = {
         | "aguardando_cliente"
         | "homologacao"
         | "concluida"
-        | "cancelada"
-      evento_tipo: "folga" | "falta" | "atestado" | "atraso" | "ferias_avulso"
-      local_trabalho: "escritorio" | "rua"
-      notificacao_canal: "in_app" | "email"
+        | "cancelada";
+      evento_tipo: "folga" | "falta" | "atestado" | "atraso" | "ferias_avulso";
+      local_trabalho: "escritorio" | "rua";
+      notificacao_canal: "in_app" | "email";
       notificacao_tipo:
         | "tarefa_atribuida"
         | "tarefa_prazo"
@@ -1604,22 +1598,12 @@ export type Database = {
         | "aviso_critico"
         | "sistema"
         | "resumo_semanal"
-        | "relatorio_novo"
-      processo_status: "planejado" | "em_andamento" | "concluido" | "atrasado"
-      reuniao_status: "agendada" | "realizada" | "cancelada"
-      reuniao_tipo:
-        | "interna"
-        | "cliente"
-        | "fornecedor"
-        | "alinhamento"
-        | "outro"
-      reuniao_transcricao_status:
-        | "pendente"
-        | "processando"
-        | "concluido"
-        | "erro"
-        | "pausado"
-      todo_prioridade: "baixa" | "media" | "alta"
+        | "relatorio_novo";
+      processo_status: "planejado" | "em_andamento" | "concluido" | "atrasado";
+      reuniao_status: "agendada" | "realizada" | "cancelada";
+      reuniao_tipo: "interna" | "cliente" | "fornecedor" | "alinhamento" | "outro";
+      reuniao_transcricao_status: "pendente" | "processando" | "concluido" | "erro" | "pausado";
+      todo_prioridade: "baixa" | "media" | "alta";
       todo_status:
         | "pendente"
         | "em_andamento"
@@ -1634,130 +1618,128 @@ export type Database = {
         | "aprovado_ressalvas"
         | "encerrada"
         | "pre_build"
-        | "reprovado"
-    }
+        | "reprovado";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R
+      Row: infer R;
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
       }
       ? R
       : never
-    : never
+    : never;
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
+      Insert: infer I;
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
+        Insert: infer I;
       }
       ? I
       : never
-    : never
+    : never;
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
+      Update: infer U;
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
+        Update: infer U;
       }
       ? U
       : never
-    : never
+    : never;
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+    : never;
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
+  schema: keyof DatabaseWithoutInternals;
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+    : never;
 
 export const Constants = {
   public: {
@@ -1803,20 +1785,8 @@ export const Constants = {
       ],
       processo_status: ["planejado", "em_andamento", "concluido", "atrasado"],
       reuniao_status: ["agendada", "realizada", "cancelada"],
-      reuniao_tipo: [
-        "interna",
-        "cliente",
-        "fornecedor",
-        "alinhamento",
-        "outro",
-      ],
-      reuniao_transcricao_status: [
-        "pendente",
-        "processando",
-        "concluido",
-        "erro",
-        "pausado",
-      ],
+      reuniao_tipo: ["interna", "cliente", "fornecedor", "alinhamento", "outro"],
+      reuniao_transcricao_status: ["pendente", "processando", "concluido", "erro", "pausado"],
       todo_prioridade: ["baixa", "media", "alta"],
       todo_status: [
         "pendente",
@@ -1836,4 +1806,4 @@ export const Constants = {
       ],
     },
   },
-} as const
+} as const;

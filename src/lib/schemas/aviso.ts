@@ -14,10 +14,7 @@ export const avisoSchema = z.object({
     .max(1000, "Mensagem deve ter no máximo 1000 caracteres"),
   tipo: z.enum(["informativo", "alerta", "critico"]),
   ativo: z.boolean().default(true),
-  destinatarios: z
-    .array(z.string().uuid())
-    .max(200, "Máximo de 200 destinatários")
-    .default([]),
+  destinatarios: z.array(z.string().uuid()).max(200, "Máximo de 200 destinatários").default([]),
   expira_em: z
     .preprocess(
       emptyToNull,
