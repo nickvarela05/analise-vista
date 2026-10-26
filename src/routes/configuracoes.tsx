@@ -8,6 +8,7 @@ import { useTheme } from "@/lib/theme-provider";
 import {
   Sun,
   Moon,
+  Layers,
   LogOut,
   Settings2,
   Mail,
@@ -27,6 +28,8 @@ import { ConfiguracoesIA } from "@/components/notificacoes/ConfiguracoesIA";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHero } from "@/components/shared/PageHero";
 import { papelLabel } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { AnimacoesConfig } from "@/components/configuracoes/AnimacoesConfig";
 
 export const Route = createFileRoute("/configuracoes")({
   component: ConfigRoute,
@@ -42,7 +45,8 @@ function ConfigRoute() {
 
 function Configuracoes() {
   const { user, role, signOut } = useAuth();
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const nomeTema = { light: "Claro", dark: "Escuro", vidro: "Vidro" }[theme];
 
   const initials =
     (user?.email ?? "?")
@@ -71,7 +75,7 @@ function Configuracoes() {
           },
           {
             label: "Tema atual",
-            value: theme === "dark" ? "Escuro" : "Claro",
+            value: nomeTema,
             icon: theme === "dark" ? Moon : Sun,
             tone: theme === "dark" ? "violet" : "amber",
           },
@@ -155,24 +159,45 @@ function Configuracoes() {
                 <div className="flex-1">
                   <p className="text-sm font-medium">Tema da interface</p>
                   <p className="text-xs text-muted-foreground">
-                    Atualmente usando o tema{" "}
-                    <span className="font-medium text-foreground">
-                      {theme === "dark" ? "escuro" : "claro"}
-                    </span>
-                    .
+                    Cada pessoa escolhe o seu; fica guardado neste navegador.
                   </p>
                 </div>
-                <Button variant="outline" onClick={toggle} className="gap-2">
-                  {theme === "dark" ? (
-                    <Sun className="h-4 w-4" />
-                  ) : (
-                    <Moon className="h-4 w-4" />
-                  )}
-                  Mudar para {theme === "dark" ? "claro" : "escuro"}
-                </Button>
+                <div
+                  className="flex rounded-xl border bg-muted/40 p-1"
+                  role="radiogroup"
+                  aria-label="Tema"
+                >
+                  {(
+                    [
+                      { id: "light", rotulo: "Claro", Icone: Sun },
+                      { id: "dark", rotulo: "Escuro", Icone: Moon },
+                      { id: "vidro", rotulo: "Vidro", Icone: Layers },
+                    ] as const
+                  ).map(({ id, rotulo, Icone }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={theme === id}
+                      onClick={() => setTheme(id)}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm transition-colors",
+                        theme === id
+                          ? "bg-background font-medium text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Icone className="h-4 w-4" />
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Animações (26/10/2026) */}
+          <AnimacoesConfig />
 
           {/* Sessão */}
           <Card className="border-destructive/20">

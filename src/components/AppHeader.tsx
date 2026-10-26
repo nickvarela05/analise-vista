@@ -1,6 +1,15 @@
 import * as React from "react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
-import { Search, Moon, Sun, LogOut, User as UserIcon, Sparkles, ChevronRight } from "lucide-react";
+import {
+  Search,
+  Moon,
+  Sun,
+  Layers,
+  LogOut,
+  User as UserIcon,
+  Sparkles,
+  ChevronRight,
+} from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/avisos/NotificationBell";
@@ -46,7 +55,7 @@ function currentLabel(pathname: string) {
 }
 
 export function AppHeader() {
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,6 +68,7 @@ export function AppHeader() {
 
   return (
     <header
+      data-app-header
       className={cn(
         "sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border/70 px-3 sm:gap-3 sm:px-4",
         "bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/55",
@@ -70,7 +80,9 @@ export function AppHeader() {
       <SidebarTrigger className="hover:bg-accent" />
 
       {/* Celular: o caminho some, então mostra só o nome da página (M12 da auditoria visual). */}
-      <span className="min-w-0 truncate text-sm font-semibold text-foreground md:hidden">{pageLabel}</span>
+      <span className="min-w-0 truncate text-sm font-semibold text-foreground md:hidden">
+        {pageLabel}
+      </span>
 
       {/* Breadcrumb-ish current page */}
       <div className="hidden items-center gap-1.5 text-sm md:flex">
@@ -110,26 +122,38 @@ export function AppHeader() {
       <div className="flex items-center gap-1">
         <NotificationBell />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggle}
-          aria-label="Alternar tema"
-          className="relative overflow-hidden"
+        {/* Tema em um clique (26/10/2026): escuro, vidro e claro lado a lado. */}
+        <div
+          className="flex items-center rounded-full border border-border/60 bg-muted/40 p-0.5"
+          role="radiogroup"
+          aria-label="Tema"
         >
-          <Sun
-            className={cn(
-              "h-4 w-4 transition-all duration-300",
-              theme === "dark" ? "rotate-0 scale-100" : "-rotate-90 scale-0",
-            )}
-          />
-          <Moon
-            className={cn(
-              "absolute h-4 w-4 transition-all duration-300",
-              theme === "dark" ? "rotate-90 scale-0" : "rotate-0 scale-100",
-            )}
-          />
-        </Button>
+          {(
+            [
+              { id: "dark", rotulo: "Tema escuro", Icone: Moon },
+              { id: "vidro", rotulo: "Tema vidro", Icone: Layers },
+              { id: "light", rotulo: "Tema claro", Icone: Sun },
+            ] as const
+          ).map(({ id, rotulo, Icone }) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={theme === id}
+              aria-label={rotulo}
+              title={rotulo}
+              onClick={() => setTheme(id)}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200",
+                theme === id
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icone className="h-3.5 w-3.5" />
+            </button>
+          ))}
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -179,7 +203,10 @@ export function AppHeader() {
             {user && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => signOut()} className="gap-2 text-rose-600 focus:text-rose-600">
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="gap-2 text-rose-600 focus:text-rose-600"
+                >
                   <LogOut className="h-4 w-4" /> Sair
                 </DropdownMenuItem>
               </>

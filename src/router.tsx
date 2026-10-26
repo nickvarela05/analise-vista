@@ -2,8 +2,11 @@ import { createRouter } from "@tanstack/react-router";
 import { QueryClient } from "@tanstack/react-query";
 import { routeTree } from "./routeTree.gen";
 import { ErrorFallback } from "./components/ErrorFallback";
+import { aplicarPreferenciaMovimento } from "./lib/movimento";
 
 export const getRouter = () => {
+  // Animações: aplica a escolha salva (Configurações) antes da primeira tela.
+  aplicarPreferenciaMovimento();
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -25,9 +28,7 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
-    defaultErrorComponent: ({ error, reset }) => (
-      <ErrorFallback error={error} reset={reset} />
-    ),
+    defaultErrorComponent: ({ error, reset }) => <ErrorFallback error={error} reset={reset} />,
   });
 
   return router;

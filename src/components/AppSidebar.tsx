@@ -171,23 +171,23 @@ export function AppSidebar() {
                           asChild
                           isActive={active}
                           tooltip={item.title}
-                          className={cn(
-                            "group/btn relative h-9 rounded-lg transition-all",
-                            active && "bg-sidebar-accent",
-                          )}
+                          className="group/btn relative h-9 rounded-lg transition-all data-[active=true]:bg-transparent"
                         >
-                          <Link to={item.url} className="flex items-center gap-2.5">
-                            {/* active accent bar */}
-                            <span
-                              aria-hidden
-                              className={cn(
-                                "absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full transition-all",
-                                active ? "bg-primary" : "bg-transparent",
-                              )}
-                            />
+                          <Link to={item.url} viewTransition className="flex items-center gap-2.5">
+                            {/* Destaque do item ativo: um só no menu, com nome de transição, para o
+                                navegador deslizá-lo do item antigo para o novo (26/10/2026). */}
+                            {active && (
+                              <span
+                                aria-hidden
+                                data-vt-menu-ativo
+                                className="absolute inset-0 -z-0 rounded-lg bg-sidebar-accent"
+                              >
+                                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-primary" />
+                              </span>
+                            )}
                             <Icon
                               className={cn(
-                                "h-4 w-4 shrink-0 transition-colors",
+                                "relative h-4 w-4 shrink-0 transition-colors",
                                 active
                                   ? "text-primary"
                                   : "text-sidebar-foreground/55 group-hover/btn:text-sidebar-foreground",
@@ -195,7 +195,7 @@ export function AppSidebar() {
                             />
                             <span
                               className={cn(
-                                "truncate text-sm transition-colors",
+                                "relative truncate text-sm transition-colors",
                                 active
                                   ? "font-semibold text-sidebar-foreground"
                                   : "text-sidebar-foreground/75",
@@ -231,7 +231,7 @@ export function AppSidebar() {
                     active && "bg-sidebar-accent",
                   )}
                 >
-                  <Link to={item.url} className="flex items-center gap-2.5">
+                  <Link to={item.url} viewTransition className="flex items-center gap-2.5">
                     <Icon
                       className={cn(
                         "h-4 w-4 shrink-0 transition-transform duration-300 group-hover/btn:rotate-45",
