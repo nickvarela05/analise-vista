@@ -194,14 +194,30 @@ function Atividades() {
   // mesmas tabelas em telas irmãs.
   const { data: tarefas = [], isLoading: loadingTarefas } = useQuery({
     queryKey: qk.dash.tarefas(),
-    // Paginado: sem isso o PostgREST devolve só 1.000 das ~9.100 tarefas.
+    // Só o que a agenda mostra: tarefas abertas com data prevista (36 de ~9.000 em 26/10/2026),
+    // com as colunas usadas. Antes baixava todas as tarefas com todas as colunas.
+    // Paginado: sem isso o PostgREST devolve no máximo 1.000 linhas.
     queryFn: () =>
-      fetchAllRows((from, to) => supabase.from("todo").select("*").order("id").range(from, to)),
+      fetchAllRows((from, to) =>
+        supabase
+          .from("todo")
+          .select(
+            "id, titulo, data_prevista, status, prioridade, descricao, responsavel_id, responsaveis_ids, equipe_toda",
+          )
+          .not("data_prevista", "is", null)
+          .not("status", "in", "(concluida,producao,cancelada,reprovada)")
+          .order("id")
+          .range(from, to),
+      ),
   });
   const { data: demandas = [], isLoading: loadingDemandas } = useQuery({
     queryKey: qk.dash.demandas(),
     queryFn: async () => {
-      const { data, error } = await supabase.from("demanda").select("*");
+      const { data, error } = await supabase
+        .from("demanda")
+        .select(
+          "id, titulo, prazo, status, prioridade, descricao, tags, responsavel_id, responsaveis_ids, equipe_toda",
+        );
       if (error) throw error;
       return data ?? [];
     },
@@ -209,7 +225,13 @@ function Atividades() {
   const { data: reunioes = [], isLoading: loadingReunioes } = useQuery({
     queryKey: qk.dash.reunioes(),
     queryFn: async () => {
-      const { data, error } = await supabase.from("reuniao").select("*").order("data_reuniao");
+      // Sem transcrição e resumo (eram quase todo o peso): a agenda usa só a pauta.
+      const { data, error } = await supabase
+        .from("reuniao")
+        .select(
+          "id, titulo, data_reuniao, status, pauta, responsavel_id, responsaveis_ids, equipe_toda",
+        )
+        .order("data_reuniao");
       if (error) throw error;
       return data ?? [];
     },
