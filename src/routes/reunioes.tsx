@@ -214,7 +214,9 @@ function Reunioes() {
         try {
           const j = await res.json();
           msg = j.error || msg;
-        } catch {}
+        } catch {
+          // resposta sem JSON: fica a mensagem com o código HTTP
+        }
         throw new Error(msg);
       }
       const blob = await res.blob();

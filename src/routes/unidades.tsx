@@ -1113,9 +1113,12 @@ function UnidadeDrawer({
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState<Unidade | null>(unidade);
 
+  // Reseta só ao trocar de unidade: um refetch da mesma unidade (realtime, salvar) não pode
+  // tirar a pessoa do modo de edição nem apagar o que ela está digitando.
   React.useEffect(() => {
     setForm(unidade);
     setEditing(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unidade?.id]);
 
   if (!unidade || !form) return null;

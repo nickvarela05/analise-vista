@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { agruparColaboradoresPorEquipe } from "@/lib/equipes";
 
 import { prioridadeLabel } from "@/lib/utils";
+import { initialFilters } from "./lib/filtrosIniciais";
 export interface TarefaFiltersState {
   search: string;
   responsaveis: string[];
@@ -27,17 +28,6 @@ export interface TarefaFiltersState {
   lotes: string[];
   emTeste: boolean;
 }
-
-export const initialFilters: TarefaFiltersState = {
-  search: "",
-  responsaveis: [],
-  prioridades: [],
-  prazo: "todos",
-  comDemanda: "todos",
-  origem: "todos",
-  lotes: [],
-  emTeste: false,
-};
 
 interface Props {
   value: TarefaFiltersState;

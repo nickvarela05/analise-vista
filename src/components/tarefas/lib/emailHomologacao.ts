@@ -26,7 +26,10 @@ const RE_DATA = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/;
 const RE_LINK = /https?:\/\/\S+/i;
 
 function limpar(s: string): string {
-  return s.replace(/ /g, " ").replace(/\s+/g, " ").trim();
+  return s
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function dataParaIso(s: string): string | null {

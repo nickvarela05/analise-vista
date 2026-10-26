@@ -1,5 +1,6 @@
 import * as React from "react";
 import { menosMovimento } from "@/lib/movimento";
+import { separar } from "./separarNumero";
 
 /**
  * Número que "conta" até o valor ao aparecer e ao mudar (pedido do Nickolas, 23/10/2026).
@@ -9,25 +10,6 @@ import { menosMovimento } from "@/lib/movimento";
  * aparece como está. Com as animações desligadas (Configurações → Animações) vê o valor final direto.
  */
 const DURACAO_MS = 700;
-const NUMERO_NO_INICIO = /^(-?\d+(?:[.,]\d+)?)(.*)$/s;
-
-export function separar(
-  valor: number | string,
-): { alvo: number; casas: number; virgula: boolean; resto: string } | null {
-  if (typeof valor === "number") {
-    if (!Number.isFinite(valor)) return null;
-    const casas = Number.isInteger(valor)
-      ? 0
-      : Math.min(2, String(valor).split(".")[1]?.length ?? 0);
-    return { alvo: valor, casas, virgula: false, resto: "" };
-  }
-  const m = NUMERO_NO_INICIO.exec(valor);
-  if (!m) return null;
-  const virgula = m[1].includes(",");
-  const casas = m[1].split(/[.,]/)[1]?.length ?? 0;
-  return { alvo: Number(m[1].replace(",", ".")), casas, virgula, resto: m[2] };
-}
-
 function formatar(n: number, casas: number, virgula: boolean) {
   const s = n.toFixed(casas);
   return virgula ? s.replace(".", ",") : s;

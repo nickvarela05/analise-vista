@@ -5,6 +5,9 @@ import { requireUser, assertReuniaoAccess } from "../_shared/auth.ts";
 import { aiFetch, AI_API_KEY } from "../_shared/ai.ts";
 import { analisarReuniao } from "../_shared/analise-reuniao.ts";
 
+// API do runtime das edge functions do Supabase (não tem tipo no Deno padrão).
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
@@ -764,9 +767,7 @@ Deno.serve(async (req) => {
       await processarReuniao(reuniaoId, audioPath, !retomar);
     })();
 
-    // @ts-ignore — API do runtime de edge functions
     if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
-      // @ts-ignore
       EdgeRuntime.waitUntil(task);
     } else {
       await task;

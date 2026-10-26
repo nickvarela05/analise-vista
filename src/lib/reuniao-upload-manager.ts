@@ -136,7 +136,7 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
 
       // === Upload ===
       useUploadStore.getState().upsert(reuniaoId, { phase: "uploading", progress: 10 });
-      const safeName = finalFile.name.replace(/[^\w.\-]+/g, "_");
+      const safeName = finalFile.name.replace(/[^\w.-]+/g, "_");
       const path = `${userId}/${Date.now()}-${safeName}`;
       const normalizedType =
         finalFile.type && finalFile.type !== "video/mp4" ? finalFile.type : "audio/mp4";
