@@ -6,7 +6,7 @@ import { menosMovimento } from "@/lib/movimento";
  * Leve: um requestAnimationFrame por número, só enquanto anima, escrevendo direto no DOM (sem
  * re-render do React a cada quadro). Aceita número ou texto que começa com número ("2,5 dias",
  * "18 h"): só a parte numérica anima, com as mesmas casas decimais. Texto sem número ("—")
- * aparece como está. Quem pede menos movimento no sistema vê o valor final direto.
+ * aparece como está. Com as animações desligadas (Configurações → Animações) vê o valor final direto.
  */
 const DURACAO_MS = 700;
 const NUMERO_NO_INICIO = /^(-?\d+(?:[.,]\d+)?)(.*)$/s;

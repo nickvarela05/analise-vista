@@ -17,7 +17,7 @@ const OPCOES: { id: PreferenciaMovimento; rotulo: string }[] = [
 
 /** Animações (contagem dos números, barras, transição de tela): escolha de cada pessoa. */
 export function AnimacoesConfig() {
-  const [escolha, setEscolha] = React.useState<PreferenciaMovimento>("sistema");
+  const [escolha, setEscolha] = React.useState<PreferenciaMovimento>("sempre");
   const [sistemaPede, setSistemaPede] = React.useState(false);
 
   React.useEffect(() => {
@@ -70,8 +70,7 @@ export function AnimacoesConfig() {
         {sistemaPede && escolha === "sistema" && (
           <p className="mt-3 rounded-lg bg-warning/10 px-3 py-2 text-xs text-foreground">
             O seu computador está pedindo menos movimento (efeitos de animação do Windows
-            desligados), então as animações estão desligadas. Para vê-las mesmo assim, escolha
-            "Sempre".
+            desligados), então, com "Seguir o sistema", as animações ficam desligadas.
           </p>
         )}
       </CardContent>
