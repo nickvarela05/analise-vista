@@ -33,3 +33,6 @@ dist-ssr
 
 # Arquivos locais da CLI do Supabase
 supabase/.temp
+
+# Gerado ao rodar o Deno na raiz (checagem local das funções do Supabase)
+deno.lock
