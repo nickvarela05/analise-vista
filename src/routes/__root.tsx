@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/lib/theme-provider";
+import { SCRIPT_TEMA_INICIAL, ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
 import { ErrorFallback } from "@/components/ErrorFallback";
 import { recarregarPorAtualizacao } from "@/lib/stale-build";
@@ -77,6 +77,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }} />
         <HeadContent />
       </head>
       <body>
