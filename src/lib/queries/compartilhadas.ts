@@ -4,7 +4,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { listSolicitacoesRelatorios } from "@/lib/n8n-db.functions";
-import type { AvisoRow, ReuniaoRow } from "@/lib/db-types";
+import type { AvisoRow } from "@/lib/db-types";
 
 export const meuProfileQuery = (userId: string | undefined | null) =>
   queryOptions({
@@ -19,17 +19,6 @@ export const meuProfileQuery = (userId: string | undefined | null) =>
         .maybeSingle();
       if (error) throw error;
       return data;
-    },
-  });
-
-export const reunioesQuery = () =>
-  queryOptions({
-    queryKey: qk.dash.reunioes(),
-    staleTime: 30_000,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("reuniao").select("*").order("data_reuniao");
-      if (error) throw error;
-      return (data ?? []) as ReuniaoRow[];
     },
   });
 
