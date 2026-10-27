@@ -81,13 +81,3 @@ export function buildBairroCanonMap(values: Array<string | null | undefined>): M
   }
   return map;
 }
-
-export const canonBairro = (
-  value: string | null | undefined,
-  map: Map<string, string>,
-): string | null => {
-  if (!value) return null;
-  const t = value.trim();
-  if (!t) return null;
-  return map.get(t) ?? t;
-};

@@ -15,8 +15,3 @@ export function parseDateOnly(value?: string | null): Date | null {
   }
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
-
-/** Igual a `parseDateOnly`, mas lança/retorna data inválida em vez de null. */
-export function parseDateOnlyOrNow(value?: string | null): Date {
-  return parseDateOnly(value) ?? new Date();
-}

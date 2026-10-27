@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { Calendar, User, Tag, ArrowRight, AlertCircle } from "lucide-react";
 import { format } from "date-fns";

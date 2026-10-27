@@ -28,8 +28,6 @@ export const iaPromptConfigSchema = z.object({
   ativo: z.boolean(),
 });
 
-export type IaPromptConfig = z.infer<typeof iaPromptConfigSchema>;
-
 // ---------- Preferências de notificação ----------
 
 export const EVENTOS_TIPOS = [
@@ -45,7 +43,6 @@ export const EVENTOS_TIPOS = [
 export type EventoTipo = (typeof EVENTOS_TIPOS)[number];
 
 export const CANAIS_NOTIF = ["in_app", "email"] as const;
-export type CanalNotif = (typeof CANAIS_NOTIF)[number];
 
 export const notifPreferenciaSchema = z.object({
   user_id: z.string().uuid({ message: "user_id inválido" }),
@@ -53,5 +50,3 @@ export const notifPreferenciaSchema = z.object({
   canal: z.enum(CANAIS_NOTIF),
   ativo: z.boolean(),
 });
-
-export type NotifPreferencia = z.infer<typeof notifPreferenciaSchema>;

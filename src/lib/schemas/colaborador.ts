@@ -19,5 +19,3 @@ export const colaboradorSchema = z.object({
   ),
   local_trabalho: z.enum(LOCAL_TRABALHO).default("escritorio"),
 });
-
-export type ColaboradorInput = z.infer<typeof colaboradorSchema>;

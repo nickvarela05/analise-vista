@@ -212,9 +212,3 @@ export async function startUploadJob(opts: StartJobOpts): Promise<void> {
 export function useUploadJob(reuniaoId: string | null | undefined): UploadJob | undefined {
   return useUploadStore((s) => (reuniaoId ? s.jobs[reuniaoId] : undefined));
 }
-
-/** Há algum job em andamento? (para beforeunload) */
-export function hasActiveJobs(): boolean {
-  const jobs = useUploadStore.getState().jobs;
-  return Object.values(jobs).some((j) => j.phase === "compressing" || j.phase === "uploading");
-}

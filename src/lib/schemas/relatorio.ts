@@ -43,5 +43,3 @@ export const relatorioSchema = z.object({
   ),
   status: z.enum(STATUS_SOLICITACAO),
 });
-
-export type RelatorioInput = z.infer<typeof relatorioSchema>;

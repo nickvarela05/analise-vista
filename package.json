@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p .",
+    "knip": "npx -y knip@5.88.1",
     "test": "vitest run",
     "test:watch": "vitest",
     "format": "prettier --write ."

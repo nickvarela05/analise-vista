@@ -23,6 +23,3 @@ export const convidarUsuarioSchema = z.object({
   email: emailField,
   role: roleField,
 });
-
-export type CriarUsuarioInput = z.infer<typeof criarUsuarioSchema>;
-export type ConvidarUsuarioInput = z.infer<typeof convidarUsuarioSchema>;

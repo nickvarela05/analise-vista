@@ -1,0 +1,50 @@
+# Checagens de cada PR (fase E do plano de limpeza, 27/10/2026): o PR só deve entrar com tudo verde.
+# Não publica nada; a prévia e a produção continuam com o Workers Builds da Cloudflare.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Um push novo no mesmo PR cancela a rodada anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checagens:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Mesma versão do bun que gerou o bun.lock e que o build da Cloudflare usa.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.15
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: bun install --frozen-lockfile
+
+      - name: Tipos (inclui imports e variáveis sem uso)
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formatação
+        run: npx prettier --check .
+
+      - name: Testes
+        run: npm test
+
+      - name: Código e dependências sem uso (knip)
+        run: npm run knip
+
+      - name: Build
+        run: npm run build

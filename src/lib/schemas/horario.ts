@@ -41,5 +41,3 @@ export const horarioSchema = z
       });
     }
   });
-
-export type HorarioInput = z.infer<typeof horarioSchema>;

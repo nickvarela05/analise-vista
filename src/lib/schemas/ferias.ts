@@ -28,5 +28,3 @@ export const feriasSchema = z
       });
     }
   });
-
-export type FeriasInput = z.infer<typeof feriasSchema>;

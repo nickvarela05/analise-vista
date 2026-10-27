@@ -3,7 +3,6 @@ import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Loader2,
   LayoutGrid,
   List as ListIcon,
   FlaskConical,

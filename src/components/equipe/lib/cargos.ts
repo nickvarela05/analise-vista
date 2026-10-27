@@ -9,5 +9,3 @@ export const CARGOS = [
   "Help-Desk",
   "Técnico de Suporte de TI",
 ] as const;
-
-export type Cargo = (typeof CARGOS)[number];

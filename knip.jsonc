@@ -1,0 +1,18 @@
+// Configuração do knip (fase E do plano de limpeza, 27/10/2026): acha arquivos, exports e
+// dependências sem uso. Roda no CI de cada PR; se acusar algo, apague o que sobrou ou, se for
+// falso positivo, explique aqui por quê.
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  // Export usado só dentro do próprio arquivo não é sujeira.
+  "ignoreExportsUsedInFile": true,
+  // Funções do Supabase rodam no Deno, fora do grafo do Vite; o knip não enxerga quem as chama.
+  "ignoreFiles": ["supabase/functions/**"],
+  "ignoreIssues": {
+    // Componentes prontos do shadcn/ui: exportam peças a mais de propósito.
+    "src/components/ui/**": ["exports", "types"],
+    // Gerado pelo Supabase a partir do banco.
+    "src/integrations/supabase/types.ts": ["exports", "types"]
+  },
+  // O build e o deploy usam estes, sem import no código (decisão da fase A, 23/10/2026).
+  "ignoreDependencies": ["@cloudflare/vite-plugin", "@tanstack/router-plugin", "wrangler"]
+}

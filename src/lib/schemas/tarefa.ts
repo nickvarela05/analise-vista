@@ -39,5 +39,3 @@ export const tarefaSchema = z
       });
     }
   });
-
-export type TarefaInput = z.infer<typeof tarefaSchema>;

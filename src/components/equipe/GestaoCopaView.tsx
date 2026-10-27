@@ -6,17 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import type { Colaborador, Horario } from "./lib/types";
+import type { Colaborador } from "./lib/types";
 import { COPA_CAPACIDADE, COPA_WINDOW_MIN, ocupacaoCopa, slotsExcedidos } from "@/lib/domain/copa";
 
 const TIMELINE_INI = 11 * 60; // 11:00
