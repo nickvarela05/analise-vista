@@ -47,10 +47,16 @@ import {
 } from "@/components/demandas/lib/demanda-utils";
 import { EsqueletoKanban, EsqueletoLista } from "@/components/shared/Esqueletos";
 import type { DemandaRow } from "@/lib/db-types";
+import { demandasConsulta } from "@/lib/consultas-telas";
 
 type ColabMini = { id: string; nome: string; cargo: string | null };
 
 export const Route = createFileRoute("/demandas")({
+  // Pré-carrega a lista ao passar o mouse no menu (só na pré-carga: na entrada direta a
+  // sessão ainda pode não estar pronta, e a lista viria vazia por causa das regras de acesso).
+  loader: ({ context, preload }) => {
+    if (preload) void context.queryClient.prefetchQuery(demandasConsulta());
+  },
   errorComponent: RouteErrorBoundary,
   component: DemandasRoute,
 });
@@ -104,17 +110,7 @@ function Demandas() {
     },
   });
 
-  const { data: demandas = [], isLoading } = useQuery({
-    queryKey: qk.demandas.all(),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("demanda")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  const { data: demandas = [], isLoading } = useQuery(demandasConsulta());
 
   // Tarefa counts per demanda
   const { data: tarefaCounts = {} } = useQuery({

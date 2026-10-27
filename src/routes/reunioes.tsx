@@ -42,14 +42,15 @@ import { ReuniaoCard } from "@/components/reunioes/ReuniaoCard";
 import { ReuniaoDetalhe } from "@/components/reunioes/ReuniaoDetalhe";
 import { ReuniaoFormDialog } from "@/components/reunioes/ReuniaoFormDialog";
 import { useFormularioReuniao } from "@/components/reunioes/useFormularioReuniao";
-import {
-  COLUNAS_LISTA,
-  STATUS,
-  TIPOS,
-  type ReuniaoLista,
-} from "@/components/reunioes/reunioes-lib";
+import { STATUS, TIPOS, type ReuniaoLista } from "@/components/reunioes/reunioes-lib";
+import { reunioesConsulta } from "@/lib/consultas-telas";
 
 export const Route = createFileRoute("/reunioes")({
+  // Pré-carrega a lista ao passar o mouse no menu (só na pré-carga: na entrada direta a
+  // sessão ainda pode não estar pronta, e a lista viria vazia por causa das regras de acesso).
+  loader: ({ context, preload }) => {
+    if (preload) void context.queryClient.prefetchQuery(reunioesConsulta());
+  },
   component: ReunioesRoute,
 });
 
@@ -89,19 +90,7 @@ function Reunioes() {
     },
   });
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: ["reunioes"],
-    queryFn: async (): Promise<ReuniaoLista[]> => {
-      const [lista, comTranscricao] = await Promise.all([
-        supabase.from("reuniao").select(COLUNAS_LISTA).order("data_reuniao", { ascending: false }),
-        supabase.from("reuniao").select("id").not("transcricao", "is", null).neq("transcricao", ""),
-      ]);
-      if (lista.error) throw lista.error;
-      if (comTranscricao.error) throw comTranscricao.error;
-      const ids = new Set((comTranscricao.data ?? []).map((r) => r.id));
-      return (lista.data ?? []).map((r) => ({ ...r, temTranscricao: ids.has(r.id) }));
-    },
-  });
+  const { data = [], isLoading } = useQuery(reunioesConsulta());
 
   const formulario = useFormularioReuniao(data);
   const { editingId, setForm, openCreate, openEdit } = formulario;

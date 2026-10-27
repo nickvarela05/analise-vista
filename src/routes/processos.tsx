@@ -53,10 +53,17 @@ import {
   type Processo,
   type ProcessoVinculo,
 } from "@/components/processos/processos-lib";
+import { processosDoAnoConsulta } from "@/lib/consultas-telas";
 
 // ---------- Route ----------
 
 export const Route = createFileRoute("/processos")({
+  // Pré-carrega a lista ao passar o mouse no menu (só na pré-carga: na entrada direta a
+  // sessão ainda pode não estar pronta, e a lista viria vazia por causa das regras de acesso).
+  loader: ({ context, preload }) => {
+    if (preload)
+      void context.queryClient.prefetchQuery(processosDoAnoConsulta(new Date().getFullYear()));
+  },
   errorComponent: RouteErrorBoundary,
   component: ProcessosRoute,
   head: () => ({
@@ -111,18 +118,7 @@ function Processos() {
   const [copiando, setCopiando] = React.useState(false);
 
   // ---------- Queries ----------
-  const { data: processos = [], isLoading } = useQuery({
-    queryKey: ["processos", ano],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("processo_anual" as never)
-        .select("*")
-        .eq("ano", ano)
-        .order("previsto_inicio", { ascending: true, nullsFirst: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as Processo[];
-    },
-  });
+  const { data: processos = [], isLoading } = useQuery(processosDoAnoConsulta(ano));
 
   const { data: vinculos = [] } = useQuery({
     queryKey: ["processos-vinculos", ano],
