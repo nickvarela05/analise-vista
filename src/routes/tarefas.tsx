@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -51,7 +51,18 @@ import { opcoesResponsavel } from "@/lib/domain/cargos";
 import { parseDateOnly } from "@/lib/date";
 import { EsqueletoKanban, EsqueletoLista } from "@/components/shared/Esqueletos";
 
+/**
+ * Filtros que chegam pelo endereço (27/10/2026): a fila de testes da Central abre o quadro já
+ * filtrado pela pessoa (`?responsavel=<id>`) ou pelas tarefas sem responsável
+ * (`?semResponsavel=true`).
+ */
+type BuscaTarefas = { responsavel?: string; semResponsavel?: boolean };
+
 export const Route = createFileRoute("/tarefas")({
+  validateSearch: (s: Record<string, unknown>): BuscaTarefas => ({
+    responsavel: typeof s.responsavel === "string" ? s.responsavel : undefined,
+    semResponsavel: s.semResponsavel === true || s.semResponsavel === "true" ? true : undefined,
+  }),
   errorComponent: RouteErrorBoundary,
   component: TarefasRoute,
 });
@@ -69,6 +80,19 @@ function Tarefas() {
   const qc = useQueryClient();
   const [view, setView] = React.useState<"kanban" | "lista">("kanban");
   const [filters, setFilters] = React.useState<TarefaFiltersState>(initialFilters);
+  const busca = Route.useSearch();
+  const navigate = useNavigate({ from: "/tarefas" });
+
+  // Aplica o filtro que veio da Central e limpa o endereço, para um F5 depois não reaplicar.
+  React.useEffect(() => {
+    if (!busca.responsavel && !busca.semResponsavel) return;
+    setFilters({
+      ...initialFilters,
+      responsaveis: busca.responsavel ? [busca.responsavel] : [],
+      semResponsavel: busca.semResponsavel === true,
+    });
+    void navigate({ search: {}, replace: true });
+  }, [busca.responsavel, busca.semResponsavel, navigate]);
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [drawerTarefa, setDrawerTarefa] = React.useState<TarefaRow | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -85,43 +109,54 @@ function Tarefas() {
   }, [colabs, tarefas]);
 
   // Aplica filtros
-  const filtered = React.useMemo(() => {
+  const passa = React.useCallback((t: TarefaRow, f: TarefaFiltersState) => {
     const today = startOfDay(new Date());
     const week = addDays(today, 7);
-    return tarefas.filter((t) => {
-      if (filters.search && !t.titulo.toLowerCase().includes(filters.search.toLowerCase()))
-        return false;
-      if (filters.prioridades.length && !filters.prioridades.includes(t.prioridade)) return false;
-      if (filters.responsaveis.length) {
-        const ids = (t.responsaveis_ids ?? []) as string[];
-        if (!filters.responsaveis.some((r) => ids.includes(r)) && !t.equipe_toda) return false;
+    if (f.search && !t.titulo.toLowerCase().includes(f.search.toLowerCase())) return false;
+    if (f.prioridades.length && !f.prioridades.includes(t.prioridade)) return false;
+    // Mesma regra da fila da Central: sem a lista nova, vale o responsável antigo.
+    const lista = (t.responsaveis_ids ?? []) as string[];
+    const ids = lista.length ? lista : t.responsavel_id ? [t.responsavel_id] : [];
+    if (f.responsaveis.length) {
+      if (!f.responsaveis.some((r) => ids.includes(r)) && !t.equipe_toda) return false;
+    }
+    if (f.semResponsavel && (ids.length > 0 || t.equipe_toda)) return false;
+    if (f.comDemanda === "sim" && !t.demanda_id) return false;
+    if (f.comDemanda === "nao" && t.demanda_id) return false;
+    if (f.emTeste && !t.em_teste) return false;
+    if (f.origem === "homologacao" && t.origem_importacao !== "homologacao") return false;
+    if (f.origem === "manual" && t.origem_importacao) return false;
+    if (f.lotes.length && (!t.lote_importacao_id || !f.lotes.includes(t.lote_importacao_id)))
+      return false;
+    if (f.prazo !== "todos") {
+      const prazo = parseDateOnly(t.data_prevista);
+      if (f.prazo === "sem_prazo" && prazo) return false;
+      if (f.prazo !== "sem_prazo" && !prazo) return false;
+      if (prazo) {
+        const finalizada = ["producao", "aprovado"].includes(t.status);
+        if (f.prazo === "atrasadas" && (!isPast(prazo) || isToday(prazo) || finalizada))
+          return false;
+        if (f.prazo === "hoje" && !isToday(prazo)) return false;
+        if (f.prazo === "semana" && !isWithinInterval(prazo, { start: today, end: week }))
+          return false;
       }
-      if (filters.comDemanda === "sim" && !t.demanda_id) return false;
-      if (filters.comDemanda === "nao" && t.demanda_id) return false;
-      if (filters.emTeste && !t.em_teste) return false;
-      if (filters.origem === "homologacao" && t.origem_importacao !== "homologacao") return false;
-      if (filters.origem === "manual" && t.origem_importacao) return false;
-      if (
-        filters.lotes.length &&
-        (!t.lote_importacao_id || !filters.lotes.includes(t.lote_importacao_id))
-      )
-        return false;
-      if (filters.prazo !== "todos") {
-        const prazo = parseDateOnly(t.data_prevista);
-        if (filters.prazo === "sem_prazo" && prazo) return false;
-        if (filters.prazo !== "sem_prazo" && !prazo) return false;
-        if (prazo) {
-          const finalizada = ["producao", "aprovado"].includes(t.status);
-          if (filters.prazo === "atrasadas" && (!isPast(prazo) || isToday(prazo) || finalizada))
-            return false;
-          if (filters.prazo === "hoje" && !isToday(prazo)) return false;
-          if (filters.prazo === "semana" && !isWithinInterval(prazo, { start: today, end: week }))
-            return false;
-        }
-      }
-      return true;
-    });
-  }, [tarefas, filters]);
+    }
+    return true;
+  }, []);
+
+  const filtered = React.useMemo(
+    () => tarefas.filter((t) => passa(t, filters)),
+    [tarefas, filters, passa],
+  );
+
+  // Quantas tarefas cada atalho mostraria, somado aos outros filtros já escolhidos.
+  const contagensAtalhos = React.useMemo(
+    () => ({
+      emTeste: tarefas.filter((t) => passa(t, { ...filters, emTeste: true })).length,
+      semResponsavel: tarefas.filter((t) => passa(t, { ...filters, semResponsavel: true })).length,
+    }),
+    [tarefas, filters, passa],
+  );
 
   // Sincroniza tarefa do drawer
   React.useEffect(() => {
@@ -356,9 +391,15 @@ function Tarefas() {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card/60 p-2 backdrop-blur">
-        <TarefaFilters value={filters} onChange={setFilters} colabs={colabsFiltro} lotes={lotes} />
+        <TarefaFilters
+          value={filters}
+          onChange={setFilters}
+          colabs={colabsFiltro}
+          lotes={lotes}
+          contagens={contagensAtalhos}
+        />
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 self-start">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline" className="h-9">

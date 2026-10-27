@@ -10,4 +10,5 @@ export const initialFilters: TarefaFiltersState = {
   origem: "todos",
   lotes: [],
   emTeste: false,
+  semResponsavel: false,
 };
