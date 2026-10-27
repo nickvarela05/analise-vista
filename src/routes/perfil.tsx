@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
 
 import { iniciais } from "@/lib/utils";
+import { EsqueletoPagina } from "@/components/shared/Esqueletos";
 export const Route = createFileRoute("/perfil")({
   component: PerfilRoute,
 });
@@ -54,11 +55,7 @@ function Perfil() {
   }, [user]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EsqueletoPagina />;
   }
   if (!user) return <Navigate to="/login" replace />;
 

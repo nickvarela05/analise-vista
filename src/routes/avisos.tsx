@@ -4,7 +4,6 @@ import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
-  Loader2,
   AlertTriangle,
   AlertCircle,
   Info,
@@ -28,6 +27,7 @@ import { qk } from "@/lib/queries/keys";
 import { meuProfileQuery } from "@/lib/queries/compartilhadas";
 import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/AvisoCard";
 import { AvisoDialog } from "@/components/avisos/AvisoDialog";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 export const Route = createFileRoute("/avisos")({
   errorComponent: RouteErrorBoundary,
@@ -372,9 +372,7 @@ function Avisos() {
 
       {/* Lista */}
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <EsqueletoLista linhas={6} />
       ) : filtrados.length === 0 ? (
         <EmptyState
           icon={Bell}

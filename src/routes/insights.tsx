@@ -36,6 +36,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 type ResumoSemanalRow = Tables<"resumo_semanal">;
 
@@ -210,14 +211,7 @@ function ResumoPorFuncionario() {
           </CardContent>
         </Card>
       ) : loadingResumos ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Carregando resumos…
-            </div>
-          </CardContent>
-        </Card>
+        <EsqueletoLista linhas={4} />
       ) : erro ? (
         <Card>
           <CardContent className="p-6">
@@ -367,14 +361,7 @@ function ResumoSemanal() {
       </Card>
 
       {loading ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Carregando resumos…
-            </div>
-          </CardContent>
-        </Card>
+        <EsqueletoLista linhas={4} />
       ) : erro ? (
         <Card>
           <CardContent className="p-6">

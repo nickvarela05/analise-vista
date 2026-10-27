@@ -33,6 +33,7 @@ import { DialogHero } from "@/components/shared/DialogHero";
 import { DialogSection } from "@/components/shared/DialogSection";
 import { supabase } from "@/integrations/supabase/client";
 import { MAX_IMAGE_UPLOAD_BYTES, formatBytes } from "@/constants/upload";
+import { EsqueletoCartoes } from "@/components/shared/Esqueletos";
 
 interface Foto {
   id: string;
@@ -208,9 +209,7 @@ export function GaleriaDialog({ canManage, trigger }: Props) {
           )}
 
           {isLoading ? (
-            <div className="flex h-32 items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
+            <EsqueletoCartoes quantidade={6} />
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-12 text-center text-sm text-muted-foreground">
               <Images className="h-8 w-8 opacity-50" />
