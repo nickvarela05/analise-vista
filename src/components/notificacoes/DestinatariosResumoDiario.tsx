@@ -5,13 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Mail, Search, MailX, UserCheck, UserX } from "lucide-react";
+import { Mail, Search, MailX, UserCheck, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   resumoDiarioTogglePayloadSchema,
   resumoDiarioBulkPayloadSchema,
 } from "@/lib/schemas/destinatarios_resumo";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 type Perfil = {
   user_id: string;
@@ -163,9 +164,7 @@ export function DestinatariosResumoDiario() {
         <div className="overflow-hidden rounded-xl border">
           <div className="max-h-[420px] overflow-y-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center py-10 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </div>
+              <EsqueletoLista linhas={5} className="rounded-none border-0" />
             ) : lista.length === 0 ? (
               <div className="py-10 text-center text-sm text-muted-foreground">
                 Nenhum usuário encontrado.

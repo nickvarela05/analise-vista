@@ -96,3 +96,25 @@ export function EsqueletoPagina() {
     </div>
   );
 }
+
+/** Os 12 meses da aba "Ano" de Processos. */
+export function EsqueletoAno() {
+  return (
+    <div
+      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+      aria-busy="true"
+      aria-label="Carregando"
+    >
+      {Array.from({ length: 12 }, (_, i) => (
+        <div key={i} className="space-y-3 rounded-2xl border border-border/60 bg-card p-4">
+          <Skeleton className="h-4 w-24" />
+          <div className="grid grid-cols-7 gap-1.5">
+            {Array.from({ length: 35 }, (_, d) => (
+              <Skeleton key={d} className="aspect-square rounded-md" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

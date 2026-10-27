@@ -54,6 +54,7 @@ import {
   type ProcessoVinculo,
 } from "@/components/processos/processos-lib";
 import { processosDoAnoConsulta } from "@/lib/consultas-telas";
+import { EsqueletoAno } from "@/components/shared/Esqueletos";
 
 // ---------- Route ----------
 
@@ -369,9 +370,7 @@ function Processos() {
       />
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-16 text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando…
-        </div>
+        <EsqueletoAno />
       ) : processos.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
