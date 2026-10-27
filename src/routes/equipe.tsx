@@ -3,7 +3,6 @@ import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Loader2,
   Users as UsersIcon,
   ShieldAlert,
   Briefcase,
@@ -33,6 +32,7 @@ import { EquipeUsuariosView } from "@/components/equipe/EquipeUsuariosView";
 import { GestaoCopaView } from "@/components/equipe/GestaoCopaView";
 import { computeStatus, ymdOf } from "@/components/equipe/lib/status";
 import type { Colaborador } from "@/components/equipe/lib/types";
+import { EsqueletoCartoes, EsqueletoPagina } from "@/components/shared/Esqueletos";
 
 export const Route = createFileRoute("/equipe")({
   errorComponent: RouteErrorBoundary,
@@ -113,11 +113,7 @@ function Equipe() {
   }, [colabs]);
 
   if (authLoading) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EsqueletoPagina />;
   }
 
   if (role !== "gestor") {
@@ -162,9 +158,7 @@ function Equipe() {
       />
 
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <EsqueletoCartoes quantidade={6} />
       ) : colabs.length === 0 ? (
         <EmptyState icon={UsersIcon} title="Nenhum colaborador cadastrado" />
       ) : (

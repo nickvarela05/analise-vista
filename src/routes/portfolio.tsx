@@ -58,6 +58,7 @@ import { qk } from "@/lib/queries/keys";
 import { GaleriaDialog } from "@/components/equipe/GaleriaDialog";
 import { GaleriaCarousel } from "@/components/equipe/GaleriaCarousel";
 import { cn } from "@/lib/utils";
+import { colaboradoresAtivosConsulta } from "@/lib/consultas-telas";
 
 type Colaborador = {
   id: string;
@@ -68,6 +69,11 @@ type Colaborador = {
 };
 
 export const Route = createFileRoute("/portfolio")({
+  // Pré-carrega a lista ao passar o mouse no menu (só na pré-carga: na entrada direta a
+  // sessão ainda pode não estar pronta, e a lista viria vazia por causa das regras de acesso).
+  loader: ({ context, preload }) => {
+    if (preload) void context.queryClient.prefetchQuery(colaboradoresAtivosConsulta());
+  },
   errorComponent: RouteErrorBoundary,
   component: PortfolioRoute,
 });
@@ -85,18 +91,7 @@ function Portfolio() {
   const isGestor = role === "gestor";
   const [busca, setBusca] = React.useState("");
 
-  const { data = [], isLoading } = useQuery({
-    queryKey: qk.colaboradores(),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("colaborador")
-        .select("*")
-        .eq("ativo", true)
-        .order("ordem", { ascending: true });
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
+  const { data = [], isLoading } = useQuery(colaboradoresAtivosConsulta());
 
   const filtrados = React.useMemo(() => {
     const q = busca.trim().toLowerCase();

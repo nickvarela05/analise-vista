@@ -4,7 +4,6 @@ import * as React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
-  Loader2,
   AlertTriangle,
   AlertCircle,
   Info,
@@ -28,8 +27,15 @@ import { qk } from "@/lib/queries/keys";
 import { meuProfileQuery } from "@/lib/queries/compartilhadas";
 import { AvisoCard, type AvisoRow, type AvisoTipo } from "@/components/avisos/AvisoCard";
 import { AvisoDialog } from "@/components/avisos/AvisoDialog";
+import { avisosConsulta } from "@/lib/consultas-telas";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 export const Route = createFileRoute("/avisos")({
+  // Pré-carrega a lista ao passar o mouse no menu (só na pré-carga: na entrada direta a
+  // sessão ainda pode não estar pronta, e a lista viria vazia por causa das regras de acesso).
+  loader: ({ context, preload }) => {
+    if (preload) void context.queryClient.prefetchQuery(avisosConsulta());
+  },
   errorComponent: RouteErrorBoundary,
   component: AvisosRoute,
 });
@@ -74,17 +80,7 @@ function Avisos() {
     [colabs],
   );
 
-  const { data: avisos = [], isLoading } = useQuery({
-    queryKey: qk.avisos.all(),
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("aviso_gestor")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as AvisoRow[];
-    },
-  });
+  const { data: avisos = [], isLoading } = useQuery(avisosConsulta());
 
   const { data: leituras = [] } = useQuery({
     queryKey: qk.avisos.leiturasDoUsuario(user?.id),
@@ -372,9 +368,7 @@ function Avisos() {
 
       {/* Lista */}
       {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <EsqueletoLista linhas={6} />
       ) : filtrados.length === 0 ? (
         <EmptyState
           icon={Bell}

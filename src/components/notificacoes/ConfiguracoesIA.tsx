@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { iaPromptConfigSchema, IA_CHAVE_ANALISE_REUNIAO } from "@/lib/schemas/configuracoes";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 const CHAVE = IA_CHAVE_ANALISE_REUNIAO;
 const DEFAULT_PROMPT =
@@ -77,13 +78,7 @@ export function ConfiguracoesIA() {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-10 text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando...
-        </CardContent>
-      </Card>
-    );
+    return <EsqueletoLista linhas={4} />;
   }
 
   const charCount = promptSistema.length;

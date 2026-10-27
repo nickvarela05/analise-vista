@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import type { Colaborador } from "./lib/types";
 import { useUsuariosAdmin } from "./usuarios/useUsuariosAdmin";
@@ -7,6 +6,7 @@ import { UsuariosTable } from "./usuarios/UsuariosTable";
 import { CriarUsuarioDialog } from "./usuarios/CriarUsuarioDialog";
 import { ConvidarUsuarioDialog } from "./usuarios/ConvidarUsuarioDialog";
 import { TempPasswordDialog } from "./usuarios/TempPasswordDialog";
+import { EsqueletoLista } from "@/components/shared/Esqueletos";
 
 interface Props {
   colabs: Colaborador[];
@@ -35,11 +35,7 @@ export function EquipeUsuariosView({ colabs }: Props) {
   }, [colabs]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-32 items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <EsqueletoLista linhas={6} />;
   }
 
   if (error) {
