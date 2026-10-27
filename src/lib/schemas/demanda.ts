@@ -47,5 +47,3 @@ export const demandaSchema = z
       });
     }
   });
-
-export type DemandaInput = z.infer<typeof demandaSchema>;

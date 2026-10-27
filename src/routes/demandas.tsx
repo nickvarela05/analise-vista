@@ -8,7 +8,6 @@ import {
   Inbox,
   LayoutGrid,
   List,
-  Loader2,
   Plus,
   Search,
   TrendingUp,

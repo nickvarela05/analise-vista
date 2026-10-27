@@ -1,14 +1,13 @@
 import * as React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
   Edit2,
   ExternalLink,
   Inbox,
   ListChecks,
-  Loader2,
   Plus,
   Tag,
   Trash2,
@@ -93,7 +92,6 @@ export function DemandaDetailDrawer({
   onCreateTarefa,
   onChanged,
 }: Props) {
-  const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   const { data: tarefas = [] } = useQuery({

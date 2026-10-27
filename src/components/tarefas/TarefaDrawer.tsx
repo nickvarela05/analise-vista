@@ -4,7 +4,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import {
-  Calendar,
   Loader2,
   MessageSquare,
   ListChecks,
@@ -14,7 +13,6 @@ import {
   Trash2,
   Send,
   Download,
-  Link2,
   FlaskConical,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -37,7 +35,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AssigneeCombobox } from "@/components/AssigneeCombobox";
@@ -206,23 +203,6 @@ export function TarefaDrawer({ tarefa, open, onOpenChange, colabs }: Props) {
       valor_antigo: antigo ? String(antigo) : null,
       valor_novo: novo ? String(novo) : null,
     });
-  };
-
-  const updateField = async <K extends keyof TablesUpdate<"todo">>(
-    field: K,
-    novo: TablesUpdate<"todo">[K],
-  ) => {
-    const antigo = tarefa?.[field as keyof TarefaRow];
-    const updates = { [field]: novo } as TablesUpdate<"todo">;
-    if (field === "status" && novo === "producao") updates.concluida_em = new Date().toISOString();
-    if (field === "status" && novo !== "producao") updates.concluida_em = null;
-    const { error } = await supabase.from("todo").update(updates).eq("id", idTarefa);
-    if (error) {
-      toast.error("Erro", { description: error.message });
-      return;
-    }
-    await logHistorico(field, antigo, novo);
-    invalidate();
   };
 
   const salvarEdicao = async () => {

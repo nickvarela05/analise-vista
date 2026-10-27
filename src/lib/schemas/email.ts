@@ -10,7 +10,6 @@ import { emptyToNull } from "./_helpers";
 // ---------- Constantes ----------
 
 export const EMAIL_STATUS = ["pending", "sent", "failed"] as const;
-export type EmailStatus = (typeof EMAIL_STATUS)[number];
 
 export const SUBJECT_MAX = 200;
 export const BODY_HTML_MAX = 200_000;
@@ -45,9 +44,6 @@ export const emailSendLogInsertSchema = z.object({
   last_error: z.preprocess(emptyToNull, z.string().max(LAST_ERROR_MAX).nullable().optional()),
 });
 
-export type EmailSendLogInsert = z.infer<typeof emailSendLogInsertSchema>;
-
 // ---------- dispatch-email-digest · mode ----------
 
 export const dispatchDigestModeSchema = z.enum(["imediato", "resumo_diario"]);
-export type DispatchDigestMode = z.infer<typeof dispatchDigestModeSchema>;

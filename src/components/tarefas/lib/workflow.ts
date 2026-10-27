@@ -15,16 +15,6 @@ export const WORKFLOW = [
 
 export type WorkflowStatus = (typeof WORKFLOW)[number];
 
-// Status legados que ainda podem existir no banco mas que mapeamos
-export const ALL_STATUS = [
-  ...WORKFLOW,
-  "aberta",
-  "pendente",
-  "concluida",
-  "cancelada",
-  "encaminhada",
-] as const;
-
 export const STATUS_LABEL: Record<string, string> = {
   aberta: "Aberta",
   em_andamento: "Stand-by",
@@ -83,30 +73,6 @@ export function statusVariant(s: string) {
   }
 }
 
-// Cor de fundo das colunas do Kanban (mais sutil)
-export function columnAccent(s: string) {
-  switch (s) {
-    case "producao":
-      return "border-t-success";
-    case "aprovado":
-      return "border-t-success";
-    case "aprovado_ressalvas":
-      return "border-t-warning";
-    case "reprovado":
-      return "border-t-destructive";
-    case "homologacao":
-      return "border-t-info";
-    case "em_andamento":
-      return "border-t-primary";
-    case "aberta":
-      return "border-t-muted-foreground/40";
-    case "encerrada":
-      return "border-t-muted-foreground/40";
-    default:
-      return "border-t-border";
-  }
-}
-
 export function prioVariant(p: string) {
   if (p === "alta") return "bg-destructive/15 text-destructive border-destructive/30";
   if (p === "media") return "bg-warning/20 text-warning border-warning/30";
@@ -114,7 +80,6 @@ export function prioVariant(p: string) {
 }
 
 export const PRIO = ["baixa", "media", "alta"] as const;
-export type Prio = (typeof PRIO)[number];
 
 // Normaliza status legados para o Kanban
 export function normalizeStatus(s: string): WorkflowStatus {
@@ -124,16 +89,3 @@ export function normalizeStatus(s: string): WorkflowStatus {
   if (s === "cancelada") return "encerrada";
   return s as WorkflowStatus;
 }
-
-// Status considerados "abertos" (não finalizados) para regras de import/expiração.
-export const STATUS_ABERTOS: readonly string[] = [
-  "aberta",
-  "em_andamento",
-  "homologacao",
-  "aprovado",
-  "aprovado_ressalvas",
-  "reprovado",
-  "pre_build",
-  "pendente",
-  "encaminhada",
-];

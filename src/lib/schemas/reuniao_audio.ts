@@ -39,8 +39,6 @@ export const audioUploadMetaSchema = z.object({
   titulo: z.string().trim().max(200, { message: "Título muito longo (máx. 200)" }).optional(),
 });
 
-export type AudioUploadMeta = z.infer<typeof audioUploadMetaSchema>;
-
 export type ParseAudioResult = { ok: true; file: File } | { ok: false; error: string };
 
 /** Executa `audioFileSchema.safeParse` e devolve mensagem pronta para toast. */

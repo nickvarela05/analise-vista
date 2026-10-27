@@ -63,14 +63,6 @@ export function prioridadeBadgeClass(p: string) {
   return "bg-muted text-muted-foreground border-border";
 }
 
-/** Returns a tailwind border-l color class to color the side of a card by priority */
-export function prioridadeSideClass(p: string) {
-  if (p === "critica") return "border-l-destructive";
-  if (p === "alta") return "border-l-warning";
-  if (p === "media") return "border-l-primary";
-  return "border-l-muted-foreground/30";
-}
-
 export interface PrazoInfo {
   label: string;
   tone: "destructive" | "warning" | "info" | "muted";

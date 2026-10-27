@@ -55,5 +55,3 @@ export const eventoSchema = z
     }
     return val;
   });
-
-export type EventoInput = z.infer<typeof eventoSchema>;

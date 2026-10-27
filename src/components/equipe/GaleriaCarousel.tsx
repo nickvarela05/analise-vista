@@ -98,8 +98,6 @@ export function GaleriaCarousel() {
   }
 
   const active = fotos[current] ?? fotos[0];
-  const prevIdx = (current - 1 + total) % total;
-  const nextIdx = (current + 1) % total;
 
   return (
     <Card

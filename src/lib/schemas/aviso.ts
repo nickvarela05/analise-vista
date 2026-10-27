@@ -27,5 +27,3 @@ export const avisoSchema = z.object({
     )
     .optional(),
 });
-
-export type AvisoInput = z.infer<typeof avisoSchema>;
