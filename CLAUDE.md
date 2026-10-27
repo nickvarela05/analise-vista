@@ -22,7 +22,7 @@ Sistema interno da equipe de homologação: tarefas, Central, liberação em pro
 
 - **`run_worker_first`** (em `wrangler.deploy.jsonc`): navegações saem direto dos assets (SPA). Toda rota de servidor precisa estar na lista: hoje `/api/*` e `/_serverFn/*` (o MCP da Lovable saiu em 23/10/2026). Uma rota fora da lista recebe o `index.html` (incidente de 16/10/2026).
 - **Banco:** mudança de estrutura ou de regra de acesso só com autorização explícita do Nickolas. Testar antes numa transação desfeita, simulando gestor e analista. Apagar dados de produção é decisão dele, comando por comando.
-- **Migrações:** aplicadas pelo MCP do Supabase (`apply_migration`). Depois, o arquivo em `supabase/migrations/` é renomeado para a versão aplicada (`select version from supabase_migrations.schema_migrations`).
+- **Migrações:** aplicadas pelo MCP do Supabase (`apply_migration`). Depois, o arquivo em `supabase/migrations/` é renomeado para a versão aplicada (`select version from supabase_migrations.schema_migrations`). Desde 27/10/2026 tudo parte de `20261027180000_base.sql`; as migrações antigas estão em `supabase/migrations_arquivo/` e não são aplicadas. Toda migração nova também exige regenerar `src/integrations/supabase/types.ts`, e o CI acusa se esquecer.
 - **Papéis:** a equipe (quem tem linha em `user_roles`) faz o dia a dia; só gestor administra e exclui registros de outros (`is_equipe`, `has_role`).
 - **Segredos:** nunca escrever valores em código, commits ou mensagens. Para valores de segredo, usar o painel do Cloudflare, porque colar no PowerShell grava só um caractere.
 
