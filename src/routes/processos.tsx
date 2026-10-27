@@ -103,7 +103,7 @@ function Processos() {
     [anoAtual],
   );
 
-  const [tab, setTab] = React.useState<"dividido" | "calendario" | "lista">("dividido");
+  const [tab, setTab] = React.useState<"dividido" | "calendario" | "lista">("calendario");
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Processo | null>(null);
   const [confirmDel, setConfirmDel] = React.useState<Processo | null>(null);
