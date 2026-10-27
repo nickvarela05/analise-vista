@@ -10,7 +10,7 @@ import {
   ClipboardPaste,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { qk } from "@/lib/queries/keys";
 import { fetchAllRows } from "@/lib/queries/fetch-all";
@@ -51,6 +58,9 @@ import {
  *  - subiu       já está em pré-build ou produção (o dev pode ter mandado por engano): não é
  *                mexida sem decisão explícita.
  * A gravação é uma chamada só (`receber_pacote_homologacao`): ou entra tudo, ou nada.
+ *
+ * Desde 27/10/2026 dá para adicionar as tarefas a um pacote que já existe, em vez de criar um
+ * novo: o desenvolvimento manda mais tarefas do mesmo pacote nos dias seguintes.
  */
 
 type Existente = { id: string; titulo: string; status: string };
@@ -115,6 +125,24 @@ export function ReceberPacoteDialog() {
   const [voltar, setVoltar] = React.useState<Set<string>>(new Set());
   const [gravando, setGravando] = React.useState(false);
   const [resultado, setResultado] = React.useState<Resultado | null>(null);
+  // "novo" cria um pacote; um id adiciona as tarefas ao pacote existente.
+  const [destino, setDestino] = React.useState<string>("novo");
+
+  const { data: pacotes = [] } = useQuery({
+    queryKey: ["tarefas", "lotes", "homologacao-recentes"],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("todo_importacao_lote")
+        .select("id, nome, created_at")
+        .eq("tipo", "homologacao")
+        .order("created_at", { ascending: false })
+        .limit(15);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const pacoteEscolhido = pacotes.find((l) => l.id === destino) ?? null;
 
   const reset = () => {
     setPasso(1);
@@ -125,6 +153,7 @@ export function ReceberPacoteDialog() {
     setErroCarga(null);
     setVoltar(new Set());
     setResultado(null);
+    setDestino("novo");
   };
 
   React.useEffect(() => {
@@ -195,6 +224,7 @@ export function ReceberPacoteDialog() {
       // O gerador de tipos marca todo argumento de função como obrigatório; o banco aceita null.
       p_descricao: (descricao || null) as string,
       p_itens: itens,
+      ...(destino !== "novo" ? { p_lote_id: destino } : {}),
     });
     setGravando(false);
     if (error) {
@@ -416,31 +446,82 @@ export function ReceberPacoteDialog() {
                 );
               })}
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="pacote-nome" className="text-xs">
-                    Nome do lote
-                  </Label>
-                  <Input
-                    id="pacote-nome"
-                    value={nomeLote}
-                    onChange={(e) => setNomeLote(e.target.value)}
-                    maxLength={120}
-                    className="mt-1 h-8 text-sm"
-                  />
+              <div className="space-y-2.5 rounded-lg border p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium">Pacote</span>
+                  <div className="flex gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-7 text-xs"
+                      variant={destino === "novo" ? "default" : "outline"}
+                      onClick={() => setDestino("novo")}
+                    >
+                      Pacote novo
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-7 text-xs"
+                      variant={destino !== "novo" ? "default" : "outline"}
+                      disabled={pacotes.length === 0}
+                      onClick={() => setDestino(pacotes[0]?.id ?? "novo")}
+                    >
+                      Adicionar a um pacote existente
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="pacote-descricao" className="text-xs">
-                    Observação do lote (opcional)
-                  </Label>
-                  <Input
-                    id="pacote-descricao"
-                    value={descricao}
-                    onChange={(e) => setDescricao(e.target.value)}
-                    maxLength={500}
-                    className="mt-1 h-8 text-sm"
-                  />
-                </div>
+
+                {destino === "novo" ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label htmlFor="pacote-nome" className="text-xs">
+                        Nome do lote
+                      </Label>
+                      <Input
+                        id="pacote-nome"
+                        value={nomeLote}
+                        onChange={(e) => setNomeLote(e.target.value)}
+                        maxLength={120}
+                        className="mt-1 h-8 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pacote-descricao" className="text-xs">
+                        Observação do lote (opcional)
+                      </Label>
+                      <Input
+                        id="pacote-descricao"
+                        value={descricao}
+                        onChange={(e) => setDescricao(e.target.value)}
+                        maxLength={500}
+                        className="mt-1 h-8 text-sm"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label className="text-xs">As tarefas entram neste pacote</Label>
+                    <Select value={destino} onValueChange={setDestino}>
+                      <SelectTrigger className="mt-1 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pacotes.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.nome}
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              recebido em {format(new Date(l.created_at), "dd/MM")}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      O pacote continua com o nome e a data do primeiro recebimento.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -450,7 +531,7 @@ export function ReceberPacoteDialog() {
               <p className="flex items-center gap-2 font-medium">
                 <CheckCircle2 className="h-5 w-5 text-success" />
                 {resultado.criadas + resultado.movidas} tarefa(s) em Homologação, marcadas “em
-                teste”.
+                teste”{pacoteEscolhido ? `, no pacote ${pacoteEscolhido.nome}` : ""}.
               </p>
               <ul className="list-disc space-y-0.5 pl-6 text-xs text-muted-foreground">
                 <li>{resultado.criadas} nova(s) criada(s)</li>
@@ -487,7 +568,7 @@ export function ReceberPacoteDialog() {
           <span className="text-xs text-muted-foreground">
             {passo === 1 && existentes === null && !erroCarga && "Carregando as tarefas do Nexus…"}
             {passo === 2 &&
-              `${totalLote} entram no lote${mantidas > 0 ? ` · ${mantidas} ficam como estão` : ""}`}
+              `${totalLote} entram ${pacoteEscolhido ? `no pacote ${pacoteEscolhido.nome}` : "no lote"}${mantidas > 0 ? ` · ${mantidas} ficam como estão` : ""}`}
           </span>
           <span className="flex gap-2">
             {passo === 1 && (
@@ -505,7 +586,14 @@ export function ReceberPacoteDialog() {
                 <Button variant="ghost" onClick={() => setPasso(1)} disabled={gravando}>
                   Voltar
                 </Button>
-                <Button onClick={receber} disabled={gravando || !nomeLote.trim() || nadaAGravar}>
+                <Button
+                  onClick={receber}
+                  disabled={
+                    gravando ||
+                    (destino === "novo" ? !nomeLote.trim() : !pacoteEscolhido) ||
+                    nadaAGravar
+                  }
+                >
                   {gravando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {totalLote > 0 ? `Receber ${totalLote} tarefa(s)` : "Atualizar dados"}
                 </Button>

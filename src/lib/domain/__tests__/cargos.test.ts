@@ -26,11 +26,13 @@ describe("cargoElegivel", () => {
 });
 
 describe("podeReceberTarefa", () => {
-  it("só analistas de requisitos (decisão de 13/10/2026)", () => {
+  it("analistas, Coordenador e Estagiário TI (decisões de 13/10 e 27/10/2026)", () => {
     expect(podeReceberTarefa("Analista de Requisitos Sênior")).toBe(true);
     expect(podeReceberTarefa("Analista de Requisitos Pleno")).toBe(true);
-    expect(podeReceberTarefa("Coordenador de Requisitos (Gestor)")).toBe(false);
-    expect(podeReceberTarefa("Estagiário TI")).toBe(false);
+    expect(podeReceberTarefa("Coordenador de Requisitos (Gestor)")).toBe(true);
+    expect(podeReceberTarefa("Estagiário TI")).toBe(true);
+    expect(podeReceberTarefa("Estagiário")).toBe(false);
+    expect(podeReceberTarefa("Técnico de Suporte de TI")).toBe(false);
     expect(podeReceberTarefa("Gerente")).toBe(false);
     expect(podeReceberTarefa("Help-Desk")).toBe(false);
   });
@@ -38,10 +40,10 @@ describe("podeReceberTarefa", () => {
   it("mantém nas opções quem já está atribuído, mesmo sem ser analista", () => {
     const colabs = [
       { id: "a", cargo: "Analista de Requisitos Pleno" },
-      { id: "g", cargo: "Coordenador de Requisitos (Gestor)" },
+      { id: "g", cargo: "Gerente" },
       { id: "h", cargo: "Help-Desk" },
     ];
     expect(opcoesResponsavel(colabs).map((c) => c.id)).toEqual(["a"]);
-    expect(opcoesResponsavel(colabs, ["g"]).map((c) => c.id)).toEqual(["a", "g"]);
+    expect(opcoesResponsavel(colabs, ["h"]).map((c) => c.id)).toEqual(["a", "h"]);
   });
 });

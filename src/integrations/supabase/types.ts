@@ -1487,7 +1487,7 @@ export type Database = {
       };
       notify_processo_proximo: { Args: never; Returns: undefined };
       receber_pacote_homologacao: {
-        Args: { p_descricao: string; p_itens: Json; p_nome: string };
+        Args: { p_descricao: string; p_itens: Json; p_lote_id?: string; p_nome: string };
         Returns: Json;
       };
       registrar_visita_central: {
