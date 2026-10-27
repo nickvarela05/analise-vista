@@ -29,6 +29,7 @@ import { Route as AtividadesRouteImport } from './routes/atividades'
 import { Route as AlterarSenhaRouteImport } from './routes/alterar-senha'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicGoogleOauthCallbackRouteImport } from './routes/api/public/google-oauth-callback'
+import { Route as ApiPublicAgendaPessoalRouteImport } from './routes/api/public/agenda-pessoal'
 import { Route as ApiAdminUsuariosRouteImport } from './routes/api.admin.usuarios'
 import { Route as ApiPublicHooksSyncGoogleCalendarRouteImport } from './routes/api/public/hooks/sync-google-calendar'
 import { Route as ApiPublicHooksRetomarTranscricoesRouteImport } from './routes/api/public/hooks/retomar-transcricoes'
@@ -134,6 +135,11 @@ const ApiPublicGoogleOauthCallbackRoute =
     path: '/api/public/google-oauth-callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAgendaPessoalRoute = ApiPublicAgendaPessoalRouteImport.update({
+  id: '/api/public/agenda-pessoal',
+  path: '/api/public/agenda-pessoal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminUsuariosRoute = ApiAdminUsuariosRouteImport.update({
   id: '/api/admin/usuarios',
   path: '/api/admin/usuarios',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
+  '/api/public/agenda-pessoal': typeof ApiPublicAgendaPessoalRoute
   '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
   '/api/public/hooks/sync-google-calendar': typeof ApiPublicHooksSyncGoogleCalendarRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
+  '/api/public/agenda-pessoal': typeof ApiPublicAgendaPessoalRoute
   '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
   '/api/public/hooks/sync-google-calendar': typeof ApiPublicHooksSyncGoogleCalendarRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/tv': typeof TvRoute
   '/unidades': typeof UnidadesRoute
   '/api/admin/usuarios': typeof ApiAdminUsuariosRoute
+  '/api/public/agenda-pessoal': typeof ApiPublicAgendaPessoalRoute
   '/api/public/google-oauth-callback': typeof ApiPublicGoogleOauthCallbackRoute
   '/api/public/hooks/retomar-transcricoes': typeof ApiPublicHooksRetomarTranscricoesRoute
   '/api/public/hooks/sync-google-calendar': typeof ApiPublicHooksSyncGoogleCalendarRoute
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/tv'
     | '/unidades'
     | '/api/admin/usuarios'
+    | '/api/public/agenda-pessoal'
     | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
     | '/api/public/hooks/sync-google-calendar'
@@ -276,6 +286,7 @@ export interface FileRouteTypes {
     | '/tv'
     | '/unidades'
     | '/api/admin/usuarios'
+    | '/api/public/agenda-pessoal'
     | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
     | '/api/public/hooks/sync-google-calendar'
@@ -301,6 +312,7 @@ export interface FileRouteTypes {
     | '/tv'
     | '/unidades'
     | '/api/admin/usuarios'
+    | '/api/public/agenda-pessoal'
     | '/api/public/google-oauth-callback'
     | '/api/public/hooks/retomar-transcricoes'
     | '/api/public/hooks/sync-google-calendar'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   TvRoute: typeof TvRoute
   UnidadesRoute: typeof UnidadesRoute
   ApiAdminUsuariosRoute: typeof ApiAdminUsuariosRoute
+  ApiPublicAgendaPessoalRoute: typeof ApiPublicAgendaPessoalRoute
   ApiPublicGoogleOauthCallbackRoute: typeof ApiPublicGoogleOauthCallbackRoute
   ApiPublicHooksRetomarTranscricoesRoute: typeof ApiPublicHooksRetomarTranscricoesRoute
   ApiPublicHooksSyncGoogleCalendarRoute: typeof ApiPublicHooksSyncGoogleCalendarRoute
@@ -474,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGoogleOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/agenda-pessoal': {
+      id: '/api/public/agenda-pessoal'
+      path: '/api/public/agenda-pessoal'
+      fullPath: '/api/public/agenda-pessoal'
+      preLoaderRoute: typeof ApiPublicAgendaPessoalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/usuarios': {
       id: '/api/admin/usuarios'
       path: '/api/admin/usuarios'
@@ -519,6 +539,7 @@ const rootRouteChildren: RootRouteChildren = {
   TvRoute: TvRoute,
   UnidadesRoute: UnidadesRoute,
   ApiAdminUsuariosRoute: ApiAdminUsuariosRoute,
+  ApiPublicAgendaPessoalRoute: ApiPublicAgendaPessoalRoute,
   ApiPublicGoogleOauthCallbackRoute: ApiPublicGoogleOauthCallbackRoute,
   ApiPublicHooksRetomarTranscricoesRoute:
     ApiPublicHooksRetomarTranscricoesRoute,
