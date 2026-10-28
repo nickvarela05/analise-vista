@@ -141,3 +141,32 @@ describe("parseEmailHomologacao — uma célula por linha", () => {
     expect(por("9069").sistema).toBe("GED / App - Aluno - Prof");
   });
 });
+
+describe("parseEmailHomologacao — e-mail de 27/10/2026, uma célula por linha", () => {
+  const texto = readFileSync(
+    fileURLToPath(new URL("./fixtures/email-27-10-2026.txt", import.meta.url)),
+    "utf8",
+  );
+  const { itens } = parseEmailHomologacao(texto);
+  const por = (n: string) => itens.find((i) => i.numero === n)!;
+
+  it("acha as 44 tarefas, inclusive o bloco de 23/10", () => {
+    expect(itens).toHaveLength(44);
+    expect(itens.filter((i) => i.dataHml === "2026-10-23").map((i) => i.numero)).toEqual([
+      "9359",
+      "9618",
+      "9369",
+      "9529",
+      "9609",
+      "9623",
+    ]);
+  });
+
+  it("ignora o 'NOVO' escrito na coluna da data e mantém os sistemas", () => {
+    expect(por("9616")).toMatchObject({ sistema: "GED", dataHml: "2026-10-27" });
+    expect(por("9553")).toMatchObject({ sistema: "Solicitação" });
+    expect(por("9369").link).toBe(
+      "https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9369",
+    );
+  });
+});

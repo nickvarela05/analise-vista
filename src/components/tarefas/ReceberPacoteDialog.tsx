@@ -168,6 +168,15 @@ export function ReceberPacoteDialog() {
   }, [open]);
 
   const email = React.useMemo(() => parseEmailHomologacao(texto), [texto]);
+  // Quantas tarefas por data de HML, para conferir de relance se veio algum bloco a menos.
+  const porData = React.useMemo(() => {
+    const m = new Map<string, number>();
+    for (const i of email.itens) {
+      const d = i.dataHml ? `${i.dataHml.slice(8, 10)}/${i.dataHml.slice(5, 7)}` : "sem data";
+      m.set(d, (m.get(d) ?? 0) + 1);
+    }
+    return [...m.entries()];
+  }, [email]);
 
   const porNumero = React.useMemo(() => {
     const m = new Map<string, Existente>();
@@ -310,10 +319,14 @@ export function ReceberPacoteDialog() {
                     // células mescladas (data e sistema que valem para várias linhas).
                     const html = e.clipboardData.getData("text/html");
                     const tsv = html ? tabelaHtmlParaTsv(html) : null;
-                    if (tsv) {
-                      e.preventDefault();
-                      setTexto(tsv);
-                    }
+                    if (!tsv) return;
+                    // Reforço (27/10/2026): se o texto puro achar mais tarefas que o HTML,
+                    // vale o texto puro. Nenhum formato de e-mail pode deixar tarefa de fora.
+                    const puro = e.clipboardData.getData("text/plain");
+                    const noHtml = parseEmailHomologacao(tsv).itens.length;
+                    if (parseEmailHomologacao(puro).itens.length > noHtml) return;
+                    e.preventDefault();
+                    setTexto(tsv);
                   }}
                   placeholder="Selecione a tabela no e-mail, copie (Ctrl+C) e cole aqui (Ctrl+V)."
                   rows={9}
@@ -334,6 +347,11 @@ export function ReceberPacoteDialog() {
                 <div className="rounded-md border">
                   <div className="border-b bg-muted/40 px-3 py-2 text-xs font-medium">
                     {email.itens.length} tarefa(s) lida(s)
+                    {porData.length > 1 && (
+                      <span className="ml-2 font-normal text-muted-foreground">
+                        {porData.map(([d, n]) => `${d}: ${n}`).join(" · ")}
+                      </span>
+                    )}
                   </div>
                   <div className="max-h-56 overflow-auto">
                     <table className="w-full text-xs">

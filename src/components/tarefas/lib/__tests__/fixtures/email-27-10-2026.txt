@@ -1,0 +1,146 @@
+Data de hml
+Sistema
+Número
+Tarefa
+Observação
+Link
+05/10/2026
+GED
+9487
+Replicar layout do processo de indicação de unidades da tela de substituição interina " Substituição interina - nível REDE" para a tela de remoção "Indicação de unidade".
+06/10/2026
+App - Professor
+9530
+Implementar novo menu de Relatórios
+App - Aluno
+9555
+[APLICATIVO DO ALUNO] Melhorar o fluxo de recuperação de senha e primeiro acesso ao aplicativo do aluno.
+App - Aluno
+9515
+Implementar módulo ACOMPANHAMENTO DE VAGA "Acompanhar vaga contemplada".
+App - Aluno
+9514
+Implementar módulo ACOMPANHAMENTO DE VAGA "Solicitação de vaga realizada".
+07/10/2026
+App - Professor/Aluno
+9587
+Ajustar visualização dos anexos das mensagens nos apps
+MAED
+9382
+Verificar consulta de solicitações realizadas no sistema de materiais.
+8763
+Verificar loading demorado da tela de parametrização de Perfil x Acesso.
+9541
+[MAED] - VERIFICAR CARREGAMENTO DA TELA DE USUÁRIO NOVO
+9208
+Verificar mensagem no login do usuário MFEDUARDO, ao tentar acessar a tela de avaliação e encaminhamento.
+19/10/2026
+GED
+9468
+Criar objeto para o botão novo na tela de PESSOA FÍSICA
+GED
+9493
+Adicionar uma identificação aos contatos cadastrados na seção DADOS DE CONTATO do cadastro do aluno
+App - Professor
+9595
+Adaptar o controle de rendimento para o APP DO PROFESSOR, mantendo a ideia do layout atual.
+App - Professor/Aluno
+9603
+Ajustar a regra de solicitação de avaliação nos APPs
+App - Professor
+9607
+Realizar ordenação de turmas no APP do professor
+App - Professor
+9608
+Ajustar fluxo de recuperar senha
+GED
+9461
+Gerar HISTÓRICO e DECLARAÇÃO ao realizar o DESLIGAMENTO (ABANDONO ou SOLICITAÇÃO DO PAI/RESPONSÁVEL) e TRANSFERÊNCIA (PARA FORA DA REDE)
+GED
+9425
+Implementar relatório de retiradas autorizadas.
+GED
+9219
+Customizar layout da ficha detalhada do aluno.
+GED
+9459
+Criar a função transferência ex-officio e customizar regra do afastamento de mesma nomenclatura
+GED
+9460
+Criar a função designação para professores substitutos
+GED
+8969
+Realizar customizações no histórico escolar do Fundamental
+GED
+9482
+Realizar padronização no tipo da fonte no HISTÓRICO ESCOLAR.
+GED
+9549
+Incluir os painéis pedagógicos disponíveis no sistema HUB no link privado do Business Intelligence Educação Osasco
+GED
+9383
+Criar Relatório de Gestores por unidade no sistema ged.
+GED
+9455
+Ajuste nas cores de porcentagem de faltas da modalidade EJA
+GED
+9385
+Implementar tela de Porcentagem de Frequência Mensal
+GED
+9338
+Customizar regra para consulta geral do relatório de FALTAS EXCESSIVAS acima de 30 dias.
+GED
+9340
+Realizar alterações na tela BUSCA ATIVA
+GED
+9189
+Alterar a regra para que o cálculo da distância não seja mais pelo endereço e sim com base na LATITUDE e LONGITUDE
+GED
+9535
+Verificar consulta da tela de "Totalizador de alunos por série e período"
+GED
+9604
+Verificar consulta ao editar cadastro de alunos.
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-solicitacao-hml-9604/#/
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-solicitacao-hml-9604/#/
+23/10/2026
+GED
+9359
+Verificar mensagem em vermelho na tela de "Relatório de funcionários ativos" e a consulta para determinados cargos (Ex: diretor de escola I, II e III)
+GED
+9618
+Criar nova tela para visualizar os emails enviados ou não por grupo
+GED
+9369
+Ampliar a quantidade de vezes que a criança volta para a fila de espera para 5 vezes
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9369
+GED
+9529
+Verificar e ajustar a consulta utilizada na tela de Declaração de Matrícula.
+App - Professor
+9609
+Ajuste no fluxo do app do professor após a troca de senha
+App - Aluno
+9623
+Verificar a possibilidade de remover as informações de OBSERVAÇÕES DO DIA e OBSERVAÇÃO DO ALUNO exibidas no aplicativo do aluno.
+27/10/2026
+NOVO
+GED
+9616
+Verificar consulta de exibição na tela de ATRIBUIÇÃO DE CLASSE
+GED
+9613
+Realizar uma validação dinâmica para que, ao preencher um dos campos - WhatsApp ou Telefone -, o outro se torne opcional, caso permaneça vazio
+https://homolog-gestaoeducacional.osasco.sp.gov.br/ged-hml-9613/#/
+Solicitação
+9553
+Implementar mudanças na tela de "Contato de suporte para os APPs"
+GED
+9349
+Ajustar a tela de Mensagens do Sistema, incluindo a opção de mover e organizar as mensagens do pop-up
+GED
+9310
+Criar o objeto de permissão TRANSFERENCIA_BTN_RETROATIVO, responsável por controlar a habilitação da funcionalidade de transferência com data retroativa.
+BI
+9602
+Alterar os IDEB's no BI com as informações recentes de 2025
