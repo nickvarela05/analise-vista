@@ -45,20 +45,25 @@ function dataParaIso(s: string): string | null {
  * Converte a tabela HTML que o Outlook põe na área de transferência em texto separado por
  * tabulação, repetindo o conteúdo das células mescladas (rowspan/colspan) em cada linha.
  * Sem isso, "MAED" mesclado em 3 linhas só apareceria na primeira.
- * @returns O texto da maior tabela encontrada, ou `null` se o HTML não tiver tabela.
+ *
+ * O e-mail pode vir em várias tabelas: em 27/10/2026 o bloco de 23/10 estava numa tabela à
+ * parte, e a leitura antiga, que ficava só com a maior, deixou 6 tarefas fora do pacote. Agora
+ * entram todas as tabelas de dados, na ordem do e-mail; as linhas sem número de tarefa
+ * (cabeçalho, assinatura) são descartadas depois, na leitura do texto.
+ * @returns O texto das tabelas encontradas, ou `null` se o HTML não tiver tabela.
  */
 export function tabelaHtmlParaTsv(html: string): string | null {
   if (typeof DOMParser === "undefined") return null;
   const doc = new DOMParser().parseFromString(html, "text/html");
   const tabelas = Array.from(doc.querySelectorAll("table"));
   if (tabelas.length === 0) return null;
-  // Tabelas de layout do Outlook podem envolver a de dados; fica a que tem mais linhas
-  // próprias sem conter outra tabela.
-  const candidatas = tabelas.filter((t) => !t.querySelector("table"));
-  const tabela = (candidatas.length ? candidatas : tabelas).reduce((a, b) =>
-    b.rows.length > a.rows.length ? b : a,
-  );
+  // Tabelas de layout do Outlook podem envolver as de dados; ficam só as que não contêm
+  // outra tabela.
+  const folhas = tabelas.filter((t) => !t.querySelector("table"));
+  return (folhas.length ? folhas : tabelas).map(tabelaParaTsv).join("\n");
+}
 
+function tabelaParaTsv(tabela: HTMLTableElement): string {
   const grade: string[][] = [];
   Array.from(tabela.rows).forEach((tr, r) => {
     grade[r] ??= [];
